@@ -1,6 +1,6 @@
 """Stateful programmatic WWW navigation, after Perl's WWW::Mechanize.
 
-Copyright 2003 John J. Lee <jjl@pobox.com>
+Copyright 2003-2004 John J. Lee <jjl@pobox.com>
 Copyright 2003 Andy Lester (original Perl code)
 
 This code is free software; you can redistribute it and/or modify it under
@@ -146,12 +146,18 @@ class Browser(UserAgent):
             raise BrowserStateError("no URL has yet been .open()ed")
         return self._open(self.request, update_history=False)
 
-    def back(self):
-        """Go back one step in history, and return response object."""
-        try:
-            self.request, self.response = self._history.pop()
-        except IndexError:
-            raise BrowserStateError("already at start of history")
+    def back(self, n=1):
+        """Go back n steps in history, and return response object.
+
+        n: go back this number of steps (default 1 step)
+
+        """
+        while n:
+            try:
+                self.request, self.response = self._history.pop()
+            except IndexError:
+                raise BrowserStateError("already at start of history")
+            n -= 1
         if self.response is not None:
             self._parse_html(self.response)
         return self.response

@@ -172,7 +172,12 @@ class BrowserTests(TestCase):
         r5 = b.reload()
         self.assert_(r5 is not r1)
         # .geturl() gets fed through to b.response
-        self.assert_(b.geturl() == "http://example.com/")
+        self.assertEquals(b.geturl(), "http://example.com/")
+        # can go back n times
+        r6 = b.open("http://example.com/spam")
+        r7 = b.open("http://example.com/spam")
+        self.assert_(b.back(2) is r5)
+        self.assertRaises(mechanize.BrowserStateError, b.back, 2)
 
     def test_empty(self):
         import mechanize
