@@ -196,16 +196,7 @@ mailing list</a> rather than direct to me.
 
 <br>
 
-<a href="../ClientCookie/">ClientCookie</a><br>
-<a href="../ClientForm/">ClientForm</a><br>
-<a href="../DOMForm/">DOMForm</a><br>
-<a href="../python-spidermonkey/">python-spidermonkey</a><br>
-<a href="../ClientTable/">ClientTable</a><br>
-<span class="thispage">mechanize</span><br>
-<a href="../pullparser/">pullparser</span><br>
-<a href="../bits/GeneralFAQ.html">General FAQs</a><br>
-<a href="../bits/urllib2_152.py">1.5.2 urllib2.py</a><br>
-<a href="../bits/urllib_152.py">1.5.2 urllib.py</a><br>
+@(release.navbar('mechanize'))
 
 <br>
 
