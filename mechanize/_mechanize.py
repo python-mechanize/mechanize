@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Stateful programmatic WWW navigation, after Perl's WWW::Mechanize.
 
 Copyright 2003 John J. Lee <jjl@pobox.com>
@@ -8,6 +9,11 @@ the terms of the BSD License (see the file COPYING included with the
 distribution).
 
 """
+# from recent LWP release notes:
+##     RFC 2616 says that http: referer should not be sent with
+##     https: requests.  The lwp-rget program, the $req->referer method
+##     and the redirect handling code now try to enforce this.
+##     Patch by Ville Skyttä <ville.skytta@iki.fi>.
 
 import urlparse, re
 
