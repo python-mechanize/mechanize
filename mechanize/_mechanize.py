@@ -12,6 +12,7 @@ distribution).
 # XXX
 # The stuff on web page's todo list.
 # Moof's emails about response object, .back(), etc.
+# Add Browser.load_response() method.
 # Add Browser.form_as_string() and Browser.__str__() methods.
 
 import urlparse, re
@@ -76,7 +77,6 @@ class Browser(UserAgent):
     Public attributes:
 
     request: last request (ClientCookie.Request or urllib2.Request)
-    response: last response (as return value of urllib2.urlopen())
     form: currently selected form (see .select_form())
     default_encoding: character encoding used for encoding numeric character
      references when matching link text, if no encoding is found in the reponse
@@ -94,7 +94,7 @@ class Browser(UserAgent):
     def __init__(self, default_encoding="latin-1"):
         self.default_encoding = default_encoding
         self._history = []  # LIFO
-        self.request = self.response = None
+        self.request = self._response = None
         self.form = None
         self._forms = None
         self._title = None
@@ -104,7 +104,7 @@ class Browser(UserAgent):
     def close(self):
         UserAgent.close(self)
         self._history = self._forms = self._title = self._links = None
-        self.request = self.response = None
+        self.request = self._response = None
 
     def open(self, url, data=None): return self._open(url, data)
 
@@ -117,31 +117,37 @@ class Browser(UserAgent):
             if not scheme:
                 # relative URL
                 assert not netloc, "malformed URL"
-                if self.response is None:
+                if self._response is None:
                     raise BrowserStateError(
                         "can't fetch relative URL: not viewing any document")
-                url = urlparse.urljoin(self.response.geturl(), url)
+                url = urlparse.urljoin(self._response.geturl(), url)
 
         if self.request is not None:
-            self._history.append((self.request, self.response))
-        self.response = None
+            self._history.append((self.request, self._response))
+        self._response = None
         # we want self.request to be assigned even if OpenerDirector.open fails
         self.request = self._request(url, data)
         self._previous_scheme = self.request.get_type()
 
-        self.response = ClientCookie.OpenerDirector.open(
+        self._response = ClientCookie.OpenerDirector.open(
             self, self.request, data)
-        if not hasattr(self.response, "seek"):
-            self.response = response_seek_wrapper(self.response)
-        self._parse_html(self.response)
+        if not hasattr(self._response, "seek"):
+            self._response = response_seek_wrapper(self._response)
+        self._parse_html(self._response)
 
-        return self.response
+        return self._response
+
+    def response(self):
+        """Return last response (as return value of urllib2.urlopen())."""
+        # XXX This is currently broken: responses returned by this method
+        # all share the same seek position.
+        return self._response
 
     def geturl(self):
         """Get URL of current document."""
-        if self.response is None:
+        if self._response is None:
             raise BrowserStateError("not viewing any document")
-        return self.response.geturl()
+        return self._response.geturl()
 
     def reload(self):
         """Reload current document, and return response object."""
@@ -157,13 +163,13 @@ class Browser(UserAgent):
         """
         while n:
             try:
-                self.request, self.response = self._history.pop()
+                self.request, self._response = self._history.pop()
             except IndexError:
                 raise BrowserStateError("already at start of history")
             n -= 1
-        if self.response is not None:
-            self._parse_html(self.response)
-        return self.response
+        if self._response is not None:
+            self._parse_html(self._response)
+        return self._response
 
     def links(self, *args, **kwds):
         """Return iteratable over links (mechanize.Link objects)."""
@@ -187,9 +193,9 @@ class Browser(UserAgent):
 
     def viewing_html(self):
         """Return whether the current response contains HTML data."""
-        if self.response is None:
+        if self._response is None:
             raise BrowserStateError("not viewing any document")
-        ct = self.response.info().getheaders("content-type")
+        ct = self._response.info().getheaders("content-type")
         return ct and ct[0].startswith("text/html")
 
     def title(self):
@@ -202,8 +208,8 @@ class Browser(UserAgent):
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         if self._title is None:
-            p = pullparser.PullParser(self.response,
-                                      encoding=self._encoding(self.response))
+            p = pullparser.PullParser(self._response,
+                                      encoding=self._encoding(self._response))
             try:
                 p.get_tag("title")
             except pullparser.NoMoreTokensError:
