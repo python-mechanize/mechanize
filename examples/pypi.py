@@ -35,7 +35,7 @@ links = b.links(text_regex=MECHANIZE_RE)
 versions = []
 for link in links:
     m = MECHANIZE_RE.search(link.text)
-    version_string = m.group(1).strip()
+    version_string = m.group(1).strip(' \t\xa0')
     tup = parse_version(version_string)[:3]
     versions.append(tup)
 latest = links[versions.index(max(versions))]

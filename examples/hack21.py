@@ -12,6 +12,10 @@ import mechanize
 assert mechanize.__version__ >= (0, 0, 6, "a")
 
 mech = mechanize.Browser()
+# Addition 2005-01-05: Be naughty, since robots.txt asks not to
+# access /search now.  We're not madly searching for everything, so
+# I don't feel too guilty.
+mech.set_handle_robots(False)
 #mech.set_debug_http(True)
 
 # Get the starting search page
@@ -36,13 +40,13 @@ except HTTPError, e:
     sys.exit("post failed: %d: %s" % (e.code, e.msg))
 
 # Get all the tarballs
-urls = [link.url for link in
+urls = [link.absolute_url for link in
         mech.links(url_regex=re.compile(r"\.tar\.gz$"))]
 print "Found", len(urls), "tarballs to download"
 
 for url in urls:
     filename = os.path.basename(url)
-    f = file(filename, "wb")
+    f = open(filename, "wb")
     print "%s -->" % filename,
     r = mech.open(url)
     while 1:
