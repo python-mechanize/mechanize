@@ -6,7 +6,7 @@
 # This is just illustrative: I assume there's an easier way of doing
 # this (also note that the download field doesn't in general point
 # directly to the source, and that many packages (including mine!)
-# aren't yet registered religiouly at every release).
+# aren't yet registered religiously at every release).
 
 import sys, os, re
 
