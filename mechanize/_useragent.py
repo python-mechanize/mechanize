@@ -32,7 +32,7 @@ class HTTPRefererProcessor(BaseProcessor):
 class UserAgent(OpenerDirector):
     """Convenient user-agent class.
 
-    Do not use .add_header() to add a handler for something already dealt with
+    Do not use .add_handler() to add a handler for something already dealt with
     by this code.
 
     Public attributes:
@@ -67,7 +67,6 @@ class UserAgent(OpenerDirector):
         # XXX rest of authentication stuff
         "_redirect": ClientCookie.HTTPRedirectHandler,
         "_cookies": ClientCookie.HTTPCookieProcessor,
-        "_robots": ClientCookie.HTTPRobotRulesProcessor,
         "_refresh": ClientCookie.HTTPRefreshProcessor,
         "_referer": HTTPRefererProcessor,  # from this module, note
         "_equiv": ClientCookie.HTTPEquivProcessor,
@@ -79,14 +78,17 @@ class UserAgent(OpenerDirector):
         "_debug_redirect": ClientCookie.HTTPRedirectDebugProcessor,
         "_debug_response_body": ClientCookie.HTTPResponseDebugProcessor,
         }
-    if hasattr(httplib, 'HTTPS'):
-        handler_classes["https"] = ClientCookie.HTTPSHandler
 
-    default_schemes = ["http", "https", "ftp", "file", "gopher"]
+    default_schemes = ["http", "ftp", "file", "gopher"]
     default_others = ["_unknown", "_http_error", "_http_request_upgrade",
                       "_http_default_error"]
-    default_features = ["_authen", "_redirect", "_cookies", "_seek", "_proxy",
-                        "_robots"]
+    default_features = ["_authen", "_redirect", "_cookies", "_seek", "_proxy"]
+    if hasattr(httplib, 'HTTPS'):
+        handler_classes["https"] = ClientCookie.HTTPSHandler
+        default_schemes.append("https")
+    if hasattr(ClientCookie, "HTTPRobotRulesProcessor"):
+        handler_classes["_robots"] = ClientCookie.HTTPRobotRulesProcessor
+        default_features.append("_robots")
 
     def __init__(self):
         OpenerDirector.__init__(self)
