@@ -32,8 +32,8 @@ def parse_version(text):
         raise ValueError
     return tuple([m.groupdict()[part] for part in
                   ("major", "minor", "bugfix", "state", "pre")])
-assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 0, 1], \
-       "ClientCookie 1.0.1a or newer is required"
+assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 0, 2], \
+       "ClientCookie 1.0.2 or newer is required"
 assert map(int, parse_version(ClientForm.VERSION)[:2]) >= [0, 1], \
        "ClientForm 0.1.x is required"
 assert pullparser.__version__[:3] >= (0, 0, 4), \
