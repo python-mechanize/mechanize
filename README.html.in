@@ -141,7 +141,7 @@ distribution.
 
 <h2>See also</h2>
 
-<p>Richard Jones' <a http="http://mechanicalcat.net/tech/webunit/">webunit</a>
+<p>Richard Jones' <a href="http://mechanicalcat.net/tech/webunit/">webunit</a>
 (this is not the same as Steven Purcell's <a
 href="http://webunit.sourceforge.net/">code of the same name</a>).  webunit and
 mechanize are quite similar.  On the minus side, webunit is missing things like
