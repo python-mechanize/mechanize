@@ -153,7 +153,7 @@ class Browser(UserAgent):
         """Reload current document, and return response object."""
         if self.request is None:
             raise BrowserStateError("no URL has yet been .open()ed")
-        return self._open(self.request, update_history=False)
+        return self._mech_open(self.request, update_history=False)
 
     def back(self, n=1):
         """Go back n steps in history, and return response object.
