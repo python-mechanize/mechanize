@@ -9,6 +9,8 @@ distribution).
 
 """
 
+# XXX moof's emails about response object, .back(), etc.
+
 import urlparse, re
 
 import ClientCookie
@@ -94,7 +96,6 @@ class Browser(UserAgent):
         self._forms = None
         self._title = None
         self._links = None
-        self._previous_scheme = None
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
     def close(self):
