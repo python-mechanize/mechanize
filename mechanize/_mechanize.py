@@ -28,8 +28,8 @@ def parse_version(text):
         raise ValueError
     return tuple([m.groupdict()[part] for part in
                   ("major", "minor", "bugfix", "state", "pre")])
-assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [0, 4, 17], \
-       "ClientCookie 0.4.17 or newer is required"
+assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [0, 4, 19], \
+       "ClientCookie 0.4.19 or newer is required"
 assert map(int, parse_version(ClientForm.VERSION)[:2]) >= [0, 1], \
        "ClientForm 0.1.x is required"
 assert pullparser.__version__[:3] >= (0, 0, 4), \
@@ -38,7 +38,7 @@ del VERSION_RE, parse_version
 
 from _useragent import UserAgent
 
-__version__ = (0, 0, 7, "a", None)  # 0.0.7a
+__version__ = (0, 0, 8, "a", None)  # 0.0.8a
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass

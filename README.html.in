@@ -4,7 +4,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
   <meta name="author" content="John J. Lee &lt;jjl@@pobox.com&gt;">
-  <meta name="date" content="2004-01">
+  <meta name="date" content="2004-05">
   <meta name="keywords" content="Python,HTML,browser,stateful,web,client,client-side,mechanize,form,ClientForm,ClientCookie,pullparser,WWW::Mechanize">
   <title>mechanize</title>
   <style type="text/css" media="screen">@@import "../styles/style.css";</style>
@@ -171,7 +171,7 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
    BSD license</a> (included in distribution).
 </ul>
 
-<p><a href="mailto:jjl@@pobox.com">John J. Lee</a>, January 2004.
+<p><a href="mailto:jjl@@pobox.com">John J. Lee</a>, May 2004.
 
 <hr>
 
