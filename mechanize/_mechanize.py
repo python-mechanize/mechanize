@@ -15,13 +15,11 @@ distribution).
 # Add Browser.load_response() method.
 # Add Browser.form_as_string() and Browser.__str__() methods.
 
-import urlparse, re
+import urllib2, urlparse, re
 
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
 from ClientCookie._HeadersUtil import split_header_words
-from ClientCookie._urllib2_support import HTTPRequestUpgradeProcessor
-import ClientForm
 import pullparser
 # serves me right for not using a version tuple...
 VERSION_RE = re.compile(r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<bugfix>\d+)"
@@ -34,15 +32,12 @@ def parse_version(text):
                   ("major", "minor", "bugfix", "state", "pre")])
 assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 0, 2], \
        "ClientCookie 1.0.2 or newer is required"
-assert map(int, parse_version(ClientForm.VERSION)[:2]) >= [0, 1], \
-       "ClientForm 0.1.x is required"
 assert pullparser.__version__[:3] >= (0, 0, 4), \
        "pullparser 0.0.4b or newer is required"
-del VERSION_RE, parse_version
 
 from _useragent import UserAgent
 
-__version__ = (0, 0, 9, "a", None)  # 0.0.9a
+__version__ = (0, 0, 10, "a", None)  # 0.0.10a
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
@@ -65,6 +60,52 @@ class Link:
     def __repr__(self):
         return "Link(base_url=%r, url=%r, text=%r, tag=%r, attrs=%r)" % (
             self.base_url, self.url, self.text, self.tag, self.attrs)
+
+
+class FormsFactory:
+
+    """Makes a sequence of objects satisfying ClientForm.HTMLForm interface.
+
+    For constructor argument docs, see ClientForm.ParseResponse
+    argument docs.
+
+    """
+
+    def __init__(self,
+                 select_default=False,
+                 form_parser_class=None,
+                 request_class=None,
+                 ):
+        import ClientForm
+        assert map(int, parse_version(ClientForm.VERSION)[:3]) >= [0, 1, 7], \
+               "ClientForm >= 0.1.7 is required"
+        self.select_default = select_default
+        if form_parser_class is None:
+            form_parser_class = ClientForm.FormParser
+        self.form_parser_class = form_parser_class
+        if request_class is None:
+            request_class = ClientCookie.Request
+        self.request_class = request_class
+
+    def parse_response(self, response):
+        import ClientForm
+        return ClientForm.ParseResponse(
+            response,
+            select_default=self.select_default,
+            form_parser_class=self.form_parser_class,
+            request_class=self.request_class
+            )
+
+    def parse_file(self, file_obj, base_url):
+        import ClientForm
+        return ClientForm.ParseFile(
+            file_obj,
+            base_url,
+            select_default=self.select_default,
+            form_parser_class=self.form_parser_class,
+            request_class=self.request_class
+            )
+
 
 class Browser(UserAgent):
     """Browser-like class with support for history, forms and links.
@@ -91,7 +132,22 @@ class Browser(UserAgent):
         "iframe": "src",
     }
 
-    def __init__(self, default_encoding="latin-1"):
+    def __init__(self, default_encoding="latin-1",
+                 forms_factory=None,
+                 request_class=None,
+                 ):
+        """
+
+        default_encoding: See class docs.
+        forms_factory: Object supporting the mechanize.FormsFactory interface.
+        request_class: Request class to use.  Defaults to ClientCookie.Request
+         by default for Pythons older than 2.4, urllib2.Request otherwise.
+
+        Note that the supplied forms_factory's request_class attribute is
+        assigned to by this constructor, to ensure only one Request class is
+        used.
+
+        """
         self.default_encoding = default_encoding
         self._history = []  # LIFO
         self.request = self._response = None
@@ -99,6 +155,18 @@ class Browser(UserAgent):
         self._forms = None
         self._title = None
         self._links = None
+
+        if request_class is None:
+            if not hasattr(urllib2.Request, "add_unredirected_header"):
+                request_class = ClientCookie.Request
+            else:
+                request_class = urllib2.Request  # Python 2.4
+        self.request_class = request_class
+        if forms_factory is None:
+            forms_factory = FormsFactory()
+        self._forms_factory = forms_factory
+        forms_factory.request_class = request_class
+
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
     def close(self):
@@ -275,7 +343,6 @@ class Browser(UserAgent):
         previous_scheme = self.request.get_type()
         if scheme not in ["http", "https"]:
             return request
-        request = HTTPRequestUpgradeProcessor().http_request(request)  # yuck
 
         if (self._handle_referer and
             previous_scheme in ["http", "https"] and not
@@ -463,7 +530,7 @@ class Browser(UserAgent):
             return
 
         # set ._forms, ._links
-        self._forms = ClientForm.ParseResponse(response)
+        self._forms = self._forms_factory.parse_response(response)
         response.seek(0)
 
         base = response.geturl()
