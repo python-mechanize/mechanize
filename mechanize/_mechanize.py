@@ -49,9 +49,12 @@ class Link:
         self.absolute_url = urlparse.urljoin(base_url, url)
         self.url, self.text, self.tag, self.attrs = url, text, tag, attrs
     def __eq__(self, other):
-        for name in "url", "text", "tag", "attrs":
-            if getattr(self, name) != getattr(other, name):
-                return False
+        try:
+            for name in "url", "text", "tag", "attrs":
+                if getattr(self, name) != getattr(other, name):
+                    return False
+        except AttributeError:
+            return False
         return True
     def __repr__(self):
         return "Link(base_url=%r, url=%r, text=%r, tag=%r, attrs=%r)" % (
