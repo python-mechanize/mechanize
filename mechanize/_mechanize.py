@@ -9,7 +9,10 @@ distribution).
 
 """
 
-# XXX moof's emails about response object, .back(), etc.
+# XXX
+# The stuff on web page's todo list.
+# Moof's emails about response object, .back(), etc.
+# Add Browser.form_as_string() and Browser.__str__() methods.
 
 import urlparse, re
 
