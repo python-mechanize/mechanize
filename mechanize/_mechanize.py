@@ -9,6 +9,10 @@ distribution).
 
 """
 
+# XXXX
+# test referer bugs (frags and don't add in redirect unless orig req had Referer)
+# fix CC bug (tst.py debug stuff)
+
 # XXX
 # The stuff on web page's todo list.
 # Moof's emails about response object, .back(), etc.
@@ -336,19 +340,24 @@ class Browser(UserAgent):
             description = ", ".join(description)
             raise FormNotFoundError("no form matching "+description)
 
-    def _add_referer_header(self, request):
+    def _add_referer_header(self, request, origin_request=True):
         if self.request is None:
             return request
         scheme = request.get_type()
-        previous_scheme = self.request.get_type()
+        original_scheme = self.request.get_type()
         if scheme not in ["http", "https"]:
+            return request
+        if not origin_request and not self.request.has_header('Referer'):
             return request
 
         if (self._handle_referer and
-            previous_scheme in ["http", "https"] and not
-            (previous_scheme == "https" and scheme != "https")):
-            request.add_unredirected_header("Referer",
-                                            self.request.get_full_url())
+            original_scheme in ["http", "https"] and not
+            (original_scheme == "https" and scheme != "https")):
+            # strip URL fragment (RFC 2616 14.36)
+            parts = urlparse.urlparse(self.request.get_full_url())
+            parts = parts[:-1]+("",)
+            referer = urlparse.urlunparse(parts)
+            request.add_unredirected_header("Referer", referer)
         return request
 
     def click(self, *args, **kwds):
