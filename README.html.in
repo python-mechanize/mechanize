@@ -191,11 +191,6 @@ mailing list</a> rather than direct to me.
 
 <div id="Menu">
 
-<a href="..">Home</a><br>
-<!--<a href=""></a><br>-->
-
-<br>
-
 @(release.navbar('mechanize'))
 
 <br>
