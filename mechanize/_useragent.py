@@ -13,9 +13,9 @@ distribution).
 
 import urllib2, httplib
 import ClientCookie
-from ClientCookie import OpenerDirector, BaseProcessor
+from ClientCookie import OpenerDirector, BaseHandler
 
-class HTTPRefererProcessor(BaseProcessor):
+class HTTPRefererProcessor(BaseHandler):
     def http_request(self, request):
         # See RFC 2616 14.36.  The only times we know the source of the
         # request URI has a URI associated with it are redirect, and
