@@ -368,7 +368,7 @@ class BrowserTests(TestCase):
 
         for html, urls in [
             (
-"""<base uri="http://www.python.org/foo/">
+"""<base href="http://www.python.org/foo/">
 <a href="bar/baz.html"></a>
 <a href="/bar/baz.html"></a>
 <a href="http://example.com/bar/baz.html"></a>

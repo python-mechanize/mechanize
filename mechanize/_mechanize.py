@@ -456,7 +456,7 @@ class Browser(UserAgent):
         self._links = []
         for token in p.tags(*(self.urltags.keys()+["base"])):
             if token.data == "base":
-                base = dict(token.attrs).get("uri")
+                base = dict(token.attrs).get("href")
                 continue
             if token.type == "endtag":
                 continue
