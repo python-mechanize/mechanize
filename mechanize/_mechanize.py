@@ -106,9 +106,9 @@ class Browser(UserAgent):
         self._history = self._forms = self._title = self._links = None
         self.request = self._response = None
 
-    def open(self, url, data=None): return self._open(url, data)
+    def open(self, url, data=None): return self._mech_open(url, data)
 
-    def _open(self, url, data=None, update_history=True):
+    def _mech_open(self, url, data=None, update_history=True):
         try:
             url.get_full_url
         except AttributeError:
