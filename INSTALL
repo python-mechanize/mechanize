@@ -1,0 +1,62 @@
+mechanize installation instructions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Dependencies
+~~~~~~~~~~~~
+
+See the web page (included here as README.html).
+
+
+Installation
+~~~~~~~~~~~~
+
+To install the package, run the following command:
+
+ python setup.py build
+
+then (with appropriate permissions)
+
+ python setup.py install
+
+
+Alternatively, just copy the whole mechanize directory into your
+Python path (eg. unix: /usr/local/lib/python2.2/site-packages,
+Windows: C:\Python21, or C:\Python22\Lib\site-packages).  That's all
+that setup.py does.  Only copy the ClientCookie directory that's
+inside the distributed tarball / zip archive, not the entire
+mechanize-x.x.x directory!
+
+
+To run the tests (none of which access the network), run the following
+command:
+
+ python test.py
+
+This runs the tests against the source files extracted from the
+package.  For help on command line options:
+
+ python test.py --help
+
+
+Bugs and comments to jjl@pobox.com.
+
+
+NO WARRANTY
+
+THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+Copyright Notices
+
+  (C) 2002-2003 John J. Lee.  All rights reserved.
+  (C) 2003 Andy Lester.  All rights reserved.  (Perl code from which
+      this module is derived)
+
+This code in this package is free software; you can redistribute it
+and/or modify it under the terms of the BSD license (see the file
+COPYING).
+
+John J. Lee <jjl@pobox.com>
+December 2003

@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <meta name="author" content="John J. Lee &lt;jjl@@pobox.com&gt;">
+  <meta name="date" content="2004-01">
+  <meta name="keywords" content="Python,HTML,browser,stateful,web,client,client-side,mechanize,form,ClientForm,ClientCookie,pullparser,WWW::Mechanize">
+  <title>mechanize</title>
+  <style type="text/css" media="screen">@@import "../styles/style.css";</style>
+  <base href="http://wwwsearch.sourceforge.net/mechanize/">
+</head>
+<body>
+
+@# This file is processed by EmPy to colorize Python source code
+@# http://wwwsearch.sf.net/bits/colorize.py
+@{from colorize import colorize}
+
+<div id="sf"><a href="http://sourceforge.net">
+<img src="http://sourceforge.net/sflogo.php?group_id=48205&amp;type=2"
+ width="125" height="37" alt="SourceForge.net Logo"></a></div>
+<!--<img src="../images/sflogo.png"-->
+
+<h1>mechanize</h1>
+
+<div id="Content">
+
+<p>Stateful programmatic web browsing in Python, after Andy Lester's Perl
+module <a
+href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
+</a>.
+
+<ul>
+  <li><code>mechanize.Browser</code> is a subclass of
+    <code>mechanize.UserAgent</code>, which is, in turn, a subclass of
+    <code>ClientCookie.OpenerDirector</code> (like
+    <code>urllib2.OpenerDirector</code>) (so any URL can be opened, not just
+    <code>http:</code>).  <code>mechanize.UserAgent</code> offers easy dynamic
+    configuration of user-agent features like protocol, cookie, redirection and
+    <code>robots.txt</code> handling, without having to make a new
+    <code>OpenerDirector</code> each time, eg.  by calling
+    <code>build_opener()</code> (it's not stable yet, though).
+  <li>Easy HTML form filling, using <a href="../ClientForm/">ClientForm</a>
+    interface.
+  <li>Convenient link parsing and following.
+  <li>Browser history (<code>.back()</code> and <code>.reload()</code>
+    methods).
+  <li>The <code>Referer</code> HTTP header is added properly (optional).
+  <li>Automatic observance of <a
+    href="http://www.robotstxt.org/wc/norobots.html">
+    <code>robots.txt</code></a>.
+  <li>In future, should be able to optionally use DOMForm (implementation of
+    ClientForm interface on top of HTML DOM) instead of ClientForm, which would
+    allow easy &quot;escape&quot; to the lower-level HTML DOM API in cases
+    where the higher-level <code>mechanize.Browser</code> / ClientForm API is
+    not sufficient.
+</ul>
+
+<p>An example:
+
+@{colorize(r"""
+import re
+from mechanize import Browser
+
+b = Browser()
+b.open("http://www.example.com/")
+# follow second link with element text matching regular expression
+response = b.follow_link(text_regex=re.compile(r"cheese\s*shop"), nr=1)
+assert b.viewing_html()
+print b.title()
+print response.geturl()
+print response.info()  # headers
+print response.read()  # body
+response.close()
+
+b.select_form(name="order")
+# Browser passes through unknown attributes (including methods)
+# to the selected HTMLForm (from ClientForm).
+b["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
+response2 = b.submit()  # submit current form
+
+response3 = b.back()  # back to cheese shop
+# the history mechanism uses cached requests and responses
+assert response3 is response
+# we can still use the response, even though we closed it:
+response3.seek(0)
+response3.read()
+response4 = b.reload()
+assert response4 is not response3
+
+for form in b.forms():
+    print form
+# .links() optionally accepts the keyword args of .follow_/.find_link()
+for link in b.links(url_regex=re.compile("python.org")):
+    print link
+    b.follow_link(link)  # takes EITHER Link instance OR keyword args
+    b.back()
+""")}
+
+<p>Full documentation is in the docstrings.
+
+<p>Thanks to Ian Bicking, for persuading me that a <code>UserAgent</code> class
+would be useful.
+
+
+<h2>Todo</h2>
+
+<ul>
+ <li>Stabilise <code>mechanize.UserAgent</code>.
+ <li>Test with non-http URLs.
+ <li>History cache expiration.
+ <li>Do auth and proxies properly (ClientCookie probably needs some work here,
+   too -- and maybe urllib2 also).  Need to configure local squid and apache,
+   yawn...
+ <li>Integrate with DOMForm, and sort out any resulting interface issues
+   (including replacing pullparser).  DOMForm will be an optional replacement
+   for ClientForm.
+ <li>Add some utilities useful for testing (eg. fetch images and stylesheets in
+   page, easy assertion of things like: cookies sent by server, redirections,
+   HTTP error codes etc.).
+</ul>
+
+
+<a name="download"></a>
+<h2>Download</h2>
+<p>All documentation (including this web page) is included in the distribution.
+
+<p>This is an alpha release: interfaces may change, and there will be bugs.
+
+<p><em>Development release.</em>
+
+<ul>
+<li><a href="./src/mechanize-0.0.8a.tar.gz">mechanize-0.0.8a.tar.gz</a>
+<li><a href="./src/mechanize-0_0_8a.zip">mechanize-0_0_8a.zip</a>
+<li><a href="./src/ChangeLog.txt">Change Log</a> (included in distribution)
+<li><a href="./src/">Older versions.</a>
+</ul>
+
+<p>For installation instructions, see the INSTALL file included in the
+distribution.
+
+<h2>See also</h2>
+
+<p>Richard Jones' <a http="http://mechanicalcat.net/tech/webunit/">webunit</a>
+(this is not the same as Steven Purcell's <a
+href="http://webunit.sourceforge.net/">code of the same name</a>).  webunit and
+mechanize are quite similar.  On the minus side, webunit is missing things like
+browser history, high-level forms and links handling, thorough cookie handling,
+refresh redirection, adding of the Referer header, observance of robots.txt and
+easy extensibility.  On the plus side, webunit has a bunch of utility functions
+bound up in its WebFetcher class, which look useful for writing tests (though
+they'd be easy to duplicate using mechanize).  In general, webunit has more of
+a frameworky emphasis, with aims limited to writing tests, where mechanize and
+the modules it depends on try hard to be general-purpose libraries.
+
+<p>There are many related links in the <a
+href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
+
+
+<a name="faq"></a>
+<h2>FAQs</h2>
+<ul>
+  <li>Which version of Python do I need?
+  <p>2.2 or above.
+  <li>What else do I need?
+  <p><a href="../ClientCookie/">ClientCookie</a> 0.4.19 or newer (<strong>note
+   the required version!</strong>), <a href="../ClientForm/">ClientForm</a>
+   0.1.x, and <a href="../pullparser/">pullparser</a> 0.0.4b or newer.
+  <li>Which license?
+  <p>The <a href="http://www.opensource.org/licenses/bsd-license.php">
+   BSD license</a> (included in distribution).
+</ul>
+
+<p><a href="mailto:jjl@@pobox.com">John J. Lee</a>, January 2004.
+
+<hr>
+
+</div>
+
+<div id="Menu">
+
+<a href="..">Home</a><br>
+<!--<a href=""></a><br>-->
+
+<br>
+
+<a href="../ClientCookie/">ClientCookie</a><br>
+<a href="../ClientForm/">ClientForm</a><br>
+<a href="../DOMForm/">DOMForm</a><br>
+<a href="../python-spidermonkey/">python-spidermonkey</a><br>
+<a href="../ClientTable/">ClientTable</a><br>
+<span class="thispage">mechanize</span><br>
+<a href="../pullparser/">pullparser</span><br>
+<a href="../bits/GeneralFAQ.html">General FAQs</a><br>
+<a href="../bits/urllib2_152.py">1.5.2 urllib2.py</a><br>
+<a href="../bits/urllib_152.py">1.5.2 urllib.py</a><br>
+
+<br>
+
+<a href="./#download">Download</a><br>
+<a href="./#faq">FAQs</a><br>
+
+</div>
+
+
+</body>
+</html>
