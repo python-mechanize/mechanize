@@ -372,6 +372,8 @@ class Browser(UserAgent):
 
         Arguments are as for ClientForm.HTMLForm.click().
 
+        Return value is same as for Browser.open().
+
         """
         return self.open(self.click(*args, **kwds))
 
@@ -397,6 +399,8 @@ class Browser(UserAgent):
         """Find a link and .open() it.
 
         Arguments are as for .click_link().
+
+        Return value is same as for Browser.open().
 
         """
         return self.open(self.click_link(link, **kwds))
