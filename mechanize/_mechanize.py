@@ -443,8 +443,9 @@ class Browser(UserAgent):
 
     def __getattr__(self, name):
         # pass through ClientForm / DOMForm methods and attributes
-        if self.form is not None:
-            try: return getattr(self.form, name)
+        form = self.__dict__.get("form")
+        if form is not None:
+            try: return getattr(form, name)
             except AttributeError: pass
         raise AttributeError("%s instance has no attribute %s "
                              "(perhaps you forgot to .select_form()?" %
