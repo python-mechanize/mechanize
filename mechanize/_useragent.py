@@ -23,7 +23,8 @@ class HTTPRefererProcessor(BaseHandler):
         # Otherwise, it's the user's job to add any Referer header before
         # .open()ing.
         if hasattr(request, "redirect_dict"):
-            request = self.parent._add_referer_header(request)
+            request = self.parent._add_referer_header(
+                request, origin_request=False)
         return request
 
     https_request = http_request
