@@ -106,6 +106,11 @@ would be useful.
 <h2>Todo</h2>
 
 <ul>
+ <li>Fix <code>.response()</code> method (each call should return independent
+   pointer to same data).
+ <li>Should work with either Python 2.4 <code>urllib2</code> or ClientCookie
+   (currently depends on latter: just a matter of deciding on a way to specify
+   this).
  <li>Stabilise <code>mechanize.UserAgent</code>.
  <li>Test with non-http URLs.
  <li>History cache expiration.
@@ -130,8 +135,8 @@ would be useful.
 <p><em>Development release.</em>
 
 <ul>
-<li><a href="./src/mechanize-0.0.8a.tar.gz">mechanize-0.0.8a.tar.gz</a>
-<li><a href="./src/mechanize-0_0_8a.zip">mechanize-0_0_8a.zip</a>
+<li><a href="./src/mechanize-0.0.9a.tar.gz">mechanize-0.0.9a.tar.gz</a>
+<li><a href="./src/mechanize-0_0_9a.zip">mechanize-0_0_9a.zip</a>
 <li><a href="./src/ChangeLog.txt">Change Log</a> (included in distribution)
 <li><a href="./src/">Older versions.</a>
 </ul>

@@ -42,7 +42,7 @@ del VERSION_RE, parse_version
 
 from _useragent import UserAgent
 
-__version__ = (0, 0, 8, "a", None)  # 0.0.8a
+__version__ = (0, 0, 9, "a", None)  # 0.0.9a
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
