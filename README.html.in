@@ -1,20 +1,22 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
         "http://www.w3.org/TR/html4/strict.dtd">
+@# This file is processed by EmPy to colorize Python source code
+@# http://wwwsearch.sf.net/bits/colorize.py
+@{from colorize import colorize}
+@{import time}
+@{import release}
+@{last_modified = release.svn_id_to_time("$Id$")}
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
   <meta name="author" content="John J. Lee &lt;jjl@@pobox.com&gt;">
-  <meta name="date" content="2005-01">
+  <meta name="date" content="@(time.strftime("%Y-%m-%d", last_modified))">
   <meta name="keywords" content="Python,HTML,browser,stateful,web,client,client-side,mechanize,form,ClientForm,ClientCookie,pullparser,WWW::Mechanize">
   <title>mechanize</title>
   <style type="text/css" media="screen">@@import "../styles/style.css";</style>
   <base href="http://wwwsearch.sourceforge.net/mechanize/">
 </head>
 <body>
-
-@# This file is processed by EmPy to colorize Python source code
-@# http://wwwsearch.sf.net/bits/colorize.py
-@{from colorize import colorize}
 
 <div id="sf"><a href="http://sourceforge.net">
 <img src="http://sourceforge.net/sflogo.php?group_id=48205&amp;type=2"
@@ -168,15 +170,20 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
   <li>Which version of Python do I need?
   <p>2.2 or above.
   <li>What else do I need?
-  <p><a href="../ClientCookie/">ClientCookie</a> 0.4.19 or newer (<strong>note
-   the required version!</strong>), <a href="../ClientForm/">ClientForm</a>
-   0.1.x, and <a href="../pullparser/">pullparser</a> 0.0.4b or newer.
+  <p><a href="../ClientCookie/">ClientCookie</a> 1.0.2 or newer,
+   <a href="../ClientForm/">ClientForm</a> 0.1.7, and
+   <a href="../pullparser/">pullparser</a> 0.0.4b or newer.
   <li>Which license?
   <p>The <a href="http://www.opensource.org/licenses/bsd-license.php">
    BSD license</a> (included in distribution).
 </ul>
 
-<p><a href="mailto:jjl@@pobox.com">John J. Lee</a>, January 2005.
+<p>I prefer questions and comments to be sent to the <a
+href="http://lists.sourceforge.net/lists/listinfo/wwwsearch-general">
+mailing list</a> rather than direct to me.
+
+<p><a href="mailto:jjl@@pobox.com">John J. Lee</a>,
+@(time.strftime("%B %Y", last_modified)).
 
 <hr>
 
