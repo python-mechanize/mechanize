@@ -331,7 +331,7 @@ class Browser(UserAgent):
 
         # Return first http link in the current page that points to somewhere
         # on python.org whose link text (after tags have been removed) is
-        # exactly "monty python" have been removed).
+        # exactly "monty python".
         find_link(text="monty python",
                   url_regex=re.compile("http.*python.org"))
 

@@ -208,9 +208,9 @@ class UserAgent(OpenerDirector):
 
     def _set_handler(self, name, handle=None, obj=None):
         if handle is None:
-            handle = bool(obj)
-        handler_class = self.handler_classes[name]
+            handle = obj is not None
         if handle:
+            handler_class = self.handler_classes[name]
             if obj is not None:
                 newhandler = handler_class(obj)
             else:
@@ -239,24 +239,22 @@ class UserAgent(OpenerDirector):
                      self.process_request, self.process_response]+
                     self.handle_error.values()):
                     for handlers in table.values():
-                        i = 0
-                        while i < len(handlers):
-                            if handlers[i] is handler:
-                                del handlers[i]
-                            else:
-                                i += 1
-                    # can't use .remove() because of __cmp__ :-(
-                    i = 0
-                    while i < len(self.handlers):
-                        if self.handlers[i] is handler:
-                            del self.handlers[i]
-                        else:
-                            i += 1
+                        remove(handlers, handler)
+                    remove(self.handlers, handler)
         # then add the replacement, if any
         if newhandler is not None:
             self.add_handler(newhandler)
             self._ua_handlers[name] = newhandler
 
+def remove(sequence, obj):
+    # for use when can't use .remove() because of obj.__cmp__ :-(
+    # (ClientCookie only requires Python 2.0, which doesn't have __lt__)
+    i = 0
+    while i < len(sequence):
+        if sequence[i] is obj:
+            del sequence[i]
+        else:
+            i += 1
 
 # XXX
 # This is urllib2.Request with a new .set_method() method,
