@@ -91,7 +91,9 @@ class BrowserTests(TestCase):
  <input type="hidden" name="foo" value="bar"></input>
  <input type="submit"></input>
  </form>
-<a href="http://example.com/foo/bar.html" name="apples">
+<a href="http://example.com/foo/bar.html" name="apples"></a>
+<a href="https://example.com/spam/eggs.html" name="secure"></a>
+<a href="blah://example.com/" name="pears"></a>
 </body>
 </html>
 """, {"content-type": "text/html"})
@@ -111,6 +113,23 @@ class BrowserTests(TestCase):
         r2 = b.open(req2)
         req3 = b.click_link(name="apples")
         self.assert_(req3.get_header("Referer") == url+"?foo=bar")
+        # Referer not added when going from https to http URL
+        b.add_handler(MockHandler([("https_open", r)]))
+        r3 = b.open(req3)
+        req4 = b.click_link(name="secure")
+        self.assert_(req4.get_header("Referer") ==
+                     "http://example.com/foo/bar.html")
+        r4 = b.open(req4)
+        req5 = b.click_link(name="apples")
+        self.assert_(not req5.has_header("Referer"))
+        # Referer not added for non-http, non-https requests
+        b.add_handler(MockHandler([("blah_open", r)]))
+        req6 = b.click_link(name="pears")
+        self.assert_(not req6.has_header("Referer"))
+        # Referer not added when going from non-http, non-https URL
+        r4 = b.open(req6)
+        req7 = b.click_link(name="apples")
+        self.assert_(not req7.has_header("Referer"))
 
         # XXX Referer added for redirect
 

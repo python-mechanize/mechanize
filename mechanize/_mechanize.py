@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Stateful programmatic WWW navigation, after Perl's WWW::Mechanize.
 
 Copyright 2003 John J. Lee <jjl@pobox.com>
@@ -9,11 +8,6 @@ the terms of the BSD License (see the file COPYING included with the
 distribution).
 
 """
-# from recent LWP release notes:
-##     RFC 2616 says that http: referer should not be sent with
-##     https: requests.  The lwp-rget program, the $req->referer method
-##     and the redirect handling code now try to enforce this.
-##     Patch by Ville Skyttä <ville.skytta@iki.fi>.
 
 import urlparse, re
 
@@ -97,6 +91,7 @@ class Browser(UserAgent):
         self._forms = None
         self._title = None
         self._links = None
+        self._previous_scheme = None
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
     def close(self):
@@ -125,6 +120,7 @@ class Browser(UserAgent):
         self.response = None
         # we want self.request to be assigned even if OpenerDirector.open fails
         self.request = self._request(url, data)
+        self._previous_scheme = self.request.get_type()
 
         self.response = ClientCookie.OpenerDirector.open(
             self, self.request, data)
@@ -254,14 +250,17 @@ class Browser(UserAgent):
             raise FormNotFoundError("no form matching "+description)
 
     def _add_referer_header(self, request):
-        # yuck
-        if self.request.get_type() not in ["http", "https"]:
+        if self.request is None:
             return request
-        request = HTTPRequestUpgradeProcessor().http_request(request)
+        scheme = request.get_type()
+        previous_scheme = self.request.get_type()
+        if scheme not in ["http", "https"]:
+            return request
+        request = HTTPRequestUpgradeProcessor().http_request(request)  # yuck
 
-        if not self._handle_referer:
-            return request
-        if self.request is not None:
+        if (self._handle_referer and
+            previous_scheme in ["http", "https"] and not
+            (previous_scheme == "https" and scheme != "https")):
             request.add_unredirected_header("Referer",
                                             self.request.get_full_url())
         return request
