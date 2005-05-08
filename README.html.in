@@ -35,9 +35,9 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 <ul>
   <li><code>mechanize.Browser</code> is a subclass of
     <code>mechanize.UserAgent</code>, which is, in turn, a subclass of
-    <code>ClientCookie.OpenerDirector</code> (like
-    <code>urllib2.OpenerDirector</code>) (so any URL can be opened, not just
-    <code>http:</code>).  <code>mechanize.UserAgent</code> offers easy dynamic
+    urllib2.OpenerDirector (<code>ClientCookie.OpenerDirector</code> for
+    pre-2.4 versions of Python), so any URL can be opened, not just
+    <code>http:</code>.  <code>mechanize.UserAgent</code> offers easy dynamic
     configuration of user-agent features like protocol, cookie, redirection and
     <code>robots.txt</code> handling, without having to make a new
     <code>OpenerDirector</code> each time, eg.  by calling
@@ -51,11 +51,8 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
   <li>Automatic observance of <a
     href="http://www.robotstxt.org/wc/norobots.html">
     <code>robots.txt</code></a>.
-  <li>In future, should be able to optionally use DOMForm (implementation of
-    ClientForm interface on top of HTML DOM) instead of ClientForm, which would
-    allow easy &quot;escape&quot; to the lower-level HTML DOM API in cases
-    where the higher-level <code>mechanize.Browser</code> / ClientForm API is
-    not sufficient.
+
+
 </ul>
 
 <p>An example:
@@ -109,25 +106,29 @@ would be useful.
 
 <ul>
  <li>Fix <code>.response()</code> method (each call should return independent
-   pointer to same data).
- <li>Should work with either Python 2.4 <code>urllib2</code> or ClientCookie
-   (currently depends on latter: just a matter of deciding on a way to specify
-   this).
+   pointer to same data).  Want to be able to clone responses, too, so can
+   process HTML.  Needs some careful thought.
  <li>Stabilise <code>mechanize.UserAgent</code>.
  <li>Test with non-http URLs.
+ <li>Remove dependency on pullparser: it's broken .
  <li>History cache expiration.
  <li>Add <code>Browser.load_response()</code> method.
  <li>Add <code>Browser.form_as_string()</code> and
    <code>Browser.__str__()</code> methods.
- <li>Do auth and proxies properly (ClientCookie probably needs some work here,
-   too -- and maybe urllib2 also).  Need to configure local squid and apache,
-   yawn...
- <li>Integrate with DOMForm, and sort out any resulting interface issues
-   (including replacing pullparser).  DOMForm will be an optional replacement
-   for ClientForm.
+ <li>Combine ClientForm, ClientCookie and mechanize in a single download.
+ <li>Would be nice to add an implementation of ClientForm interface built on
+   something like BeautifulSoup, which would allow easy &quot;escape&quot; to
+   the lower-level BeautifulSoup API in cases where the higher-level
+   <code>mechanize.Browser</code> / ClientForm API is not sufficient.  (DOMForm
+   is similar: implementation of ClientForm interface on top of HTML DOM, but
+   it's buggy and unmaintained, and the DOM is not as nice an API as
+   BeautifulSoup).
  <li>Add some utilities useful for testing (eg. fetch images and stylesheets in
    page, easy assertion of things like: cookies sent by server, redirections,
    HTTP error codes etc.).
+ <li>Do auth and proxies properly (ClientCookie probably needs some work here,
+   too -- and maybe urllib2 also).  Need to configure local squid and apache,
+   yawn...
 </ul>
 
 
