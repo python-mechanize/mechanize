@@ -116,6 +116,9 @@ would be useful.
  <li>Stabilise <code>mechanize.UserAgent</code>.
  <li>Test with non-http URLs.
  <li>History cache expiration.
+ <li>Add <code>Browser.load_response()</code> method.
+ <li>Add <code>Browser.form_as_string()</code> and
+   <code>Browser.__str__()</code> methods.
  <li>Do auth and proxies properly (ClientCookie probably needs some work here,
    too -- and maybe urllib2 also).  Need to configure local squid and apache,
    yawn...

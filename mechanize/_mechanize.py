@@ -11,13 +11,10 @@ distribution).
 
 # XXXX
 # test referer bugs (frags and don't add in redirect unless orig req had Referer)
-# fix CC bug (tst.py debug stuff)
 
 # XXX
 # The stuff on web page's todo list.
 # Moof's emails about response object, .back(), etc.
-# Add Browser.load_response() method.
-# Add Browser.form_as_string() and Browser.__str__() methods.
 
 import urllib2, urlparse, re
 
@@ -194,7 +191,7 @@ class Browser(UserAgent):
                         "can't fetch relative URL: not viewing any document")
                 url = urlparse.urljoin(self._response.geturl(), url)
 
-        if self.request is not None:
+        if self.request is not None and update_history:
             self._history.append((self.request, self._response))
         self._response = None
         # we want self.request to be assigned even if OpenerDirector.open fails
