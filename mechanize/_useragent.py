@@ -13,7 +13,20 @@ distribution).
 
 import urllib2, httplib
 import ClientCookie
-from ClientCookie import OpenerDirector, BaseHandler
+if sys.version_info[:2] >= (2, 4):
+    from urllib2 import OpenerDirector, BaseHandler, \
+         HTTPHandler, HTTPSHandler, HTTPErrorProcessor
+    class SaneHTTPCookieProcessor(ClientCookie.HTTPCookieProcessor):
+        # workaround for RFC 2109 bug (at least if you don't pass your own
+        # CookieJar in...)
+        def __init__(self, cookiejar=None):
+            if cookiejar is None:
+                cookiejar = CookieJar(DefaultCookiePolicy(rfc2965=True))
+            self.cookiejar = cookiejar
+    HTTPCookieProcessor = SaneHTTPCookieProcessor
+else:
+    from ClientCookie import OpenerDirector, BaseHandler, \
+         HTTPHandler, HTTPSHandler, HTTPErrorProcessor, HTTPCookieProcessor
 
 class HTTPRefererProcessor(BaseHandler):
     def http_request(self, request):
@@ -50,7 +63,7 @@ class UserAgent(OpenerDirector):
 
     handler_classes = {
         # scheme handlers
-        "http": ClientCookie.HTTPHandler,
+        "http": HTTPHandler,
         "ftp": urllib2.FTPHandler,  # CacheFTPHandler is buggy in 2.3
         "file": urllib2.FileHandler,
         "gopher": urllib2.GopherHandler,
@@ -59,7 +72,7 @@ class UserAgent(OpenerDirector):
         # other handlers
         "_unknown": urllib2.UnknownHandler,
         # HTTP{S,}Handler depend on HTTPErrorProcessor too
-        "_http_error": ClientCookie.HTTPErrorProcessor,
+        "_http_error": HTTPErrorProcessor,
         "_http_request_upgrade": ClientCookie.HTTPRequestUpgradeProcessor,
         "_http_default_error": urllib2.HTTPDefaultErrorHandler,
 
@@ -67,7 +80,7 @@ class UserAgent(OpenerDirector):
         "_authen": urllib2.HTTPBasicAuthHandler,
         # XXX rest of authentication stuff
         "_redirect": ClientCookie.HTTPRedirectHandler,
-        "_cookies": ClientCookie.HTTPCookieProcessor,
+        "_cookies": HTTPCookieProcessor,
         "_refresh": ClientCookie.HTTPRefreshProcessor,
         "_referer": HTTPRefererProcessor,  # from this module, note
         "_equiv": ClientCookie.HTTPEquivProcessor,
@@ -85,7 +98,7 @@ class UserAgent(OpenerDirector):
                       "_http_default_error"]
     default_features = ["_authen", "_redirect", "_cookies", "_seek", "_proxy"]
     if hasattr(httplib, 'HTTPS'):
-        handler_classes["https"] = ClientCookie.HTTPSHandler
+        handler_classes["https"] = HTTPSHandler
         default_schemes.append("https")
     if hasattr(ClientCookie, "HTTPRobotRulesProcessor"):
         handler_classes["_robots"] = ClientCookie.HTTPRobotRulesProcessor

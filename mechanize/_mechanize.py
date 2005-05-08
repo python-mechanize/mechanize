@@ -1,6 +1,6 @@
 """Stateful programmatic WWW navigation, after Perl's WWW::Mechanize.
 
-Copyright 2003-2004 John J. Lee <jjl@pobox.com>
+Copyright 2003-2005 John J. Lee <jjl@pobox.com>
 Copyright 2003 Andy Lester (original Perl code)
 
 This code is free software; you can redistribute it and/or modify it under
@@ -21,6 +21,10 @@ import urllib2, urlparse, re
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
 from ClientCookie._HeadersUtil import split_header_words
+if sys.version_info[:2] >= (2, 4):
+    from urllib2 import OpenerDirector
+else:
+    from ClientCookie import OpenerDirector
 import pullparser
 # serves me right for not using a version tuple...
 VERSION_RE = re.compile(r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<bugfix>\d+)"
@@ -198,8 +202,7 @@ class Browser(UserAgent):
         self.request = self._request(url, data)
         self._previous_scheme = self.request.get_type()
 
-        self._response = ClientCookie.OpenerDirector.open(
-            self, self.request, data)
+        self._response = OpenerDirector.open(self, self.request, data)
         if not hasattr(self._response, "seek"):
             self._response = response_seek_wrapper(self._response)
         self._parse_html(self._response)
@@ -389,7 +392,7 @@ class Browser(UserAgent):
             if kwds:
                 raise ValueError(
                     "either pass a Link, or keyword arguments, not both")
-        request = ClientCookie.Request(link.absolute_url)
+        request = self.request_class(link.absolute_url)
         return self._add_referer_header(request)
 
     def follow_link(self, link=None, **kwds):
