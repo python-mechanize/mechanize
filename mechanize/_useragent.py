@@ -11,6 +11,7 @@ distribution).
 
 """
 
+import sys
 import urllib2, httplib
 import ClientCookie
 if sys.version_info[:2] >= (2, 4):

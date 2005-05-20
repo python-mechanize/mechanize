@@ -16,7 +16,7 @@ distribution).
 # The stuff on web page's todo list.
 # Moof's emails about response object, .back(), etc.
 
-import urllib2, urlparse, re
+import urllib2, urlparse, re, sys
 
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
@@ -243,12 +243,10 @@ class Browser(UserAgent):
             self._parse_html(self._response)
         return self._response
 
-    def links(self, *args, **kwds):
+    def links(self, **kwds):
         """Return iteratable over links (mechanize.Link objects)."""
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
-        if args:
-            raise ValueError("keyword arguments only, please!")
         if kwds:
             return self._find_links(False, **kwds)
         return self._links
