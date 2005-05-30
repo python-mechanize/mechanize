@@ -18,8 +18,10 @@ if sys.version_info[:2] >= (2, 4):
     from urllib2 import OpenerDirector, BaseHandler, \
          HTTPHandler, HTTPSHandler, HTTPErrorProcessor
     class SaneHTTPCookieProcessor(ClientCookie.HTTPCookieProcessor):
-        # workaround for RFC 2109 bug (at least if you don't pass your own
-        # CookieJar in...)
+        # Workaround for RFC 2109 bug http://python.org/sf/1157027 (at least if
+        # you don't pass your own CookieJar in: if that's the case, you should
+        # pass rfc2965=True to the DefaultCookiePolicy constructor yourself, or
+        # set the corresponding attribute).
         def __init__(self, cookiejar=None):
             if cookiejar is None:
                 cookiejar = CookieJar(DefaultCookiePolicy(rfc2965=True))
@@ -97,7 +99,8 @@ class UserAgent(OpenerDirector):
     default_schemes = ["http", "ftp", "file", "gopher"]
     default_others = ["_unknown", "_http_error", "_http_request_upgrade",
                       "_http_default_error"]
-    default_features = ["_authen", "_redirect", "_cookies", "_seek", "_proxy"]
+    default_features = ["_authen", "_redirect", "_cookies", "_refresh",
+                        "_referer", "equiv", "_seek", "_proxy"]
     if hasattr(httplib, 'HTTPS'):
         handler_classes["https"] = HTTPSHandler
         default_schemes.append("https")
