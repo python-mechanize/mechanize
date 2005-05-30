@@ -61,39 +61,63 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 import re
 from mechanize import Browser
 
-b = Browser()
-b.open("http://www.example.com/")
+br = Browser()
+br.open("http://www.example.com/")
 # follow second link with element text matching regular expression
-response = b.follow_link(text_regex=re.compile(r"cheese\s*shop"), nr=1)
-assert b.viewing_html()
-print b.title()
+response = br.follow_link(text_regex=re.compile(r"cheese\s*shop"), nr=1)
+assert br.viewing_html()
+print br.title()
 print response.geturl()
 print response.info()  # headers
 print response.read()  # body
 response.close()
 
-b.select_form(name="order")
+br.select_form(name="order")
 # Browser passes through unknown attributes (including methods)
 # to the selected HTMLForm (from ClientForm).
-b["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
-response2 = b.submit()  # submit current form
+br["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
+response2 = br.submit()  # submit current form
 
-response3 = b.back()  # back to cheese shop
+response3 = br.back()  # back to cheese shop
 # the history mechanism uses cached requests and responses
 assert response3 is response
 # we can still use the response, even though we closed it:
 response3.seek(0)
 response3.read()
-response4 = b.reload()
+response4 = br.reload()
 assert response4 is not response3
 
-for form in b.forms():
+for form in br.forms():
     print form
 # .links() optionally accepts the keyword args of .follow_/.find_link()
-for link in b.links(url_regex=re.compile("python.org")):
+for link in br.links(url_regex=re.compile("python.org")):
     print link
-    b.follow_link(link)  # takes EITHER Link instance OR keyword args
-    b.back()
+    br.follow_link(link)  # takes EITHER Link instance OR keyword args
+    br.back()
+""")}
+
+<p>You may control the browser's policy by using the methods of
+<code>mechanize.Browser</code>'s base class, <code>mechanize.UserAgent</code>.
+For example:
+
+@{colorize("""
+br = Browser()
+# Don't handle HTTP-EQUIV headers (HTTP headers embedded in HTML).
+br.set_handle_equiv(False)
+# Ignore robots.txt.  Do not do this without thought and consideration.
+br.set_handle_robots(False)
+# Don't handle cookies
+br.set_cookiejar()
+# Supply your own ClientCookie.CookieJar (NOTE: cookie handling is ON by
+# default: no need to do this unless you have some reason to use a
+# particular cookiejar)
+br.set_cookiejar(cj)
+# Print information about HTTP redirects and Refreshes.
+br.set_debug_redirects(True)
+# Print HTTP response bodies (ie. the HTML, most of the time).
+br.set_debug_responses(True)
+# Print HTTP headers.
+br.set_debug_http(True)
 """)}
 
 <p>Full documentation is in the docstrings.
@@ -107,7 +131,8 @@ would be useful.
 <ul>
  <li>Fix <code>.response()</code> method (each call should return independent
    pointer to same data).  Want to be able to clone responses, too, so can
-   process HTML.  Needs some careful thought.
+   process HTML.  Needs some careful thought: want to clean up the multiple
+   layers of response objects in ClientCookie and the standard library.
  <li>Stabilise <code>mechanize.UserAgent</code>.
  <li>Test with non-http URLs.
  <li>Remove dependency on pullparser: it's broken .
