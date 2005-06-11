@@ -266,7 +266,6 @@ class Browser(UserAgent, OpenerMixin):
         if self._response is None:
             raise BrowserStateError("not viewing any document")
         ct = self._response.info().getheaders("content-type")
-        print ct[0]
         return ct and (ct[0].startswith("text/html") or
                        ct[0].startswith("text/xhtml"))
 
