@@ -109,16 +109,16 @@ class BrowserTests(TestCase):
         # Referer added by .click_link() and .click()
         b.select_form("form1")
         req2 = b.click()
-        self.assert_(req2.get_header("Referer") == url)
+        self.assertEqual(req2.get_header("Referer"), url)
         r2 = b.open(req2)
         req3 = b.click_link(name="apples")
-        self.assert_(req3.get_header("Referer") == url+"?foo=bar")
+        self.assertEqual(req3.get_header("Referer"), url+"?foo=bar")
         # Referer not added when going from https to http URL
         b.add_handler(MockHandler([("https_open", r)]))
         r3 = b.open(req3)
         req4 = b.click_link(name="secure")
-        self.assert_(req4.get_header("Referer") ==
-                     "http://example.com/foo/bar.html")
+        self.assertEqual(req4.get_header("Referer"),
+                         "http://example.com/foo/bar.html")
         r4 = b.open(req4)
         req5 = b.click_link(name="apples")
         self.assert_(not req5.has_header("Referer"))
@@ -152,7 +152,7 @@ class BrowserTests(TestCase):
                       ]:
             msg = mimetools.Message(StringIO(s))
             r = urllib.addinfourl(StringIO(""), msg, "http://www.example.com/")
-            self.assert_(b._encoding(r) == ct)
+            self.assertEqual(b._encoding(r), ct)
 
     def test_history(self):
         import mechanize
@@ -206,9 +206,9 @@ class BrowserTests(TestCase):
 """, {"content-type": "text/html"})
         b.add_handler(MockHandler([("http_open", r)]))
         r = b.open(url)
-        self.assert_(b.title() == "Title")
-        self.assert_(len(list(b.links())) == 0)
-        self.assert_(len(list(b.forms())) == 0)
+        self.assertEqual(b.title(), "Title")
+        self.assertEqual(len(list(b.links())), 0)
+        self.assertEqual(len(list(b.forms())), 0)
         self.assertRaises(ValueError, b.select_form)
         self.assertRaises(mechanize.FormNotFoundError, b.select_form,
                           name="blah")
@@ -245,10 +245,10 @@ class BrowserTests(TestCase):
         r = b.open(url)
 
         forms = b.forms()
-        self.assert_(len(forms) == 2)
+        self.assertEqual(len(forms), 2)
         for got, expect in zip([f.name for f in forms], [
             "form1", "form2"]):
-            self.assert_(got == expect)
+            self.assertEqual(got, expect)
 
         self.assertRaises(mechanize.FormNotFoundError, b.select_form, "foo")
 
@@ -256,14 +256,14 @@ class BrowserTests(TestCase):
         self.assertRaises(AttributeError, getattr, b, "possible_items")
         b.select_form("form1")
         # now unknown methods are fed through to selected ClientForm.HTMLForm
-        self.assert_(b.possible_items("cheeses") == ["cheddar", "edam"])
+        self.assertEqual(b.possible_items("cheeses"), ["cheddar", "edam"])
         b["cheeses"] = ["cheddar", "edam"]
-        self.assert_(b.click_pairs() == [
+        self.assertEqual(b.click_pairs(), [
             ("cheeses", "cheddar"), ("cheeses", "edam"), ("one", "")])
 
         b.select_form(nr=1)
-        self.assert_(b.name == "form2")
-        self.assert_(b.click_pairs() == [("two", "")])
+        self.assertEqual(b.name, "form2")
+        self.assertEqual(b.click_pairs(), [("two", "")])
 
     def test_links(self):
         import mechanize
@@ -315,52 +315,52 @@ class BrowserTests(TestCase):
                  [("src", "foo")]),
             ]
         links = b.links()
-        self.assert_(len(links) == len(exp_links))
+        self.assertEqual(len(links), len(exp_links))
         for got, expect in zip(links, exp_links):
-            self.assert_(got == expect)
+            self.assertEqual(got, expect)
         # nr
         l = b.find_link()
-        self.assert_(l.url == "http://example.com/foo/bar.html")
+        self.assertEqual(l.url, "http://example.com/foo/bar.html")
         l = b.find_link(nr=1)
-        self.assert_(l.url == "spam")
+        self.assertEqual(l.url, "spam")
         # text
         l = b.find_link(text="yada yada")
-        self.assert_(l.url == "one")
+        self.assertEqual(l.url, "one")
         self.assertRaises(mechanize.LinkNotFoundError,
                           b.find_link, text="da ya")
         l = b.find_link(text_regex=re.compile("da ya"))
-        self.assert_(l.url == "one")
+        self.assertEqual(l.url, "one")
         # name
         l = b.find_link(name="name3")
-        self.assert_(l.url == "one")
+        self.assertEqual(l.url, "one")
         l = b.find_link(name_regex=re.compile("oo"))
-        self.assert_(l.url == "blah")
+        self.assertEqual(l.url, "blah")
         # url
         l = b.find_link(url="spam")
-        self.assert_(l.url == "spam")
+        self.assertEqual(l.url, "spam")
         l = b.find_link(url_regex=re.compile("pam"))
-        self.assert_(l.url == "spam")
+        self.assertEqual(l.url, "spam")
         # tag
         l = b.find_link(tag="area")
-        self.assert_(l.url == "blah")
+        self.assertEqual(l.url, "blah")
         # predicate
         l = b.find_link(predicate=
                         lambda l: dict(l.attrs).get("weird") == "stuff")
-        self.assert_(l.url == "two")
+        self.assertEqual(l.url, "two")
         # combinations
         l = b.find_link(name="pears", nr=1)
-        self.assert_(l.text == "rhubarb")
+        self.assertEqual(l.text, "rhubarb")
         l = b.find_link(url="src", nr=0, name="name2")
-        self.assert_(l.tag == "iframe")
-        self.assert_(l.url == "src")
+        self.assertEqual(l.tag, "iframe")
+        self.assertEqual(l.url, "src")
         self.assertRaises(mechanize.LinkNotFoundError, b.find_link,
                           url="src", nr=1, name="name2")
         l = b.find_link(tag="a", predicate=
                         lambda l: dict(l.attrs).get("weird") == "stuff")
-        self.assert_(l.url == "two")
+        self.assertEqual(l.url, "two")
 
         # .links()
-        self.assert_(list(b.links(url="src")) == [
+        self.assertEqual(list(b.links(url="src")), [
             Link(url, url='src', text=None, tag='frame',
                  attrs=[('name', 'name'), ('href', 'href'), ('src', 'src')]),
             Link(url, url='src', text=None, tag='iframe',
@@ -399,7 +399,7 @@ class BrowserTests(TestCase):
             r = MockResponse(url, html, {"content-type": "text/html"})
             b.add_handler(MockHandler([("http_open", r)]))
             r = b.open(url)
-            self.assert_([link.absolute_url for link in b.links()] == urls)
+            self.assertEqual([link.absolute_url for link in b.links()], urls)
 
 
 class UserAgentTests(TestCase):
@@ -419,9 +419,9 @@ class UserAgentTests(TestCase):
                 {"blah": BlahHandler, "_blah": BlahProcessor})
         ua = TestUserAgent()
 
-        self.assert_(len(ua.handlers) == 5)
+        self.assertEqual(len(ua.handlers), 5)
         ua.set_handled_schemes(["http", "https"])
-        self.assert_(len(ua.handlers) == 2)
+        self.assertEqual(len(ua.handlers), 2)
         self.assertRaises(ValueError,
             ua.set_handled_schemes, ["blah", "non-existent"])
         self.assertRaises(ValueError,
@@ -433,7 +433,7 @@ class UserAgentTests(TestCase):
         exp_calls = [("blah_open", (req,), {})]
         assert len(ua.calls) == len(exp_calls)
         for got, expect in zip(ua.calls, exp_calls):
-            self.assert_(expect == got[1:])
+            self.assertEqual(expect, got[1:])
 
         ua.calls = []
         req = ClientCookie.Request("blah://example.com/")
@@ -444,7 +444,7 @@ class UserAgentTests(TestCase):
             ("blah_open", (req,), {})]
         assert len(ua.calls) == len(exp_calls)
         for got, expect in zip(ua.calls, exp_calls):
-            self.assert_(expect == got[1:])
+            self.assertEqual(expect, got[1:])
         ua._set_handler("_blah", True)
 
 if __name__ == "__main__":
