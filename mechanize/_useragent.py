@@ -15,6 +15,7 @@ import sys
 import urllib2, httplib
 import ClientCookie
 if sys.version_info[:2] >= (2, 4):
+    import cookielib
     from urllib2 import OpenerDirector, BaseHandler, \
          HTTPHandler, HTTPSHandler, HTTPErrorProcessor
     class SaneHTTPCookieProcessor(ClientCookie.HTTPCookieProcessor):
@@ -24,7 +25,8 @@ if sys.version_info[:2] >= (2, 4):
         # set the corresponding attribute).
         def __init__(self, cookiejar=None):
             if cookiejar is None:
-                cookiejar = CookieJar(DefaultCookiePolicy(rfc2965=True))
+                cookiejar = cookielib.CookieJar(
+                    cookielib.DefaultCookiePolicy(rfc2965=True))
             self.cookiejar = cookiejar
     HTTPCookieProcessor = SaneHTTPCookieProcessor
 else:
@@ -100,7 +102,7 @@ class UserAgent(OpenerDirector):
     default_others = ["_unknown", "_http_error", "_http_request_upgrade",
                       "_http_default_error"]
     default_features = ["_authen", "_redirect", "_cookies", "_refresh",
-                        "_referer", "equiv", "_seek", "_proxy"]
+                        "_referer", "_equiv", "_seek", "_proxy"]
     if hasattr(httplib, 'HTTPS'):
         handler_classes["https"] = HTTPSHandler
         default_schemes.append("https")

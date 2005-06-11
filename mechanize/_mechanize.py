@@ -21,10 +21,6 @@ import urllib2, urlparse, re, sys
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
 from ClientCookie._HeadersUtil import split_header_words
-if sys.version_info[:2] >= (2, 4):
-    from urllib2 import OpenerDirector
-else:
-    from ClientCookie import OpenerDirector
 import pullparser
 # serves me right for not using a version tuple...
 VERSION_RE = re.compile(r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<bugfix>\d+)"
@@ -111,8 +107,12 @@ class FormsFactory:
             request_class=self.request_class
             )
 
+if sys.version_info[:2] >= (2, 4):
+    from ClientCookie._Opener import OpenerMixin
+else:
+    class OpenerMixin: pass
 
-class Browser(UserAgent):
+class Browser(UserAgent, OpenerMixin):
     """Browser-like class with support for history, forms and links.
 
     BrowserStateError is raised whenever the browser is in the wrong state to
@@ -198,11 +198,11 @@ class Browser(UserAgent):
         if self.request is not None and update_history:
             self._history.append((self.request, self._response))
         self._response = None
-        # we want self.request to be assigned even if OpenerDirector.open fails
+        # we want self.request to be assigned even if UserAgent.open fails
         self.request = self._request(url, data)
         self._previous_scheme = self.request.get_type()
 
-        self._response = OpenerDirector.open(self, self.request, data)
+        self._response = UserAgent.open(self, self.request, data)
         if not hasattr(self._response, "seek"):
             self._response = response_seek_wrapper(self._response)
         self._parse_html(self._response)
@@ -244,7 +244,7 @@ class Browser(UserAgent):
         return self._response
 
     def links(self, **kwds):
-        """Return iteratable over links (mechanize.Link objects)."""
+        """Return iterable over links (mechanize.Link objects)."""
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         if kwds:
@@ -252,7 +252,7 @@ class Browser(UserAgent):
         return self._links
 
     def forms(self):
-        """Return iteratable over forms.
+        """Return iterable over forms.
 
         The returned form objects implement the ClientForm.HTMLForm interface.
 
@@ -266,7 +266,9 @@ class Browser(UserAgent):
         if self._response is None:
             raise BrowserStateError("not viewing any document")
         ct = self._response.info().getheaders("content-type")
-        return ct and ct[0].startswith("text/html")
+        print ct[0]
+        return ct and (ct[0].startswith("text/html") or
+                       ct[0].startswith("text/xhtml"))
 
     def title(self):
         """Return title, or None if there is no title element in the document.
@@ -540,15 +542,19 @@ class Browser(UserAgent):
         if not self.viewing_html():
             # nothing to see here
             return
+        try:
+            self._forms = self._forms_factory.parse_response(response)
+        finally:
+            response.seek(0)
+        try:
+            self._links = self._extract_links(response)
+        finally:
+            response.seek(0)
 
-        # set ._forms, ._links
-        self._forms = self._forms_factory.parse_response(response)
-        response.seek(0)
-
+    def _extract_links(self, response):
         base = response.geturl()
-
         p = pullparser.PullParser(response, encoding=self._encoding(response))
-        self._links = []
+        links = []
         for token in p.tags(*(self.urltags.keys()+["base"])):
             if token.data == "base":
                 base = dict(token.attrs).get("href")
@@ -580,6 +586,5 @@ class Browser(UserAgent):
                 continue
 
             link = Link(base, url, text, tag, token.attrs)
-            self._links.append(link)
-
-        response.seek(0)
+            links.append(link)
+        return links
