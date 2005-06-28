@@ -122,6 +122,11 @@ class UserAgent(OpenerDirector):
         for handler in self._ua_handlers.itervalues():
             self.add_handler(handler)
 
+        # Ensure correct default constructor args were passed to
+        # HTTPRefererProcessor.  Yuck.
+        if '_refresh' in self._ua_handlers:
+            self.set_handle_refresh(True)
+
         # special case, requires extra support from mechanize.Browser
         self._handle_referer = True
 
