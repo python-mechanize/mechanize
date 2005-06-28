@@ -123,9 +123,11 @@ class UserAgent(OpenerDirector):
             self.add_handler(handler)
 
         # Ensure correct default constructor args were passed to
-        # HTTPRefererProcessor.  Yuck.
+        # HTTPRefererProcessor and HTTPEquivProcessor.  Yuck.
         if '_refresh' in self._ua_handlers:
             self.set_handle_refresh(True)
+        if '_equiv' in self._ua_handlers:
+            self.set_handle_equiv(True)
 
         # special case, requires extra support from mechanize.Browser
         self._handle_referer = True
@@ -187,18 +189,23 @@ class UserAgent(OpenerDirector):
         """Set whether to observe rules from robots.txt."""
         self._set_handler("_robots", handle)
     def set_handle_redirect(self, handle):
-        """Set whether to handle HTTP Refresh headers."""
+        """Set whether to handle HTTP 30x redirections."""
         self._set_handler("_redirect", handle)
     def set_handle_refresh(self, handle, max_time=None, honor_time=True):
         """Set whether to handle HTTP Refresh headers."""
-        self._set_handler("_refresh", handle, constructor_kwds={"max_time": max_time, "honor_time": honor_time})
-    def set_handle_equiv(self, handle):
+        self._set_handler("_refresh", handle, constructor_kwds=
+                          {"max_time": max_time, "honor_time": honor_time})
+    def set_handle_equiv(self, handle, head_parser_class=None):
         """Set whether to treat HTML http-equiv headers like HTTP headers.
 
         Response objects will be .seek()able if this is set.
 
         """
-        self._set_handler("_equiv", handle)
+        if head_parser_class is not None:
+            constructor_kwds = {"head_parser_class": head_parser_class}
+        else:
+            constructor_kwds={}
+        self._set_handler("_equiv", handle, constructor_kwds=constructor_kwds)
     def set_handle_referer(self, handle):
         """Set whether to add Referer header to each request.
 
