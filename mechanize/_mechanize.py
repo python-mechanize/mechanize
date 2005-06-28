@@ -279,8 +279,8 @@ class Browser(UserAgent, OpenerMixin):
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         if self._title is None:
-            p = pullparser.PullParser(self._response,
-                                      encoding=self._encoding(self._response))
+            p = pullparser.TolerantPullParser(
+                self._response, encoding=self._encoding(self._response))
             try:
                 p.get_tag("title")
             except pullparser.NoMoreTokensError:
@@ -552,7 +552,7 @@ class Browser(UserAgent, OpenerMixin):
 
     def _extract_links(self, response):
         base = response.geturl()
-        p = pullparser.PullParser(response, encoding=self._encoding(response))
+        p = pullparser.TolerantPullParser(response, encoding=self._encoding(response))
         links = []
         for token in p.tags(*(self.urltags.keys()+["base"])):
             if token.data == "base":
