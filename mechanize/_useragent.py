@@ -227,7 +227,7 @@ class UserAgent(OpenerDirector):
                 h.set_http_debuglevel(level)
 
     def _set_handler(self, name, handle=None, obj=None,
-                     constructor_args=(), constructor_kwds=()):
+                     constructor_args=(), constructor_kwds={}):
         if handle is None:
             handle = obj is not None
         if handle:
