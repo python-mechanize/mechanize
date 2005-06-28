@@ -184,9 +184,9 @@ class UserAgent(OpenerDirector):
     def set_handle_redirect(self, handle):
         """Set whether to handle HTTP Refresh headers."""
         self._set_handler("_redirect", handle)
-    def set_handle_refresh(self, handle):
+    def set_handle_refresh(self, handle, max_time=None, honor_time=True):
         """Set whether to handle HTTP Refresh headers."""
-        self._set_handler("_refresh", handle)
+        self._set_handler("_refresh", handle, constructor_kwds={"max_time": max_time, "honor_time": honor_time})
     def set_handle_equiv(self, handle):
         """Set whether to treat HTML http-equiv headers like HTTP headers.
 
@@ -226,7 +226,8 @@ class UserAgent(OpenerDirector):
             if h is not None:
                 h.set_http_debuglevel(level)
 
-    def _set_handler(self, name, handle=None, obj=None):
+    def _set_handler(self, name, handle=None, obj=None,
+                     constructor_args=(), constructor_kwds=()):
         if handle is None:
             handle = obj is not None
         if handle:
@@ -234,7 +235,7 @@ class UserAgent(OpenerDirector):
             if obj is not None:
                 newhandler = handler_class(obj)
             else:
-                newhandler = handler_class()
+                newhandler = handler_class(*constructor_args, **constructor_kwds)
         else:
             newhandler = None
         self._replace_handler(name, newhandler)
