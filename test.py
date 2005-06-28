@@ -286,8 +286,7 @@ class BrowserTests(TestCase):
 <a name="name3" href="one">yada yada</a>
 <a name="pears" href="two" weird="stuff">rhubarb</a>
 <a></a>
-<a/>
-<iframe src="foo"/>
+<iframe src="foo"></iframe>
 </body>
 </html>
 """, {"content-type": "text/html"})
