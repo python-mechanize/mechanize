@@ -220,18 +220,44 @@ class UserAgent(OpenerDirector):
         """Make response objects .seek()able."""
         self._set_handler("_seek", handle)
     def set_debug_redirects(self, handle):
-        """Print information about HTTP redirects.
+        """Log information about HTTP redirects.
 
         This includes refreshes, which show up as faked 302 redirections at the
         moment.
 
+        Logs is performed using module logging.  The logger name is
+        "ClientCookie.http_redirects".  To actually print some debug output,
+        eg:
+
+        logger = logging.getLogger("ClientCookie.http_redirects")
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+
+        Other logger names relevant to this module:
+
+        "ClientCookie.http_responses"
+        "ClientCookie.cookies" (or "cookielib" if running Python 2.4)
+
+        To turn on everything:
+
+        for logger in [
+            logging.getLogger("ClientCookie"),
+            logging.getLogger("cookielib"),
+            ]:
+            logger.addHandler(logging.StreamHandler())
+            logger.setLevel(logging.INFO)
+
         """
         self._set_handler("_debug_redirect", handle)
     def set_debug_responses(self, handle):
-        """Print HTTP response bodies."""
+        """Log HTTP response bodies.
+
+        See docstring for .set_debug_redirects() for details of logging.
+
+        """
         self._set_handler("_debug_response_body", handle)
     def set_debug_http(self, handle):
-        """Print HTTP headers."""
+        """Print HTTP headers to sys.stdout."""
         level = int(bool(handle))
         for scheme in "http", "https":
             h = self._ua_handlers.get(scheme)
@@ -252,13 +278,6 @@ class UserAgent(OpenerDirector):
             newhandler = None
         self._replace_handler(name, newhandler)
 
-    # XXXX I'd *really* rather get rid of this and just rebuild every time.
-    #  This is fragile to base class changes, and hard to understand.
-    #  Have to make sure there's no state directly stored in handlers, though,
-    #  and have appropriate methods for adding state back to the cookie etc.
-    #  handlers known to this class (only the ones in urllib2 / ClientCookie --
-    #  no need to care about other peoples' as long as it's documented that
-    #  calling the set_* methods will in general clobber handler state).
     def _replace_handler(self, name, newhandler=None):
         # first, if handler was previously added, remove it
         if name is not None:
@@ -288,128 +307,3 @@ def remove(sequence, obj):
             del sequence[i]
         else:
             i += 1
-
-# XXX
-# This is urllib2.Request with a new .set_method() method,
-# for HTTP HEAD / PUT -- move into ClientCookie if/when need it.
-# Maybe it should have a constructor arg, too.
-## class Request:
-
-##     def __init__(self, url, data=None, headers={}):
-##         # unwrap('<URL:type://host/path>') --> 'type://host/path'
-##         self.__original = unwrap(url)
-##         self.type = None
-##         # self.__r_type is what's left after doing the splittype
-##         self.host = None
-##         self.port = None
-##         self.data = data
-##         self.headers = {}
-##         for key, value in headers.items():
-##             self.add_header(key, value)
-##         if data is None:
-##             self._method = "GET"
-##         else:
-##             self._method = "POST"
-
-##     def __getattr__(self, attr):
-##         # XXX this is a fallback mechanism to guard against these
-##         # methods getting called in a non-standard order.  this may be
-##         # too complicated and/or unnecessary.
-##         # XXX should the __r_XXX attributes be public?
-##         if attr[:12] == '_Request__r_':
-##             name = attr[12:]
-##             if hasattr(Request, 'get_' + name):
-##                 getattr(self, 'get_' + name)()
-##                 return getattr(self, attr)
-##         raise AttributeError, attr
-
-##     def get_method(self):
-##         return self._method
-
-##     def set_method(self, method):
-##         if method == "POST":
-##             if data is None:
-##                 data = ""
-##         else:
-##             self.data = None
-##         self._method == method
-
-##     def add_data(self, data):
-##         self.data = data
-
-##     def has_data(self):
-##         return self.data is not None
-
-##     def get_data(self):
-##         return self.data
-
-##     def get_full_url(self):
-##         return self.__original
-
-##     def get_type(self):
-##         if self.type is None:
-##             self.type, self.__r_type = splittype(self.__original)
-##             if self.type is None:
-##                 raise ValueError, "unknown url type: %s" % self.__original
-##         return self.type
-
-##     def get_host(self):
-##         if self.host is None:
-##             self.host, self.__r_host = splithost(self.__r_type)
-##             if self.host:
-##                 self.host = unquote(self.host)
-##         return self.host
-
-##     def get_selector(self):
-##         return self.__r_host
-
-##     def set_proxy(self, host, type):
-##         self.host, self.type = host, type
-##         self.__r_host = self.__original
-
-##     def add_header(self, key, val):
-##         # useful for something like authentication
-##         self.headers[key.capitalize()] = val
-
-
-## def http_get(fullurl, ranges=None, conditions=None):
-##     """HTTP GET, with convenient partial fetches (ranges).
-
-##     XXX conditional fetches?
-
-##     ranges: sequence of pairs of byte ranges (start, end) to fetch;
-
-##     Ranges follow the usual Python rules (the start byte is included,
-##     the end byte is not; negative numbers count back from the end of
-##     the entity; start None means start of entity; end None means end of
-##     entity).  There are restrictions, though: end must not be negative,
-##     and if start is negative, end must be None.
-
-##     >>> http_get("http://www.example.com/big.dat",
-##                  [(0, 10), (-10, None)])  # first and last 10 bytes
-##     >>> http_get("http://www.example.com/big.dat",
-##                  [(50000, None)])  # from byte 50000 to the end
-
-##     """
-##     if conditions: raise NotImplementedError("conditions not yet implemented")
-##     req = self._request(fullurl, data)
-##     assert req.get_type() == "http", "http_get for non-HTTP URI"
-##     rs = []
-##     for start, end in ranges:
-##         if start < 0:
-##             assert end is None, "invalid range"
-##             start = ""
-##         else:
-##             assert 0 <= start <= end, "invalid range"
-##             if start == end: continue
-##             end = end - 1
-##         rs.append("%s-%s" % range)
-##     req.add_header(("Range", "bytes=" % string.join(rs, ", ")))
-##     return self.open(req)
-
-## def http_head(self, fullurl):
-##     raise NotImplementedError()  # XXX
-
-## def http_put(self, fullurl, data=None):
-##     # XXX what about 30x handling?
-##     raise NotImplementedError()  # XXX

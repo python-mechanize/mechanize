@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
         "http://www.w3.org/TR/html4/strict.dtd">
-@# This file is processed by EmPy to colorize Python source code
+@# This file is processed by EmPy: do not edit
 @# http://wwwsearch.sf.net/bits/colorize.py
 @{from colorize import colorize}
 @{import time}
