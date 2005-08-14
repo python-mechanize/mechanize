@@ -350,8 +350,8 @@ class Browser(UserAgent, OpenerMixin):
             return request
 
         if (self._handle_referer and
-            original_scheme in ["http", "https"] and not
-            (original_scheme == "https" and scheme != "https")):
+            original_scheme in ["http", "https"] and
+            not (original_scheme == "https" and scheme != "https")):
             # strip URL fragment (RFC 2616 14.36)
             parts = urlparse.urlparse(self.request.get_full_url())
             parts = parts[:-1]+("",)
@@ -515,22 +515,10 @@ class Browser(UserAgent, OpenerMixin):
 
     def _encoding(self, response):
         # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
-        # headers may be in the response.
-        ct_headers = response.info().getheaders("content-type")
-        if not ct_headers:
-            return self.default_encoding
-
-        # sometimes servers return multiple HTTP headers: take the first
-        http_ct = ct_headers[0]
-        for k, v in split_header_words([http_ct])[0]:
-            if k == "charset":
-                return v
-
-        # no HTTP-specified encoding, so look in META HTTP-EQUIV headers,
-        # which, if present, will be last
-        if len(ct_headers) > 1:
-            equiv_ct = ct_headers[-1]
-            for k, v in split_header_words([equiv_ct])[0]:
+        # headers may be in the response.  HTTP-EQUIV headers come last,
+        # so try in order from first to last.
+        for ct in response.info().getheaders("content-type"):
+            for k, v in split_header_words([ct])[0]:
                 if k == "charset":
                     return v
         return self.default_encoding
@@ -552,7 +540,8 @@ class Browser(UserAgent, OpenerMixin):
 
     def _extract_links(self, response):
         base = response.geturl()
-        p = pullparser.TolerantPullParser(response, encoding=self._encoding(response))
+        p = pullparser.TolerantPullParser(
+            response, encoding=self._encoding(response))
         links = []
         for token in p.tags(*(self.urltags.keys()+["base"])):
             if token.data == "base":
