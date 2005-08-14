@@ -1,23 +1,13 @@
 #!/usr/bin/env python
+@# This file is processed by EmPy: do not edit
 """Stateful programmatic web browsing.
 
 Stateful programmatic web browsing, after Andy Lester's Perl module
 WWW::Mechanize.
 """
 
-from mechanize import __version__
-def unparse_version(tup):
-    major, minor, bugfix, state_char, pre = tup
-    fmt = "%s.%s.%s"
-    args = [major, minor, bugfix]
-    if state_char is not None:
-        fmt += "%s"
-        args.append(state_char)
-    if pre is not None:
-        fmt += "-pre%s"
-        args.append(pre)
-    return fmt % tuple(args)
-VERSION = unparse_version(__version__)
+@{import release, mechanize}
+VERSION = "@{release.unparse_version(mechanize.__version__)}"
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"
