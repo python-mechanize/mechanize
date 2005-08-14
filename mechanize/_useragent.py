@@ -172,7 +172,7 @@ class UserAgent(OpenerDirector):
                 raise ValueError("unknown scheme '%s'")
             self._set_handler(scheme, True)
 
-    def _add_referer_header(self, request):
+    def _add_referer_header(self, request, origin_request=True):
         raise NotImplementedError(
             "this class can't do HTTP Referer: use mechanize.Browser instead")
 
