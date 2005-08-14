@@ -50,14 +50,14 @@ class Link:
         self.base_url = base_url
         self.absolute_url = urlparse.urljoin(base_url, url)
         self.url, self.text, self.tag, self.attrs = url, text, tag, attrs
-    def __eq__(self, other):
+    def __cmp__(self, other):
         try:
             for name in "url", "text", "tag", "attrs":
                 if getattr(self, name) != getattr(other, name):
-                    return False
+                    return -1
         except AttributeError:
-            return False
-        return True
+            return -1
+        return 0
     def __repr__(self):
         return "Link(base_url=%r, url=%r, text=%r, tag=%r, attrs=%r)" % (
             self.base_url, self.url, self.text, self.tag, self.attrs)
@@ -249,7 +249,7 @@ class Browser(UserAgent, OpenerMixin):
             raise BrowserStateError("not viewing HTML")
         if kwds:
             return self._find_links(False, **kwds)
-        return self._links
+        return list(self._links)
 
     def forms(self):
         """Return iterable over forms.
