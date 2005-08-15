@@ -175,11 +175,16 @@ class Browser(UserAgent, OpenerMixin):
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
     def close(self):
+        if self._response is not None:
+            self._response.close()    
         UserAgent.close(self)
         self._history = self._forms = self._title = self._links = None
         self.request = self._response = None
 
-    def open(self, url, data=None): return self._mech_open(url, data)
+    def open(self, url, data=None):
+        if self._response is not None:
+            self._response.close()
+        return self._mech_open(url, data)
 
     def _mech_open(self, url, data=None, update_history=True):
         try:
@@ -233,6 +238,8 @@ class Browser(UserAgent, OpenerMixin):
         n: go back this number of steps (default 1 step)
 
         """
+        if self._response is not None:
+            self._response.close()
         while n:
             try:
                 self.request, self._response = self._history.pop()
