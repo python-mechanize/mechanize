@@ -33,6 +33,7 @@ class MockResponse:
     def seek(self, whence):
         assert whence == 0
         self._f.seek(0)
+    def close(self): pass
 
 class MockHandler:
     processor_order = 500
