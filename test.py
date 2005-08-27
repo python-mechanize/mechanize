@@ -169,7 +169,7 @@ class BrowserTests(TestCase):
         self.assert_(b.back() is r3)
         self.assert_(b.back() is r1)
         self.assertRaises(mechanize.BrowserStateError, b.back)
-         # reloading does a real HTTP fetch rather than using history cache
+        # reloading does a real HTTP fetch rather than using history cache
         r5 = b.reload()
         self.assert_(r5 is not r1)
         # .geturl() gets fed through to b.response
