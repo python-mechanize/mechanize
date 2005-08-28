@@ -257,7 +257,9 @@ class BrowserTests(TestCase):
         self.assertRaises(AttributeError, getattr, b, "possible_items")
         b.select_form("form1")
         # now unknown methods are fed through to selected ClientForm.HTMLForm
-        self.assertEqual(b.possible_items("cheeses"), ["cheddar", "edam"])
+        self.assertEqual(
+            [i.name for i in b.find_control('cheeses').items],
+            ["cheddar", "edam"])
         b["cheeses"] = ["cheddar", "edam"]
         self.assertEqual(b.click_pairs(), [
             ("cheeses", "cheddar"), ("cheeses", "edam"), ("one", "")])

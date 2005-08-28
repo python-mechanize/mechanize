@@ -16,6 +16,8 @@ distribution).
 # The stuff on web page's todo list.
 # Moof's emails about response object, .back(), etc.
 
+from __future__ import generators
+
 import urllib2, urlparse, re, sys
 
 import ClientCookie
@@ -256,7 +258,52 @@ class Browser(UserAgent, OpenerMixin):
             raise BrowserStateError("not viewing HTML")
         if kwds:
             return self._find_links(False, **kwds)
+        if self._links is None:
+            try:
+                self._links = list(self.get_links_iter())
+            finally:
+                self._response.seek(0)
         return list(self._links)
+
+    def get_links_iter(self):
+        """Return an iterator that provides links of the document."""
+        base = self._response.geturl()
+        self._response.seek(0)
+        p = pullparser.PullParser(
+            self._response, encoding=self._encoding(self._response))
+
+        for token in p.tags(*(self.urltags.keys()+["base"])):
+            if token.data == "base":
+                base = dict(token.attrs).get("href")
+                continue
+            if token.type == "endtag":
+                continue
+            attrs = dict(token.attrs)
+            tag = token.data
+            name = attrs.get("name")
+            text = None
+            url = attrs.get(self.urltags[tag])
+            if tag == "a":
+                if token.type != "startendtag":
+                    # XXX hmm, this'd break if end tag is missing
+                    text = p.get_compressed_text(("endtag", tag))
+                # but this doesn't work for eg. <a href="blah"><b>Andy</b></a>
+                #text = p.get_compressed_text()
+                # This is a hack from WWW::Mechanize to get some really basic
+                # JavaScript working, which I'm not yet convinced is a good
+                # idea.
+##                 onClick = attrs["onclick"]
+##                 m = re.search(r"/^window\.open\(\s*'([^']+)'/", onClick)
+##                 if onClick and m:
+##                     url = m.group(1)
+            if not url:
+                # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
+                # For our purposes a link is something with a URL, so ignore
+                # this.
+                continue
+
+            yield Link(base, url, text, tag, token.attrs)
+
 
     def forms(self):
         """Return iterable over forms.
@@ -266,6 +313,13 @@ class Browser(UserAgent, OpenerMixin):
         """
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
+        if self._forms is None:
+            response = self._response
+            response.seek(0)
+            try:
+                self._forms = self._forms_factory.parse_response(response)
+            finally:
+                response.seek(0)
         return self._forms
 
     def viewing_html(self):
@@ -326,7 +380,7 @@ class Browser(UserAgent, OpenerMixin):
                 "at least one argument must be supplied to specify form")
 
         orig_nr = nr
-        for form in self._forms:
+        for form in self.forms():
             if name is not None and name != form.name:
                 continue
             if predicate is not None and not predicate(form):
@@ -484,10 +538,22 @@ class Browser(UserAgent, OpenerMixin):
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
 
-        links = []
+        found_links = []
         orig_nr = nr
 
-        for link in self._links:
+        # An optimization, so that if we look for a single link we do not have
+        # to necessarily parse the entire file.
+        if self._links is None and single:
+            all_links = self.get_links_iter()
+        else:
+            if self._links is None:
+                try:
+                    self._links = list(self.get_links_iter())
+                finally:
+                    self._response.seek(0)
+            all_links = self._links
+
+        for link in all_links:
             if url is not None and url != link.url:
                 continue
             if url_regex is not None and not url_regex.search(link.url):
@@ -514,11 +580,11 @@ class Browser(UserAgent, OpenerMixin):
             if single:
                 return link
             else:
-                links.append(link)
+                found_links.append(link)
                 nr = orig_nr
-        if not links:
+        if not found_links:
             raise LinkNotFoundError()
-        return links
+        return found_links
 
     def _encoding(self, response):
         # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
@@ -536,50 +602,4 @@ class Browser(UserAgent, OpenerMixin):
         if not self.viewing_html():
             # nothing to see here
             return
-        try:
-            self._forms = self._forms_factory.parse_response(response)
-        finally:
-            response.seek(0)
-        try:
-            self._links = self._extract_links(response)
-        finally:
-            response.seek(0)
-
-    def _extract_links(self, response):
-        base = response.geturl()
-        p = pullparser.TolerantPullParser(
-            response, encoding=self._encoding(response))
-        links = []
-        for token in p.tags(*(self.urltags.keys()+["base"])):
-            if token.data == "base":
-                base = dict(token.attrs).get("href")
-                continue
-            if token.type == "endtag":
-                continue
-            attrs = dict(token.attrs)
-            tag = token.data
-            name = attrs.get("name")
-            text = None
-            url = attrs.get(self.urltags[tag])
-            if tag == "a":
-                if token.type != "startendtag":
-                    # XXX hmm, this'd break if end tag is missing
-                    text = p.get_compressed_text(("endtag", tag))
-                # but this doesn't work for eg. <a href="blah"><b>Andy</b></a>
-                #text = p.get_compressed_text()
-                # This is a hack from WWW::Mechanize to get some really basic
-                # JavaScript working, which I'm not yet convinced is a good
-                # idea.
-##                 onClick = attrs["onclick"]
-##                 m = re.search(r"/^window\.open\(\s*'([^']+)'/", onClick)
-##                 if onClick and m:
-##                     url = m.group(1)
-            if not url:
-                # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
-                # For our purposes a link is something with a URL, so ignore
-                # this.
-                continue
-
-            link = Link(base, url, text, tag, token.attrs)
-            links.append(link)
-        return links
+        self._forms = self._links = None
