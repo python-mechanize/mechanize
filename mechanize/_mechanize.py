@@ -269,7 +269,7 @@ class Browser(UserAgent, OpenerMixin):
         """Return an iterator that provides links of the document."""
         base = self._response.geturl()
         self._response.seek(0)
-        p = pullparser.PullParser(
+        p = pullparser.TolerantPullParser(
             self._response, encoding=self._encoding(self._response))
 
         for token in p.tags(*(self.urltags.keys()+["base"])):
