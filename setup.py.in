@@ -7,7 +7,7 @@ WWW::Mechanize.
 """
 
 @{import release, mechanize}
-VERSION = "@{release.unparse_version(mechanize.__version__)}"
+VERSION = "@(release.unparse_version(mechanize.__version__))"
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"
