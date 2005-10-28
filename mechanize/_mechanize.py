@@ -78,10 +78,11 @@ class FormsFactory:
                  select_default=False,
                  form_parser_class=None,
                  request_class=None,
+                 backwards_compat=False,
                  ):
         import ClientForm
-        assert map(int, parse_version(ClientForm.VERSION)[:3]) >= [0, 1, 7], \
-               "ClientForm >= 0.1.7 is required"
+        assert map(int, parse_version(ClientForm.VERSION)[:3]) >= [0, 2, 0], \
+               "ClientForm >= 0.2.0a is required"
         self.select_default = select_default
         if form_parser_class is None:
             form_parser_class = ClientForm.FormParser
@@ -89,6 +90,7 @@ class FormsFactory:
         if request_class is None:
             request_class = ClientCookie.Request
         self.request_class = request_class
+        self.backwards_compat = backwards_compat
 
     def parse_response(self, response):
         import ClientForm
@@ -96,7 +98,8 @@ class FormsFactory:
             response,
             select_default=self.select_default,
             form_parser_class=self.form_parser_class,
-            request_class=self.request_class
+            request_class=self.request_class,
+            backwards_compat=self.backwards_compat,
             )
 
     def parse_file(self, file_obj, base_url):
@@ -106,7 +109,8 @@ class FormsFactory:
             base_url,
             select_default=self.select_default,
             form_parser_class=self.form_parser_class,
-            request_class=self.request_class
+            request_class=self.request_class,
+            backwards_compat=self.backwards_compat,
             )
 
 if sys.version_info[:2] >= (2, 4):
