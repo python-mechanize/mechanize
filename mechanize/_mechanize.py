@@ -472,7 +472,7 @@ class Browser(UserAgent, OpenerMixin):
         """
         return self.open(self.click_link(link, **kwds))
 
-    def find_link(self, *args, **kwds):
+    def find_link(self, **kwds):
         """Find a link in current page.
 
         Links are returned as mechanize.Link objects.
@@ -517,8 +517,6 @@ class Browser(UserAgent, OpenerMixin):
         nr: matches the nth link that matches all other criteria (default 0)
 
         """
-        if args:
-            raise ValueError("keyword arguments only, please!")
         return self._find_links(True, **kwds)
 
     def __getattr__(self, name):
