@@ -252,8 +252,7 @@ class Browser(UserAgent, OpenerMixin):
             except IndexError:
                 raise BrowserStateError("already at start of history")
             n -= 1
-        if self._response is not None:
-            self._parse_html(self._response)
+        self._parse_html(self._response)
         return self._response
 
     def links(self, **kwds):
@@ -267,10 +266,12 @@ class Browser(UserAgent, OpenerMixin):
                 self._links = list(self.get_links_iter())
             finally:
                 self._response.seek(0)
-        return list(self._links)
+        return self._links
 
     def get_links_iter(self):
         """Return an iterator that provides links of the document."""
+        if not self.viewing_html():
+            raise BrowserStateError("not viewing HTML")
         base = self._response.geturl()
         self._response.seek(0)
         p = pullparser.TolerantPullParser(
@@ -609,6 +610,4 @@ class Browser(UserAgent, OpenerMixin):
         # result from parsing
         self.form = None
         self._title = None
-        if not self.viewing_html():
-            return
         self._forms = self._links = None
