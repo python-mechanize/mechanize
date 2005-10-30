@@ -22,7 +22,7 @@ import urllib2, urlparse, re, sys
 
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
-from ClientCookie._HeadersUtil import split_header_words
+from ClientCookie._HeadersUtil import split_header_words, is_html
 import pullparser
 # serves me right for not using a version tuple...
 VERSION_RE = re.compile(r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<bugfix>\d+)"
@@ -333,17 +333,8 @@ class Browser(UserAgent, OpenerMixin):
         if self._response is None:
             raise BrowserStateError("not viewing any document")
         ct_hdrs = self._response.info().getheaders("content-type")
-        if not ct_hdrs:
-            # guess
-            url = self._response.geturl()
-            return (url.endswith('.htm') or url.endswith('.html') or
-                    url.endswith('.xhtml'))
-        # use first header
-        ct = split_header_words(ct_hdrs)[0][0][0]
-        return ct in [
-            "text/html", "text/xhtml", "text/xml",
-            "application/xml", "application/xhtml+xml",
-            ]
+        url = self._response.geturl()
+        return is_html(ct_hdrs, url)
 
     def title(self):
         """Return title, or None if there is no title element in the document.
