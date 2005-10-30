@@ -557,12 +557,13 @@ class Browser(UserAgent, OpenerMixin):
         # pass through ClientForm / DOMForm methods and attributes
         form = self.__dict__.get("form")
         if form is not None:
-            try: return getattr(form, name)
-            except AttributeError: pass
-
-        msg = "%s instance has no attribute %s" % (self.__class__, name)
-        if form is None:
-            msg += " (perhaps you forgot to .select_form()?)"
+            try:
+                return getattr(form, name)
+            except AttributeError, exc:
+                msg = str(exc)
+        else:
+            msg = ("%s instance has no attribute %s (perhaps you forgot to "
+                   ".select_form()?)" % (self.__class__, name))
         raise AttributeError(msg)
 
 #---------------------------------------------------
