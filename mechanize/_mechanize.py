@@ -32,8 +32,8 @@ def parse_version(text):
         raise ValueError
     return tuple([m.groupdict()[part] for part in
                   ("major", "minor", "bugfix", "state", "pre")])
-assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 0, 2], \
-       "ClientCookie 1.0.2 or newer is required"
+assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 0, 3], \
+       "ClientCookie 1.0.3 or newer is required"
 
 from _useragent import UserAgent
 
@@ -87,7 +87,7 @@ class LinksFactory:
 
     def get_links_iter(self, fh, base_url, encoding=None):
         import pullparser
-        p = pullparser.TolerantPullParser(fh, encoding=encoding)
+        p = self.link_parser_class(fh, encoding=encoding)
 
         for token in p.tags(*(self.urltags.keys()+["base"])):
             if token.data == "base":
@@ -139,8 +139,8 @@ class FormsFactory:
                  backwards_compat=False,
                  ):
         import ClientForm
-        assert map(int, parse_version(ClientForm.VERSION)[:3]) >= [0, 2, 0], \
-               "ClientForm >= 0.2.0a is required"
+        assert map(int, parse_version(ClientForm.VERSION)[:3]) >= [0, 2, 1], \
+               "ClientForm >= 0.2.1a is required"
         self.select_default = select_default
         if form_parser_class is None:
             form_parser_class = ClientForm.FormParser
