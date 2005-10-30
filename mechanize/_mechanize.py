@@ -85,7 +85,8 @@ class LinksFactory:
                 }
         self.urltags = urltags
 
-    def get_links_iter(self, fh, base_url, encoding=None):
+    def links(self, fh, base_url, encoding=None):
+        """Return an iterator that provides links of the document."""
         import pullparser
         p = self.link_parser_class(fh, encoding=encoding)
 
@@ -325,15 +326,23 @@ class Browser(UserAgent, OpenerMixin):
                 self._links = list(self.get_links_iter())
             finally:
                 self._response.seek(0)
-        return self._links
+            return self._links
 
     def get_links_iter(self):
-        """Return an iterator that provides links of the document."""
+        """Return an iterator that provides links of the document.
+
+        This method is provided in addition to .links() to allow lazy iteration
+        over links, while still keeping .links() safe against somebody
+        .seek()ing on a response "behind your back".  When response objects are
+        fixed to have independent seek positions, this method will be
+        deprecated in favour of .links().
+
+        """
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         base_url = self._response.geturl()
         self._response.seek(0)
-        return self._links_factory.get_links_iter(
+        return self._links_factory.links(
             self._response, base_url, self._encoding(self._response))
 
     def forms(self):
