@@ -180,6 +180,46 @@ class BrowserTests(TestCase):
         self.assert_(b.back(2) is r5)
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
 
+    def test_viewing_html(self):
+        # XXX not testing multiple Content-Type headers
+        import mechanize
+        url = "http://example.com/"
+
+        for ct, isHtml in [
+            (None, False),
+            ("text/plain", False),
+            ("text/html", True),
+            ("text/xhtml", True),
+            ("text/xml", True),
+            ("application/xml", True),
+            ("application/xhtml+xml", True),
+            ("text/html; charset=blah", True),
+            (" text/xml ; charset=ook ", True),
+            ]:
+            b = TestBrowser()
+            hdrs = {}
+            if ct is not None:
+                hdrs["Content-Type"] = ct
+            b.add_handler(MockHandler([("http_open",
+                                        MockResponse(url, "", hdrs))]))
+            r = b.open(url)
+            self.assertEqual(b.viewing_html(), isHtml)
+
+        for ext, isHtml in [
+            (".htm", True),
+            (".html", True),
+            (".xhtml", True),
+            (".txt", False),
+            (".xml", False),  # XXX is this sensible?
+            ("", False),
+            ]:
+            b = TestBrowser()
+            url = "http://example.com/foo"+ext
+            b.add_handler(MockHandler(
+                [("http_open", MockResponse(url, "", {}))]))
+            r = b.open(url)
+            self.assertEqual(b.viewing_html(), isHtml)
+
     def test_empty(self):
         import mechanize
         url = "http://example.com/"

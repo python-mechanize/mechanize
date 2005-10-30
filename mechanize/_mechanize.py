@@ -286,6 +286,8 @@ class Browser(UserAgent, OpenerMixin):
             tag = token.data
             name = attrs.get("name")
             text = None
+            # XXX need to sort out quoting
+            #url = urllib.quote_plus(attrs.get(self.urltags[tag]))
             url = attrs.get(self.urltags[tag])
             if tag == "a":
                 if token.type != "startendtag":
@@ -330,9 +332,18 @@ class Browser(UserAgent, OpenerMixin):
         """Return whether the current response contains HTML data."""
         if self._response is None:
             raise BrowserStateError("not viewing any document")
-        ct = self._response.info().getheaders("content-type")
-        return ct and (ct[0].startswith("text/html") or
-                       ct[0].startswith("text/xhtml"))
+        ct_hdrs = self._response.info().getheaders("content-type")
+        if not ct_hdrs:
+            # guess
+            url = self._response.geturl()
+            return (url.endswith('.htm') or url.endswith('.html') or
+                    url.endswith('.xhtml'))
+        # use first header
+        ct = split_header_words(ct_hdrs)[0][0][0]
+        return ct in [
+            "text/html", "text/xhtml", "text/xml",
+            "application/xml", "application/xhtml+xml",
+            ]
 
     def title(self):
         """Return title, or None if there is no title element in the document.
@@ -357,7 +368,7 @@ class Browser(UserAgent, OpenerMixin):
     def select_form(self, name=None, predicate=None, nr=None):
         """Select an HTML form for input.
 
-        This is like giving a form the "input focus" in a browser.
+        This is a bit like giving a form the "input focus" in a browser.
 
         If a form is selected, the object supports the HTMLForm interface, so
         you can call methods like .set_value(), .set(), and .click().
@@ -524,9 +535,11 @@ class Browser(UserAgent, OpenerMixin):
         if form is not None:
             try: return getattr(form, name)
             except AttributeError: pass
-        raise AttributeError("%s instance has no attribute %s "
-                             "(perhaps you forgot to .select_form()?" %
-                             (self.__class__, name))
+
+        msg = "%s instance has no attribute %s " % (self.__class__, name)
+        if form is None:
+            msg += "(perhaps you forgot to .select_form()?)"
+        raise AttributeError(msg)
 
 #---------------------------------------------------
 # Private methods.
@@ -601,9 +614,10 @@ class Browser(UserAgent, OpenerMixin):
         return self.default_encoding
 
     def _parse_html(self, response):
+        # this is now lazy, so we just reset the various attributes that
+        # result from parsing
         self.form = None
         self._title = None
         if not self.viewing_html():
-            # nothing to see here
             return
         self._forms = self._links = None
