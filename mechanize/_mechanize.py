@@ -527,9 +527,9 @@ class Browser(UserAgent, OpenerMixin):
             try: return getattr(form, name)
             except AttributeError: pass
 
-        msg = "%s instance has no attribute %s " % (self.__class__, name)
+        msg = "%s instance has no attribute %s" % (self.__class__, name)
         if form is None:
-            msg += "(perhaps you forgot to .select_form()?)"
+            msg += " (perhaps you forgot to .select_form()?)"
         raise AttributeError(msg)
 
 #---------------------------------------------------
