@@ -23,7 +23,6 @@ import urllib2, urlparse, re, sys
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
 from ClientCookie._HeadersUtil import split_header_words, is_html
-import pullparser
 # serves me right for not using a version tuple...
 VERSION_RE = re.compile(r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<bugfix>\d+)"
                         r"(?P<state>[ab])?(?:-pre)?(?P<pre>\d+)?$")
@@ -35,8 +34,6 @@ def parse_version(text):
                   ("major", "minor", "bugfix", "state", "pre")])
 assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 0, 2], \
        "ClientCookie 1.0.2 or newer is required"
-assert pullparser.__version__[:3] >= (0, 0, 4), \
-       "pullparser 0.0.4b or newer is required"
 
 from _useragent import UserAgent
 
@@ -64,6 +61,67 @@ class Link:
         return "Link(base_url=%r, url=%r, text=%r, tag=%r, attrs=%r)" % (
             self.base_url, self.url, self.text, self.tag, self.attrs)
 
+
+class LinksFactory:
+
+    def __init__(self,
+                 link_parser_class=None,
+                 link_class=Link,
+                 urltags=None,
+                 ):
+        import pullparser
+        assert pullparser.__version__[:3] >= (0, 0, 4), \
+               "pullparser 0.0.4b or newer is required"
+        if link_parser_class is None:
+            link_parser_class = pullparser.TolerantPullParser
+        self.link_parser_class = link_parser_class
+        self.link_class = link_class
+        if urltags is None:
+            urltags = {
+                "a": "href",
+                "area": "href",
+                "frame": "src",
+                "iframe": "src",
+                }
+        self.urltags = urltags
+
+    def get_links_iter(self, fh, base_url, encoding=None):
+        import pullparser
+        p = pullparser.TolerantPullParser(fh, encoding=encoding)
+
+        for token in p.tags(*(self.urltags.keys()+["base"])):
+            if token.data == "base":
+                base_url = dict(token.attrs).get("href")
+                continue
+            if token.type == "endtag":
+                continue
+            attrs = dict(token.attrs)
+            tag = token.data
+            name = attrs.get("name")
+            text = None
+            # XXX need to sort out quoting
+            #url = urllib.quote_plus(attrs.get(self.urltags[tag]))
+            url = attrs.get(self.urltags[tag])
+            if tag == "a":
+                if token.type != "startendtag":
+                    # XXX hmm, this'd break if end tag is missing
+                    text = p.get_compressed_text(("endtag", tag))
+                # but this doesn't work for eg. <a href="blah"><b>Andy</b></a>
+                #text = p.get_compressed_text()
+                # This is a hack from WWW::Mechanize to get some really basic
+                # JavaScript working, which I'm not yet convinced is a good
+                # idea.
+##                 onClick = attrs["onclick"]
+##                 m = re.search(r"/^window\.open\(\s*'([^']+)'/", onClick)
+##                 if onClick and m:
+##                     url = m.group(1)
+            if not url:
+                # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
+                # For our purposes a link is something with a URL, so ignore
+                # this.
+                continue
+
+            yield Link(base_url, url, text, tag, token.attrs)
 
 class FormsFactory:
 
@@ -136,21 +194,19 @@ class Browser(UserAgent, OpenerMixin):
      getting this right without resorting to this default)
 
     """
-    urltags = {
-        "a": "href",
-        "area": "href",
-        "frame": "src",
-        "iframe": "src",
-    }
 
     def __init__(self, default_encoding="latin-1",
                  forms_factory=None,
+                 links_factory=None,
                  request_class=None,
                  ):
         """
 
+        Only named arguments should be passed to this constructor.
+
         default_encoding: See class docs.
         forms_factory: Object supporting the mechanize.FormsFactory interface.
+        links_factory: Object supporting the mechanize.LinksFactory interface.
         request_class: Request class to use.  Defaults to ClientCookie.Request
          by default for Pythons older than 2.4, urllib2.Request otherwise.
 
@@ -177,6 +233,9 @@ class Browser(UserAgent, OpenerMixin):
             forms_factory = FormsFactory()
         self._forms_factory = forms_factory
         forms_factory.request_class = request_class
+        if links_factory is None:
+            links_factory = LinksFactory()
+        self._links_factory = links_factory
 
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
@@ -272,45 +331,10 @@ class Browser(UserAgent, OpenerMixin):
         """Return an iterator that provides links of the document."""
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
-        base = self._response.geturl()
+        base_url = self._response.geturl()
         self._response.seek(0)
-        p = pullparser.TolerantPullParser(
-            self._response, encoding=self._encoding(self._response))
-
-        for token in p.tags(*(self.urltags.keys()+["base"])):
-            if token.data == "base":
-                base = dict(token.attrs).get("href")
-                continue
-            if token.type == "endtag":
-                continue
-            attrs = dict(token.attrs)
-            tag = token.data
-            name = attrs.get("name")
-            text = None
-            # XXX need to sort out quoting
-            #url = urllib.quote_plus(attrs.get(self.urltags[tag]))
-            url = attrs.get(self.urltags[tag])
-            if tag == "a":
-                if token.type != "startendtag":
-                    # XXX hmm, this'd break if end tag is missing
-                    text = p.get_compressed_text(("endtag", tag))
-                # but this doesn't work for eg. <a href="blah"><b>Andy</b></a>
-                #text = p.get_compressed_text()
-                # This is a hack from WWW::Mechanize to get some really basic
-                # JavaScript working, which I'm not yet convinced is a good
-                # idea.
-##                 onClick = attrs["onclick"]
-##                 m = re.search(r"/^window\.open\(\s*'([^']+)'/", onClick)
-##                 if onClick and m:
-##                     url = m.group(1)
-            if not url:
-                # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
-                # For our purposes a link is something with a URL, so ignore
-                # this.
-                continue
-
-            yield Link(base, url, text, tag, token.attrs)
-
+        return self._links_factory.get_links_iter(
+            self._response, base_url, self._encoding(self._response))
 
     def forms(self):
         """Return iterable over forms.
@@ -344,6 +368,7 @@ class Browser(UserAgent, OpenerMixin):
         PullParser.get_text() method of pullparser module.
 
         """
+        import pullparser
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         if self._title is None:
