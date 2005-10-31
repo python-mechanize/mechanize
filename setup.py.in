@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-@# This file is processed by EmPy: do not edit
 """Stateful programmatic web browsing.
 
 Stateful programmatic web browsing, after Andy Lester's Perl module
@@ -10,8 +9,40 @@ SVN URL for Python Eggs:
 http://codespeak.net/svn/wwwsearch/mechanize/trunk#egg=mechanize-dev
 """
 
-@{import release, mechanize}
-VERSION = "@(release.unparse_version(mechanize.__version__))"
+def unparse_version(tup):
+    major, minor, bugfix, state_char, pre = tup
+    fmt = "%s.%s.%s"
+    args = [major, minor, bugfix]
+    if state_char is not None:
+        fmt += "%s"
+        args.append(state_char)
+    if pre is not None:
+        fmt += "-pre%s"
+        args.append(pre)
+    return fmt % tuple(args)
+
+def strToTuple(text):
+    if text.startswith("("):
+        text = text[1:-1]
+    els = [el.strip() for el in text.split(",")]
+    newEls = []
+    for ii in range(len(els)):
+        el = els[ii]
+        if el == "None":
+            newEls.append(None)
+        elif 0 <= ii < 3:
+            newEls.append(int(el))
+        else:
+            if el.startswith("'") or el.startswith('"'):
+                el = el[1:-1]
+            newEls.append(el)
+    return tuple(newEls)
+
+import re
+VERSION_MATCH = re.search(r'__version__ = \((.*)\)', open("mechanize/_mechanize.py").read())
+VERSION_TUPLE_STRING = VERSION_MATCH.group(1)
+VERSION_TUPLE = strToTuple(VERSION_TUPLE_STRING)
+VERSION = unparse_version(VERSION_TUPLE)
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"
@@ -64,16 +95,16 @@ setuptools.setup(
     version = VERSION,
     license = LICENSE,
     platforms = PLATFORMS,
-    classifiers = filter(None, string.split(CLASSIFIERS, "\n")),
+    classifiers = filter(None, CLASSIFIERS.split("\n")),
     zip_safe = ZIP_SAFE,
     test_suite = "test",
     author = "John J. Lee",
-    author_email = "jjl@@pobox.com",
+    author_email = "jjl@pobox.com",
     description = doclines[0],
     url = "http://wwwsearch.sourceforge.net/%s/" % NAME,
     download_url = ("http://wwwsearch.sourceforge.net/%s/src/"
                     "%s-%s.tar.gz" % (NAME, NAME, VERSION)),
-    long_description = string.join(doclines[2:], "\n"),
+    long_description = "\n".join(doclines[2:]),
     py_modules = py_modules,
     packages = packages,
     )
