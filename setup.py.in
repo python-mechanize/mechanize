@@ -4,6 +4,10 @@
 
 Stateful programmatic web browsing, after Andy Lester's Perl module
 WWW::Mechanize.
+
+SVN URL for Python Eggs:
+
+http://codespeak.net/svn/wwwsearch/mechanize/trunk#egg=mechanize-dev
 """
 
 @{import release, mechanize}
@@ -12,6 +16,7 @@ NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"
 PLATFORMS = ["any"]
+ZIP_SAFE = True
 CLASSIFIERS = """\
 Development Status :: 3 - Alpha
 Intended Audience :: Developers
@@ -42,47 +47,33 @@ Topic :: Text Processing :: Markup :: XML
 #-------------------------------------------------------
 # the rest is constant for most of my released packages:
 
-import sys, string
-from distutils.core import setup
+import ez_setup
+ez_setup.use_setuptools()
 
-_setup = setup
-def setup(**kwargs):
-    if not hasattr(sys, "version_info") or sys.version_info < (2, 3):
-        # Python version compatibility
-        # XXX probably download_url came in earlier than 2.3
-        for key in ["classifiers", "download_url"]:
-            if kwargs.has_key(key):
-                del kwargs[key]
-    # Only want packages keyword if this is a package,
-    # only want py_modules keyword if this is a single-file module,
-    # so get rid of packages or py_modules keyword as appropriate.
-    if kwargs["packages"] is None:
-        del kwargs["packages"]
-    else:
-        del kwargs["py_modules"]
-    apply(_setup, (), kwargs)
+import setuptools
 
 if PACKAGE:
-    packages = [NAME]
-    py_modules = None
+    packages, py_modules = [NAME], None
 else:
-    py_modules = [NAME]
-    packages = None
+    packages, py_modules = None, [NAME]
 
-doclines = string.split(__doc__, "\n")
+doclines = __doc__.split("\n")
 
-setup(name = NAME,
-      version = VERSION,
-      license = LICENSE,
-      platforms = PLATFORMS,
-      classifiers = filter(None, string.split(CLASSIFIERS, "\n")),
-      author = "John J. Lee",
-      author_email = "jjl@@pobox.com",
-      description = doclines[0],
-      url = "http://wwwsearch.sourceforge.net/%s/" % NAME,
-      download_url = ("http://wwwsearch.sourceforge.net/%s/src/"
-                      "%s-%s.tar.gz" % (NAME, NAME, VERSION)),
-      long_description = string.join(doclines[2:], "\n"),
-      py_modules = py_modules,
-      packages = packages,
-      )
+setuptools.setup(
+    name = NAME,
+    version = VERSION,
+    license = LICENSE,
+    platforms = PLATFORMS,
+    classifiers = filter(None, string.split(CLASSIFIERS, "\n")),
+    zip_safe = ZIP_SAFE,
+    test_suite = "test",
+    author = "John J. Lee",
+    author_email = "jjl@@pobox.com",
+    description = doclines[0],
+    url = "http://wwwsearch.sourceforge.net/%s/" % NAME,
+    download_url = ("http://wwwsearch.sourceforge.net/%s/src/"
+                    "%s-%s.tar.gz" % (NAME, NAME, VERSION)),
+    long_description = string.join(doclines[2:], "\n"),
+    py_modules = py_modules,
+    packages = packages,
+    )
