@@ -3,10 +3,6 @@
 
 Stateful programmatic web browsing, after Andy Lester's Perl module
 WWW::Mechanize.
-
-SVN URL for Python Eggs:
-
-http://codespeak.net/svn/wwwsearch/mechanize/trunk#egg=mechanize-dev
 """
 
 def unparse_version(tup):
