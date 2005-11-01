@@ -21,7 +21,7 @@ def unparse_version(tup):
         args.append(pre)
     return fmt % tuple(args)
 
-def strToTuple(text):
+def str_to_tuple(text):
     if text.startswith("("):
         text = text[1:-1]
     els = [el.strip() for el in text.split(",")]
@@ -39,10 +39,11 @@ def strToTuple(text):
     return tuple(newEls)
 
 import re
-VERSION_MATCH = re.search(r'__version__ = \((.*)\)', open("mechanize/_mechanize.py").read())
-VERSION_TUPLE_STRING = VERSION_MATCH.group(1)
-VERSION_TUPLE = strToTuple(VERSION_TUPLE_STRING)
-VERSION = unparse_version(VERSION_TUPLE)
+VERSION_MATCH = re.search(r'__version__ = \((.*)\)'
+                          , open("mechanize/_mechanize.py").read())
+VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
+INSTALL_REQUIRES = [
+    "ClientForm>=0.2.1", "ClientCookie>=1.0.3", "pullparser>=0.0.4"]
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"
@@ -96,6 +97,7 @@ setuptools.setup(
     license = LICENSE,
     platforms = PLATFORMS,
     classifiers = [c for c in CLASSIFIERS.split("\n") if c],
+    install_requires = INSTALL_REQUIRES,
     zip_safe = ZIP_SAFE,
     test_suite = "test",
     author = "John J. Lee",
