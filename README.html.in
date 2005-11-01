@@ -175,6 +175,16 @@ would be useful.
 <p>For installation instructions, see the INSTALL file included in the
 distribution.
 
+
+<h2>Subversion</h2>
+
+<p>The <a href="http://subversion.tigris.org/">Subversion (SVN)</a> trunk is <a href="http://codespeak.net/svn/wwwsearch/mechanize/trunk#egg=mechanize-dev">http://codespeak.net/svn/wwwsearch/mechanize/trunk</a>, so to check out the source:
+
+<pre>
+svn co http://codespeak.net/svn/wwwsearch/mechanize/trunk
+</pre>
+
+
 <h2>See also</h2>
 
 <p>Richard Jones' <a href="http://mechanicalcat.net/tech/webunit/">webunit</a>

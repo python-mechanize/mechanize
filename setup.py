@@ -95,16 +95,16 @@ setuptools.setup(
     version = VERSION,
     license = LICENSE,
     platforms = PLATFORMS,
-    classifiers = filter(None, CLASSIFIERS.split("\n")),
+    classifiers = [c for c in CLASSIFIERS.split("\n") if c],
     zip_safe = ZIP_SAFE,
     test_suite = "test",
     author = "John J. Lee",
     author_email = "jjl@pobox.com",
     description = doclines[0],
+    long_description = "\n".join(doclines[2:]),
     url = "http://wwwsearch.sourceforge.net/%s/" % NAME,
     download_url = ("http://wwwsearch.sourceforge.net/%s/src/"
                     "%s-%s.tar.gz" % (NAME, NAME, VERSION)),
-    long_description = "\n".join(doclines[2:]),
     py_modules = py_modules,
     packages = packages,
     )
