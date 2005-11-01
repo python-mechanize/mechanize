@@ -39,7 +39,7 @@ VERSION_MATCH = re.search(r'__version__ = \((.*)\)'
                           , open("mechanize/_mechanize.py").read())
 VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
 INSTALL_REQUIRES = [
-    "ClientForm>=0.2.1", "ClientCookie>=1.0.3", "pullparser>=0.0.4"]
+    "ClientForm>=0.2.1, ==dev", "ClientCookie>=1.0.3, ==dev", "pullparser>=0.0.4"]
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"
