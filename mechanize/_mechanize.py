@@ -32,8 +32,8 @@ def parse_version(text):
         raise ValueError
     return tuple([m.groupdict()[part] for part in
                   ("major", "minor", "bugfix", "state", "pre")])
-assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 0, 3], \
-       "ClientCookie 1.0.3 or newer is required"
+assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 0, 4], \
+       "ClientCookie 1.0.4 or newer is required"
 
 from _useragent import UserAgent
 
@@ -70,8 +70,8 @@ class LinksFactory:
                  urltags=None,
                  ):
         import pullparser
-        assert pullparser.__version__[:3] >= (0, 0, 4), \
-               "pullparser 0.0.4b or newer is required"
+        assert pullparser.__version__[:3] >= (0, 0, 7), \
+               "pullparser 0.0.7 or newer is required"
         if link_parser_class is None:
             link_parser_class = pullparser.TolerantPullParser
         self.link_parser_class = link_parser_class
