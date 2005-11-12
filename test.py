@@ -209,6 +209,7 @@ class BrowserTests(TestCase):
             (".htm", True),
             (".html", True),
             (".xhtml", True),
+            (".html?foo=bar&a=b;whelk#kool", True),
             (".txt", False),
             (".xml", False),  # XXX is this sensible?
             ("", False),
