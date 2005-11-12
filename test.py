@@ -175,10 +175,18 @@ class BrowserTests(TestCase):
         # .geturl() gets fed through to b.response
         self.assertEquals(b.geturl(), "http://example.com/")
         # can go back n times
-        r6 = b.open("http://example.com/spam")
-        r7 = b.open("http://example.com/spam")
+        r6 = b.open("spam")
+        self.assertEquals(b.geturl(), "http://example.com/spam")
+        r7 = b.open("/spam")
+        self.assertEquals(b.geturl(), "http://example.com/spam")
         self.assert_(b.back(2) is r5)
+        self.assertEquals(b.geturl(), "http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
+        b.close() # history should work after close
+        r8 = b.open("http://example.com/")
+        r9 = b.open("http://example.com/foo")
+        self.assert_(b.back() is r8)
+        
 
     def test_viewing_html(self):
         # XXX not testing multiple Content-Type headers

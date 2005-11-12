@@ -244,7 +244,8 @@ class Browser(UserAgent, OpenerMixin):
         if self._response is not None:
             self._response.close()    
         UserAgent.close(self)
-        self._history = self._forms = self._title = self._links = None
+        del self._history[:]
+        self._forms = self._title = self._links = None
         self.request = self._response = None
 
     def open(self, url, data=None):
@@ -296,6 +297,8 @@ class Browser(UserAgent, OpenerMixin):
         """Reload current document, and return response object."""
         if self.request is None:
             raise BrowserStateError("no URL has yet been .open()ed")
+        if self._response is not None:
+            self._response.close()
         return self._mech_open(self.request, update_history=False)
 
     def back(self, n=1):
@@ -306,7 +309,7 @@ class Browser(UserAgent, OpenerMixin):
         """
         if self._response is not None:
             self._response.close()
-        while n:
+        while n > 0 or self._response is None:
             try:
                 self.request, self._response = self._history.pop()
             except IndexError:

@@ -17,7 +17,11 @@ import ClientCookie
 if sys.version_info[:2] >= (2, 4):
     import cookielib
     from urllib2 import OpenerDirector, BaseHandler, \
-         HTTPHandler, HTTPSHandler, HTTPErrorProcessor
+         HTTPHandler, HTTPErrorProcessor
+    try:
+        from urllib2 import HTTPSHandler
+    except ImportError:
+        pass
     class SaneHTTPCookieProcessor(ClientCookie.HTTPCookieProcessor):
         # Workaround for RFC 2109 bug http://python.org/sf/1157027 (at least if
         # you don't pass your own CookieJar in: if that's the case, you should
@@ -31,7 +35,11 @@ if sys.version_info[:2] >= (2, 4):
     HTTPCookieProcessor = SaneHTTPCookieProcessor
 else:
     from ClientCookie import OpenerDirector, BaseHandler, \
-         HTTPHandler, HTTPSHandler, HTTPErrorProcessor, HTTPCookieProcessor
+         HTTPHandler, HTTPErrorProcessor, HTTPCookieProcessor
+    try:
+        from ClientCookie import HTTPSHandler
+    except ImportError:
+        pass
 
 class HTTPRefererProcessor(BaseHandler):
     def http_request(self, request):
