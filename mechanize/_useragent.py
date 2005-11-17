@@ -223,7 +223,7 @@ class UserAgent(OpenerDirector):
 
         """
         self._set_handler("_referer", handle)
-        self._handle_referer = True
+        self._handle_referer = bool(handle)
     def set_seekable_responses(self, handle):
         """Make response objects .seek()able."""
         self._set_handler("_seek", handle)
