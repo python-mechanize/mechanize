@@ -181,7 +181,7 @@ distribution.
 <p>The <a href="http://subversion.tigris.org/">Subversion (SVN)</a> trunk is <a href="http://codespeak.net/svn/wwwsearch/mechanize/trunk#egg=mechanize-dev">http://codespeak.net/svn/wwwsearch/mechanize/trunk</a>, so to check out the source:
 
 <pre>
-svn co http://codespeak.net/svn/wwwsearch/mechanize/trunk
+svn co http://codespeak.net/svn/wwwsearch/mechanize/trunk mechanize
 </pre>
 
 
