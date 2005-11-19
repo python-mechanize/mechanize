@@ -41,7 +41,7 @@ import re
 VERSION = "0.0.10a"
 INSTALL_REQUIRES = [
     "ClientForm>=0.2.1, ==dev",
-    "ClientCookie>=1.0.4, ==dev",
+    "ClientCookie>=1.1.0, ==dev",
     "pullparser>=0.0.7, ==dev"]
 NAME = "mechanize"
 PACKAGE = True
