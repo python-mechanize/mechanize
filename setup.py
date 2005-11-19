@@ -35,9 +35,10 @@ def str_to_tuple(text):
     return tuple(newEls)
 
 import re
-VERSION_MATCH = re.search(r'__version__ = \((.*)\)',
-                          open("mechanize/_mechanize.py").read())
-VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
+## VERSION_MATCH = re.search(r'__version__ = \((.*)\)',
+##                           open("mechanize/_mechanize.py").read())
+## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
+VERSION = "0.0.10a"
 INSTALL_REQUIRES = [
     "ClientForm>=0.2.1, ==dev",
     "ClientCookie>=1.0.4, ==dev",
