@@ -166,8 +166,10 @@ would be useful.
 <p><em>Development release.</em>
 
 <ul>
-<li><a href="./src/mechanize-0.0.10a.tar.gz">mechanize-0.0.10a.tar.gz</a>
-<li><a href="./src/mechanize-0_0_10a.zip">mechanize-0_0_10a.zip</a>
+@{version = "0.0.11a"}
+@{win_version = release.win_version(version)}
+<li><a href="./src/mechanize-@(version).tar.gz">mechanize-@(version).tar.gz</a>
+<li><a href="./src/mechanize-@(win_version).zip">mechanize-@(win_version).zip</a>
 <li><a href="./src/ChangeLog.txt">Change Log</a> (included in distribution)
 <li><a href="./src/">Older versions.</a>
 </ul>
@@ -209,9 +211,12 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
   <li>Which version of Python do I need?
   <p>2.2 or above.
   <li>What else do I need?
-  <p><a href="../ClientCookie/">ClientCookie</a> 1.0.2 or newer,
-   <a href="../ClientForm/">ClientForm</a> 0.1.7, and
-   <a href="../pullparser/">pullparser</a> 0.0.4b or newer.
+  <p><a href="../ClientCookie/">ClientCookie</a>,
+   <a href="../ClientForm/">ClientForm</a> and
+   <a href="../pullparser/">pullparser</a>.
+  <p>The versions of those required modules are listed in the setup.py for
+     mechanize (included with the download).  The dependencies are
+     automatically fetched by easy_install when you run python setup.py install.
   <li>Which license?
   <p>The <a href="http://www.opensource.org/licenses/bsd-license.php">
    BSD license</a> (included in distribution).

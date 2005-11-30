@@ -37,7 +37,7 @@ assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 1, 0], \
 
 from _useragent import UserAgent
 
-__version__ = (0, 0, 10, "a", None)  # 0.0.10a
+__version__ = (0, 0, 11, "a", None)  # 0.0.11a
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
