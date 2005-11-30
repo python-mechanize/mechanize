@@ -38,7 +38,7 @@ import re
 ## VERSION_MATCH = re.search(r'__version__ = \((.*)\)',
 ##                           open("mechanize/_mechanize.py").read())
 ## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
-VERSION = "0.0.11a"
+VERSION = "0.0.12a"
 INSTALL_REQUIRES = [
     "ClientForm>=0.2.1b, ==dev",
     "ClientCookie>=1.1.0, ==dev",
