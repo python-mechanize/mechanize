@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from unittest import TestCase
-import StringIO, re, UserDict
+import StringIO, re, UserDict, urllib2
 
 import ClientCookie
 
@@ -50,6 +50,8 @@ class MockHandler:
     def handle(self, fn_name, response, *args, **kwds):
         self.parent.calls.append((self, fn_name, args, kwds))
         if response:
+            if isinstance(response, urllib2.URLError):
+                raise response
             r = response
             r.seek(0)
         else:
@@ -186,7 +188,16 @@ class BrowserTests(TestCase):
         r8 = b.open("http://example.com/")
         r9 = b.open("http://example.com/foo")
         self.assert_(b.back() is r8)
-        
+
+        self.assert_(b.response() is r8)
+
+        # even if we get a URLError, history and .response() should still get updated
+        error = urllib2.HTTPError("http://example.com/bad", 503, "Oops",
+                                  MockHeaders(), StringIO.StringIO())
+        b.add_handler(MockHandler([("https_open", error)]))
+        self.assertRaises(urllib2.HTTPError, b.open, "https://example.com/")
+        self.assertEqual(b.response().geturl(), error.geturl())
+        self.assert_(b.back() is r8)
 
     def test_viewing_html(self):
         # XXX not testing multiple Content-Type headers

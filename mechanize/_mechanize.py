@@ -18,7 +18,7 @@ distribution).
 
 from __future__ import generators
 
-import urllib2, urlparse, re, sys
+import urllib2, socket, urlparse, re, sys
 
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
@@ -274,11 +274,18 @@ class Browser(UserAgent, OpenerMixin):
         self.request = self._request(url, data)
         self._previous_scheme = self.request.get_type()
 
-        self._response = UserAgent.open(self, self.request, data)
+        success = True
+        try:
+            self._response = UserAgent.open(self, self.request, data)
+        except (IOError, socket.error, OSError), error:
+            # yes, urllib2 really does raise all these :-((
+            success = False
+            self._response = error
         if not hasattr(self._response, "seek"):
             self._response = response_seek_wrapper(self._response)
         self._parse_html(self._response)
-
+        if not success:
+            raise error
         return self._response
 
     def response(self):
