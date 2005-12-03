@@ -29,7 +29,7 @@ To install the package, run the following command:
 
 then (with appropriate permissions)
 
- python setup.py install
+ python setup.py easy_install --no-deps .
 
 
 Alternatively, just copy the whole mechanize directory into your
