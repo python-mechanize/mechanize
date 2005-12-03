@@ -157,6 +157,16 @@ class FormsFactory:
             backwards_compat=self.backwards_compat,
             )
 
+def pp_get_title(response, encoding):
+    import pullparser
+    p = pullparser.TolerantPullParser(response, encoding=encoding)
+    try:
+        p.get_tag("title")
+    except pullparser.NoMoreTokensError:
+        return None
+    else:
+        return p.get_text()
+
 if sys.version_info[:2] >= (2, 4):
     from ClientCookie._Opener import OpenerMixin
 else:
@@ -184,6 +194,7 @@ class Browser(UserAgent, OpenerMixin):
     def __init__(self, default_encoding="latin-1",
                  forms_factory=None,
                  links_factory=None,
+                 get_title=None,
                  request_class=None,
                  ):
         """
@@ -193,6 +204,8 @@ class Browser(UserAgent, OpenerMixin):
         default_encoding: See class docs.
         forms_factory: Object supporting the mechanize.FormsFactory interface.
         links_factory: Object supporting the mechanize.LinksFactory interface.
+        get_title: callable taking a response object and an encoding string,
+         and returning the page title.
         request_class: Request class to use.  Defaults to ClientCookie.Request
          by default for Pythons older than 2.4, urllib2.Request otherwise.
 
@@ -222,6 +235,9 @@ class Browser(UserAgent, OpenerMixin):
         if links_factory is None:
             links_factory = LinksFactory()
         self._links_factory = links_factory
+        if get_title is None:
+            get_title = pp_get_title
+        self._get_title = get_title
 
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
@@ -372,18 +388,11 @@ class Browser(UserAgent, OpenerMixin):
         PullParser.get_text() method of pullparser module.
 
         """
-        import pullparser
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         if self._title is None:
-            p = pullparser.TolerantPullParser(
-                self._response, encoding=self._encoding(self._response))
-            try:
-                p.get_tag("title")
-            except pullparser.NoMoreTokensError:
-                pass
-            else:
-                self._title = p.get_text()
+            self._title = self._get_title(
+                self._response, self._encoding(self._response))
         return self._title
 
     def select_form(self, name=None, predicate=None, nr=None):
