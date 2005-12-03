@@ -262,7 +262,7 @@ like symlinks).  Get the mechanize source, then:
 <p><em>Development release.</em>
 
 <ul>
-@{version = "0.0.11a"}
+@{version = "0.0.12a"}
 @{win_version = release.win_version(version)}
 <li><a href="./src/mechanize-@(version).tar.gz">mechanize-@(version).tar.gz</a>
 <li><a href="./src/mechanize-@(win_version).zip">mechanize-@(win_version).zip</a>

@@ -23,21 +23,10 @@ import urllib2, socket, urlparse, re, sys
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
 from ClientCookie._HeadersUtil import split_header_words, is_html
-# serves me right for not using a version tuple...
-VERSION_RE = re.compile(r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<bugfix>\d+)"
-                        r"(?P<state>[ab])?(?:-pre)?(?P<pre>\d+)?$")
-def parse_version(text):
-    m = VERSION_RE.match(text)
-    if m is None:
-        raise ValueError
-    return tuple([m.groupdict()[part] for part in
-                  ("major", "minor", "bugfix", "state", "pre")])
-assert map(int, parse_version(ClientCookie.VERSION)[:3]) >= [1, 1, 0], \
-       "ClientCookie 1.1.0 or newer is required"
 
 from _useragent import UserAgent
 
-__version__ = (0, 0, 11, "a", None)  # 0.0.11a
+__version__ = (0, 0, 12, "a", None)  # 0.0.12a
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
@@ -70,8 +59,6 @@ class LinksFactory:
                  urltags=None,
                  ):
         import pullparser
-        assert pullparser.__version__[:3] >= (0, 0, 7), \
-               "pullparser 0.0.7 or newer is required"
         if link_parser_class is None:
             link_parser_class = pullparser.TolerantPullParser
         self.link_parser_class = link_parser_class
@@ -140,8 +127,6 @@ class FormsFactory:
                  backwards_compat=False,
                  ):
         import ClientForm
-        assert map(int, parse_version(ClientForm.VERSION)[:3]) >= [0, 2, 1], \
-               "ClientForm >= 0.2.1a is required"
         self.select_default = select_default
         if form_parser_class is None:
             form_parser_class = ClientForm.FormParser
