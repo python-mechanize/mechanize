@@ -1,4 +1,5 @@
-from _useragent import UserAgent#, http_get, http_put, http_head
-from _mechanize import Browser, Link, FormsFactory, \
+from _useragent import UserAgent
+from _mechanize import Browser, Link, \
+     FormsFactory, LinksFactory, \
      BrowserStateError, LinkNotFoundError, FormNotFoundError, \
      __version__
