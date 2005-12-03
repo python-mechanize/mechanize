@@ -135,7 +135,8 @@ would be useful.
    layers of response objects in ClientCookie and the standard library.
  <li>Stabilise <code>mechanize.UserAgent</code>.
  <li>Test with non-http URLs.
- <li>Remove dependency on pullparser: it's broken .
+ <li>Remove dependency on pullparser?  I suspect it's neither nice to
+   use nor as tolerant of bad HTML as BeautifulSoup.
  <li>History cache expiration.
  <li>Add <code>Browser.load_response()</code> method.
  <li>Add <code>Browser.form_as_string()</code> and
