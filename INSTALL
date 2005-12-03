@@ -1,11 +1,23 @@
 mechanize installation instructions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+NOTE: This file describes the old-fashioned install.
+
+I now recommend using EasyInstall instead.
+
+See the web page for EasyInstall instructions (included here as
+README.html).
+
+If you use EasyInstall, you should ignore the rest of this file.
+
 
 Dependencies
 ~~~~~~~~~~~~
 
-See the web page (included here as README.html).
+See the web page for the version of Python required (included here as
+README.html).
+
+See setup.py for the required Python packages.
 
 
 Installation

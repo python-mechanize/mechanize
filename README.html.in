@@ -152,12 +152,107 @@ would be useful.
    page, easy assertion of things like: cookies sent by server, redirections,
    HTTP error codes etc.).
  <li>Do auth and proxies properly (ClientCookie probably needs some work here,
-   too -- and maybe urllib2 also).  Need to configure local squid and apache,
+   too &#8211; and maybe urllib2 also).  Need to configure local squid and apache,
    yawn...
 </ul>
 
 
 <a name="download"></a>
+<h2>Getting mechanize</h2>
+
+<p>You can install the <a href="./#source">old-fashioned way</a>, or using <a
+href="http://peak.telecommunity.com/DevCenter/EasyInstall">EasyInstall</a>.  I
+recommend the latter even though EasyInstall is still in alpha, because it will
+automatically ensure you have the necessary dependencies, downloading if
+necessary.
+
+<p><a href="./#svn">Subversion (SVN) access</a> is also available.
+
+<p>Since EasyInstall is new, I include some instructions below, but mechanize
+follows standard EasyInstall / <code>setuptools</code> conventions, so you
+should refer to the <a
+href="http://peak.telecommunity.com/DevCenter/EasyInstall">EasyInstall</a> and
+<a href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</a>
+documentation if you need more detailed or up-to-date instructions.
+
+<h2>EasyInstall / setuptools</h2>
+
+<p>The benefit of EasyInstall and the new <code>setuptools</code>-supporting
+<code>setup.py</code> is that they grab all dependencies for you (viz,
+ClientForm, ClientCookie, and pullparser).
+
+<p><strong>You need EasyInstall version 0.6a8 or newer.</strong>
+
+<h3>Using EasyInstall to download and install mechanize</h3>
+
+<ol>
+  <li><a href="http://peak.telecommunity.com/DevCenter/EasyInstall#installing-easy-install">Install easy_install</a> (you need version 0.6a8 or newer)
+  <li><code>easy_install mechanize</code>
+</ol>
+
+<p>If you're on a Unix-like OS, you may need root permissions for that last
+step (or see the <a
+href="http://peak.telecommunity.com/DevCenter/EasyInstall">EasyInstall
+documentation</a> for other installation options).
+
+<p>If you already have mechanize installed as a <a
+href="http://peak.telecommunity.com/DevCenter/PythonEggs">Python Egg</a> (as
+you do if you installed using EasyInstall, or using <code>setup.py
+install</code> from mechanize 0.0.10a or newer), you can upgrade to the latest
+version using:
+
+<pre>easy_install --upgrade mechanize</pre>
+
+<p>You probably want to read up on the <code>-m</code> option to
+<code>easy_install</code>, which lets you install multiple versions of a
+package.
+
+<h3>Using EasyInstall to download and install the latest in-development (SVN HEAD) version of mechanize</h3>
+
+<pre>easy_install "mechanize==dev"</pre>
+
+<p>Note that that will not necessarily grab the SVN versions of dependencies,
+such as ClientCookie: It will use SVN to fetch dependencies if and only if the
+SVN HEAD version of mechanize declares itself to depend on the SVN versions of
+those dependencies; even then, those declared dependencies won't necessarily be
+on SVN HEAD, but rather a particular revision.  If you want SVN HEAD for a
+dependency project, you should ask for it explicitly by running
+<code>easy_install "projectname=dev"</code> for that project.
+
+<p>Note also that you can still carry on using a plain old SVN checkout as
+usual if you like (optionally in conjunction with <a
+href="./#develop"><code>setup.py develop</code></a> &#8211; this is
+particularly useful on Windows, since it functions rather like symlinks).
+
+<h3>Using setup.py from a .tar.gz, .zip or an SVN checkout to download and install mechanize</h3>
+
+<p><code>setup.py</code> should correctly resolve and download dependencies:
+
+<pre>python setup.py install</pre>
+
+<p>Or, to get access to the same options that <code>easy_install</code>
+accepts, use the <code>easy_install</code> distutils command instead of
+<code>install</code> (see <code>python setup.py --help easy_install</code>)
+
+<pre>python setup.py easy_install mechanize</pre>
+
+<a name="develop"></a>
+<h3>Using setup.py to install mechanize for development work on mechanize</h3>
+
+<p>For development of mechanize using EasyInstall (see the <a
+href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</a> docs
+for details), you have the option of using the <code>develop</code> distutils
+command.  This is particularly useful on Windows, since it functions rather
+like symlinks).  Get the mechanize source, then:
+
+<pre>python setup.py develop</pre>
+
+<p>One convenient way to get the latest source is:
+
+<pre>easy_install --editable --build-directory mybuilddir "mechanize==dev"</pre>
+
+
+<a name="source"></a>
 <h2>Download</h2>
 <p>All documentation (including this web page) is included in the distribution.
 
@@ -174,10 +269,11 @@ would be useful.
 <li><a href="./src/">Older versions.</a>
 </ul>
 
-<p>For installation instructions, see the INSTALL file included in the
-distribution.
+<p>For old-style installation instructions, see the INSTALL file included in
+the distribution.  Better, <a href="./#download">use EasyInstall</a>.
 
 
+<a name="svn"></a>
 <h2>Subversion</h2>
 
 <p>The <a href="http://subversion.tigris.org/">Subversion (SVN)</a> trunk is <a href="http://codespeak.net/svn/wwwsearch/mechanize/trunk#egg=mechanize-dev">http://codespeak.net/svn/wwwsearch/mechanize/trunk</a>, so to check out the source:
@@ -185,6 +281,35 @@ distribution.
 <pre>
 svn co http://codespeak.net/svn/wwwsearch/mechanize/trunk mechanize
 </pre>
+
+<a name="tests"></a>
+<h2>Tests and examples</h2>
+
+<h3>Examples</h3>
+
+<p>The <code>examples</code> directory contains a couple of silly scripts to
+demonstrate basic use of the module.  Note that it's in the nature of web
+scraping for such scripts to break, so don't be too suprised if that happens
+&#8211; do let me know, though!
+
+<p>It's worth knowing also that the examples on the <a
+href="../ClientForm/">ClientForm web page</a> are useful for mechanize users,
+and are now real run-able scripts rather than just documentation.
+
+<h3>Unit tests</h3>
+
+<p>Note that the dependencies of mechanize (ClientCookie, ClientForm, and
+pullparser) have their own unit tests, which must be run separately.
+
+<p>To run the unit tests (none of which access the network), run the following
+command:
+
+<pre>python test.py</pre>
+
+<p>This runs the tests against the source files extracted from the
+package.  For help on command line options:
+
+<pre>python test.py --help</pre>
 
 
 <h2>See also</h2>
@@ -216,7 +341,9 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
    <a href="../pullparser/">pullparser</a>.
   <p>The versions of those required modules are listed in the setup.py for
      mechanize (included with the download).  The dependencies are
-     automatically fetched by easy_install when you run python setup.py install.
+     automatically fetched by <a
+     href="http://peak.telecommunity.com/DevCenter/EasyInstall">EasyInstall</a>
+     or by running <code>python setup.py install</code>.
   <li>Which license?
   <p>The <a href="http://www.opensource.org/licenses/bsd-license.php">
    BSD license</a> (included in distribution).
