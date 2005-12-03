@@ -3,10 +3,8 @@
 # Search PyPI, the Python Package Index, and retrieve latest mechanize
 # tarball.
 
-# This is just illustrative: I assume there's an easier way of doing
-# this (also note that the download field doesn't in general point
-# directly to the source, and that many packages (including mine!)
-# aren't yet registered religiously at every release).
+# This is just to demonstrate mechanize: You should use EasyInstall to
+# do this, not this silly script.
 
 import sys, os, re
 
