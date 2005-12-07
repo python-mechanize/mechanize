@@ -438,12 +438,12 @@ class BrowserTests(TestCase):
 """<base href="http://www.python.org/foo/">
 <a href="bar/baz.html"></a>
 <a href="/bar/baz.html"></a>
-<a href="http://example.com/bar/baz.html"></a>
+<a href="http://example.com/bar %2f%2Fblah;/baz@~._-.html"></a>
 """,
             [
             "http://www.python.org/foo/bar/baz.html",
             "http://www.python.org/bar/baz.html",
-            "http://example.com/bar/baz.html",
+            "http://example.com/bar%20%2f%2Fblah;/baz@~._-.html",
             ]),
             (
 """<a href="bar/baz.html"></a>

@@ -18,7 +18,7 @@ distribution).
 
 from __future__ import generators
 
-import urllib2, socket, urlparse, re, sys
+import urllib2, socket, urlparse, urllib, re, sys
 
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
@@ -50,8 +50,18 @@ class Link:
         return "Link(base_url=%r, url=%r, text=%r, tag=%r, attrs=%r)" % (
             self.base_url, self.url, self.text, self.tag, self.attrs)
 
+## def chr_range(a, b):
+##     return ''.join(map(chr, range(ord(a), ord(b)+1)))
 
 class LinksFactory:
+
+##     RESERVED_URL_CHARS = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+##                           "abcdefghijklmnopqrstuvwxyz"
+##                           "-_.~")
+##     UNRESERVED_URL_CHARS = "!*'();:@&=+$,/?%#[]"
+    # we want (RESERVED_URL_CHARS+UNRESERVED_URL_CHARS), minus those
+    # 'safe'-by-default characters that urllib.urlquote never quotes
+    URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
 
     def __init__(self,
                  link_parser_class=None,
@@ -87,27 +97,27 @@ class LinksFactory:
             tag = token.data
             name = attrs.get("name")
             text = None
-            # XXX need to sort out quoting
-            #url = urllib.quote_plus(attrs.get(self.urltags[tag]))
+            attr_encoding = attrs.get("charset")
+            if attr_encoding is None:
+                attr_encoding = encoding
             url = attrs.get(self.urltags[tag])
-            if tag == "a":
-                if token.type != "startendtag":
-                    # XXX hmm, this'd break if end tag is missing
-                    text = p.get_compressed_text(("endtag", tag))
-                # but this doesn't work for eg. <a href="blah"><b>Andy</b></a>
-                #text = p.get_compressed_text()
-                # This is a hack from WWW::Mechanize to get some really basic
-                # JavaScript working, which I'm not yet convinced is a good
-                # idea.
-##                 onClick = attrs["onclick"]
-##                 m = re.search(r"/^window\.open\(\s*'([^']+)'/", onClick)
-##                 if onClick and m:
-##                     url = m.group(1)
             if not url:
                 # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
                 # For our purposes a link is something with a URL, so ignore
                 # this.
                 continue
+
+            # percent-encode illegal URL characters
+            if type(url) == type(""):
+                url = url.decode(attr_encoding, 'replace')
+            url = urllib.quote(url.encode(attr_encoding),
+                               self.URLQUOTE_SAFE_URL_CHARS)
+            if tag == "a":
+                if token.type != "startendtag":
+                    # hmm, this'd break if end tag is missing
+                    text = p.get_compressed_text(("endtag", tag))
+                # but this doesn't work for eg. <a href="blah"><b>Andy</b></a>
+                #text = p.get_compressed_text()
 
             yield Link(base_url, url, text, tag, token.attrs)
 
