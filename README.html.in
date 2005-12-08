@@ -35,13 +35,16 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 <ul>
   <li><code>mechanize.Browser</code> is a subclass of
     <code>mechanize.UserAgent</code>, which is, in turn, a subclass of
-    urllib2.OpenerDirector (<code>ClientCookie.OpenerDirector</code> for
-    pre-2.4 versions of Python), so any URL can be opened, not just
-    <code>http:</code>.  <code>mechanize.UserAgent</code> offers easy dynamic
-    configuration of user-agent features like protocol, cookie, redirection and
-    <code>robots.txt</code> handling, without having to make a new
-    <code>OpenerDirector</code> each time, eg.  by calling
-    <code>build_opener()</code> (it's not stable yet, though).
+    <code>urllib2.OpenerDirector</code> (or of
+    <code>ClientCookie.OpenerDirector</code> for pre-2.4 versions of Python), so:
+    <ul>
+      <li>any URL can be opened, not just <code>http:</code>
+      <li><code>mechanize.UserAgent</code> offers easy dynamic configuration of
+      user-agent features like protocol, cookie, redirection and
+      <code>robots.txt</code> handling, without having to make a new
+      <code>OpenerDirector</code> each time, eg.  by calling
+      <code>build_opener()</code>.
+    </ul>
   <li>Easy HTML form filling, using <a href="../ClientForm/">ClientForm</a>
     interface.
   <li>Convenient link parsing and following.
@@ -51,11 +54,16 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
   <li>Automatic observance of <a
     href="http://www.robotstxt.org/wc/norobots.html">
     <code>robots.txt</code></a>.
-
-
+  <li>Automatic handling of HTTP-Equiv and Refresh, using <a
+    href="../ClientCookie/">ClientCookie</a>.
 </ul>
 
-<p>An example:
+
+<a name="examples"></a>
+<h2>Examples</h2>
+
+<p>The two below are just to give the gist.  There are also some <a
+href="./#tests">actual working examples</a>.
 
 @{colorize(r"""
 import re
@@ -120,41 +128,63 @@ br.set_debug_responses(True)
 br.set_debug_http(True)
 """)}
 
+
+<a name="docs"></a>
+<h2>Documentation</h2>
+
 <p>Full documentation is in the docstrings.
 
+
+<a name="credits"></a>
+<h2>Credits</h2>
+
 <p>Thanks to Ian Bicking, for persuading me that a <code>UserAgent</code> class
-would be useful.
+would be useful, and to everyone who has reported bugs.
+
+<p>And of course thanks to Andy Lester for the original, <a
+href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
+</a>.
 
 
+<a name="todo"></a>
 <h2>Todo</h2>
 
+<p>Contributions welcome!
+
+<h3>Specific to mechanize</h3>
 <ul>
- <li>Fix <code>.response()</code> method (each call should return independent
-   pointer to same data).  Want to be able to clone responses, too, so can
-   process HTML.  Needs some careful thought: want to clean up the multiple
-   layers of response objects in ClientCookie and the standard library.
- <li>Stabilise <code>mechanize.UserAgent</code>.
- <li>Test with non-http URLs.
- <li>Remove dependency on pullparser?  I suspect it's neither nice to
-   use nor as tolerant of bad HTML as BeautifulSoup.
- <li>History cache expiration.
- <li>Add <code>Browser.load_response()</code> method.
- <li>Add <code>Browser.form_as_string()</code> and
-   <code>Browser.__str__()</code> methods.
- <li>Combine ClientForm, ClientCookie and mechanize in a single download.
- <li>Would be nice to add an implementation of ClientForm interface built on
-   something like BeautifulSoup, which would allow easy &quot;escape&quot; to
-   the lower-level BeautifulSoup API in cases where the higher-level
-   <code>mechanize.Browser</code> / ClientForm API is not sufficient.  (DOMForm
-   is similar: implementation of ClientForm interface on top of HTML DOM, but
-   it's buggy and unmaintained, and the DOM is not as nice an API as
-   BeautifulSoup).
- <li>Add some utilities useful for testing (eg. fetch images and stylesheets in
-   page, easy assertion of things like: cookies sent by server, redirections,
-   HTTP error codes etc.).
- <li>Do auth and proxies properly (ClientCookie probably needs some work here,
-   too &#8211; and maybe urllib2 also).  Need to configure local squid and apache,
-   yawn...
+  <li>Fix <code>.response()</code> method (each call should return independently
+    .seek()-able pointer to same data).  Want to be able to clone responses,
+    too, so can process HTML.  Needs some careful thought: want to clean up the
+    multiple layers of response objects in ClientCookie and the standard
+    library (why hasn't Guido blessed interfaces yet??).
+  <li>Perhaps extend <code>mechanize.UserAgent</code> with a way to give it
+    handler instances to use.
+  <li>Add more functional tests.
+  <li>History cache expiration / pluggable History implementations.
+  <li>Add <code>Browser.load_response()</code> method.
+  <li>Add <code>Browser.form_as_string()</code> and
+    <code>Browser.__str__()</code> methods.
+  <li>Would be nice to add an implementation of ClientForm interface built on
+    something like BeautifulSoup, which would allow easy &quot;escape&quot; to
+    the lower-level BeautifulSoup API in cases where the higher-level
+    <code>mechanize.Browser</code> / ClientForm API is not sufficient.  (DOMForm
+    is similar: implementation of ClientForm interface on top of HTML DOM, but
+    it's buggy and unmaintained, and the DOM is not as nice an API as
+    BeautifulSoup).
+</ul>
+
+<h3>Basic protocols / standards support</h3>
+<ul>
+  <li>Implement RFC 3986 URL absolutization.
+  <li>Figure out the Right Thing (if such a thing exists) for %-encoding.
+  <li>How do IRIs fit into the world?
+  <li>IDNA (ClientCookie) -- must read about security stuff first.
+  <li>Unicode support in general (not sure yet how/when/whether this will
+    happen).
+  <li>Provide per-connection access to timeouts (ClientCookie).
+  <li>Persistent connections / pipelining.
+  <li>Work on auth / proxies (yawn).
 </ul>
 
 
@@ -262,7 +292,7 @@ like symlinks).  Get the mechanize source, then:
 <p><em>Development release.</em>
 
 <ul>
-@{version = "0.0.12a"}
+@{version = "0.0.11a"}
 @{win_version = release.win_version(version)}
 <li><a href="./src/mechanize-@(version).tar.gz">mechanize-@(version).tar.gz</a>
 <li><a href="./src/mechanize-@(win_version).zip">mechanize-@(win_version).zip</a>
@@ -288,10 +318,11 @@ svn co http://codespeak.net/svn/wwwsearch/mechanize/trunk mechanize
 
 <h3>Examples</h3>
 
-<p>The <code>examples</code> directory contains a couple of silly scripts to
-demonstrate basic use of the module.  Note that it's in the nature of web
-scraping for such scripts to break, so don't be too suprised if that happens
-&#8211; do let me know, though!
+<p>The <code>examples</code> directory in the <a href="./#source">source
+packages</a> contains a couple of silly, but working, scripts to demonstrate
+basic use of the module.  Note that it's in the nature of web scraping for such
+scripts to break, so don't be too suprised if that happens &#8211; do let me
+know, though!
 
 <p>It's worth knowing also that the examples on the <a
 href="../ClientForm/">ClientForm web page</a> are useful for mechanize users,
@@ -314,6 +345,18 @@ package.  For help on command line options:
 
 
 <h2>See also</h2>
+
+<p>There are several wrappers around mechanize designed for functional testing
+of web applications:
+
+<ul>
+
+  <li><a href="http://cheeseshop.python.org/pypi?:action=display&name=zope.testbrowser">
+    <code>zope.testbrowser</code></a> (or
+    <a href="http://cheeseshop.python.org/pypi?%3Aaction=display&name=ZopeTestbrowser">
+    <code>ZopeTestBrowser</code></a>, the standalone version).
+  <li><a href="http://www.idyll.org/~t/www-tools/twill.html">twill</a>.
+</ul>
 
 <p>Richard Jones' <a href="http://mechanicalcat.net/tech/webunit/">webunit</a>
 (this is not the same as Steven Purcell's <a
@@ -344,7 +387,8 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
      mechanize (included with the download).  The dependencies are
      automatically fetched by <a
      href="http://peak.telecommunity.com/DevCenter/EasyInstall">EasyInstall</a>
-     or by running <code>python setup.py install</code>.
+     (or by <a href="./#source">downloading</a> a mechanize source package and
+     running <code>python setup.py install</code>).
   <li>Which license?
   <p>The <a href="http://www.opensource.org/licenses/bsd-license.php">
    BSD license</a> (included in distribution).
@@ -367,7 +411,12 @@ mailing list</a> rather than direct to me.
 
 <br>
 
+<a href="./#examples">Examples</a><br>
+<a href="./#docs">Documentation</a><br>
+<a href="./#todo">To-do</a><br>
 <a href="./#download">Download</a><br>
+<a href="./#svn">Subversion</a><br>
+<a href="./#tests">More examples</a><br>
 <a href="./#faq">FAQs</a><br>
 
 </div>
