@@ -19,6 +19,7 @@ distribution).
 from __future__ import generators
 
 import urllib2, socket, urlparse, urllib, re, sys
+from urlparse import urljoin
 
 import ClientCookie
 from ClientCookie._Util import response_seek_wrapper
@@ -32,11 +33,18 @@ class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
 class FormNotFoundError(Exception): pass
 
+## # XXXX miserable hack
+## def urljoin(base, url):
+##     if url.startswith('?'):
+##         return base+url
+##     else:
+##         return urlparse.urljoin(base, url)
+
 class Link:
     def __init__(self, base_url, url, text, tag, attrs):
         assert None not in [url, tag, attrs]
         self.base_url = base_url
-        self.absolute_url = urlparse.urljoin(base_url, url)
+        self.absolute_url = urljoin(base_url, url)
         self.url, self.text, self.tag, self.attrs = url, text, tag, attrs
     def __cmp__(self, other):
         try:
@@ -97,9 +105,9 @@ class LinksFactory:
             tag = token.data
             name = attrs.get("name")
             text = None
-            attr_encoding = attrs.get("charset")
-            if attr_encoding is None:
-                attr_encoding = encoding
+            # XXX use attr_encoding for ref'd doc if that doc does not provide
+            #  one by other means
+            #attr_encoding = attrs.get("charset")
             url = attrs.get(self.urltags[tag])
             if not url:
                 # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
@@ -109,8 +117,8 @@ class LinksFactory:
 
             # percent-encode illegal URL characters
             if type(url) == type(""):
-                url = url.decode(attr_encoding, 'replace')
-            url = urllib.quote(url.encode(attr_encoding),
+                url = url.decode(encoding, 'replace')
+            url = urllib.quote(url.encode(encoding),
                                self.URLQUOTE_SAFE_URL_CHARS)
             if tag == "a":
                 if token.type != "startendtag":
