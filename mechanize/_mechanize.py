@@ -143,6 +143,7 @@ class FormsFactory:
                  form_parser_class=None,
                  request_class=None,
                  backwards_compat=False,
+                 encoding='latin-1',
                  ):
         import ClientForm
         self.select_default = select_default
@@ -153,6 +154,7 @@ class FormsFactory:
             request_class = ClientCookie.Request
         self.request_class = request_class
         self.backwards_compat = backwards_compat
+        self.encoding = encoding
 
     def parse_response(self, response):
         import ClientForm
@@ -162,6 +164,7 @@ class FormsFactory:
             form_parser_class=self.form_parser_class,
             request_class=self.request_class,
             backwards_compat=self.backwards_compat,
+            encoding=self.encoding,
             )
 
     def parse_file(self, file_obj, base_url):
@@ -173,6 +176,7 @@ class FormsFactory:
             form_parser_class=self.form_parser_class,
             request_class=self.request_class,
             backwards_compat=self.backwards_compat,
+            encoding=self.encoding,
             )
 
 def pp_get_title(response, encoding):
@@ -203,9 +207,9 @@ class Browser(UserAgent, OpenerMixin):
     request: last request (ClientCookie.Request or urllib2.Request)
     form: currently selected form (see .select_form())
     default_encoding: character encoding used for encoding numeric character
-     references when matching link text, if no encoding is found in the reponse
-     (you should turn on HTTP-EQUIV handling if you want the best chance of
-     getting this right without resorting to this default)
+     references when matching link text, if no encoding is found in the
+     response (you should turn on HTTP-EQUIV handling if you want the best
+     chance of getting this right without resorting to this default)
 
     """
 

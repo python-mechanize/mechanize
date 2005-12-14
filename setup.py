@@ -40,7 +40,7 @@ import re
 ## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
 VERSION = "0.0.12a"
 INSTALL_REQUIRES = [
-    "ClientForm>=0.2.1b, ==dev",
+    "ClientForm>=0.2.2, ==dev",
     "ClientCookie>=1.1.0, ==dev",
     "pullparser>=0.0.7, ==dev"]
 NAME = "mechanize"
