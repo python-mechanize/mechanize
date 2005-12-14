@@ -206,8 +206,7 @@ class Browser(UserAgent, OpenerMixin):
 
     request: last request (ClientCookie.Request or urllib2.Request)
     form: currently selected form (see .select_form())
-    default_encoding: character encoding used for encoding numeric character
-     references when matching link text, if no encoding is found in the
+    default_encoding: character encoding used if no encoding is found in the
      response (you should turn on HTTP-EQUIV handling if you want the best
      chance of getting this right without resorting to this default)
 
