@@ -318,7 +318,7 @@ class BrowserTests(TestCase):
         b.select_form("form1")
         # now unknown methods are fed through to selected ClientForm.HTMLForm
         self.assertEqual(
-            [i.name for i in b.find_control('cheeses').items],
+            [i.name for i in b.find_control("cheeses").items],
             ["cheddar", "edam"])
         b["cheeses"] = ["cheddar", "edam"]
         self.assertEqual(b.click_pairs(), [
@@ -423,10 +423,10 @@ class BrowserTests(TestCase):
 
         # .links()
         self.assertEqual(list(b.links(url="src")), [
-            Link(url, url='src', text=None, tag='frame',
-                 attrs=[('name', 'name'), ('href', 'href'), ('src', 'src')]),
-            Link(url, url='src', text=None, tag='iframe',
-                 attrs=[('name', 'name2'), ('href', 'href'), ('src', 'src')]),
+            Link(url, url="src", text=None, tag="frame",
+                 attrs=[("name", "name"), ("href", "href"), ("src", "src")]),
+            Link(url, url="src", text=None, tag="iframe",
+                 attrs=[("name", "name2"), ("href", "href"), ("src", "src")]),
             ])
 
     def test_base_uri(self):

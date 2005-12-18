@@ -35,7 +35,7 @@ class FormNotFoundError(Exception): pass
 
 ## # XXXX miserable hack
 ## def urljoin(base, url):
-##     if url.startswith('?'):
+##     if url.startswith("?"):
 ##         return base+url
 ##     else:
 ##         return urlparse.urljoin(base, url)
@@ -59,7 +59,7 @@ class Link:
             self.base_url, self.url, self.text, self.tag, self.attrs)
 
 ## def chr_range(a, b):
-##     return ''.join(map(chr, range(ord(a), ord(b)+1)))
+##     return "".join(map(chr, range(ord(a), ord(b)+1)))
 
 class LinksFactory:
 
@@ -117,7 +117,7 @@ class LinksFactory:
 
             # percent-encode illegal URL characters
             if type(url) == type(""):
-                url = url.decode(encoding, 'replace')
+                url = url.decode(encoding, "replace")
             url = urllib.quote(url.encode(encoding),
                                self.URLQUOTE_SAFE_URL_CHARS)
             if tag == "a":
@@ -143,7 +143,7 @@ class FormsFactory:
                  form_parser_class=None,
                  request_class=None,
                  backwards_compat=False,
-                 encoding='latin-1',
+                 encoding="latin-1",
                  ):
         import ClientForm
         self.select_default = select_default
@@ -473,7 +473,7 @@ class Browser(UserAgent, OpenerMixin):
         original_scheme = self.request.get_type()
         if scheme not in ["http", "https"]:
             return request
-        if not origin_request and not self.request.has_header('Referer'):
+        if not origin_request and not self.request.has_header("Referer"):
             return request
 
         if (self._handle_referer and
