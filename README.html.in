@@ -238,6 +238,7 @@ version using:
 <code>easy_install</code>, which lets you install multiple versions of a
 package.
 
+<a name="svnhead"></a>
 <h3>Using EasyInstall to download and install the latest in-development (SVN HEAD) version of mechanize</h3>
 
 <pre>easy_install "mechanize==dev"</pre>
@@ -270,13 +271,28 @@ accepts, use the <code>easy_install</code> distutils command instead of
 <a name="develop"></a>
 <h3>Using setup.py to install mechanize for development work on mechanize</h3>
 
+<p><strong>Note: this section is only useful for people who want to change
+mechanize</strong>: It is not useful to do this if all you want is to <a
+href="./#svnhead">keep up with SVN</a>.
+
 <p>For development of mechanize using EasyInstall (see the <a
 href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</a> docs
 for details), you have the option of using the <code>develop</code> distutils
 command.  This is particularly useful on Windows, since it functions rather
-like symlinks).  Get the mechanize source, then:
+like symlinks.  Get the mechanize source, then:
 
 <pre>python setup.py develop</pre>
+
+<p>Note that after every <code>svn update</code> on a
+<code>develop</code>-installed project, you should run <code>setup.py
+develop</code> to ensure that project's dependencies are updated if required.
+
+<p>Also note that, currently, if you also use the <code>develop</code>
+distutils command on the <em>dependencies</em> of mechanize to keep up with
+SVN, you must run <code>setup.py develop</code> for each dependency of
+mechanize before running it for mechanize itself.  As a result, in this case
+it's probably simplest to just set up your sys.path manually rather than using
+<code>setup.py develop</code>.
 
 <p>One convenient way to get the latest source is:
 
@@ -292,7 +308,7 @@ like symlinks).  Get the mechanize source, then:
 <p><em>Development release.</em>
 
 <ul>
-@{version = "0.0.11a"}
+@{version = "0.0.12a"}
 @{win_version = release.win_version(version)}
 <li><a href="./src/mechanize-@(version).tar.gz">mechanize-@(version).tar.gz</a>
 <li><a href="./src/mechanize-@(win_version).zip">mechanize-@(win_version).zip</a>
@@ -383,12 +399,14 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
   <p><a href="../ClientCookie/">ClientCookie</a>,
    <a href="../ClientForm/">ClientForm</a> and
    <a href="../pullparser/">pullparser</a>.
-  <p>The versions of those required modules are listed in the setup.py for
-     mechanize (included with the download).  The dependencies are
-     automatically fetched by <a
+  <p>The versions of those required modules are listed in the
+     <code>setup.py</code> for mechanize (included with the download).  The
+     dependencies are automatically fetched by <a
      href="http://peak.telecommunity.com/DevCenter/EasyInstall">EasyInstall</a>
      (or by <a href="./#source">downloading</a> a mechanize source package and
-     running <code>python setup.py install</code>).
+     running <code>python setup.py install</code>).  If you like you can fetch
+     and install them manually, instead &#8211; see the <code>INSTALL.txt</code>
+     file (included with the distribution).
   <li>Which license?
   <p>The <a href="http://www.opensource.org/licenses/bsd-license.php">
    BSD license</a> (included in distribution).
