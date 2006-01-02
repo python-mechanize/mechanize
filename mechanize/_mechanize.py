@@ -1,6 +1,6 @@
 """Stateful programmatic WWW navigation, after Perl's WWW::Mechanize.
 
-Copyright 2003-2005 John J. Lee <jjl@pobox.com>
+Copyright 2003-2006 John J. Lee <jjl@pobox.com>
 Copyright 2003 Andy Lester (original Perl code)
 
 This code is free software; you can redistribute it and/or modify it under
