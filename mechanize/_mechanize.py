@@ -144,7 +144,7 @@ class LinksFactory:
             # XXX use attr_encoding for ref'd doc if that doc does not provide
             #  one by other means
             #attr_encoding = attrs.get("charset")
-            url = attrs.get(self.urltags[tag])  # XXX is '' a valid URL?
+            url = attrs.get(self.urltags[tag])  # XXX is "" a valid URL?
             if not url:
                 # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
                 # For our purposes a link is something with a URL, so ignore
@@ -227,12 +227,12 @@ def pp_get_title(response, encoding):
 
 
 def unescape(data, entities, encoding):
-    if data is None or '&' not in data:
+    if data is None or "&" not in data:
         return data
 
     def replace_entities(match):
         ent = match.group()
-        if ent[1] == '#':
+        if ent[1] == "#":
             return unescape_charref(ent[2:-1], encoding)
 
         repl = entities.get(ent[1:-1])
@@ -247,11 +247,11 @@ def unescape(data, entities, encoding):
             repl = ent
         return repl
 
-    return re.sub(r'&#?\S+?;', replace_entities, data)
+    return re.sub(r"&#?\S+?;", replace_entities, data)
 
 def unescape_charref(data, encoding):
     name, base = data, 10
-    if name.startswith('x'):
+    if name.startswith("x"):
         name, base= name[1:], 16
     uc = unichr(int(name, base))
     try:
@@ -268,7 +268,7 @@ except ImportError:
 else:
     import sgmllib
     # monkeypatch to fix http://www.python.org/sf/803422 :-(
-    sgmllib.charref = re.compile('&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]')
+    sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
     class MechanizeBs(BeautifulSoup.BeautifulSoup):
         from htmlentitydefs import name2codepoint as _entitydefs
         def __init__(self, encoding, text=None, avoidParserProblems=True,
@@ -278,10 +278,10 @@ else:
                 self, text, avoidParserProblems, initialTextIsEverything)
 
         def handle_charref(self, ref):
-            t = unescape('&#%s;'%ref, self._entitydefs, self._encoding)
+            t = unescape("&#%s;"%ref, self._entitydefs, self._encoding)
             self.handle_data(t)
         def handle_entityref(self, ref):
-            t = unescape('&%s;'%ref, self._entitydefs, self._encoding)
+            t = unescape("&%s;"%ref, self._entitydefs, self._encoding)
             self.handle_data(t)
         def unescape_attrs(self, attrs):
             escaped_attrs = []
