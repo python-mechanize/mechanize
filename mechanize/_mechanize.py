@@ -33,12 +33,52 @@ class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
 class FormNotFoundError(Exception): pass
 
+## def chr_range(a, b):
+##     return "".join(map(chr, range(ord(a), ord(b)+1)))
+
+## RESERVED_URL_CHARS = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+##                       "abcdefghijklmnopqrstuvwxyz"
+##                       "-_.~")
+## UNRESERVED_URL_CHARS = "!*'();:@&=+$,/?%#[]"
+# we want (RESERVED_URL_CHARS+UNRESERVED_URL_CHARS), minus those
+# 'safe'-by-default characters that urllib.urlquote never quotes
+URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
+
 ## # XXXX miserable hack
 ## def urljoin(base, url):
 ##     if url.startswith("?"):
 ##         return base+url
 ##     else:
 ##         return urlparse.urljoin(base, url)
+
+# idea for this argument-processing trick is from Peter Otten
+class Args:
+    def __init__(self):
+        self._args = {}
+    def add_arg(self, name, value):
+        self._args[name] = value
+    def __getattr__(self, key):
+        try:
+            return self._args[key]
+        except KeyError:
+            return getattr(self.__class__, key)
+    def dictionary(self):
+        return self._args
+def get_args(d):
+    args = Args()
+    for n, v in d.iteritems():
+        args.add_arg(n, v)
+    return args
+
+def form_parser_args(
+    select_default=False,
+    form_parser_class=None,
+    request_class=None,
+    backwards_compat=False,
+    encoding="latin-1",  # deprecated
+    ):
+    return get_args(locals())
+
 
 class Link:
     def __init__(self, base_url, url, text, tag, attrs):
@@ -58,18 +98,14 @@ class Link:
         return "Link(base_url=%r, url=%r, text=%r, tag=%r, attrs=%r)" % (
             self.base_url, self.url, self.text, self.tag, self.attrs)
 
-## def chr_range(a, b):
-##     return "".join(map(chr, range(ord(a), ord(b)+1)))
+
+def cleanUrl(url, encoding):
+    # percent-encode illegal URL characters
+    if type(url) == type(""):
+        url = url.decode(encoding, "replace")
+    return urllib.quote(url.encode(encoding), URLQUOTE_SAFE_URL_CHARS)
 
 class LinksFactory:
-
-##     RESERVED_URL_CHARS = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-##                           "abcdefghijklmnopqrstuvwxyz"
-##                           "-_.~")
-##     UNRESERVED_URL_CHARS = "!*'();:@&=+$,/?%#[]"
-    # we want (RESERVED_URL_CHARS+UNRESERVED_URL_CHARS), minus those
-    # 'safe'-by-default characters that urllib.urlquote never quotes
-    URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
 
     def __init__(self,
                  link_parser_class=None,
@@ -108,18 +144,14 @@ class LinksFactory:
             # XXX use attr_encoding for ref'd doc if that doc does not provide
             #  one by other means
             #attr_encoding = attrs.get("charset")
-            url = attrs.get(self.urltags[tag])
+            url = attrs.get(self.urltags[tag])  # XXX is '' a valid URL?
             if not url:
                 # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
                 # For our purposes a link is something with a URL, so ignore
                 # this.
                 continue
 
-            # percent-encode illegal URL characters
-            if type(url) == type(""):
-                url = url.decode(encoding, "replace")
-            url = urllib.quote(url.encode(encoding),
-                               self.URLQUOTE_SAFE_URL_CHARS)
+            url = cleanUrl(url, encoding)
             if tag == "a":
                 if token.type != "startendtag":
                     # hmm, this'd break if end tag is missing
@@ -143,7 +175,7 @@ class FormsFactory:
                  form_parser_class=None,
                  request_class=None,
                  backwards_compat=False,
-                 encoding="latin-1",
+                 encoding="latin-1",  # deprecated
                  ):
         import ClientForm
         self.select_default = select_default
@@ -156,19 +188,23 @@ class FormsFactory:
         self.backwards_compat = backwards_compat
         self.encoding = encoding
 
-    def parse_response(self, response):
+    def parse_response(self, response, encoding=None):
         import ClientForm
+        if encoding is None:
+            encoding = self.encoding
         return ClientForm.ParseResponse(
             response,
             select_default=self.select_default,
             form_parser_class=self.form_parser_class,
             request_class=self.request_class,
             backwards_compat=self.backwards_compat,
-            encoding=self.encoding,
+            encoding=encoding,
             )
 
-    def parse_file(self, file_obj, base_url):
+    def parse_file(self, file_obj, base_url, encoding=None):
         import ClientForm
+        if encoding is None:
+            encoding = self.encoding
         return ClientForm.ParseFile(
             file_obj,
             base_url,
@@ -176,7 +212,7 @@ class FormsFactory:
             form_parser_class=self.form_parser_class,
             request_class=self.request_class,
             backwards_compat=self.backwards_compat,
-            encoding=self.encoding,
+            encoding=encoding,
             )
 
 def pp_get_title(response, encoding):
@@ -188,6 +224,202 @@ def pp_get_title(response, encoding):
         return None
     else:
         return p.get_text()
+
+
+def unescape(data, entities, encoding):
+    if data is None or '&' not in data:
+        return data
+
+    def replace_entities(match):
+        ent = match.group()
+        if ent[1] == '#':
+            return unescape_charref(ent[2:-1], encoding)
+
+        repl = entities.get(ent[1:-1])
+        if repl is not None:
+            repl = unichr(repl)
+            if type(repl) != type(""):
+                try:
+                    repl = repl.encode(encoding)
+                except UnicodeError:
+                    repl = ent
+        else:
+            repl = ent
+        return repl
+
+    return re.sub(r'&#?\S+?;', replace_entities, data)
+
+def unescape_charref(data, encoding):
+    name, base = data, 10
+    if name.startswith('x'):
+        name, base= name[1:], 16
+    uc = unichr(int(name, base))
+    try:
+        t = uc.encode(encoding)
+    except UnicodeError:
+        t = '&#%s;' % data
+    return t
+
+
+try:
+    import BeautifulSoup
+except ImportError:
+    pass
+else:
+    import sgmllib
+    # monkeypatch to fix http://www.python.org/sf/803422 :-(
+    sgmllib.charref = re.compile('&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]')
+    class MechanizeBs(BeautifulSoup.BeautifulSoup):
+        from htmlentitydefs import name2codepoint as _entitydefs
+        def __init__(self, encoding, text=None, avoidParserProblems=True,
+                     initialTextIsEverything=True):
+            self._encoding = encoding
+            BeautifulSoup.BeautifulSoup.__init__(
+                self, text, avoidParserProblems, initialTextIsEverything)
+
+        def handle_charref(self, ref):
+            t = unescape('&#%s;'%ref, self._entitydefs, self._encoding)
+            self.handle_data(t)
+        def handle_entityref(self, ref):
+            t = unescape('&%s;'%ref, self._entitydefs, self._encoding)
+            self.handle_data(t)
+        def unescape_attrs(self, attrs):
+            escaped_attrs = []
+            for key, val in attrs:
+                val = unescape(val, self._entitydefs, self._encoding)
+                escaped_attrs.append((key, val))
+            return escaped_attrs
+
+class RobustLinksFactory:
+
+    compress_re = re.compile(r"\s+")
+
+    def __init__(self,
+                 link_parser_class=None,
+                 link_class=Link,
+                 urltags=None,
+                 ):
+        import BeautifulSoup
+        if link_parser_class is None:
+            link_parser_class = MechanizeBs
+        self.link_parser_class = link_parser_class
+        self.link_class = link_class
+        if urltags is None:
+            urltags = {
+                "a": "href",
+                "area": "href",
+                "frame": "src",
+                "iframe": "src",
+                }
+        self.urltags = urltags
+
+    def links(self, fh, base_url, encoding=None):
+        import BeautifulSoup
+        data = fh.read()
+        bs = self.link_parser_class(encoding, data)
+        gen = bs.recursiveChildGenerator()
+        for ch in bs.recursiveChildGenerator():
+            if (isinstance(ch, BeautifulSoup.Tag) and
+                ch.name in self.urltags.keys()+["base"]):
+                link = ch
+                attrs = bs.unescape_attrs(link.attrs)
+                attrs_dict = dict(attrs)
+                if link.name == "base":
+                    base_url = attrs_dict.get("href")
+                    continue
+                url_attr = self.urltags[link.name]
+                url = attrs_dict.get(url_attr)
+                if not url:
+                    continue
+                if type(url) == type(""):
+                    url = url.decode(encoding, "replace")
+                url = urllib.quote(url.encode(encoding), URLQUOTE_SAFE_URL_CHARS)
+                text = link.firstText(lambda t: True)
+                if text is BeautifulSoup.Null:
+                    # follow pullparser's weird behaviour rigidly
+                    if link.name == "a":
+                        text = ""
+                    else:
+                        text = None
+                else:
+                    text = self.compress_re.sub(" ", text.strip())
+                yield Link(base_url, url, text, link.name, attrs)
+
+
+class RobustFormsFactory(FormsFactory):
+    def __init__(self, *args, **kwds):
+        import ClientForm
+        args = form_parser_args(*args, **kwds)
+        if args.form_parser_class is None:
+            args.form_parser_class = ClientForm.RobustFormParser
+        FormsFactory.__init__(self, **args.dictionary())
+
+def bs_get_title(response, encoding):
+    import BeautifulSoup
+    # XXXX encoding
+    bs = BeautifulSoup.BeautifulSoup(response.read())
+    title = bs.first("title")
+    if title == BeautifulSoup.Null:
+        return None
+    else:
+        return bs.firstText(lambda t: True)
+
+
+class Factory:
+    """Factory for forms, links, etc.
+
+    The interface of this class may expand in future.
+
+    """
+
+    def __init__(self, forms_factory, links_factory, get_title):
+        """
+
+        Pass keyword
+        arguments only.
+
+        """
+        self._forms_factory = forms_factory
+        self._links_factory = links_factory
+        self._get_title = get_title
+
+    def set_request_class(self, request_class):
+        """Set urllib2.Request class.
+
+        ClientForm.HTMLForm instances returned by .forms() will return
+        instances of this class when .click()ed.
+
+        """
+        self._forms_factory.request_class = request_class
+
+    def forms(self, response, encoding):
+        """Return iterable over ClientForm.HTMLForm-like objects."""
+        return self._forms_factory.parse_response(response, encoding)
+
+    def links(self, response, encoding):
+        """Return iterable over mechanize.Link-like objects."""
+        return self._links_factory.links(response, response.geturl(), encoding)
+
+    def title(self, response, encoding):
+        """Return page title."""
+        return self._get_title(response, encoding)
+
+class DefaultFactory(Factory):
+    def __init__(self):
+        Factory.__init__(self,
+                         forms_factory=FormsFactory(),
+                         links_factory=LinksFactory(),
+                         get_title=pp_get_title,
+                         )
+
+class RobustFactory(Factory):
+    def __init__(self):
+        Factory.__init__(self,
+                         forms_factory=RobustFormsFactory(),
+                         links_factory=RobustLinksFactory(),
+                         get_title=bs_get_title,
+                         )
+
 
 if sys.version_info[:2] >= (2, 4):
     from ClientCookie._Opener import OpenerMixin
@@ -213,26 +445,31 @@ class Browser(UserAgent, OpenerMixin):
     """
 
     def __init__(self, default_encoding="latin-1",
-                 forms_factory=None,
-                 links_factory=None,
-                 get_title=None,
+                 factory=None,
                  request_class=None,
+                 forms_factory=None,  # deprecated
+                 links_factory=None,  # deprecated
+                 get_title=None,  # deprecated
                  ):
         """
 
         Only named arguments should be passed to this constructor.
 
         default_encoding: See class docs.
+        request_class: Request class to use.  Defaults to ClientCookie.Request
+         by default for Pythons older than 2.4, urllib2.Request otherwise.
+        factory: mechanize.Factory
+
+        Note that the supplied factory's request_class is overridden by this
+        constructor, to ensure only one Request class is used.
+
+
+        Deprecated arguments:
+
         forms_factory: Object supporting the mechanize.FormsFactory interface.
         links_factory: Object supporting the mechanize.LinksFactory interface.
         get_title: callable taking a response object and an encoding string,
          and returning the page title.
-        request_class: Request class to use.  Defaults to ClientCookie.Request
-         by default for Pythons older than 2.4, urllib2.Request otherwise.
-
-        Note that the supplied forms_factory's request_class attribute is
-        assigned to by this constructor, to ensure only one Request class is
-        used.
 
         """
         self.default_encoding = default_encoding
@@ -240,25 +477,25 @@ class Browser(UserAgent, OpenerMixin):
         self.request = self._response = None
         self.form = None
         self._forms = None
-        self._title = None
         self._links = None
+        self._title = None
 
         if request_class is None:
             if not hasattr(urllib2.Request, "add_unredirected_header"):
                 request_class = ClientCookie.Request
             else:
                 request_class = urllib2.Request  # Python 2.4
+
+        if factory is None:
+            if (forms_factory is None and
+                links_factory is None and
+                get_title is None):
+                factory = DefaultFactory()
+            else:
+                factory = Factory(forms_factory, links_factory, get_title)
+        factory.set_request_class(request_class)
+        self._factory = factory
         self.request_class = request_class
-        if forms_factory is None:
-            forms_factory = FormsFactory()
-        self._forms_factory = forms_factory
-        forms_factory.request_class = request_class
-        if links_factory is None:
-            links_factory = LinksFactory()
-        self._links_factory = links_factory
-        if get_title is None:
-            get_title = pp_get_title
-        self._get_title = get_title
 
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
@@ -374,8 +611,8 @@ class Browser(UserAgent, OpenerMixin):
             raise BrowserStateError("not viewing HTML")
         base_url = self._response.geturl()
         self._response.seek(0)
-        return self._links_factory.links(
-            self._response, base_url, self._encoding(self._response))
+        return self._factory.links(
+            self._response, self._encoding(self._response))
 
     def forms(self):
         """Return iterable over forms.
@@ -389,7 +626,8 @@ class Browser(UserAgent, OpenerMixin):
             response = self._response
             response.seek(0)
             try:
-                self._forms = self._forms_factory.parse_response(response)
+                self._forms = self._factory.forms(
+                    response, self._encoding(self._response))
             finally:
                 response.seek(0)
         return self._forms
@@ -412,7 +650,7 @@ class Browser(UserAgent, OpenerMixin):
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         if self._title is None:
-            self._title = self._get_title(
+            self._title = self._factory.title(
                 self._response, self._encoding(self._response))
         return self._title
 
@@ -421,8 +659,9 @@ class Browser(UserAgent, OpenerMixin):
 
         This is a bit like giving a form the "input focus" in a browser.
 
-        If a form is selected, the object supports the HTMLForm interface, so
-        you can call methods like .set_value(), .set(), and .click().
+        If a form is selected, the Browser object supports the HTMLForm
+        interface, so you can call methods like .set_value(), .set(), and
+        .click().
 
         At least one of the name, predicate and nr arguments must be supplied.
         If no matching form is found, mechanize.FormNotFoundError is raised.

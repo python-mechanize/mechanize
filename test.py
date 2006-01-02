@@ -6,6 +6,7 @@ import StringIO, re, UserDict, urllib2
 import ClientCookie
 
 import mechanize
+FACTORY_CLASSES = [mechanize.DefaultFactory, mechanize.RobustFactory]
 
 class MockMethod:
     def __init__(self, meth_name, action, handle):
@@ -150,7 +151,7 @@ class BrowserTests(TestCase):
                        "UTF-8"),
 
                       ("Content-Type: text/html; charset=UTF-8\r\n"
-                       "Content-Type: text/html: charset=KOI8-R\r\n\r\n",
+                       "Content-Type: text/html; charset=KOI8-R\r\n\r\n",
                        "UTF-8"),
                       ]:
             msg = mimetools.Message(StringIO(s))
@@ -281,10 +282,13 @@ class BrowserTests(TestCase):
                           predicate=lambda x: True)
 
     def test_forms(self):
+        for factory_class in FACTORY_CLASSES:
+            self._test_forms(factory_class())
+    def _test_forms(self, factory):
         import mechanize
         url = "http://example.com"
 
-        b = TestBrowser()
+        b = TestBrowser(factory=factory)
         r = MockResponse(url,
 """<html>
 <head><title>Title</title></head>
@@ -328,11 +332,51 @@ class BrowserTests(TestCase):
         self.assertEqual(b.name, "form2")
         self.assertEqual(b.click_pairs(), [("two", "")])
 
+    def test_link_encoding(self):
+        for factory_class in FACTORY_CLASSES:
+            self._test_link_encoding(factory_class())
+    def _test_link_encoding(self, factory):
+        import urllib
+        import mechanize
+        from mechanize._mechanize import cleanUrl
+        url = "http://example.com/"
+        for encoding in ["UTF-8", "latin-1"]:
+            encoding_decl = "; charset=%s" % encoding
+            b = TestBrowser(factory=factory)
+            r = MockResponse(url, """\
+<a href="http://example.com/foo/bar&mdash;&#x2014;.html"
+   name="name0&mdash;&#x2014;">blah&mdash;&#x2014;</a>
+""", #"
+{"content-type": "text/html%s" % encoding_decl})
+            b.add_handler(MockHandler([("http_open", r)]))
+            r = b.open(url)
+
+            Link = mechanize.Link
+            try:
+                mdashx2 = u"\u2014".encode(encoding)*2
+            except UnicodeError:
+                mdashx2 = '&mdash;&#x2014;'
+            qmdashx2 = cleanUrl(mdashx2, encoding)
+            # base_url, url, text, tag, attrs
+            exp = Link(url, "http://example.com/foo/bar%s.html" % qmdashx2,
+                       "blah"+mdashx2, "a",
+                       [("href", "http://example.com/foo/bar%s.html" % mdashx2),
+                        ("name", "name0%s" % mdashx2)])
+            # nr
+            link = b.find_link()
+##             print
+##             print exp
+##             print link
+            self.assertEqual(link, exp)
+
     def test_links(self):
+        for factory_class in FACTORY_CLASSES:
+            self._test_links(factory_class())
+    def _test_links(self, factory):
         import mechanize
         url = "http://example.com/"
 
-        b = TestBrowser()
+        b = TestBrowser(factory=factory)
         r = MockResponse(url,
 """<html>
 <head><title>Title</title></head>

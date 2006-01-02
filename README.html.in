@@ -210,14 +210,16 @@ documentation if you need more detailed or up-to-date instructions.
 
 <p>The benefit of EasyInstall and the new <code>setuptools</code>-supporting
 <code>setup.py</code> is that they grab all dependencies for you (viz,
-ClientForm, ClientCookie, and pullparser).
+ClientForm, ClientCookie, and either pullparser or
+<a href="http://www.crummy.com/software/BeautifulSoup/">Beautiful Soup</a>).
 
 <p><strong>You need EasyInstall version 0.6a8 or newer.</strong>
 
 <h3>Using EasyInstall to download and install mechanize</h3>
 
 <ol>
-  <li><a href="http://peak.telecommunity.com/DevCenter/EasyInstall#installing-easy-install">Install easy_install</a> (you need version 0.6a8 or newer)
+  <li><a href="http://peak.telecommunity.com/DevCenter/EasyInstall#installing-easy-install">
+Install easy_install</a> (you need version 0.6a8 or newer)
   <li><code>easy_install mechanize</code>
 </ol>
 
