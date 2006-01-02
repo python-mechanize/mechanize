@@ -18,7 +18,7 @@ distribution).
 
 from __future__ import generators
 
-import urllib2, socket, urlparse, urllib, re, sys
+import urllib2, socket, urlparse, urllib, re, sys, htmlentitydefs
 from urlparse import urljoin
 
 import ClientCookie
@@ -254,11 +254,29 @@ def unescape_charref(data, encoding):
     if name.startswith("x"):
         name, base= name[1:], 16
     uc = unichr(int(name, base))
+    if encoding is None:
+        return uc
+    else:
+        try:
+            repl = uc.encode(encoding)
+        except UnicodeError:
+            repl = "&#%s;" % data
+        return repl
+
+def get_entitydefs():
     try:
-        t = uc.encode(encoding)
-    except UnicodeError:
-        t = '&#%s;' % data
-    return t
+        htmlentitydefs.name2codepoint
+    except AttributeError:
+        entitydefs = {}
+        for name, char in htmlentitydefs.entitydefs.items():
+            uc = char.decode("latin-1")
+            if uc.startswith("&#") and uc.endswith(";"):
+                uc = unescape_charref(uc[2:-1], None)
+            codepoint = ord(uc)
+            entitydefs[name] = codepoint
+    else:
+        entitydefs = htmlentitydefs.name2codepoint
+    return entitydefs
 
 
 try:
@@ -270,7 +288,7 @@ else:
     # monkeypatch to fix http://www.python.org/sf/803422 :-(
     sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
     class MechanizeBs(BeautifulSoup.BeautifulSoup):
-        from htmlentitydefs import name2codepoint as _entitydefs
+        _entitydefs = get_entitydefs()
         def __init__(self, encoding, text=None, avoidParserProblems=True,
                      initialTextIsEverything=True):
             self._encoding = encoding
