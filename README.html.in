@@ -396,7 +396,7 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
 <h2>FAQs</h2>
 <ul>
   <li>Which version of Python do I need?
-  <p>2.2 or above.
+  <p>2.2.1 or above.
   <li>What else do I need?
   <p><a href="../ClientCookie/">ClientCookie</a>,
    <a href="../ClientForm/">ClientForm</a> and
