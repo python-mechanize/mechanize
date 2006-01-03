@@ -18,7 +18,7 @@ distribution).
 
 from __future__ import generators
 
-import urllib2, socket, urlparse, urllib, re, sys, htmlentitydefs
+import urllib2, socket, urlparse, urllib, re, sys, htmlentitydefs, copy
 from urlparse import urljoin
 
 import ClientCookie
@@ -567,9 +567,7 @@ class Browser(UserAgent, OpenerMixin):
 
     def response(self):
         """Return last response (as return value of urllib2.urlopen())."""
-        # XXX This is currently broken: responses returned by this method
-        # all share the same seek position.
-        return self._response
+        return copy.copy(self._response)
 
     def geturl(self):
         """Get URL of current document."""

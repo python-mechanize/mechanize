@@ -153,15 +153,10 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 
 <h3>Specific to mechanize</h3>
 <ul>
-  <li>Fix <code>.response()</code> method (each call should return independently
-    .seek()-able pointer to same data).  Want to be able to clone responses,
-    too, so can process HTML.  Needs some careful thought: want to clean up the
-    multiple layers of response objects in ClientCookie and the standard
-    library (why hasn't Guido blessed interfaces yet??).
+  <li>History cache expiration / pluggable History implementations.
   <li>Perhaps extend <code>mechanize.UserAgent</code> with a way to give it
     handler instances to use.
   <li>Add more functional tests.
-  <li>History cache expiration / pluggable History implementations.
   <li>Add <code>Browser.load_response()</code> method.
   <li>Add <code>Browser.form_as_string()</code> and
     <code>Browser.__str__()</code> methods.
@@ -183,8 +178,9 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
   <li>Unicode support in general (not sure yet how/when/whether this will
     happen).
   <li>Provide per-connection access to timeouts (ClientCookie).
-  <li>Persistent connections / pipelining.
+  <li>Keep-alive / connection caching
   <li>Work on auth / proxies (yawn).
+  <li>Pipelining??
 </ul>
 
 
