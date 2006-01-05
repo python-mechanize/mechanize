@@ -563,7 +563,7 @@ class Browser(UserAgent, OpenerMixin):
         self._parse_html(self._response)
         if not success:
             raise error
-        return self._response
+        return copy.copy(self._response)
 
     def response(self):
         """Return last response (as return value of urllib2.urlopen())."""
