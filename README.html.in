@@ -153,6 +153,8 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 
 <h3>Specific to mechanize</h3>
 <ul>
+  <li>Add some means of processing response on ad-hoc basis <em>before</em> it
+    gets parsed!
   <li>History cache expiration / pluggable History implementations.
   <li>Perhaps extend <code>mechanize.UserAgent</code> with a way to give it
     handler instances to use.
