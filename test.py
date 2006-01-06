@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys, random
 from unittest import TestCase
 import StringIO, re, UserDict, urllib2
 
@@ -63,6 +64,7 @@ class MockResponse:
         self._f = StringIO.StringIO(data)
         if info is None: info = {}
         self._info = MockHeaders(info)
+        self.source = "%d%d" % (id(self), random.randint(0, sys.maxint))
     def info(self): return self._info
     def geturl(self): return self.url
     def read(self, size=-1): return self._f.read(size)
@@ -70,6 +72,12 @@ class MockResponse:
         assert whence == 0
         self._f.seek(0)
     def close(self): pass
+    def __getstate__(self):
+        state = self.__dict__
+        state['source'] = self.source
+        return state
+    def __setstate__(self, state):
+        self.__dict__ = state
 
 class MockHandler:
     processor_order = 500
@@ -195,21 +203,25 @@ class BrowserTests(TestCase):
 
     def test_history(self):
         import mechanize
+
+        def same_response(ra, rb):
+            return ra.source == rb.source
+
         b = TestBrowser()
         b.add_handler(MockHandler([("http_open", None)]))
         self.assertRaises(mechanize.BrowserStateError, b.back)
         r1 = b.open("http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back)
         r2 = b.open("http://example.com/foo")
-        self.assert_(b.back() is r1)
+        self.assert_(same_response(b.back(), r1))
         r3 = b.open("http://example.com/bar")
         r4 = b.open("http://example.com/spam")
-        self.assert_(b.back() is r3)
-        self.assert_(b.back() is r1)
+        self.assert_(same_response(b.back(), r3))
+        self.assert_(same_response(b.back(), r1))
         self.assertRaises(mechanize.BrowserStateError, b.back)
         # reloading does a real HTTP fetch rather than using history cache
         r5 = b.reload()
-        self.assert_(r5 is not r1)
+        self.assert_(not same_response(r5, r1))
         # .geturl() gets fed through to b.response
         self.assertEquals(b.geturl(), "http://example.com/")
         # can go back n times
@@ -217,15 +229,15 @@ class BrowserTests(TestCase):
         self.assertEquals(b.geturl(), "http://example.com/spam")
         r7 = b.open("/spam")
         self.assertEquals(b.geturl(), "http://example.com/spam")
-        self.assert_(b.back(2) is r5)
+        self.assert_(same_response(b.back(2), r5))
         self.assertEquals(b.geturl(), "http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
         b.close() # history should work after close
         r8 = b.open("http://example.com/")
         r9 = b.open("http://example.com/foo")
-        self.assert_(b.back() is r8)
+        self.assert_(same_response(b.back(), r8))
 
-        self.assert_(b.response() is r8)
+        self.assert_(same_response(b.response(), r8))
 
         # even if we get a URLError, history and .response() should still get updated
         error = urllib2.HTTPError("http://example.com/bad", 503, "Oops",
@@ -233,7 +245,7 @@ class BrowserTests(TestCase):
         b.add_handler(MockHandler([("https_open", error)]))
         self.assertRaises(urllib2.HTTPError, b.open, "https://example.com/")
         self.assertEqual(b.response().geturl(), error.geturl())
-        self.assert_(b.back() is r8)
+        self.assert_(same_response(b.back(), r8))
 
     def test_viewing_html(self):
         # XXX not testing multiple Content-Type headers
