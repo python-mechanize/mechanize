@@ -439,6 +439,28 @@ class RobustFactory(Factory):
                          )
 
 
+class History:
+    def __init__(self):
+        self._history = []  # LIFO
+    def add(self, request, response):
+        self._history.append((request, response))
+    def back(self, n, _response):
+        response = _response  # XXX move Browser._response into this class?
+        while n > 0 or response is None:
+            try:
+                request, response = self._history.pop()
+            except IndexError:
+                raise BrowserStateError("already at start of history")
+            n -= 1
+        return request, response
+    def clear(self):
+        del self._history[:]
+    def close(self):
+        for request, response in self._history:
+            response.close()
+        del self._history[:]
+
+
 if sys.version_info[:2] >= (2, 4):
     from ClientCookie._Opener import OpenerMixin
 else:
@@ -464,6 +486,7 @@ class Browser(UserAgent, OpenerMixin):
 
     def __init__(self, default_encoding="latin-1",
                  factory=None,
+                 history=None,
                  request_class=None,
                  forms_factory=None,  # deprecated
                  links_factory=None,  # deprecated
@@ -491,7 +514,9 @@ class Browser(UserAgent, OpenerMixin):
 
         """
         self.default_encoding = default_encoding
-        self._history = []  # LIFO
+        if history is None:
+            history = History()
+        self._history = history
         self.request = self._response = None
         self.form = None
         self._forms = None
@@ -521,7 +546,8 @@ class Browser(UserAgent, OpenerMixin):
         if self._response is not None:
             self._response.close()    
         UserAgent.close(self)
-        del self._history[:]
+        self._history.close()
+        self._history = None
         self._forms = self._title = self._links = None
         self.request = self._response = None
 
@@ -545,7 +571,7 @@ class Browser(UserAgent, OpenerMixin):
                 url = urlparse.urljoin(self._response.geturl(), url)
 
         if self.request is not None and update_history:
-            self._history.append((self.request, self._response))
+            self._history.add(self.request, self._response)
         self._response = None
         # we want self.request to be assigned even if UserAgent.open fails
         self.request = self._request(url, data)
@@ -591,14 +617,12 @@ class Browser(UserAgent, OpenerMixin):
         """
         if self._response is not None:
             self._response.close()
-        while n > 0 or self._response is None:
-            try:
-                self.request, self._response = self._history.pop()
-            except IndexError:
-                raise BrowserStateError("already at start of history")
-            n -= 1
+        self.request, self._response = self._history.back(n, self._response)
         self._parse_html(self._response)
         return self._response
+
+    def clear_history(self):
+        self._history.clear()
 
     def links(self, **kwds):
         """Return iterable over links (mechanize.Link objects)."""

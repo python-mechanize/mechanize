@@ -228,16 +228,12 @@ class BrowserTests(TestCase):
         r6 = b.open("spam")
         self.assertEquals(b.geturl(), "http://example.com/spam")
         r7 = b.open("/spam")
+        self.assert_(same_response(b.response(), r7))
         self.assertEquals(b.geturl(), "http://example.com/spam")
         self.assert_(same_response(b.back(2), r5))
         self.assertEquals(b.geturl(), "http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
-        b.close() # history should work after close
-        r8 = b.open("http://example.com/")
-        r9 = b.open("http://example.com/foo")
-        self.assert_(same_response(b.back(), r8))
-
-        self.assert_(same_response(b.response(), r8))
+        r8 = b.open("/spam")
 
         # even if we get a URLError, history and .response() should still get updated
         error = urllib2.HTTPError("http://example.com/bad", 503, "Oops",
@@ -246,6 +242,9 @@ class BrowserTests(TestCase):
         self.assertRaises(urllib2.HTTPError, b.open, "https://example.com/")
         self.assertEqual(b.response().geturl(), error.geturl())
         self.assert_(same_response(b.back(), r8))
+
+        b.close()
+        # XXX assert BrowserStateError
 
     def test_viewing_html(self):
         # XXX not testing multiple Content-Type headers
