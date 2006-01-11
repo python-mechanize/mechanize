@@ -580,10 +580,16 @@ class Browser(UserAgent, OpenerMixin):
         success = True
         try:
             self._response = UserAgent.open(self, self.request, data)
-        except (IOError, socket.error, OSError), error:
-            # yes, urllib2 really does raise all these :-((
+        except urllib2.URLError, error:
             success = False
             self._response = error
+        except (IOError, socket.error, OSError), error:
+            # Yes, urllib2 really does raise all these :-((
+            # I don't want to start fixing these here, though, since this is a
+            # subclass of OpenerDirector, and it would break old code.  Even in
+            # Python core, a fix would need some backwards-compat. hack to be
+            # acceptable.
+            raise
         if not hasattr(self._response, "seek"):
             self._response = response_seek_wrapper(self._response)
         self._parse_html(self._response)
