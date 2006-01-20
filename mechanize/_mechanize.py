@@ -546,8 +546,9 @@ class Browser(UserAgent, OpenerMixin):
         if self._response is not None:
             self._response.close()    
         UserAgent.close(self)
-        self._history.close()
-        self._history = None
+        if self._history is not None:
+            self._history.close()
+            self._history = None
         self._forms = self._title = self._links = None
         self.request = self._response = None
 
