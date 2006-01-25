@@ -642,7 +642,7 @@ class Browser(UserAgent, OpenerMixin):
                 self._links = list(self.get_links_iter())
             finally:
                 self._response.seek(0)
-            return self._links
+        return self._links
 
     def get_links_iter(self):
         """Return an iterator that provides links of the document.
