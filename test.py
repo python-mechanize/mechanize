@@ -64,7 +64,7 @@ class MockResponse:
         self._f = StringIO.StringIO(data)
         if info is None: info = {}
         self._info = MockHeaders(info)
-        self.source = "%d%d" % (id(self), random.randint(0, sys.maxint))
+        self.source = "%d%d" % (id(self), random.randint(0, sys.maxint-1))
     def info(self): return self._info
     def geturl(self): return self.url
     def read(self, size=-1): return self._f.read(size)
