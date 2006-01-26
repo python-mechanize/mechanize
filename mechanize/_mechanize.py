@@ -459,6 +459,8 @@ class History:
         for request, response in self._history:
             response.close()
         del self._history[:]
+    def __len__(self):
+        return len(self._history)
 
 
 if sys.version_info[:2] >= (2, 4):
