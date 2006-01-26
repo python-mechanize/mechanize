@@ -581,7 +581,7 @@ class Browser(UserAgent, OpenerMixin):
         success = True
         try:
             self._response = UserAgent.open(self, self.request, data)
-        except urllib2.URLError, error:
+        except urllib2.HTTPError, error:
             success = False
             self._response = error
         except (IOError, socket.error, OSError), error:
