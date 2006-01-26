@@ -591,13 +591,18 @@ class Browser(UserAgent, OpenerMixin):
         except urllib2.HTTPError, error:
             success = False
             self._response = error
-        except (IOError, socket.error, OSError), error:
-            # Yes, urllib2 really does raise all these :-((
-            # I don't want to start fixing these here, though, since this is a
-            # subclass of OpenerDirector, and it would break old code.  Even in
-            # Python core, a fix would need some backwards-compat. hack to be
-            # acceptable.
-            raise
+##         except (IOError, socket.error, OSError), error:
+##             # Yes, urllib2 really does raise all these :-((
+##             # See test_urllib2.py in stdlib and in ClientCookie for examples
+##             # of socket.gaierror and OSError, plus note that FTPHandler raises
+##             # IOError.
+##             # XXX I don't seem to have an example of exactly socket.error being
+##             #  raised, only socket.gaierror...
+##             # I don't want to start fixing these here, though, since this is a
+##             # subclass of OpenerDirector, and it would break old code.  Even in
+##             # Python core, a fix would need some backwards-compat. hack to be
+##             # acceptable.
+##             raise
         if not hasattr(self._response, "seek"):
             self._response = response_seek_wrapper(self._response)
         self._parse_html(self._response)
