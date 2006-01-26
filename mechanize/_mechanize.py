@@ -440,6 +440,11 @@ class RobustFactory(Factory):
 
 
 class History:
+    """
+
+    Though this will become public, the implied interface is not yet stable.
+
+    """
     def __init__(self):
         self._history = []  # LIFO
     def add(self, request, response):
