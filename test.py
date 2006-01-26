@@ -94,7 +94,7 @@ class MockHandler:
     def handle(self, fn_name, response, *args, **kwds):
         self.parent.calls.append((self, fn_name, args, kwds))
         if response:
-            if isinstance(response, urllib2.URLError):
+            if isinstance(response, urllib2.HTTPError):
                 raise response
             r = response
             r.seek(0)
@@ -235,7 +235,7 @@ class BrowserTests(TestCase):
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
         r8 = b.open("/spam")
 
-        # even if we get a URLError, history and .response() should still get updated
+        # even if we get a HTTPError, history and .response() should still get updated
         error = urllib2.HTTPError("http://example.com/bad", 503, "Oops",
                                   MockHeaders(), StringIO.StringIO())
         b.add_handler(MockHandler([("https_open", error)]))
