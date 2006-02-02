@@ -90,7 +90,7 @@ class Link:
             self.base_url, self.url, self.text, self.tag, self.attrs)
 
 
-def cleanUrl(url, encoding):
+def clean_url(url, encoding):
     # percent-encode illegal URL characters
     if type(url) == type(""):
         url = url.decode(encoding, "replace")
@@ -142,7 +142,7 @@ class LinksFactory:
                 # this.
                 continue
 
-            url = cleanUrl(url, encoding)
+            url = clean_url(url, encoding)
             if tag == "a":
                 if token.type != "startendtag":
                     # hmm, this'd break if end tag is missing
@@ -340,9 +340,7 @@ class RobustLinksFactory:
                 url = attrs_dict.get(url_attr)
                 if not url:
                     continue
-                if type(url) == type(""):
-                    url = url.decode(encoding, "replace")
-                url = urllib.quote(url.encode(encoding), URLQUOTE_SAFE_URL_CHARS)
+                url = clean_url(url)
                 text = link.firstText(lambda t: True)
                 if text is BeautifulSoup.Null:
                     # follow pullparser's weird behaviour rigidly
