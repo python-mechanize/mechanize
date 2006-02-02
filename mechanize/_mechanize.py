@@ -53,10 +53,8 @@ URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
 
 # idea for this argument-processing trick is from Peter Otten
 class Args:
-    def __init__(self):
-        self._args = {}
-    def add_arg(self, name, value):
-        self._args[name] = value
+    def __init__(self, args_map):
+        self._args = dict(args_map)
     def __getattr__(self, key):
         try:
             return self._args[key]
@@ -64,11 +62,6 @@ class Args:
             return getattr(self.__class__, key)
     def dictionary(self):
         return self._args
-def get_args(d):
-    args = Args()
-    for n, v in d.iteritems():
-        args.add_arg(n, v)
-    return args
 
 def form_parser_args(
     select_default=False,
@@ -77,7 +70,7 @@ def form_parser_args(
     backwards_compat=False,
     encoding="latin-1",  # deprecated
     ):
-    return get_args(locals())
+    return Args(locals())
 
 
 class Link:
