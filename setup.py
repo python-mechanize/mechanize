@@ -40,9 +40,9 @@ import re
 ## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
 VERSION = "0.0.12a"
 INSTALL_REQUIRES = [
-    "ClientForm>=0.2.2, ==dev",
-    "ClientCookie>=1.1.1, ==dev",
-    "pullparser>=0.0.8, ==dev"]
+    "ClientForm>=0.2.2.dev_r22910, ==dev",
+    "ClientCookie>=1.2.0.dev_r22696, ==dev",
+    "pullparser>=0.0.8.dev_r21645, ==dev"]
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"
