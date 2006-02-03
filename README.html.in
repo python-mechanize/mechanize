@@ -151,6 +151,7 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 
 <h3>Specific to mechanize</h3>
 <ul>
+  <li>Add basic proxy support.
   <li>Add some means of processing response on ad-hoc basis <em>before</em> it
     gets parsed!
   <li>History cache expiration / pluggable History implementations.
