@@ -384,7 +384,7 @@ class BrowserTests(TestCase):
     def _test_link_encoding(self, factory):
         import urllib
         import mechanize
-        from mechanize._mechanize import cleanUrl
+        from mechanize._mechanize import clean_url
         url = "http://example.com/"
         for encoding in ["UTF-8", "latin-1"]:
             encoding_decl = "; charset=%s" % encoding
@@ -402,7 +402,7 @@ class BrowserTests(TestCase):
                 mdashx2 = u"\u2014".encode(encoding)*2
             except UnicodeError:
                 mdashx2 = '&mdash;&#x2014;'
-            qmdashx2 = cleanUrl(mdashx2, encoding)
+            qmdashx2 = clean_url(mdashx2, encoding)
             # base_url, url, text, tag, attrs
             exp = Link(url, "http://example.com/foo/bar%s.html" % qmdashx2,
                        "blah"+mdashx2, "a",

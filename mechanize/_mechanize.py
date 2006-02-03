@@ -340,7 +340,7 @@ class RobustLinksFactory:
                 url = attrs_dict.get(url_attr)
                 if not url:
                     continue
-                url = clean_url(url)
+                url = clean_url(url, encoding)
                 text = link.firstText(lambda t: True)
                 if text is BeautifulSoup.Null:
                     # follow pullparser's weird behaviour rigidly
