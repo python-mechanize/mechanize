@@ -78,10 +78,7 @@ Topic :: Text Processing :: Markup :: XML
 #-------------------------------------------------------
 # the rest is constant for most of my released packages:
 
-import ez_setup
-ez_setup.use_setuptools()
-
-import setuptools
+import sys
 
 if PACKAGE:
     packages, py_modules = [NAME], None
@@ -90,7 +87,33 @@ else:
 
 doclines = __doc__.split("\n")
 
-setuptools.setup(
+if not hasattr(sys, "version_info") or sys.version_info < (2, 3):
+    from distutils.core import setup
+    _setup = setup
+    def setup(**kwargs):
+        for key in [
+            # distutils >= Python 2.3 args
+            # XXX probably download_url came in earlier than 2.3
+            "classifiers", "download_url",
+            # setuptools args
+            "install_requires", "zip_safe", "test_suite",
+            ]:
+            if kwargs.has_key(key):
+                del kwargs[key]
+        # Only want packages keyword if this is a package,
+        # only want py_modules keyword if this is a single-file module,
+        # so get rid of packages or py_modules keyword as appropriate.
+        if kwargs["packages"] is None:
+            del kwargs["packages"]
+        else:
+            del kwargs["py_modules"]
+        apply(_setup, (), kwargs)
+else:
+    import ez_setup
+    ez_setup.use_setuptools()
+    from setuptools import setup
+
+setup(
     name = NAME,
     version = VERSION,
     license = LICENSE,
