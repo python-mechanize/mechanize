@@ -595,11 +595,13 @@ class Browser(UserAgent, OpenerMixin):
         self._parse_html(self._response)
         if not success:
             raise error
-        return copy.copy(self._response)
+        #return copy.copy(self._response)
+        return self._response
 
     def response(self):
         """Return last response (as return value of urllib2.urlopen())."""
-        return copy.copy(self._response)
+        #return copy.copy(self._response)
+        return self._response
 
     def geturl(self):
         """Get URL of current document."""
