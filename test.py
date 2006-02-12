@@ -554,6 +554,36 @@ class BrowserTests(TestCase):
             self.assertEqual([link.absolute_url for link in b.links()], urls)
 
 
+class ResponseTests(TestCase):
+    def test_set_response(self):
+        from ClientCookie import response_seek_wrapper
+
+        br = TestBrowser()
+        url = "http://example.com/"
+        html = """<html><body><a href="spam">click me</a></body></html>"""
+        headers = {"content-type": "text/html"}
+        r = response_seek_wrapper(MockResponse(url, html, headers))
+        br.add_handler(MockHandler([("http_open", r)]))
+
+        r = br.open(url)
+        self.assertEqual(r.read(), html)
+        r.seek(0)
+        self.assertEqual(br.links()[0].url, "spam")
+
+        newhtml = """<html><body><a href="eggs">click me</a></body></html>"""
+
+        r.set_data(newhtml)
+        self.assertEqual(r.read(), newhtml)
+        self.assertEqual(br.response().read(), html)
+        br.response().set_data(newhtml)
+        self.assertEqual(br.response().read(), html)
+        self.assertEqual(br.links()[0].url, "spam")
+
+        br.set_response(r)
+        self.assertEqual(br.response().read(), newhtml)
+        self.assertEqual(br.links()[0].url, "eggs")
+
+
 class UserAgentTests(TestCase):
     def test_set_handled_schemes(self):
         import mechanize

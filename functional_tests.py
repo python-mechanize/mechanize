@@ -26,6 +26,14 @@ class SimpleTests(TestCase):
         self.browser.open('/mechanize/')
         self.assertEqual(self.browser.title(), 'mechanize')
 
+    def test_reread(self):
+        r = self.browser.open('http://wwwsearch.sourceforge.net/')
+        data = r.read()
+        r.close()
+        r.seek(0)
+        self.assertEqual(r.read(), data)
+        self.assertEqual(self.browser.response().read(), data)
+
     def test_error_recovery(self):
         self.assertRaises(OSError, self.browser.open,
                           'file:///c|thisnoexistyiufheiurgbueirgbue')
@@ -43,6 +51,34 @@ class SimpleTests(TestCase):
 
 
 class ResponseTests(TestCase):
+
+    def test_seek(self):
+        from mechanize import Browser
+        br = Browser()
+        r = br.open("http://wwwsearch.sourceforge.net/")
+        html = r.read()
+        r.seek(0)
+        self.assertEqual(r.read(), html)
+
+    def test_set_response(self):
+        from mechanize import Browser
+        br = Browser()
+        r = br.open("http://wwwsearch.sourceforge.net/")
+        html = r.read()
+        self.assertEqual(br.title(), "Python bits")
+
+        newhtml = """<html><body><a href="spam">click me</a></body></html>"""
+
+        r.set_data(newhtml)
+        self.assertEqual(r.read(), newhtml)
+        self.assertEqual(br.response().read(), html)
+        br.response().set_data(newhtml)
+        self.assertEqual(br.response().read(), html)
+        self.assertEqual(br.links()[0].url, 'http://sourceforge.net')
+
+        br.set_response(r)
+        self.assertEqual(br.response().read(), newhtml)
+        self.assertEqual(br.links()[0].url, "spam")
 
     def test_close_pickle_load(self):
         print ("Test test_close_pickle_load is expected to fail unless Python "

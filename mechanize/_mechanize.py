@@ -470,7 +470,7 @@ class Browser(UserAgent, OpenerMixin):
 
     Public attributes:
 
-    request: last request (ClientCookie.Request or urllib2.Request)
+    request: current request (ClientCookie.Request or urllib2.Request)
     form: currently selected form (see .select_form())
     default_encoding: character encoding used if no encoding is found in the
      response (you should turn on HTTP-EQUIV handling if you want the best
@@ -595,13 +595,23 @@ class Browser(UserAgent, OpenerMixin):
         self._parse_html(self._response)
         if not success:
             raise error
-        #return copy.copy(self._response)
-        return self._response
+        return copy.copy(self._response)
 
     def response(self):
-        """Return last response (as return value of urllib2.urlopen())."""
-        #return copy.copy(self._response)
-        return self._response
+        """Return a copy of the current response.
+
+        The returned object has the same interface as the object returned by
+        .open() (or urllib2.urlopen()).
+
+        """
+        return copy.copy(self._response)
+
+    def set_response(self, response):
+        """Replace current response with response."""
+        if not hasattr(response, "seek"):
+            response = response_seek_wrapper(self._response)
+        self._response = response
+        self._parse_html(self._response)
 
     def geturl(self):
         """Get URL of current document."""
