@@ -16,22 +16,8 @@ import urllib2, httplib
 import ClientCookie
 if sys.version_info[:2] >= (2, 4):
     from urllib2 import OpenerDirector, BaseHandler, HTTPErrorProcessor
-    if sys.version_info[:2] == (2, 4):
-        # Workaround for RFC 2109 bug http://python.org/sf/1157027 (at least if
-        # you don't pass your own CookieJar in: if that's the case, you should
-        # pass rfc2965=True to the DefaultCookiePolicy constructor yourself, or
-        # set the corresponding attribute).
-        import cookielib
-        class SaneHTTPCookieProcessor(urllib2.HTTPCookieProcessor):
-            def __init__(self, cookiejar=None):
-                if cookiejar is None:
-                    cookiejar = cookielib.CookieJar(
-                        cookielib.DefaultCookiePolicy(rfc2965=True))
-                self.cookiejar = cookiejar
-        HTTPCookieProcessor = SaneHTTPCookieProcessor
 else:
-    from ClientCookie import OpenerDirector, BaseHandler, HTTPErrorProcessor, \
-         HTTPCookieProcessor
+    from ClientCookie import OpenerDirector, BaseHandler, HTTPErrorProcessor
 
 class HTTPRefererProcessor(BaseHandler):
     def http_request(self, request):
@@ -85,7 +71,7 @@ class UserAgent(OpenerDirector):
         "_authen": urllib2.HTTPBasicAuthHandler,
         # XXX rest of authentication stuff
         "_redirect": ClientCookie.HTTPRedirectHandler,
-        "_cookies": HTTPCookieProcessor,
+        "_cookies": ClientCookie.HTTPCookieProcessor,
         "_refresh": ClientCookie.HTTPRefreshProcessor,
         "_referer": HTTPRefererProcessor,  # from this module, note
         "_equiv": ClientCookie.HTTPEquivProcessor,
