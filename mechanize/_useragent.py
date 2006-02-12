@@ -15,31 +15,23 @@ import sys
 import urllib2, httplib
 import ClientCookie
 if sys.version_info[:2] >= (2, 4):
-    import cookielib
-    from urllib2 import OpenerDirector, BaseHandler, \
-         HTTPHandler, HTTPErrorProcessor
-    try:
-        from urllib2 import HTTPSHandler
-    except ImportError:
-        pass
-    class SaneHTTPCookieProcessor(ClientCookie.HTTPCookieProcessor):
+    from urllib2 import OpenerDirector, BaseHandler, HTTPErrorProcessor
+    if sys.version_info[:2] == (2, 4):
         # Workaround for RFC 2109 bug http://python.org/sf/1157027 (at least if
         # you don't pass your own CookieJar in: if that's the case, you should
         # pass rfc2965=True to the DefaultCookiePolicy constructor yourself, or
         # set the corresponding attribute).
-        def __init__(self, cookiejar=None):
-            if cookiejar is None:
-                cookiejar = cookielib.CookieJar(
-                    cookielib.DefaultCookiePolicy(rfc2965=True))
-            self.cookiejar = cookiejar
-    HTTPCookieProcessor = SaneHTTPCookieProcessor
+        import cookielib
+        class SaneHTTPCookieProcessor(urllib2.HTTPCookieProcessor):
+            def __init__(self, cookiejar=None):
+                if cookiejar is None:
+                    cookiejar = cookielib.CookieJar(
+                        cookielib.DefaultCookiePolicy(rfc2965=True))
+                self.cookiejar = cookiejar
+        HTTPCookieProcessor = SaneHTTPCookieProcessor
 else:
-    from ClientCookie import OpenerDirector, BaseHandler, \
-         HTTPHandler, HTTPErrorProcessor, HTTPCookieProcessor
-    try:
-        from ClientCookie import HTTPSHandler
-    except ImportError:
-        pass
+    from ClientCookie import OpenerDirector, BaseHandler, HTTPErrorProcessor, \
+         HTTPCookieProcessor
 
 class HTTPRefererProcessor(BaseHandler):
     def http_request(self, request):
@@ -76,7 +68,7 @@ class UserAgent(OpenerDirector):
 
     handler_classes = {
         # scheme handlers
-        "http": HTTPHandler,
+        "http": ClientCookie.HTTPHandler,
         "ftp": urllib2.FTPHandler,  # CacheFTPHandler is buggy in 2.3
         "file": urllib2.FileHandler,
         "gopher": urllib2.GopherHandler,
@@ -112,7 +104,7 @@ class UserAgent(OpenerDirector):
     default_features = ["_authen", "_redirect", "_cookies", "_refresh",
                         "_referer", "_equiv", "_seek", "_proxy"]
     if hasattr(httplib, 'HTTPS'):
-        handler_classes["https"] = HTTPSHandler
+        handler_classes["https"] = ClientCookie.HTTPSHandler
         default_schemes.append("https")
     if hasattr(ClientCookie, "HTTPRobotRulesProcessor"):
         handler_classes["_robots"] = ClientCookie.HTTPRobotRulesProcessor
