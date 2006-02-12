@@ -369,7 +369,7 @@ def bs_get_title(response, encoding):
     if title == BeautifulSoup.Null:
         return None
     else:
-        return bs.firstText(lambda t: True)
+        return title.firstText(lambda t: True)
 
 
 class Factory:
