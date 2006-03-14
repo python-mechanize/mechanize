@@ -199,7 +199,7 @@ class BrowserTests(TestCase):
                       ]:
             msg = mimetools.Message(StringIO(s))
             r = urllib.addinfourl(StringIO(""), msg, "http://www.example.com/")
-            self.assertEqual(b._encoding(r), ct)
+            self.assertEqual(b.encoding(r), ct)
 
     def test_history(self):
         import mechanize

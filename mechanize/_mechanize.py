@@ -670,7 +670,7 @@ class Browser(UserAgent, OpenerMixin):
         base_url = self._response.geturl()
         self._response.seek(0)
         return self._factory.links(
-            self._response, self._encoding(self._response))
+            self._response, self.encoding(self._response))
 
     def forms(self):
         """Return iterable over forms.
@@ -685,7 +685,7 @@ class Browser(UserAgent, OpenerMixin):
             response.seek(0)
             try:
                 self._forms = self._factory.forms(
-                    response, self._encoding(self._response))
+                    response, self.encoding(self._response))
             finally:
                 response.seek(0)
         return self._forms
@@ -698,6 +698,16 @@ class Browser(UserAgent, OpenerMixin):
         url = self._response.geturl()
         return is_html(ct_hdrs, url)
 
+    def encoding(self, response):
+        # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
+        # headers may be in the response.  HTTP-EQUIV headers come last,
+        # so try in order from first to last.
+        for ct in response.info().getheaders("content-type"):
+            for k, v in split_header_words([ct])[0]:
+                if k == "charset":
+                    return v
+        return self.default_encoding
+
     def title(self):
         """Return title, or None if there is no title element in the document.
 
@@ -709,7 +719,7 @@ class Browser(UserAgent, OpenerMixin):
             raise BrowserStateError("not viewing HTML")
         if self._title is None:
             self._title = self._factory.title(
-                self._response, self._encoding(self._response))
+                self._response, self.encoding(self._response))
         return self._title
 
     def select_form(self, name=None, predicate=None, nr=None):
@@ -945,16 +955,6 @@ class Browser(UserAgent, OpenerMixin):
         if not found_links:
             raise LinkNotFoundError()
         return found_links
-
-    def _encoding(self, response):
-        # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
-        # headers may be in the response.  HTTP-EQUIV headers come last,
-        # so try in order from first to last.
-        for ct in response.info().getheaders("content-type"):
-            for k, v in split_header_words([ct])[0]:
-                if k == "charset":
-                    return v
-        return self.default_encoding
 
     def _parse_html(self, response):
         # this is now lazy, so we just reset the various attributes that
