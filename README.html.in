@@ -151,23 +151,30 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 
 <h3>Specific to mechanize</h3>
 <ul>
-  <li>Add basic proxy support.
-  <li>Add some means of processing response on ad-hoc basis <em>before</em> it
-    gets parsed!
-  <li>History cache expiration / pluggable History implementations.
-  <li>Perhaps extend <code>mechanize.UserAgent</code> with a way to give it
-    handler instances to use.
-  <li>Add more functional tests.
-  <li>Add <code>Browser.load_response()</code> method.
+  <li>Disable XML support (with switch to turn it back on) unless and
+    until I get it right.
+  <li>Support Mark Pilgrim's universal encoding detector.
+  <li>Add another History implementation or two and finalise interface.
+  <li>History cache expiration.
+  <li>Investigate possible leak (see Balazs Ree's list posting).
   <li>Add <code>Browser.form_as_string()</code> and
     <code>Browser.__str__()</code> methods.
-  <li>Would be nice to add an implementation of ClientForm interface built on
-    something like BeautifulSoup, which would allow easy &quot;escape&quot; to
-    the lower-level BeautifulSoup API in cases where the higher-level
-    <code>mechanize.Browser</code> / ClientForm API is not sufficient.  (DOMForm
-    is similar: implementation of ClientForm interface on top of HTML DOM, but
-    it's buggy and unmaintained, and the DOM is not as nice an API as
-    BeautifulSoup).
+  <li>Test BeautifulSoup support better / fix encoding issue.
+  <li>Add two-way links between BeautifulSoup & ClientForm object models.
+  <li>Add basic proxy support.  I hope somebody else does this!
+</ul>
+
+<h3>mechanize documentation</h3>
+<ul>
+  <li>Add docs re auth!  And perhaps simpler API...
+  <li>Document means of processing response on ad-hoc basis with
+    .set_response() - e.g. to fix bad encoding in Content-type header or
+    clean up bad HTML.
+  <li>Add example to documentation showing can pass None as handle arg
+    to <code>mechanize.UserAgent</code> methods and then .add_handler()
+    if need to give it a specific handler instance to use for one of the
+    things it UserAgent already handles.
+  <li>Add more functional tests.
 </ul>
 
 <h3>Basic protocols / standards support</h3>
