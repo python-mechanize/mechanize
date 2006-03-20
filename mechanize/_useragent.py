@@ -211,7 +211,7 @@ class UserAgent(OpenerDirector):
         This includes refreshes, which show up as faked 302 redirections at the
         moment.
 
-        Logs is performed using module logging.  The logger name is
+        Logging is performed using module logging.  The logger name is
         "ClientCookie.http_redirects".  To actually print some debug output,
         eg:
 
