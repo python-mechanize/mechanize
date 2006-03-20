@@ -238,7 +238,7 @@ def unescape(data, entities, encoding):
             repl = ent
         return repl
 
-    return re.sub(r"&#?\S+?;", replace_entities, data)
+    return re.sub(r"&#?[A-Za-z0-9]+?;", replace_entities, data)
 
 def unescape_charref(data, encoding):
     name, base = data, 10

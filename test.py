@@ -7,7 +7,14 @@ import StringIO, re, UserDict, urllib2
 import ClientCookie
 
 import mechanize
-FACTORY_CLASSES = [mechanize.DefaultFactory, mechanize.RobustFactory]
+FACTORY_CLASSES = [mechanize.DefaultFactory]
+try:
+    import BeautifulSoup
+except ImportError:
+    import warnings
+    warnings.warn("skipping tests involving BeautifulSoup")
+else:
+    FACTORY_CLASSES.append(mechanize.RobustFactory)
 
 
 class UnescapeTests(TestCase):
@@ -37,11 +44,19 @@ class UnescapeTests(TestCase):
             self.assertEqual(ed[name], codepoint)
 
     def test_unescape(self):
+        import htmlentitydefs
         from mechanize._mechanize import unescape, get_entitydefs
         data = "&amp; &lt; &mdash; &#8212; &#x2014;"
         mdash_utf8 = u"\u2014".encode("utf-8")
         ue = unescape(data, get_entitydefs(), "utf-8")
         self.assertEqual("& < %s %s %s" % ((mdash_utf8,)*3), ue)
+
+        for text, expect in [
+            ("&a&amp;", "&a&"),
+            ("a&amp;", "a&"),
+            ]:
+            got = unescape(text, get_entitydefs(), "latin-1")
+            self.assertEqual(got, expect)
 
 
 class MockMethod:
