@@ -151,6 +151,9 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 
 <h3>Specific to mechanize</h3>
 <ul>
+  <li>Apply Titus' patch to move stuff into separate file and change
+    Factory interface.
+  <li>Kill of <code>.get_links_iter()</code>.
   <li>Disable XML support (with switch to turn it back on) unless and
     until I get it right.
   <li>Support Mark Pilgrim's universal encoding detector.
