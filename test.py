@@ -266,41 +266,49 @@ class BrowserTests(TestCase):
         import mechanize
         url = "http://example.com/"
 
-        for ct, isHtml in [
-            (None, False),
-            ("text/plain", False),
-            ("text/html", True),
-            ("text/xhtml", True),
-            ("text/xml", True),
-            ("application/xml", True),
-            ("application/xhtml+xml", True),
-            ("text/html; charset=blah", True),
-            (" text/xml ; charset=ook ", True),
-            ]:
-            b = TestBrowser()
-            hdrs = {}
-            if ct is not None:
-                hdrs["Content-Type"] = ct
-            b.add_handler(MockHandler([("http_open",
-                                        MockResponse(url, "", hdrs))]))
-            r = b.open(url)
-            self.assertEqual(b.viewing_html(), isHtml)
+        for allow_xhtml in False, True:
+            for ct, expect in [
+                (None, False),
+                ("text/plain", False),
+                ("text/html", True),
 
-        for ext, isHtml in [
-            (".htm", True),
-            (".html", True),
-            (".xhtml", True),
-            (".html?foo=bar&a=b;whelk#kool", True),
-            (".txt", False),
-            (".xml", False),  # XXX is this sensible?
-            ("", False),
-            ]:
-            b = TestBrowser()
-            url = "http://example.com/foo"+ext
-            b.add_handler(MockHandler(
-                [("http_open", MockResponse(url, "", {}))]))
-            r = b.open(url)
-            self.assertEqual(b.viewing_html(), isHtml)
+                # don't try to handle XML until we can do it right!
+                ("text/xhtml", allow_xhtml),
+                ("text/xml", allow_xhtml),
+                ("application/xml", allow_xhtml),
+                ("application/xhtml+xml", allow_xhtml),
+
+                ("text/html; charset=blah", True),
+                (" text/html ; charset=ook ", True),
+                ]:
+                b = TestBrowser(i_want_broken_xhtml_support=allow_xhtml)
+                hdrs = {}
+                if ct is not None:
+                    hdrs["Content-Type"] = ct
+                b.add_handler(MockHandler([("http_open",
+                                            MockResponse(url, "", hdrs))]))
+                r = b.open(url)
+                self.assertEqual(b.viewing_html(), expect)
+
+        for allow_xhtml in False, True:
+            for ext, expect in [
+                (".htm", True),
+                (".html", True),
+
+                # don't try to handle XML until we can do it right!
+                (".xhtml", allow_xhtml),
+
+                (".html?foo=bar&a=b;whelk#kool", True),
+                (".txt", False),
+                (".xml", False),
+                ("", False),
+                ]:
+                b = TestBrowser(i_want_broken_xhtml_support=allow_xhtml)
+                url = "http://example.com/foo"+ext
+                b.add_handler(MockHandler(
+                    [("http_open", MockResponse(url, "", {}))]))
+                r = b.open(url)
+                self.assertEqual(b.viewing_html(), expect)
 
     def test_empty(self):
         import mechanize

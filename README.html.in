@@ -153,10 +153,8 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 <ul>
   <li>Apply Titus' patch to move stuff into separate file and change
     Factory interface.
-  <li>Kill of <code>.get_links_iter()</code>.
-  <li>Disable XML support (with switch to turn it back on) unless and
-    until I get it right.
-  <li>Support Mark Pilgrim's universal encoding detector.
+  <li>Kill off <code>.get_links_iter()</code>.
+  <li>Support Mark Pilgrim's universal encoding detector?
   <li>Add another History implementation or two and finalise interface.
   <li>History cache expiration.
   <li>Investigate possible leak (see Balazs Ree's list posting).

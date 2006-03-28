@@ -482,6 +482,7 @@ class Browser(UserAgent, OpenerMixin):
                  factory=None,
                  history=None,
                  request_class=None,
+                 i_want_broken_xhtml_support=False,
                  forms_factory=None,  # deprecated
                  links_factory=None,  # deprecated
                  get_title=None,  # deprecated
@@ -508,6 +509,7 @@ class Browser(UserAgent, OpenerMixin):
 
         """
         self.default_encoding = default_encoding
+        self._allow_xhtml = i_want_broken_xhtml_support
         if history is None:
             history = History()
         self._history = history
@@ -696,7 +698,7 @@ class Browser(UserAgent, OpenerMixin):
             raise BrowserStateError("not viewing any document")
         ct_hdrs = self._response.info().getheaders("content-type")
         url = self._response.geturl()
-        return is_html(ct_hdrs, url)
+        return is_html(ct_hdrs, url, self._allow_xhtml)
 
     def encoding(self, response):
         # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
