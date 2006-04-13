@@ -118,12 +118,20 @@ br.set_cookiejar()
 # default: no need to do this unless you have some reason to use a
 # particular cookiejar)
 br.set_cookiejar(cj)
-# Print information about HTTP redirects and Refreshes.
+# Log information about HTTP redirects and Refreshes.
 br.set_debug_redirects(True)
-# Print HTTP response bodies (ie. the HTML, most of the time).
+# Log HTTP response bodies (ie. the HTML, most of the time).
 br.set_debug_responses(True)
 # Print HTTP headers.
 br.set_debug_http(True)
+
+# To make sure you're seeing all debug output:
+for logger in [
+    logging.getLogger("ClientCookie"),
+    logging.getLogger("cookielib"),
+    ]:
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.INFO)
 """)}
 
 
