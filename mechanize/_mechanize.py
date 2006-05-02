@@ -27,7 +27,7 @@ import ClientCookie
 from _useragent import UserAgent
 from _html import DefaultFactory
 
-__version__ = (0, 0, 12, "a", None)  # 0.0.12a
+__version__ = (0, 1, 0, "a", None)  # 0.1.0a
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
