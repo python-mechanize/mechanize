@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import generators
+
 import sys, random
 from unittest import TestCase
 import StringIO, re, UserDict, urllib2
@@ -15,6 +17,144 @@ except ImportError:
     warnings.warn("skipping tests involving BeautifulSoup")
 else:
     FACTORY_CLASSES.append(mechanize.RobustFactory)
+
+
+def test_password_manager(self):
+    """
+    >>> mgr = mechanize.HTTPProxyPasswordMgr()
+    >>> add = mgr.add_password
+
+    >>> add("Some Realm", "http://example.com/", "joe", "password")
+    >>> add("Some Realm", "http://example.com/ni", "ni", "ni")
+    >>> add("c", "http://example.com/foo", "foo", "ni")
+    >>> add("c", "http://example.com/bar", "bar", "nini")
+    >>> add("b", "http://example.com/", "first", "blah")
+    >>> add("b", "http://example.com/", "second", "spam")
+    >>> add("a", "http://example.com", "1", "a")
+    >>> add("Some Realm", "http://c.example.com:3128", "3", "c")
+    >>> add("Some Realm", "d.example.com", "4", "d")
+    >>> add("Some Realm", "e.example.com:3128", "5", "e")
+
+    >>> mgr.find_user_password("Some Realm", "example.com")
+    ('joe', 'password')
+    >>> mgr.find_user_password("Some Realm", "http://example.com")
+    ('joe', 'password')
+    >>> mgr.find_user_password("Some Realm", "http://example.com/")
+    ('joe', 'password')
+    >>> mgr.find_user_password("Some Realm", "http://example.com/spam")
+    ('joe', 'password')
+    >>> mgr.find_user_password("Some Realm", "http://example.com/spam/spam")
+    ('joe', 'password')
+    >>> mgr.find_user_password("c", "http://example.com/foo")
+    ('foo', 'ni')
+    >>> mgr.find_user_password("c", "http://example.com/bar")
+    ('bar', 'nini')
+
+    Currently, we use the highest-level path where more than one match:
+
+    >>> mgr.find_user_password("Some Realm", "http://example.com/ni")
+    ('joe', 'password')
+
+    Use latest add_password() in case of conflict:
+
+    >>> mgr.find_user_password("b", "http://example.com/")
+    ('second', 'spam')
+
+    No special relationship between a.example.com and example.com:
+
+    >>> mgr.find_user_password("a", "http://example.com/")
+    ('1', 'a')
+    >>> mgr.find_user_password("a", "http://a.example.com/")
+    (None, None)
+
+    Ports:
+
+    >>> mgr.find_user_password("Some Realm", "c.example.com")
+    (None, None)
+    >>> mgr.find_user_password("Some Realm", "c.example.com:3128")
+    ('3', 'c')
+    >>> mgr.find_user_password("Some Realm", "http://c.example.com:3128")
+    ('3', 'c')
+    >>> mgr.find_user_password("Some Realm", "d.example.com")
+    ('4', 'd')
+    >>> mgr.find_user_password("Some Realm", "e.example.com:3128")
+    ('5', 'e')
+
+
+    Now features specific to HTTPProxyPasswordMgr.
+
+    Default realm:
+
+    >>> mgr.find_user_password("d", "f.example.com")
+    (None, None)
+    >>> add(None, "f.example.com", "6", "f")
+    >>> mgr.find_user_password("d", "f.example.com")
+    ('6', 'f')
+
+    Default host/port:
+
+    >>> mgr.find_user_password("e", "g.example.com")
+    (None, None)
+    >>> add("e", None, "7", "g")
+    >>> mgr.find_user_password("e", "g.example.com")
+    ('7', 'g')
+
+    Default realm and host/port:
+
+    >>> mgr.find_user_password("f", "h.example.com")
+    (None, None)
+    >>> add(None, None, "8", "h")
+    >>> mgr.find_user_password("f", "h.example.com")
+    ('8', 'h')
+
+    Default realm beats default host/port:
+
+    >>> add("d", None, "9", "i")
+    >>> mgr.find_user_password("d", "f.example.com")
+    ('6', 'f')
+
+    """
+    pass
+
+
+class CachingGeneratorFunctionTests(TestCase):
+
+    def _get_simple_cgenf(self, log):
+        from mechanize._html import CachingGeneratorFunction
+        todo = []
+        for ii in range(2):
+            def work(ii=ii):
+                log.append(ii)
+                return ii
+            todo.append(work)
+        def genf():
+            for a in todo:
+                yield a()
+        return CachingGeneratorFunction(genf())
+
+    def test_cache(self):
+        log = []
+        cgenf = self._get_simple_cgenf(log)
+        for repeat in range(2):
+            for ii, jj in zip(cgenf(), range(2)):
+                self.assertEqual(ii, jj)
+            self.assertEqual(log, range(2))  # work only done once
+
+    def test_interleaved(self):
+        log = []
+        cgenf = self._get_simple_cgenf(log)
+        cgen = cgenf()
+        self.assertEqual(cgen.next(), 0)
+        self.assertEqual(log, [0])
+        cgen2 = cgenf()
+        self.assertEqual(cgen2.next(), 0)
+        self.assertEqual(log, [0])
+        self.assertEqual(cgen.next(), 1)
+        self.assertEqual(log, [0, 1])
+        self.assertEqual(cgen2.next(), 1)
+        self.assertEqual(log, [0, 1])
+        self.assertRaises(StopIteration, cgen.next)
+        self.assertRaises(StopIteration, cgen2.next)
 
 
 class UnescapeTests(TestCase):
@@ -74,18 +214,19 @@ class MockHeaders(UserDict.UserDict):
         return self.data.values()
 
 class MockResponse:
+    closeable_response = None
     def __init__(self, url="http://example.com/", data=None, info=None):
         self.url = url
-        self._f = StringIO.StringIO(data)
+        self.fp = StringIO.StringIO(data)
         if info is None: info = {}
         self._info = MockHeaders(info)
         self.source = "%d%d" % (id(self), random.randint(0, sys.maxint-1))
     def info(self): return self._info
     def geturl(self): return self.url
-    def read(self, size=-1): return self._f.read(size)
+    def read(self, size=-1): return self.fp.read(size)
     def seek(self, whence):
         assert whence == 0
-        self._f.seek(0)
+        self.fp.seek(0)
     def close(self): pass
     def __getstate__(self):
         state = self.__dict__
@@ -199,11 +340,12 @@ class BrowserTests(TestCase):
         import mechanize
         from StringIO import StringIO
         import urllib, mimetools
-        # always take first encoding, since that's the one
+        # always take first encoding, since that's the one from the real HTTP
+        # headers, rather than from HTTP-EQUIV
         b = mechanize.Browser()
-        for s, ct in [("", b.default_encoding),
+        for s, ct in [("", mechanize._html.DEFAULT_ENCODING),
 
-                      ("Foo: Bar\r\n\r\n", b.default_encoding),
+                      ("Foo: Bar\r\n\r\n", mechanize._html.DEFAULT_ENCODING),
 
                       ("Content-Type: text/html; charset=UTF-8\r\n\r\n",
                        "UTF-8"),
@@ -214,7 +356,8 @@ class BrowserTests(TestCase):
                       ]:
             msg = mimetools.Message(StringIO(s))
             r = urllib.addinfourl(StringIO(""), msg, "http://www.example.com/")
-            self.assertEqual(b.encoding(r), ct)
+            b.set_response(r)
+            self.assertEqual(b.encoding(), ct)
 
     def test_history(self):
         import mechanize
@@ -281,7 +424,8 @@ class BrowserTests(TestCase):
                 ("text/html; charset=blah", True),
                 (" text/html ; charset=ook ", True),
                 ]:
-                b = TestBrowser(i_want_broken_xhtml_support=allow_xhtml)
+                b = TestBrowser(mechanize.DefaultFactory(
+                    i_want_broken_xhtml_support=allow_xhtml))
                 hdrs = {}
                 if ct is not None:
                     hdrs["Content-Type"] = ct
@@ -303,7 +447,8 @@ class BrowserTests(TestCase):
                 (".xml", False),
                 ("", False),
                 ]:
-                b = TestBrowser(i_want_broken_xhtml_support=allow_xhtml)
+                b = TestBrowser(mechanize.DefaultFactory(
+                    i_want_broken_xhtml_support=allow_xhtml))
                 url = "http://example.com/foo"+ext
                 b.add_handler(MockHandler(
                     [("http_open", MockResponse(url, "", {}))]))
@@ -378,7 +523,7 @@ class BrowserTests(TestCase):
         b.add_handler(MockHandler([("http_open", r)]))
         r = b.open(url)
 
-        forms = b.forms()
+        forms = list(b.forms())
         self.assertEqual(len(forms), 2)
         for got, expect in zip([f.name for f in forms], [
             "form1", "form2"]):
@@ -489,7 +634,7 @@ class BrowserTests(TestCase):
             Link(url, "foo", None, "iframe",
                  [("src", "foo")]),
             ]
-        links = b.links()
+        links = list(b.links())
         self.assertEqual(len(links), len(exp_links))
         for got, expect in zip(links, exp_links):
             self.assertEqual(got, expect)
@@ -579,6 +724,7 @@ class BrowserTests(TestCase):
 
 class ResponseTests(TestCase):
     def test_set_response(self):
+        import copy
         from ClientCookie import response_seek_wrapper
 
         br = TestBrowser()
@@ -591,7 +737,8 @@ class ResponseTests(TestCase):
         r = br.open(url)
         self.assertEqual(r.read(), html)
         r.seek(0)
-        self.assertEqual(br.links()[0].url, "spam")
+        self.assertEqual(copy.copy(r).read(), html)
+        self.assertEqual(list(br.links())[0].url, "spam")
 
         newhtml = """<html><body><a href="eggs">click me</a></body></html>"""
 
@@ -600,11 +747,12 @@ class ResponseTests(TestCase):
         self.assertEqual(br.response().read(), html)
         br.response().set_data(newhtml)
         self.assertEqual(br.response().read(), html)
-        self.assertEqual(br.links()[0].url, "spam")
+        self.assertEqual(list(br.links())[0].url, "spam")
+        r.seek(0)
 
         br.set_response(r)
         self.assertEqual(br.response().read(), newhtml)
-        self.assertEqual(br.links()[0].url, "eggs")
+        self.assertEqual(list(br.links())[0].url, "eggs")
 
 
 class UserAgentTests(TestCase):
@@ -653,5 +801,7 @@ class UserAgentTests(TestCase):
         ua._set_handler("_blah", True)
 
 if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
     import unittest
     unittest.main()

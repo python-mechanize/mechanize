@@ -6,13 +6,13 @@ This is a subclass of urllib2.OpenerDirector.
 Copyright 2003-2006 John J. Lee <jjl@pobox.com>
 
 This code is free software; you can redistribute it and/or modify it under
-the terms of the BSD License (see the file COPYING included with the
-distribution).
+the terms of the BSD or ZPL 2.1 licenses (see the file COPYING.txt
+included with the distribution).
 
 """
 
 import sys
-import urllib2, httplib
+import urllib2
 import ClientCookie
 if sys.version_info[:2] >= (2, 4):
     from urllib2 import OpenerDirector, BaseHandler, HTTPErrorProcessor
@@ -32,6 +32,51 @@ class HTTPRefererProcessor(BaseHandler):
         return request
 
     https_request = http_request
+
+
+class HTTPProxyPasswordMgr(urllib2.HTTPPasswordMgr):
+    # has default realm and host/port
+    def add_password(self, realm, uri, user, passwd):
+        # uri could be a single URI or a sequence
+        if uri is None or isinstance(uri, basestring):
+            uris = [uri]
+        else:
+            uris = uri
+        passwd_by_domain = self.passwd.setdefault(realm, {})
+        for uri in uris:
+            uri = self.reduce_uri(uri)
+            passwd_by_domain[uri] = (user, passwd)
+
+    def find_user_password(self, realm, authuri):
+        perms = [(realm, authuri), (None, authuri)]
+        # bleh, want default realm to take precedence over default
+        # URI/authority, hence this outer loop
+        for default_uri in False, True:
+            for realm, authuri in perms:
+                authinfo_by_domain = self.passwd.get(realm, {})
+                reduced_authuri = self.reduce_uri(authuri)
+                for uri, authinfo in authinfo_by_domain.iteritems():
+                    if uri is None and not default_uri:
+                        continue
+                    if self.is_suburi(uri, reduced_authuri):
+                        return authinfo
+                user, password = None, None
+
+                if user is not None:
+                    break
+        return user, password
+
+    def reduce_uri(self, uri):
+        if uri is None:
+            return None
+        return urllib2.HTTPPasswordMgr.reduce_uri(self, uri)
+
+    def is_suburi(self, base, test):
+        if base is None:
+            # default to the proxy's host/port
+            hostport, path = test
+            base = (hostport, "/")
+        return urllib2.HTTPPasswordMgr.is_suburi(self, base, test)
 
 
 class UserAgent(OpenerDirector):
@@ -58,7 +103,6 @@ class UserAgent(OpenerDirector):
         "ftp": urllib2.FTPHandler,  # CacheFTPHandler is buggy in 2.3
         "file": urllib2.FileHandler,
         "gopher": urllib2.GopherHandler,
-        # XXX etc.
 
         # other handlers
         "_unknown": urllib2.UnknownHandler,
@@ -68,8 +112,8 @@ class UserAgent(OpenerDirector):
         "_http_default_error": urllib2.HTTPDefaultErrorHandler,
 
         # feature handlers
-        "_authen": urllib2.HTTPBasicAuthHandler,
-        # XXX rest of authentication stuff
+        "_basicauth": urllib2.HTTPBasicAuthHandler,
+        "_digestauth": urllib2.HTTPBasicAuthHandler,
         "_redirect": ClientCookie.HTTPRedirectHandler,
         "_cookies": ClientCookie.HTTPCookieProcessor,
         "_refresh": ClientCookie.HTTPRefreshProcessor,
@@ -77,7 +121,8 @@ class UserAgent(OpenerDirector):
         "_equiv": ClientCookie.HTTPEquivProcessor,
         "_seek": ClientCookie.SeekableProcessor,
         "_proxy": urllib2.ProxyHandler,
-        # XXX there's more to proxies, too
+        "_proxy_basicauth": urllib2.ProxyBasicAuthHandler,
+        "_proxy_digestauth": urllib2.ProxyDigestAuthHandler,
 
         # debug handlers
         "_debug_redirect": ClientCookie.HTTPRedirectDebugProcessor,
@@ -86,10 +131,15 @@ class UserAgent(OpenerDirector):
 
     default_schemes = ["http", "ftp", "file", "gopher"]
     default_others = ["_unknown", "_http_error", "_http_request_upgrade",
-                      "_http_default_error"]
-    default_features = ["_authen", "_redirect", "_cookies", "_refresh",
-                        "_referer", "_equiv", "_seek", "_proxy"]
-    if hasattr(httplib, 'HTTPS'):
+                      "_http_default_error",
+                      ]
+    default_features = ["_redirect", "_cookies", "_referer",
+                        "_refresh", "_equiv",
+                        "_basicauth", "_digestauth",
+                        "_proxy", "_proxy_basicauth", "_proxy_digestauth",
+                        "_seek",
+                        ]
+    if hasattr(ClientCookie, 'HTTPSHandler'):
         handler_classes["https"] = ClientCookie.HTTPSHandler
         default_schemes.append("https")
     if hasattr(ClientCookie, "HTTPRobotRulesProcessor"):
@@ -99,21 +149,31 @@ class UserAgent(OpenerDirector):
     def __init__(self):
         OpenerDirector.__init__(self)
 
-        self._ua_handlers = {}
+        ua_handlers = self._ua_handlers = {}
         for scheme in (self.default_schemes+
                        self.default_others+
                        self.default_features):
             klass = self.handler_classes[scheme]
-            self._ua_handlers[scheme] = klass()
-        for handler in self._ua_handlers.itervalues():
+            ua_handlers[scheme] = klass()
+        for handler in ua_handlers.itervalues():
             self.add_handler(handler)
 
+        # Yuck.
         # Ensure correct default constructor args were passed to
-        # HTTPRefererProcessor and HTTPEquivProcessor.  Yuck.
-        if '_refresh' in self._ua_handlers:
+        # HTTPRefererProcessor and HTTPEquivProcessor.
+        if "_refresh" in ua_handlers:
             self.set_handle_refresh(True)
-        if '_equiv' in self._ua_handlers:
+        if "_equiv" in ua_handlers:
             self.set_handle_equiv(True)
+        # Ensure default password managers are installed.
+        pm = ppm = None
+        if "_basicauth" in ua_handlers or "_digestauth" in ua_handlers:
+            pm = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        if ("_proxy_basicauth" in ua_handlers or
+            "_proxy_digestauth" in ua_handlers):
+            ppm = HTTPProxyPasswordMgr()
+        self.set_password_manager(pm)
+        self.set_proxy_password_manager(ppm)
 
         # special case, requires extra support from mechanize.Browser
         self._handle_referer = True
@@ -132,17 +192,20 @@ class UserAgent(OpenerDirector):
 ##         self._ftp_conn_cache = conn_cache
 
     def set_handled_schemes(self, schemes):
-        """Set sequence of protocol scheme strings.
+        """Set sequence of URL scheme (protocol) strings.
+
+        For example: ua.set_handled_schemes(["http", "ftp"])
 
         If this fails (with ValueError) because you've passed an unknown
-        scheme, the set of handled schemes WILL be updated, but schemes in the
-        list that come after the unknown scheme won't be handled.
+        scheme, the set of handled schemes will not be changed.
 
         """
         want = {}
         for scheme in schemes:
             if scheme.startswith("_"):
-                raise ValueError("invalid scheme '%s'" % scheme)
+                raise ValueError("not a scheme '%s'" % scheme)
+            if scheme not in self.handler_classes:
+                raise ValueError("unknown scheme '%s'")
             want[scheme] = None
 
         # get rid of scheme handlers we don't want
@@ -154,8 +217,6 @@ class UserAgent(OpenerDirector):
                 del want[scheme]  # already got it
         # add the scheme handlers that are missing
         for scheme in want.keys():
-            if scheme not in self.handler_classes:
-                raise ValueError("unknown scheme '%s'")
             self._set_handler(scheme, True)
 
     def _add_referer_header(self, request, origin_request=True):
@@ -165,10 +226,36 @@ class UserAgent(OpenerDirector):
     def set_cookiejar(self, cookiejar):
         """Set a ClientCookie.CookieJar, or None."""
         self._set_handler("_cookies", obj=cookiejar)
-    def set_credentials(self, credentials):
-        """Set a urllib2.HTTPPasswordMgr, or None."""
-        # XXX use Greg Stein's httpx instead?
-        self._set_handler("_authen", obj=credentials)
+
+    # XXX could use Greg Stein's httpx for some of this instead?
+    # or httplib2??
+    def set_proxies(self, proxies):
+        """Set a dictionary mapping URL scheme to proxy specification, or None.
+
+        e.g. {'http': 'myproxy.example.com',
+              'ftp': 'joe:password@proxy.example.com:8080'}
+
+        """
+        self._set_handler("_proxy", obj=proxies)
+
+    def add_password(self, url, user, password, realm=None):
+        self._password_manager.add_password(realm, url, user, password)
+    def add_proxy_password(self, user, password, hostport=None, realm=None):
+        self._proxy_password_manager.add_password(
+            realm, hostport, user, password)
+
+    # the following are rarely useful -- use add_password / add_proxy_password
+    # instead
+    def set_password_manager(self, password_manager):
+        """Set a urllib2.HTTPPasswordMgrWithDefaultRealm, or None."""
+        self._password_manager = password_manager
+        self._set_handler("_basicauth", obj=password_manager)
+        self._set_handler("_digestauth", obj=password_manager)
+    def set_proxy_password_manager(self, password_manager):
+        """Set a mechanize.HTTPProxyPasswordMgr, or None."""
+        self._proxy_password_manager = password_manager
+        self._set_handler("_proxy_basicauth", obj=password_manager)
+        self._set_handler("_proxy_digestauth", obj=password_manager)
 
     # these methods all take a boolean parameter
     def set_handle_robots(self, handle):

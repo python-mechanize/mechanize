@@ -1,9 +1,20 @@
+"""HTML handling.
+
+Copyright 2003-2006 John J. Lee <jjl@pobox.com>
+
+This code is free software; you can redistribute it and/or modify it under
+the terms of the BSD or ZPL 2.1 licenses (see the file COPYING.txt
+included with the distribution).
+
+"""
+
 from __future__ import generators
 
-import re, urllib, htmlentitydefs
+import re, copy, urllib, htmlentitydefs
 from urlparse import urljoin
 
 import ClientCookie
+from ClientCookie._HeadersUtil import split_header_words, is_html as _is_html
 
 ## # XXXX miserable hack
 ## def urljoin(base, url):
@@ -23,6 +34,41 @@ import ClientCookie
 # 'safe'-by-default characters that urllib.urlquote never quotes
 URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
 
+DEFAULT_ENCODING = "latin-1"
+
+class CachingGeneratorFunction(object):
+    """Caching wrapper around a no-arguments iterable."""
+    def __init__(self, iterable):
+        self._iterable = iterable
+        self._cache = []
+    def __call__(self):
+        cache = self._cache
+        for item in cache:
+            yield item
+        for item in self._iterable:
+            cache.append(item)
+            yield item
+
+def encoding_finder(default_encoding):
+    def encoding(response):
+        # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
+        # headers may be in the response.  HTTP-EQUIV headers come last,
+        # so try in order from first to last.
+        for ct in response.info().getheaders("content-type"):
+            for k, v in split_header_words([ct])[0]:
+                if k == "charset":
+                    return v
+        return default_encoding
+    return encoding
+
+def make_is_html(allow_xhtml):
+    def is_html(response, encoding):
+        ct_hdrs = response.info().getheaders("content-type")
+        url = response.geturl()
+        # XXX encoding
+        return _is_html(ct_hdrs, url, allow_xhtml)
+    return is_html
+
 # idea for this argument-processing trick is from Peter Otten
 class Args:
     def __init__(self, args_map):
@@ -38,7 +84,6 @@ def form_parser_args(
     form_parser_class=None,
     request_class=None,
     backwards_compat=False,
-    encoding="latin-1",  # deprecated
     ):
     return Args(locals())
 
@@ -88,11 +133,21 @@ class LinksFactory:
                 "iframe": "src",
                 }
         self.urltags = urltags
+        self._response = None
+        self._encoding = None
 
-    def links(self, fh, base_url, encoding=None):
+    def set_response(self, response, base_url, encoding):
+        self._response = response
+        self._encoding = encoding
+        self._base_url = base_url
+
+    def links(self):
         """Return an iterator that provides links of the document."""
         import pullparser
-        p = self.link_parser_class(fh, encoding=encoding)
+        response = self._response
+        encoding = self._encoding
+        base_url = self._base_url
+        p = self.link_parser_class(response, encoding=encoding)
 
         for token in p.tags(*(self.urltags.keys()+["base"])):
             if token.data == "base":
@@ -138,7 +193,6 @@ class FormsFactory:
                  form_parser_class=None,
                  request_class=None,
                  backwards_compat=False,
-                 encoding="latin-1",  # deprecated
                  ):
         import ClientForm
         self.select_default = select_default
@@ -149,14 +203,18 @@ class FormsFactory:
             request_class = ClientCookie.Request
         self.request_class = request_class
         self.backwards_compat = backwards_compat
+        self._response = None
+        self.encoding = None
+
+    def set_response(self, response, encoding):
+        self._response = response
         self.encoding = encoding
 
-    def parse_response(self, response, encoding=None):
+    def forms(self):
         import ClientForm
-        if encoding is None:
-            encoding = self.encoding
+        encoding = self.encoding
         return ClientForm.ParseResponse(
-            response,
+            self._response,
             select_default=self.select_default,
             form_parser_class=self.form_parser_class,
             request_class=self.request_class,
@@ -164,29 +222,24 @@ class FormsFactory:
             encoding=encoding,
             )
 
-    def parse_file(self, file_obj, base_url, encoding=None):
-        import ClientForm
-        if encoding is None:
-            encoding = self.encoding
-        return ClientForm.ParseFile(
-            file_obj,
-            base_url,
-            select_default=self.select_default,
-            form_parser_class=self.form_parser_class,
-            request_class=self.request_class,
-            backwards_compat=self.backwards_compat,
-            encoding=encoding,
-            )
+class TitleFactory:
+    def __init__(self):
+        self._response = self._encoding = None
 
-def pp_get_title(response, encoding):
-    import pullparser
-    p = pullparser.TolerantPullParser(response, encoding=encoding)
-    try:
-        p.get_tag("title")
-    except pullparser.NoMoreTokensError:
-        return None
-    else:
-        return p.get_text()
+    def set_response(self, response, encoding):
+        self._response = response
+        self._encoding = encoding
+
+    def title(self):
+        import pullparser
+        p = pullparser.TolerantPullParser(
+            self._response, encoding=self._encoding)
+        try:
+            p.get_tag("title")
+        except pullparser.NoMoreTokensError:
+            return None
+        else:
+            return p.get_text()
 
 
 def unescape(data, entities, encoding):
@@ -252,6 +305,13 @@ else:
     sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
     class MechanizeBs(BeautifulSoup.BeautifulSoup):
         _entitydefs = get_entitydefs()
+        # don't want the magic Microsoft-char workaround
+        PARSER_MASSAGE = [(re.compile('(<[^<>]*)/>'),
+                           lambda(x):x.group(1) + ' />'),
+                          (re.compile('<!\s+([^<>]*)>'),
+                           lambda(x):'<!' + x.group(1) + '>')
+                          ]
+
         def __init__(self, encoding, text=None, avoidParserProblems=True,
                      initialTextIsEverything=True):
             self._encoding = encoding
@@ -293,11 +353,20 @@ class RobustLinksFactory:
                 "iframe": "src",
                 }
         self.urltags = urltags
+        self._bs = None
+        self._encoding = None
+        self._base_url = None
 
-    def links(self, fh, base_url, encoding=None):
+    def set_soup(self, soup, base_url, encoding):
+        self._bs = soup
+        self._base_url = base_url
+        self._encoding = encoding
+
+    def links(self):
         import BeautifulSoup
-        data = fh.read()
-        bs = self.link_parser_class(encoding, data)
+        bs = self._bs
+        base_url = self._base_url
+        encoding = self._encoding
         gen = bs.recursiveChildGenerator()
         for ch in bs.recursiveChildGenerator():
             if (isinstance(ch, BeautifulSoup.Tag) and
@@ -333,34 +402,73 @@ class RobustFormsFactory(FormsFactory):
             args.form_parser_class = ClientForm.RobustFormParser
         FormsFactory.__init__(self, **args.dictionary)
 
-def bs_get_title(response, encoding):
-    import BeautifulSoup
-    # XXXX encoding
-    bs = BeautifulSoup.BeautifulSoup(response.read())
-    title = bs.first("title")
-    if title == BeautifulSoup.Null:
-        return None
-    else:
-        return title.firstText(lambda t: True)
+    def set_response(self, response, encoding):
+        self._response = response
+        self.encoding = encoding
+
+
+class RobustTitleFactory:
+    def __init__(self):
+        self._bs = self._encoding = None
+
+    def set_soup(self, soup, encoding):
+        self._bs = soup
+        self._encoding = encoding
+
+    def title(soup):
+        import BeautifulSoup
+        title = self._bs.first("title")
+        if title == BeautifulSoup.Null:
+            return None
+        else:
+            return title.firstText(lambda t: True)
 
 
 class Factory:
     """Factory for forms, links, etc.
 
-    The interface of this class may expand in future.
+    This interface may expand in future.
+
+    Public methods:
+
+    set_request_class(request_class)
+    set_response(response)
+    forms()
+    links()
+
+    Public attributes:
+
+    encoding: string specifying the encoding of response if it contains a text
+     document (this value is left unspecified for documents that do not have
+     an encoding, e.g. an image file)
+    is_html: true if response contains an HTML document (XHTML may be
+     regarded as HTML too)
+    title: page title, or None if no title or not HTML
 
     """
 
-    def __init__(self, forms_factory, links_factory, get_title):
+    def __init__(self, forms_factory, links_factory, title_factory,
+                 get_encoding=encoding_finder(DEFAULT_ENCODING),
+                 is_html_p=make_is_html(allow_xhtml=False),
+                 ):
         """
 
-        Pass keyword
-        arguments only.
+        Pass keyword arguments only.
+
+        default_encoding: character encoding to use if encoding cannot be
+         determined (or guessed) from the response.  You should turn on
+         HTTP-EQUIV handling if you want the best chance of getting this right
+         without resorting to this default.  The default value of this
+         parameter (currently latin-1) may change in future.
 
         """
         self._forms_factory = forms_factory
         self._links_factory = links_factory
-        self._get_title = get_title
+        self._title_factory = title_factory
+        self._get_encoding = get_encoding
+        self._is_html_p = is_html_p
+
+        self.set_response(None)
 
     def set_request_class(self, request_class):
         """Set urllib2.Request class.
@@ -371,30 +479,100 @@ class Factory:
         """
         self._forms_factory.request_class = request_class
 
-    def forms(self, response, encoding):
+    def set_response(self, response):
+        """Set response.
+
+        The response must implement the same interface as objects returned by
+        urllib2.urlopen().
+
+        """
+        self._response = response
+        self._forms_genf = self._links_genf = None
+        self._get_title = None
+        for name in ["encoding", "is_html", "title"]:
+            try:
+                delattr(self, name)
+            except AttributeError:
+                pass
+
+    def __getattr__(self, name):
+        if name not in ["encoding", "is_html", "title"]:
+            return getattr(self.__class__, name)
+
+        try:
+            if name == "encoding":
+                self.encoding = self._get_encoding(self._response)
+                return self.encoding
+            elif name == "is_html":
+                self.is_html = self._is_html_p(self._response, self.encoding)
+                return self.is_html
+            elif name == "title":
+                if self.is_html:
+                    self.title = self._title_factory.title()
+                else:
+                    self.title = None
+                return self.title
+        finally:
+            self._response.seek(0)
+
+    def forms(self):
         """Return iterable over ClientForm.HTMLForm-like objects."""
-        return self._forms_factory.parse_response(response, encoding)
+        if self._forms_genf is None:
+            self._forms_genf = CachingGeneratorFunction(
+                self._forms_factory.forms())
+        return self._forms_genf()
 
-    def links(self, response, encoding):
+    def links(self):
         """Return iterable over mechanize.Link-like objects."""
-        return self._links_factory.links(response, response.geturl(), encoding)
-
-    def title(self, response, encoding):
-        """Return page title."""
-        return self._get_title(response, encoding)
+        if self._links_genf is None:
+            self._links_genf = CachingGeneratorFunction(
+                self._links_factory.links())
+        return self._links_genf()
 
 class DefaultFactory(Factory):
-    def __init__(self):
-        Factory.__init__(self,
-                         forms_factory=FormsFactory(),
-                         links_factory=LinksFactory(),
-                         get_title=pp_get_title,
-                         )
+    """Based on sgmllib."""
+    def __init__(self, i_want_broken_xhtml_support=False):
+        Factory.__init__(
+            self,
+            forms_factory=FormsFactory(),
+            links_factory=LinksFactory(),
+            title_factory=TitleFactory(),
+            is_html_p=make_is_html(allow_xhtml=i_want_broken_xhtml_support),
+            )
+
+    def set_response(self, response):
+        Factory.set_response(self, response)
+        if response is not None:
+            self._forms_factory.set_response(
+                copy.copy(response), self.encoding)
+            self._links_factory.set_response(
+                copy.copy(response), self._response.geturl(), self.encoding)
+            self._title_factory.set_response(
+                copy.copy(response), self.encoding)
 
 class RobustFactory(Factory):
-    def __init__(self):
-        Factory.__init__(self,
-                         forms_factory=RobustFormsFactory(),
-                         links_factory=RobustLinksFactory(),
-                         get_title=bs_get_title,
-                         )
+    """Based on BeautifulSoup, hopefully a bit more robust to bad HTML than is
+    DefaultFactory.
+
+    """
+    def __init__(self, i_want_broken_xhtml_support=False,
+                 soup_class=MechanizeBs):
+        Factory.__init__(
+            self,
+            forms_factory=RobustFormsFactory(),
+            links_factory=RobustLinksFactory(),
+            title_factory=RobustTitleFactory(),
+            is_html_p=make_is_html(allow_xhtml=i_want_broken_xhtml_support),
+            )
+        self._soup_class = soup_class
+
+    def set_response(self, response):
+        import BeautifulSoup
+        Factory.set_response(self, response)
+        if response is not None:
+            data = response.read()
+            soup = self._soup_class(self.encoding, data)
+            self._forms_factory.set_response(response, self.encoding)
+            self._links_factory.set_soup(
+                soup, response.geturl(), self.encoding)
+            self._title_factory.set_soup(soup, self.encoding)

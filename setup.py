@@ -45,7 +45,7 @@ INSTALL_REQUIRES = [
     "pullparser>=0.0.8.dev_r21645, ==dev"]
 NAME = "mechanize"
 PACKAGE = True
-LICENSE = "BSD"
+LICENSE = "BSD"  # or ZPL 2.1
 PLATFORMS = ["any"]
 ZIP_SAFE = True
 CLASSIFIERS = """\
@@ -53,6 +53,7 @@ Development Status :: 3 - Alpha
 Intended Audience :: Developers
 Intended Audience :: System Administrators
 License :: OSI Approved :: BSD License
+License :: OSI Approved :: Zope Public License
 Natural Language :: English
 Operating System :: OS Independent
 Programming Language :: Python

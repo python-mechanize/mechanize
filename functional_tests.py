@@ -74,11 +74,11 @@ class ResponseTests(TestCase):
         self.assertEqual(br.response().read(), html)
         br.response().set_data(newhtml)
         self.assertEqual(br.response().read(), html)
-        self.assertEqual(br.links()[0].url, 'http://sourceforge.net')
+        self.assertEqual(list(br.links())[0].url, 'http://sourceforge.net')
 
         br.set_response(r)
         self.assertEqual(br.response().read(), newhtml)
-        self.assertEqual(br.links()[0].url, "spam")
+        self.assertEqual(list(br.links())[0].url, "spam")
 
     def test_close_pickle_load(self):
         print ("Test test_close_pickle_load is expected to fail unless Python "

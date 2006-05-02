@@ -33,11 +33,10 @@ then (with appropriate permissions)
 
 
 Alternatively, just copy the whole mechanize directory into your
-Python path (eg. unix: /usr/local/lib/python2.2/site-packages,
-Windows: C:\Python21, or C:\Python22\Lib\site-packages).  That's all
-that setup.py does.  Only copy the ClientCookie directory that's
-inside the distributed tarball / zip archive, not the entire
-mechanize-x.x.x directory!
+Python path (eg. unix: /usr/local/lib/python2.4/site-packages,
+Windows: C:\Python24\Lib\site-packages).  Only copy the mechanize
+directory that's inside the distributed tarball / zip archive, not the
+entire mechanize-x.x.x directory!
 
 
 To run the tests (none of which access the network), run the following
@@ -62,13 +61,13 @@ MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 Copyright Notices
 
-  (C) 2002-2003 John J. Lee.  All rights reserved.
+  (C) 2002-2006 John J. Lee.  All rights reserved.
   (C) 2003 Andy Lester.  All rights reserved.  (Perl code from which
       this module is derived)
 
 This code in this package is free software; you can redistribute it
-and/or modify it under the terms of the BSD license (see the file
-COPYING).
+and/or modify it under the terms of the BSD or ZPL 2.1 licenses (see
+the file COPYING.txt).
 
 John J. Lee <jjl@pobox.com>
-December 2003
+May 2006

@@ -159,23 +159,22 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 
 <h3>Specific to mechanize</h3>
 <ul>
-  <li>Apply Titus' patch to move stuff into separate file and change
-    Factory interface.
-  <li>Kill off <code>.get_links_iter()</code>.
+  <li>Make encoding_finder public, I guess.
+  <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
+    per page.
+  <li>Test BeautifulSoup support better / fix encoding issue.
   <li>Support Mark Pilgrim's universal encoding detector?
   <li>Add another History implementation or two and finalise interface.
   <li>History cache expiration.
   <li>Investigate possible leak (see Balazs Ree's list posting).
   <li>Add <code>Browser.form_as_string()</code> and
     <code>Browser.__str__()</code> methods.
-  <li>Test BeautifulSoup support better / fix encoding issue.
   <li>Add two-way links between BeautifulSoup & ClientForm object models.
-  <li>Add basic proxy support.  I hope somebody else does this!
 </ul>
 
 <h3>mechanize documentation</h3>
 <ul>
-  <li>Add docs re auth!  And perhaps simpler API...
+  <li>Auth / proxies.
   <li>Document means of processing response on ad-hoc basis with
     .set_response() - e.g. to fix bad encoding in Content-type header or
     clean up bad HTML.
@@ -195,9 +194,9 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
   <li>Unicode support in general (not sure yet how/when/whether this will
     happen).
   <li>Provide per-connection access to timeouts (ClientCookie).
-  <li>Keep-alive / connection caching
-  <li>Work on auth / proxies (yawn).
+  <li>Keep-alive / connection caching.
   <li>Pipelining??
+  <li>Content negotiation.
 </ul>
 
 
@@ -423,8 +422,10 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
      and install them manually, instead &#8211; see the <code>INSTALL.txt</code>
      file (included with the distribution).
   <li>Which license?
-  <p>The <a href="http://www.opensource.org/licenses/bsd-license.php">
-   BSD license</a> (included in distribution).
+  <p>mechanize is dual-licensed: you may pick either the
+     <a href="http://www.opensource.org/licenses/bsd-license.php">BSD license</a>,
+     or the <a href="http://www.zope.org/Resources/ZPL">ZPL 2.1</a> (both are
+     included in the distribution).
 </ul>
 
 <p>I prefer questions and comments to be sent to the <a

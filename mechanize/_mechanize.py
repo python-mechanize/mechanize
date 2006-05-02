@@ -3,24 +3,26 @@
 Copyright 2003-2006 John J. Lee <jjl@pobox.com>
 Copyright 2003 Andy Lester (original Perl code)
 
-This code is free software; you can redistribute it and/or modify it under
-the terms of the BSD License (see the file COPYING included with the
-distribution).
+This code is free software; you can redistribute it and/or modify it
+under the terms of the BSD or ZPL 2.1 licenses (see the file COPYING.txt
+included with the distribution).
 
 """
 
 # XXXX
+# spaces in URLs
+# clean_url(): test Moz behaviour against Apache rather than File->Open!
 # test referer bugs (frags and don't add in redirect unless orig req had Referer)
 
 # XXX
 # The stuff on web page's todo list.
 # Moof's emails about response object, .back(), etc.
 
+from __future__ import generators
+
 import urllib2, urlparse, sys, copy
 
 import ClientCookie
-from ClientCookie._Util import response_seek_wrapper
-from ClientCookie._HeadersUtil import split_header_words, is_html
 
 from _useragent import UserAgent
 from _html import DefaultFactory
@@ -76,66 +78,47 @@ class Browser(UserAgent, OpenerMixin):
 
     request: current request (ClientCookie.Request or urllib2.Request)
     form: currently selected form (see .select_form())
-    default_encoding: character encoding used if no encoding is found in the
-     response (you should turn on HTTP-EQUIV handling if you want the best
-     chance of getting this right without resorting to this default)
 
     """
 
-    def __init__(self, default_encoding="latin-1",
+    def __init__(self,
                  factory=None,
                  history=None,
                  request_class=None,
-                 i_want_broken_xhtml_support=False,
-                 forms_factory=None,  # deprecated
-                 links_factory=None,  # deprecated
-                 get_title=None,  # deprecated
                  ):
         """
 
         Only named arguments should be passed to this constructor.
 
-        default_encoding: See class docs.
+        factory: object implementing the mechanize.Factory interface.
+        history: object implementing the mechanize.History interface.  Note this
+         interface is still experimental and may change in future.
         request_class: Request class to use.  Defaults to ClientCookie.Request
          by default for Pythons older than 2.4, urllib2.Request otherwise.
-        factory: mechanize.Factory
+
+        The Factory and History objects passed in are 'owned' by the Browser,
+        so they should not be shared across Browsers.  In particular,
+        factory.set_response() should not be called except by the owning
+        Browser itself.
 
         Note that the supplied factory's request_class is overridden by this
         constructor, to ensure only one Request class is used.
 
-
-        Deprecated arguments:
-
-        forms_factory: Object supporting the mechanize.FormsFactory interface.
-        links_factory: Object supporting the mechanize.LinksFactory interface.
-        get_title: callable taking a response object and an encoding string,
-         and returning the page title.
-
         """
-        self.default_encoding = default_encoding
-        self._allow_xhtml = i_want_broken_xhtml_support
         if history is None:
             history = History()
         self._history = history
         self.request = self._response = None
         self.form = None
-        self._forms = None
-        self._links = None
-        self._title = None
 
         if request_class is None:
             if not hasattr(urllib2.Request, "add_unredirected_header"):
                 request_class = ClientCookie.Request
             else:
-                request_class = urllib2.Request  # Python 2.4
+                request_class = urllib2.Request  # Python >= 2.4
 
         if factory is None:
-            if (forms_factory is None and
-                links_factory is None and
-                get_title is None):
-                factory = DefaultFactory()
-            else:
-                factory = Factory(forms_factory, links_factory, get_title)
+            factory = DefaultFactory()
         factory.set_request_class(request_class)
         self._factory = factory
         self.request_class = request_class
@@ -149,7 +132,6 @@ class Browser(UserAgent, OpenerMixin):
         if self._history is not None:
             self._history.close()
             self._history = None
-        self._forms = self._title = self._links = None
         self.request = self._response = None
 
     def open(self, url, data=None):
@@ -180,10 +162,10 @@ class Browser(UserAgent, OpenerMixin):
 
         success = True
         try:
-            self._response = UserAgent.open(self, self.request, data)
+            response = UserAgent.open(self, self.request, data)
         except urllib2.HTTPError, error:
             success = False
-            self._response = error
+            response = error
 ##         except (IOError, socket.error, OSError), error:
 ##             # Yes, urllib2 really does raise all these :-((
 ##             # See test_urllib2.py in stdlib and in ClientCookie for examples
@@ -196,9 +178,7 @@ class Browser(UserAgent, OpenerMixin):
 ##             # Python core, a fix would need some backwards-compat. hack to be
 ##             # acceptable.
 ##             raise
-        if not hasattr(self._response, "seek"):
-            self._response = response_seek_wrapper(self._response)
-        self._parse_html(self._response)
+        self.set_response(response)
         if not success:
             raise error
         return copy.copy(self._response)
@@ -213,11 +193,44 @@ class Browser(UserAgent, OpenerMixin):
         return copy.copy(self._response)
 
     def set_response(self, response):
-        """Replace current response with response."""
+        """Replace current response with (a copy of) response."""
+        from ClientCookie._Util import closeable_response
+        # sanity check, necessary but far from sufficient
+        if not (hasattr(response, "info") and hasattr(response, "geturl") and
+                hasattr(response, "read")):
+            raise ValueError("not a response object")
+
+        self.form = None
+
+        # XXX bleah!!
+
+        if not hasattr(response, 'closeable_response'):
+            # we expect to get here if a urllib2 handler constructed the
+            # response, i.e. the response is an urllib.addinfourl, instead of a
+            # ClientCookie._Util.closeable_response as returned by
+            # e.g. ClientCookie.HTTPHandler
+            try:
+                code = response.code
+            except AttributeError:
+                code = None
+            try:
+                msg = response.msg
+            except AttributeError:
+                msg = None
+            # assume response has an .fp attribute, the socket fileobject
+            # (i.e. is an urllib.addinfourl, really).
+            response = closeable_response(
+                response.fp, response.info(), response.geturl(), code, msg)
         if not hasattr(response, "seek"):
-            response = response_seek_wrapper(self._response)
+            response = ClientCookie.response_seek_wrapper(response)
+        # 0) don't want to copy here, but
+        # 1) don't want to copy some of the time and not other times
+        # 2) need response to be .close()able and .seek()able
+        # 3) 2) and 1) imply must always be copy.copy()ed
+        response = copy.copy(response)
+
         self._response = response
-        self._parse_html(self._response)
+        self._factory.set_response(self._response)
 
     def geturl(self):
         """Get URL of current document."""
@@ -241,9 +254,9 @@ class Browser(UserAgent, OpenerMixin):
         """
         if self._response is not None:
             self._response.close()
-        self.request, self._response = self._history.back(n, self._response)
-        self._parse_html(self._response)
-        return self._response
+        self.request, response = self._history.back(n, self._response)
+        self.set_response(response)
+        return response
 
     def clear_history(self):
         self._history.clear()
@@ -252,31 +265,11 @@ class Browser(UserAgent, OpenerMixin):
         """Return iterable over links (mechanize.Link objects)."""
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
+        links = self._factory.links()
         if kwds:
-            return self._find_links(False, **kwds)
-        if self._links is None:
-            try:
-                self._links = list(self.get_links_iter())
-            finally:
-                self._response.seek(0)
-        return self._links
-
-    def get_links_iter(self):
-        """Return an iterator that provides links of the document.
-
-        This method is provided in addition to .links() to allow lazy iteration
-        over links, while still keeping .links() safe against somebody
-        .seek()ing on a response "behind your back".  When response objects are
-        fixed to have independent seek positions, this method will be
-        deprecated in favour of .links().
-
-        """
-        if not self.viewing_html():
-            raise BrowserStateError("not viewing HTML")
-        base_url = self._response.geturl()
-        self._response.seek(0)
-        return self._factory.links(
-            self._response, self.encoding(self._response))
+            return self._filter_links(links, **kwds)
+        else:
+            return links
 
     def forms(self):
         """Return iterable over forms.
@@ -286,33 +279,19 @@ class Browser(UserAgent, OpenerMixin):
         """
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
-        if self._forms is None:
-            response = self._response
-            response.seek(0)
-            try:
-                self._forms = self._factory.forms(
-                    response, self.encoding(self._response))
-            finally:
-                response.seek(0)
-        return self._forms
+        return self._factory.forms()
 
     def viewing_html(self):
         """Return whether the current response contains HTML data."""
         if self._response is None:
             raise BrowserStateError("not viewing any document")
-        ct_hdrs = self._response.info().getheaders("content-type")
-        url = self._response.geturl()
-        return is_html(ct_hdrs, url, self._allow_xhtml)
+        return self._factory.is_html
 
-    def encoding(self, response):
-        # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
-        # headers may be in the response.  HTTP-EQUIV headers come last,
-        # so try in order from first to last.
-        for ct in response.info().getheaders("content-type"):
-            for k, v in split_header_words([ct])[0]:
-                if k == "charset":
-                    return v
-        return self.default_encoding
+    def encoding(self):
+        """"""
+        if self._response is None:
+            raise BrowserStateError("not viewing any document")
+        return self._factory.encoding
 
     def title(self):
         """Return title, or None if there is no title element in the document.
@@ -323,10 +302,7 @@ class Browser(UserAgent, OpenerMixin):
         """
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
-        if self._title is None:
-            self._title = self._factory.title(
-                self._response, self.encoding(self._response))
-        return self._title
+        return self._factory.title
 
     def select_form(self, name=None, predicate=None, nr=None):
         """Select an HTML form for input.
@@ -489,7 +465,10 @@ class Browser(UserAgent, OpenerMixin):
         nr: matches the nth link that matches all other criteria (default 0)
 
         """
-        return self._find_links(True, **kwds)
+        try:
+            return self._filter_links(self._factory.links(), **kwds).next()
+        except StopIteration:
+            raise LinkNotFoundError()
 
     def __getattr__(self, name):
         # pass through ClientForm / DOMForm methods and attributes
@@ -503,7 +482,7 @@ class Browser(UserAgent, OpenerMixin):
 #---------------------------------------------------
 # Private methods.
 
-    def _find_links(self, single,
+    def _filter_links(self, links,
                     text=None, text_regex=None,
                     name=None, name_regex=None,
                     url=None, url_regex=None,
@@ -517,19 +496,7 @@ class Browser(UserAgent, OpenerMixin):
         found_links = []
         orig_nr = nr
 
-        # An optimization, so that if we look for a single link we do not have
-        # to necessarily parse the entire file.
-        if self._links is None and single:
-            all_links = self.get_links_iter()
-        else:
-            if self._links is None:
-                try:
-                    self._links = list(self.get_links_iter())
-                finally:
-                    self._response.seek(0)
-            all_links = self._links
-
-        for link in all_links:
+        for link in links:
             if url is not None and url != link.url:
                 continue
             if url_regex is not None and not url_regex.search(link.url):
@@ -553,18 +520,5 @@ class Browser(UserAgent, OpenerMixin):
             if nr:
                 nr -= 1
                 continue
-            if single:
-                return link
-            else:
-                found_links.append(link)
-                nr = orig_nr
-        if not found_links:
-            raise LinkNotFoundError()
-        return found_links
-
-    def _parse_html(self, response):
-        # this is now lazy, so we just reset the various attributes that
-        # result from parsing
-        self.form = None
-        self._title = None
-        self._forms = self._links = None
+            yield link
+            nr = orig_nr
