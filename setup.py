@@ -41,8 +41,8 @@ import re
 VERSION = "0.1.0a"
 INSTALL_REQUIRES = [
     "ClientForm>=0.2.2, ==dev",
-    "ClientCookie>=1.2.2.dev_25094, ==dev",
-    "pullparser>=0.0.8.dev_r21645, ==dev"]
+    "ClientCookie>=1.3.0, ==dev",
+    "pullparser>=0.1.0, ==dev"]
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"  # or ZPL 2.1
