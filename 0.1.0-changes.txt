@@ -1,35 +1,34 @@
 Recent public API changes:
 
 - ATM, auth support requires Python 2.5 (I hope to fix this soon for
-  older Pythons).  As a result, the tests are failing for 2.2, 2.3,
-  and 2.4.
-
-- mechanize.Browser.default_encoding is gone
+  older Pythons).  As a result, some tests fail for 2.2, 2.3, and 2.4.
 
 - Some mechanize.Browser constructor args have been moved to
-  mechanize.Factory (default_encoding, ...)
+  mechanize.Factory (default_encoding, ...).
+
+- .get_links_iter() is gone (use .links() instead).
+
+- .forms() and .links() now both return iterators (in fact, generators),
+  not sequences (not really an interface change: these were always
+  documented to return iterables, but it will no doubt break some client
+  code).
+
+- .links no longer raises LinkNotFoundError (was accidental -- only
+  .click_link() / .find_link() should raise this).
+
+- Rename set_credentials --> set_password_manager (and add some new
+  methods to improve auth and proxy support).
 
 - mechanize.Factory has changed completely, to make it easier to avoid
   re-parsing (principally: add .set_response() method and make
   factory methods take no args)
 
-- .links no longer raises LinkNotFoundError (was accidental -- only
-  .click_link() / .find_link() should raise this)
+- mechanize.Browser.default_encoding is gone.
 
-- .get_links_iter() is gone (use .links() instead)
+- Added Browser.encoding().
 
-- .forms() and .links() now both return iterators (in fact, generators),
-  not sequences (not really an interface change: these were always
-  documented to return iterables, but it will no doubt break some client
-  code)
+- Factory() takes an i_want_broken_xhtml_support argument, as a stop
+  gap until I actually make a proper job of it.  Without a true value
+  for that argument, mechanize is ignorant of XML/XHTML.
 
 - _authen handler name renamed --> _basicauth
-
-- Rename set_credentials --> set_password_manager (and add some new
-  methods)
-
-
-Changed in SVN fairly recently (since last mechanize release):
- - Browser.encoding() now takes no parameters
-
- - i_want_broken_xhtml_support moved from Browser to Factory()
