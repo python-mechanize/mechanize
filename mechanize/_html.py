@@ -556,7 +556,7 @@ class RobustFactory(Factory):
 
     """
     def __init__(self, i_want_broken_xhtml_support=False,
-                 soup_class=MechanizeBs):
+                 soup_class=None):
         Factory.__init__(
             self,
             forms_factory=RobustFormsFactory(),
@@ -564,6 +564,8 @@ class RobustFactory(Factory):
             title_factory=RobustTitleFactory(),
             is_html_p=make_is_html(allow_xhtml=i_want_broken_xhtml_support),
             )
+        if soup_class is None:
+            soup_class = MechanizeBs
         self._soup_class = soup_class
 
     def set_response(self, response):
