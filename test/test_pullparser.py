@@ -5,16 +5,6 @@ from __future__ import generators
 import sys
 from unittest import TestCase
 
-try:
-    enumerate
-except NameError:
-    def enumerate(it):
-        i = 0
-        while 1:
-            v = it.next()
-            yield i, v
-            i += 1
-
 def peek_token(p):
     tok = p.get_token()
     p.unget_token(tok)
@@ -23,7 +13,7 @@ def peek_token(p):
 class UnescapeTests(TestCase):
 
     def test_unescape_charref(self):
-        from pullparser import unescape_charref, get_entitydefs
+        from mechanize._pullparser import unescape_charref, get_entitydefs
         mdash_utf8 = u"\u2014".encode("utf-8")
         for ref, codepoint, utf8, latin1 in [
             ("38", 38, u"&".encode("utf-8"), "&"),
@@ -35,7 +25,7 @@ class UnescapeTests(TestCase):
             self.assertEqual(unescape_charref(ref, 'utf-8'), utf8)
 
     def test_get_entitydefs(self):
-        from pullparser import get_entitydefs
+        from mechanize._pullparser import get_entitydefs
         ed = get_entitydefs()
         for name, char in [
             ("&amp;", u"&"),
@@ -48,24 +38,24 @@ class UnescapeTests(TestCase):
 
     def test_unescape(self):
         import htmlentitydefs
-        import pullparser
+        from mechanize import _pullparser
         data = "&amp; &lt; &mdash; &#8212; &#x2014;"
         mdash_utf8 = u"\u2014".encode("utf-8")
-        ue = pullparser.unescape(data, pullparser.get_entitydefs(), "utf-8")
+        ue = _pullparser.unescape(data, _pullparser.get_entitydefs(), "utf-8")
         self.assertEqual("& < %s %s %s" % ((mdash_utf8,)*3), ue)
 
         for text, expect in [
             ("&a&amp;", "&a&"),
             ("a&amp;", "a&"),
             ]:
-            got = pullparser.unescape(text,
-                                      pullparser.get_entitydefs(),
+            got = _pullparser.unescape(text,
+                                      _pullparser.get_entitydefs(),
                                       "latin-1")
             self.assertEqual(got, expect)
 
 
 class PullParserTests(TestCase):
-    from pullparser import PullParser, TolerantPullParser
+    from mechanize._pullparser import PullParser, TolerantPullParser
     PARSERS = [(PullParser, False), (TolerantPullParser, True)]
 
     def data_and_file(self):
@@ -92,7 +82,7 @@ still a comment , blah and a space at the end
         return data, f
 
     def test_encoding(self):
-        import pullparser
+        from mechanize import _pullparser
         #for pc, tolerant in [(pullparser.PullParser, False)]:#PullParserTests.PARSERS:
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_encoding(pc, tolerant)
@@ -135,7 +125,7 @@ still a comment , blah and a space at the end
     def _test_get_token(self, parser_class, tolerant):
         data, f = self.data_and_file()
         p = parser_class(f)
-        from pullparser import NoMoreTokensError
+        from mechanize._pullparser import NoMoreTokensError
         self.assertEqual(
             p.get_token(), ("decl",
 '''DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
@@ -190,7 +180,7 @@ still a comment , blah and a space at the end
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_unget_token(pc, tolerant)
     def _test_unget_token(self, parser_class, tolerant):
-        from pullparser import NoMoreTokensError
+        from mechanize._pullparser import NoMoreTokensError
         data, f = self.data_and_file()
         p = parser_class(f)
         p.get_token()
@@ -207,7 +197,7 @@ still a comment , blah and a space at the end
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_get_tag(pc, tolerant)
     def _test_get_tag(self, parser_class, tolerant):
-        from pullparser import NoMoreTokensError
+        from mechanize._pullparser import NoMoreTokensError
         data, f = self.data_and_file()
         p = parser_class(f)
         self.assertEqual(p.get_tag(), ("starttag", "html", []))
@@ -227,7 +217,7 @@ still a comment , blah and a space at the end
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_get_text(pc, tolerant)
     def _test_get_text(self, parser_class, tolerant):
-        from pullparser import NoMoreTokensError
+        from mechanize._pullparser import NoMoreTokensError
         data, f = self.data_and_file()
         p = parser_class(f)
         self.assertEqual(p.get_text(), "\n")
@@ -260,7 +250,7 @@ still a comment , blah and a space at the end
             self._test_get_text_2(pc, tolerant)
     def _test_get_text_2(self, parser_class, tolerant):
         # more complicated stuff
-        from pullparser import NoMoreTokensError
+        from mechanize._pullparser import NoMoreTokensError
 
         # endat
         data, f = self.data_and_file()
@@ -300,7 +290,7 @@ still a comment , blah and a space at the end
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_tags(pc, tolerant)
     def _test_tags(self, parser_class, tolerant):
-        from pullparser import NoMoreTokensError
+        from mechanize._pullparser import NoMoreTokensError
 
         # no args
         data, f = self.data_and_file()
@@ -333,7 +323,7 @@ still a comment , blah and a space at the end
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_tokens(pc, tolerant)
     def _test_tokens(self, parser_class, tolerant):
-        from pullparser import NoMoreTokensError
+        from mechanize._pullparser import NoMoreTokensError
 
         # no args
         data, f = self.data_and_file()
@@ -366,7 +356,7 @@ still a comment , blah and a space at the end
         f.close()
 
     def test_token_eq(self):
-        from pullparser import Token
+        from mechanize._pullparser import Token
         for (a, b) in [
             (Token('endtag', 'html', None),
              ('endtag', 'html', None)),
