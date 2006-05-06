@@ -494,7 +494,7 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
 <h2>FAQs - usage</h2>
 <ul>
   <li>I'm <strong><em>sure</em></strong> this page is HTML, why does
-     <code>mechanize.Browser</code> think otherwise
+     <code>mechanize.Browser</code> think otherwise?
 @{colorize("""
 b = mechanize.Browser(
     # mechanize's XHTML support needs work, so is currently switched off.  If
