@@ -3,6 +3,20 @@
 
 Stateful programmatic web browsing, after Andy Lester's Perl module
 WWW::Mechanize.
+
+The library is layered: mechanize.Browser (stateful web browser),
+mechanize.UserAgent (configurable URL opener), plus urllib2 handlers.
+
+Features include: ftp:, http: and file: URL schemes, browser history,
+high-level hyperlink and HTML form support, HTTP cookies, HTTP-EQUIV and
+Refresh, Referer [sic] header, robots.txt, redirections, proxies, and
+Basic and Digest HTTP authentication.  mechanize's response objects are
+(lazily-) .seek()able and still work after .close().
+
+Much of the code originally derived from Perl code by Gisle Aas
+(libwww-perl), Johnny Lee (MSIE Cookie support) and last but not least
+Andy Lester (WWW::Mechanize).  urllib2 was written by Jeremy Hylton.
+
 """
 
 def unparse_version(tup):
@@ -39,10 +53,7 @@ import re
 ##                           open("mechanize/_mechanize.py").read())
 ## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
 VERSION = "0.1.0a"
-INSTALL_REQUIRES = [
-    "ClientForm>=0.2.2, ==dev",
-    "ClientCookie>=1.3.0, ==dev",
-    "pullparser>=0.1.0, ==dev"]
+INSTALL_REQUIRES = ["ClientForm>=0.2.2, ==dev"]
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"  # or ZPL 2.1
@@ -71,6 +82,7 @@ Topic :: Software Development :: Testing :: Traffic Generation
 Topic :: System :: Archiving :: Mirroring
 Topic :: System :: Networking :: Monitoring
 Topic :: System :: Systems Administration
+Topic :: Text Processing
 Topic :: Text Processing :: Markup
 Topic :: Text Processing :: Markup :: HTML
 Topic :: Text Processing :: Markup :: XML

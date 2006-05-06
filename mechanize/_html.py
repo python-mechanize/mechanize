@@ -8,13 +8,11 @@ included with the distribution).
 
 """
 
-from __future__ import generators
-
 import re, copy, urllib, htmlentitydefs
 from urlparse import urljoin
 
-import ClientCookie
-from ClientCookie._HeadersUtil import split_header_words, is_html as _is_html
+import _Request
+from _HeadersUtil import split_header_words, is_html as _is_html
 
 ## # XXXX miserable hack
 ## def urljoin(base, url):
@@ -120,9 +118,9 @@ class LinksFactory:
                  link_class=Link,
                  urltags=None,
                  ):
-        import pullparser
+        import _pullparser
         if link_parser_class is None:
-            link_parser_class = pullparser.TolerantPullParser
+            link_parser_class = _pullparser.TolerantPullParser
         self.link_parser_class = link_parser_class
         self.link_class = link_class
         if urltags is None:
@@ -143,7 +141,6 @@ class LinksFactory:
 
     def links(self):
         """Return an iterator that provides links of the document."""
-        import pullparser
         response = self._response
         encoding = self._encoding
         base_url = self._base_url
@@ -200,7 +197,7 @@ class FormsFactory:
             form_parser_class = ClientForm.FormParser
         self.form_parser_class = form_parser_class
         if request_class is None:
-            request_class = ClientCookie.Request
+            request_class = _Request.Request
         self.request_class = request_class
         self.backwards_compat = backwards_compat
         self._response = None
@@ -231,12 +228,12 @@ class TitleFactory:
         self._encoding = encoding
 
     def title(self):
-        import pullparser
-        p = pullparser.TolerantPullParser(
+        import _pullparser
+        p = _pullparser.TolerantPullParser(
             self._response, encoding=self._encoding)
         try:
             p.get_tag("title")
-        except pullparser.NoMoreTokensError:
+        except _pullparser.NoMoreTokensError:
             return None
         else:
             return p.get_text()
@@ -384,7 +381,7 @@ class RobustLinksFactory:
                 url = clean_url(url, encoding)
                 text = link.firstText(lambda t: True)
                 if text is BeautifulSoup.Null:
-                    # follow pullparser's weird behaviour rigidly
+                    # follow _pullparser's weird behaviour rigidly
                     if link.name == "a":
                         text = ""
                     else:

@@ -11,7 +11,8 @@
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
   <meta name="author" content="John J. Lee &lt;jjl@@pobox.com&gt;">
   <meta name="date" content="@(time.strftime("%Y-%m-%d", last_modified))">
-  <meta name="keywords" content="Python,HTML,browser,stateful,web,client,client-side,mechanize,form,ClientForm,ClientCookie,pullparser,WWW::Mechanize">
+  <meta name="keywords" content="Python,HTML,HTTP,browser,stateful,web,client,client-side,mechanize,cookie,form,META,HTTP-EQUIV,Refresh,ClientForm,ClientCookie,pullparser,WWW::Mechanize">
+  <meta name="keywords" content="cookie,HTTP,Python,web,client,client-side,HTML,META,HTTP-EQUIV,Refresh">
   <title>mechanize</title>
   <style type="text/css" media="screen">@@import "../styles/style.css";</style>
   <base href="http://wwwsearch.sourceforge.net/mechanize/">
@@ -408,7 +409,7 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
 <h2>FAQs</h2>
 <ul>
   <li>Which version of Python do I need?
-  <p>2.2.1 or above.
+  <p>2.3 or above.
   <li>What else do I need?
   <p><a href="../ClientCookie/">ClientCookie</a>,
    <a href="../ClientForm/">ClientForm</a> and

@@ -1,7 +1,20 @@
 Recent public API changes:
 
+- ClientCookie has been moved into the mechanize package and is no
+  longer a separate package.  The ClientCookie interface is still
+  supported, but all names must be imported from module mechanize
+  instead of from module ClientCookie.  Python 2.3 is now required. (I
+  have no plans to merge ClientForm with mechanize.)  Note that the
+  logging work-alike facility is gone.  Also, the experimental BSDDB
+  support is now only included as example code, and not installed.
+
+- pullparser has been moved into the mechanize package and is no
+  longer a separate package.  Also, the interface of pullparser is no
+  longer supported.  Instead, it's just a purely internal
+  implementation detail of mechanize.
+
 - ATM, auth support requires Python 2.5 (I hope to fix this soon for
-  older Pythons).  As a result, some tests fail for 2.2, 2.3, and 2.4.
+  older Pythons).  As a result, some tests fail for 2.3 and 2.4.
 
 - Some mechanize.Browser constructor args have been moved to
   mechanize.Factory (default_encoding, ...).

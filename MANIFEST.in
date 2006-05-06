@@ -5,6 +5,8 @@ include GeneralFAQ.html
 include README.html.in
 include README.html
 include README.txt
+include doc.html.in
+include doc.html
 include ChangeLog.txt
 include *.py
 recursive-include examples *.py

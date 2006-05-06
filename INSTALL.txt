@@ -32,8 +32,8 @@ then (with appropriate permissions)
  python setup.py easy_install --no-deps .
 
 
-Alternatively, just copy the whole mechanize directory into your
-Python path (eg. unix: /usr/local/lib/python2.4/site-packages,
+Alternatively, just copy the whole mechanize directory into a directory
+on your Python path (eg. unix: /usr/local/lib/python2.4/site-packages,
 Windows: C:\Python24\Lib\site-packages).  Only copy the mechanize
 directory that's inside the distributed tarball / zip archive, not the
 entire mechanize-x.x.x directory!
@@ -44,13 +44,21 @@ command:
 
  python test.py
 
-This runs the tests against the source files extracted from the
-package.  For help on command line options:
+This runs the tests against the source files extracted from the package.
+For help on command line options:
 
  python test.py --help
 
+To run the functional tests (which DO access the network), run the
+following command:
 
-Bugs and comments to jjl@pobox.com.
+ python functional_tests.py
+
+
+Please send bugs and comments to the mailing list (or failing that, to
+jjl@pobox.com):
+
+https://lists.sourceforge.net/lists/listinfo/wwwsearch-general
 
 
 NO WARRANTY
@@ -62,12 +70,14 @@ MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 Copyright Notices
 
   (C) 2002-2006 John J. Lee.  All rights reserved.
-  (C) 2003 Andy Lester.  All rights reserved.  (Perl code from which
-      this module is derived)
+  (C) 1995-2001 Gisle Aas.  All rights reserved.   (Original LWP code)
+  (C) 2002-2003 Johhny Lee.  All rights reserved.  (MSIE Perl code)
+  (C) 2003 Andy Lester.  All rights reserved.  (Original WWW::Mechanize
+      Perl code)
 
 This code in this package is free software; you can redistribute it
-and/or modify it under the terms of the BSD or ZPL 2.1 licenses (see
-the file COPYING.txt).
+and/or modify it under the terms of the BSD or ZPL 2.1 licenses (see the
+file COPYING.txt).
 
 John J. Lee <jjl@pobox.com>
 May 2006

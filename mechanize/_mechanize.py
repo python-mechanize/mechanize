@@ -22,10 +22,10 @@ from __future__ import generators
 
 import urllib2, urlparse, sys, copy
 
-import ClientCookie
-
 from _useragent import UserAgent
 from _html import DefaultFactory
+from _Util import response_seek_wrapper
+import _Request
 
 __version__ = (0, 1, 0, "a", None)  # 0.1.0a
 
@@ -62,7 +62,7 @@ class History:
 
 
 if sys.version_info[:2] >= (2, 4):
-    from ClientCookie._Opener import OpenerMixin
+    from _Opener import OpenerMixin
 else:
     class OpenerMixin: pass
 
@@ -76,7 +76,7 @@ class Browser(UserAgent, OpenerMixin):
 
     Public attributes:
 
-    request: current request (ClientCookie.Request or urllib2.Request)
+    request: current request (mechanize.Request or urllib2.Request)
     form: currently selected form (see .select_form())
 
     """
@@ -93,7 +93,7 @@ class Browser(UserAgent, OpenerMixin):
         factory: object implementing the mechanize.Factory interface.
         history: object implementing the mechanize.History interface.  Note this
          interface is still experimental and may change in future.
-        request_class: Request class to use.  Defaults to ClientCookie.Request
+        request_class: Request class to use.  Defaults to mechanize.Request
          by default for Pythons older than 2.4, urllib2.Request otherwise.
 
         The Factory and History objects passed in are 'owned' by the Browser,
@@ -113,7 +113,7 @@ class Browser(UserAgent, OpenerMixin):
 
         if request_class is None:
             if not hasattr(urllib2.Request, "add_unredirected_header"):
-                request_class = ClientCookie.Request
+                request_class = _Request.Request
             else:
                 request_class = urllib2.Request  # Python >= 2.4
 
@@ -168,9 +168,8 @@ class Browser(UserAgent, OpenerMixin):
             response = error
 ##         except (IOError, socket.error, OSError), error:
 ##             # Yes, urllib2 really does raise all these :-((
-##             # See test_urllib2.py in stdlib and in ClientCookie for examples
-##             # of socket.gaierror and OSError, plus note that FTPHandler raises
-##             # IOError.
+##             # See test_urllib2.py for examples of socket.gaierror and OSError,
+##             # plus note that FTPHandler raises IOError.
 ##             # XXX I don't seem to have an example of exactly socket.error being
 ##             #  raised, only socket.gaierror...
 ##             # I don't want to start fixing these here, though, since this is a
@@ -194,7 +193,7 @@ class Browser(UserAgent, OpenerMixin):
 
     def set_response(self, response):
         """Replace current response with (a copy of) response."""
-        from ClientCookie._Util import closeable_response
+        from _Util import closeable_response
         # sanity check, necessary but far from sufficient
         if not (hasattr(response, "info") and hasattr(response, "geturl") and
                 hasattr(response, "read")):
@@ -207,8 +206,8 @@ class Browser(UserAgent, OpenerMixin):
         if not hasattr(response, 'closeable_response'):
             # we expect to get here if a urllib2 handler constructed the
             # response, i.e. the response is an urllib.addinfourl, instead of a
-            # ClientCookie._Util.closeable_response as returned by
-            # e.g. ClientCookie.HTTPHandler
+            # _Util.closeable_response as returned by
+            # e.g. mechanize.HTTPHandler
             try:
                 code = response.code
             except AttributeError:
@@ -222,7 +221,7 @@ class Browser(UserAgent, OpenerMixin):
             response = closeable_response(
                 response.fp, response.info(), response.geturl(), code, msg)
         if not hasattr(response, "seek"):
-            response = ClientCookie.response_seek_wrapper(response)
+            response = response_seek_wrapper(response)
         # 0) don't want to copy here, but
         # 1) don't want to copy some of the time and not other times
         # 2) need response to be .close()able and .seek()able

@@ -13,11 +13,14 @@ included with the distribution).
 
 import sys
 import urllib2
-import ClientCookie
+
 if sys.version_info[:2] >= (2, 4):
     from urllib2 import OpenerDirector, BaseHandler, HTTPErrorProcessor
 else:
-    from ClientCookie import OpenerDirector, BaseHandler, HTTPErrorProcessor
+    from _Opener import OpenerDirector
+    from _urllib2_support import BaseHandler, HTTPErrorProcessor
+
+import _urllib2_support
 
 class HTTPRefererProcessor(BaseHandler):
     def http_request(self, request):
@@ -99,7 +102,7 @@ class UserAgent(OpenerDirector):
 
     handler_classes = {
         # scheme handlers
-        "http": ClientCookie.HTTPHandler,
+        "http": _urllib2_support.HTTPHandler,
         "ftp": urllib2.FTPHandler,  # CacheFTPHandler is buggy in 2.3
         "file": urllib2.FileHandler,
         "gopher": urllib2.GopherHandler,
@@ -108,25 +111,26 @@ class UserAgent(OpenerDirector):
         "_unknown": urllib2.UnknownHandler,
         # HTTP{S,}Handler depend on HTTPErrorProcessor too
         "_http_error": HTTPErrorProcessor,
-        "_http_request_upgrade": ClientCookie.HTTPRequestUpgradeProcessor,
+        "_http_request_upgrade": _urllib2_support.HTTPRequestUpgradeProcessor,
         "_http_default_error": urllib2.HTTPDefaultErrorHandler,
 
         # feature handlers
         "_basicauth": urllib2.HTTPBasicAuthHandler,
         "_digestauth": urllib2.HTTPBasicAuthHandler,
-        "_redirect": ClientCookie.HTTPRedirectHandler,
-        "_cookies": ClientCookie.HTTPCookieProcessor,
-        "_refresh": ClientCookie.HTTPRefreshProcessor,
+        "_redirect": _urllib2_support.HTTPRedirectHandler,
+        "_cookies": _urllib2_support.HTTPCookieProcessor,
+        "_refresh": _urllib2_support.HTTPRefreshProcessor,
         "_referer": HTTPRefererProcessor,  # from this module, note
-        "_equiv": ClientCookie.HTTPEquivProcessor,
-        "_seek": ClientCookie.SeekableProcessor,
+        "_equiv": _urllib2_support.HTTPEquivProcessor,
+        "_seek": _urllib2_support.SeekableProcessor,
         "_proxy": urllib2.ProxyHandler,
         "_proxy_basicauth": urllib2.ProxyBasicAuthHandler,
         "_proxy_digestauth": urllib2.ProxyDigestAuthHandler,
+        "_robots": _urllib2_support.HTTPRobotRulesProcessor,
 
         # debug handlers
-        "_debug_redirect": ClientCookie.HTTPRedirectDebugProcessor,
-        "_debug_response_body": ClientCookie.HTTPResponseDebugProcessor,
+        "_debug_redirect": _urllib2_support.HTTPRedirectDebugProcessor,
+        "_debug_response_body": _urllib2_support.HTTPResponseDebugProcessor,
         }
 
     default_schemes = ["http", "ftp", "file", "gopher"]
@@ -137,14 +141,11 @@ class UserAgent(OpenerDirector):
                         "_refresh", "_equiv",
                         "_basicauth", "_digestauth",
                         "_proxy", "_proxy_basicauth", "_proxy_digestauth",
-                        "_seek",
+                        "_seek", "_robots",
                         ]
-    if hasattr(ClientCookie, 'HTTPSHandler'):
-        handler_classes["https"] = ClientCookie.HTTPSHandler
+    if hasattr(_urllib2_support, 'HTTPSHandler'):
+        handler_classes["https"] = _urllib2_support.HTTPSHandler
         default_schemes.append("https")
-    if hasattr(ClientCookie, "HTTPRobotRulesProcessor"):
-        handler_classes["_robots"] = ClientCookie.HTTPRobotRulesProcessor
-        default_features.append("_robots")
 
     def __init__(self):
         OpenerDirector.__init__(self)
@@ -224,7 +225,7 @@ class UserAgent(OpenerDirector):
             "this class can't do HTTP Referer: use mechanize.Browser instead")
 
     def set_cookiejar(self, cookiejar):
-        """Set a ClientCookie.CookieJar, or None."""
+        """Set a mechanize.CookieJar, or None."""
         self._set_handler("_cookies", obj=cookiejar)
 
     # XXX could use Greg Stein's httpx for some of this instead?
@@ -289,36 +290,33 @@ class UserAgent(OpenerDirector):
         """
         self._set_handler("_referer", handle)
         self._handle_referer = bool(handle)
+    # XXXXX isn't this always true?
     def set_seekable_responses(self, handle):
         """Make response objects .seek()able."""
         self._set_handler("_seek", handle)
     def set_debug_redirects(self, handle):
-        """Log information about HTTP redirects.
-
-        This includes refreshes, which show up as faked 302 redirections at the
-        moment.
+        """Log information about HTTP redirects (including refreshes).
 
         Logging is performed using module logging.  The logger name is
-        "ClientCookie.http_redirects".  To actually print some debug output,
+        "mechanize.http_redirects".  To actually print some debug output,
         eg:
 
-        logger = logging.getLogger("ClientCookie.http_redirects")
-        logger.addHandler(logging.StreamHandler())
+        import sys, logging
+        logger = logging.getLogger("mechanize.http_redirects")
+        logger.addHandler(logging.StreamHandler(sys.stdout))
         logger.setLevel(logging.INFO)
 
         Other logger names relevant to this module:
 
-        "ClientCookie.http_responses"
-        "ClientCookie.cookies" (or "cookielib" if running Python 2.4)
+        "mechanize.http_responses"
+        "mechanize.cookies" (or "cookielib" if running Python 2.4)
 
         To turn on everything:
 
-        for logger in [
-            logging.getLogger("ClientCookie"),
-            logging.getLogger("cookielib"),
-            ]:
-            logger.addHandler(logging.StreamHandler())
-            logger.setLevel(logging.INFO)
+        import sys, logging
+        logger = logging.getLogger("mechanize")
+        logger.addHandler(logging.StreamHandler(sys.stdout))
+        logger.setLevel(logging.INFO)
 
         """
         self._set_handler("_debug_redirect", handle)
@@ -371,6 +369,7 @@ class UserAgent(OpenerDirector):
             self.add_handler(newhandler)
             self._ua_handlers[name] = newhandler
 
+# XXXXX cruft
 def remove(sequence, obj):
     # for use when can't use .remove() because of obj.__cmp__ :-(
     # (ClientCookie only requires Python 2.0, which doesn't have __lt__)
