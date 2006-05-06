@@ -11,18 +11,10 @@ COPYING.txt included with the distribution).
 
 import os, re, string, urlparse
 from types import StringType
-try:
-    from types import UnicodeType
-    STRING_TYPES = StringType, UnicodeType
-except:
-    STRING_TYPES = StringType,
+from types import UnicodeType
+STRING_TYPES = StringType, UnicodeType
 
 from _Util import startswith, endswith, http2time
-
-try: True
-except NameError:
-    True = 1
-    False = 0
 
 def is_html(ct_headers, url, allow_xhtml=False):
     """
