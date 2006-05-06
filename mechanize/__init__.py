@@ -20,9 +20,10 @@ from _MozillaCookieJar import MozillaCookieJar
 from _MSIECookieJar import MSIECookieJar
 from _urllib2_support import \
      Request, \
-     OpenerDirector, build_opener, install_opener, urlopen, \
+     build_opener, install_opener, urlopen, \
      OpenerFactory, urlretrieve, BaseHandler, HeadParser, \
      RobotExclusionError
+from _Opener import OpenerDirector
 try:
     from _urllib2_support import XHTMLCompatibleHeadParser
 except ImportError:

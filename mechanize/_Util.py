@@ -411,6 +411,14 @@ class seek_wrapper:
         cpy.__cache = self.__cache
         return cpy
 
+    def get_data(self):
+        pos = self.__pos
+        try:
+            self.seek(0)
+            return self.read(-1)
+        finally:
+            self.__pos = pos
+
     def read(self, size=-1):
         pos = self.__pos
         end = len(self.__cache.getvalue())

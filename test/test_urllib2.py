@@ -225,11 +225,12 @@ class OpenerDirectorTests(unittest.TestCase):
 
         req = Request("http://example.com/")
         r = o.open(req)
+
         # processor methods are called on *all* handlers that define them,
         # not just the first handler
         calls = [(handlers[0], "http_request"), (handlers[1], "http_request"),
                  (handlers[0], "http_response"), (handlers[1], "http_response")]
-
+        self.assertEqual(len(o.calls), len(calls))
         for i in range(len(o.calls)):
             handler, name, args, kwds = o.calls[i]
             if i < 2:
@@ -246,6 +247,47 @@ class OpenerDirectorTests(unittest.TestCase):
                 # handler that defines http_open to handle it
                 self.assert_(args[1] is None or
                              isinstance(args[1], MockResponse))
+
+    def test_any(self):
+        o = OpenerDirector()
+        meth_spec = [[
+            ("http_request", "return request"),
+            ("http_response", "return response"),
+            ("ftp_request", "return request"),
+            ("ftp_response", "return response"),
+            ("any_request", "return request"),
+            ("any_response", "return response"),
+            ]]
+        handlers = add_ordered_mock_handlers(o, meth_spec)
+        handler = handlers[0]
+
+        for scheme in ["http", "ftp"]:
+            o.calls = []
+            req = Request("%s://example.com/" % scheme)
+            r = o.open(req)
+
+            calls = [(handler, "any_request"),
+                     (handler, ("%s_request" % scheme)),
+                     (handler, "any_response"),
+                     (handler, ("%s_response" % scheme)),
+                     ]
+            #self.assertEqual(len(o.calls), len(calls))
+            for i, ((handler, name, args, kwds), calls) in (
+                enumerate(zip(o.calls, calls))):
+                if i < 2:
+                    # *_request
+                    self.assert_((handler, name) == calls)
+                    self.assert_(len(args) == 1)
+                    self.assert_(isinstance(args[0], Request))
+                else:
+                    # *_response
+                    self.assert_((handler, name) == calls)
+                    self.assert_(len(args) == 2)
+                    self.assert_(isinstance(args[0], Request))
+                    # response from opener.open is None, because there's no
+                    # handler that defines http_open to handle it
+                    self.assert_(args[1] is None or
+                                 isinstance(args[1], MockResponse))
 
 
 class MockHTTPResponse:
@@ -668,7 +710,7 @@ class HandlerTests(unittest.TestCase):
             def info(self): pass
             def geturl(self): return ""
         r = MockUnseekableResponse()
-        newr = h.http_response(req, r)
+        newr = h.any_response(req, r)
         self.assert_(not hasattr(r, "seek"))
         self.assert_(hasattr(newr, "seek"))
 

@@ -42,7 +42,53 @@ def methnames_of_class_as_dict(klass):
     return names
 
 
-class OpenerMixin:
+class OpenerDirector(urllib2.OpenerDirector):
+    def __init__(self):
+        urllib2.OpenerDirector.__init__(self)
+        self.process_response = {}
+        self.process_request = {}
+
+    def add_handler(self, handler):
+        added = False
+        for meth in methnames(handler):
+            i = string.find(meth, "_")
+            protocol = meth[:i]
+            condition = meth[i+1:]
+
+            if startswith(condition, "error"):
+                j = string.find(meth[i+1:], "_") + i + 1
+                kind = meth[j+1:]
+                try:
+                    kind = int(kind)
+                except ValueError:
+                    pass
+                lookup = self.handle_error.get(protocol, {})
+                self.handle_error[protocol] = lookup
+            elif (condition == "open" and
+                  protocol not in ["do", "proxy"]):  # hack -- see below
+                kind = protocol
+                lookup = self.handle_open
+            elif (condition in ["response", "request"] and
+                  protocol != "redirect"):  # yucky hack
+                # hack above is to fix HTTPRedirectHandler problem, which
+                # appears to above line to be a processor because of the
+                # redirect_request method :-((
+                kind = protocol
+                lookup = getattr(self, "process_"+condition)
+            else:
+                continue
+
+            if lookup.has_key(kind):
+                bisect.insort(lookup[kind], handler)
+            else:
+                lookup[kind] = [handler]
+            added = True
+
+        if added:
+            # XXX why does self.handlers need to be sorted?
+            bisect.insort(self.handlers, handler)
+            handler.add_parent(self)
+
     def _request(self, url_or_req, data):
         if isstringlike(url_or_req):
             req = Request(url_or_req, data)
@@ -52,6 +98,55 @@ class OpenerMixin:
             if data is not None:
                 req.add_data(data)
         return req
+
+    def open(self, fullurl, data=None):
+        req = self._request(fullurl, data)
+        req_scheme = req.get_type()
+
+        # pre-process request
+        # XXX should we allow a Processor to change the type (URL
+        #   scheme) of the request?
+        for scheme in ["any", req_scheme]:
+            meth_name = scheme+"_request"
+            for processor in self.process_request.get(scheme, []):
+                meth = getattr(processor, meth_name)
+                req = meth(req)
+
+        # In Python >= 2.4, .open() supports processors already, so we must
+        # call ._open() instead.
+        urlopen = getattr(urllib2.OpenerDirector, "_open",
+                          urllib2.OpenerDirector.open)
+        response = urlopen(self, req, data)
+
+        # post-process response
+        for scheme in ["any", req_scheme]:
+            meth_name = scheme+"_response"
+            for processor in self.process_response.get(scheme, []):
+                meth = getattr(processor, meth_name)
+                response = meth(req, response)
+
+        return response
+
+    def error(self, proto, *args):
+        if proto in ['http', 'https']:
+            # XXX http[s] protocols are special-cased
+            dict = self.handle_error['http'] # https is not different than http
+            proto = args[2]  # YUCK!
+            meth_name = 'http_error_%s' % proto
+            http_err = 1
+            orig_args = args
+        else:
+            dict = self.handle_error
+            meth_name = proto + '_error'
+            http_err = 0
+        args = (dict, proto, meth_name) + args
+        result = apply(self._call_chain, args)
+        if result:
+            return result
+
+        if http_err:
+            args = (dict, 'default', 'http_error_default') + orig_args
+            return apply(self._call_chain, args)
 
     def retrieve(self, fullurl, filename=None, reporthook=None, data=None):
         """Returns (filename, headers).
@@ -98,95 +193,3 @@ class OpenerMixin:
             raise IOError("incomplete retrieval error",
                           "got only %d bytes out of %d" % (read,size))
         return result
-
-
-class OpenerDirector(urllib2.OpenerDirector, OpenerMixin):
-    def __init__(self):
-        urllib2.OpenerDirector.__init__(self)
-        self.process_response = {}
-        self.process_request = {}
-
-    def add_handler(self, handler):
-        added = False
-        for meth in methnames(handler):
-            i = string.find(meth, "_")
-            protocol = meth[:i]
-            condition = meth[i+1:]
-
-            if startswith(condition, "error"):
-                j = string.find(meth[i+1:], "_") + i + 1
-                kind = meth[j+1:]
-                try:
-                    kind = int(kind)
-                except ValueError:
-                    pass
-                lookup = self.handle_error.get(protocol, {})
-                self.handle_error[protocol] = lookup
-            elif (condition == "open" and
-                  protocol not in ["do", "proxy"]):  # hack -- see below
-                kind = protocol
-                lookup = self.handle_open
-            elif (condition in ["response", "request"] and
-                  protocol != "redirect"):  # yucky hack
-                # hack above is to fix HTTPRedirectHandler problem, which
-                # appears to above line to be a processor because of the
-                # redirect_request method :-((
-                kind = protocol
-                lookup = getattr(self, "process_"+condition)
-            else:
-                continue
-
-            if lookup.has_key(kind):
-                bisect.insort(lookup[kind], handler)
-            else:
-                lookup[kind] = [handler]
-            added = True
-            continue
-
-        if added:
-            # XXX why does self.handlers need to be sorted?
-            bisect.insort(self.handlers, handler)
-            handler.add_parent(self)
-
-    def open(self, fullurl, data=None):
-        req = self._request(fullurl, data)
-        type_ = req.get_type()
-
-        # pre-process request
-        # XXX should we allow a Processor to change the type (URL
-        #   scheme) of the request?
-        meth_name = type_+"_request"
-        for processor in self.process_request.get(type_, []):
-            meth = getattr(processor, meth_name)
-            req = meth(req)
-
-        response = urllib2.OpenerDirector.open(self, req, data)
-
-        # post-process response
-        meth_name = type_+"_response"
-        for processor in self.process_response.get(type_, []):
-            meth = getattr(processor, meth_name)
-            response = meth(req, response)
-
-        return response
-
-    def error(self, proto, *args):
-        if proto in ['http', 'https']:
-            # XXX http[s] protocols are special-cased
-            dict = self.handle_error['http'] # https is not different than http
-            proto = args[2]  # YUCK!
-            meth_name = 'http_error_%s' % proto
-            http_err = 1
-            orig_args = args
-        else:
-            dict = self.handle_error
-            meth_name = proto + '_error'
-            http_err = 0
-        args = (dict, proto, meth_name) + args
-        result = apply(self._call_chain, args)
-        if result:
-            return result
-
-        if http_err:
-            args = (dict, 'default', 'http_error_default') + orig_args
-            return apply(self._call_chain, args)

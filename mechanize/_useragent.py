@@ -14,10 +14,10 @@ included with the distribution).
 import sys
 import urllib2
 
+from _Opener import OpenerDirector
 if sys.version_info[:2] >= (2, 4):
-    from urllib2 import OpenerDirector, BaseHandler, HTTPErrorProcessor
+    from urllib2 import BaseHandler, HTTPErrorProcessor
 else:
-    from _Opener import OpenerDirector
     from _urllib2_support import BaseHandler, HTTPErrorProcessor
 
 import _urllib2_support

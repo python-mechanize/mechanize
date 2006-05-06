@@ -24,7 +24,7 @@ import urllib2, urlparse, sys, copy
 
 from _useragent import UserAgent
 from _html import DefaultFactory
-from _Util import response_seek_wrapper
+from _Util import response_seek_wrapper, closeable_response
 import _Request
 
 __version__ = (0, 1, 0, "a", None)  # 0.1.0a
@@ -60,13 +60,43 @@ class History:
             response.close()
         del self._history[:]
 
+# Horrible, but needed, at least until fork urllib2.  Even then, may want
+# to preseve urllib2 compatibility.
+def upgrade_response(response):
+    # a urllib2 handler constructed the response, i.e. the response is an
+    # urllib.addinfourl, instead of a _Util.closeable_response as returned
+    # by e.g. mechanize.HTTPHandler
+    try:
+        code = response.code
+    except AttributeError:
+        code = None
+    try:
+        msg = response.msg
+    except AttributeError:
+        msg = None
 
-if sys.version_info[:2] >= (2, 4):
-    from _Opener import OpenerMixin
-else:
-    class OpenerMixin: pass
+    # may have already-.read() data from .seek() cache
+    data = None
+    get_data = getattr(response, "get_data", None)
+    if get_data:
+        data = get_data()
 
-class Browser(UserAgent, OpenerMixin):
+    response = closeable_response(
+        response.fp, response.info(), response.geturl(), code, msg)
+    response = response_seek_wrapper(response)
+    if data:
+        response.set_data(data)
+    return response
+class ResponseUpgradeProcessor(urllib2.BaseHandler):
+    # upgrade responses to be .close()able without becoming unusable
+    handler_order = 0  # before anything else
+    def any_response(self, request, response):
+        if not hasattr(response, 'closeable_response'):
+            response = upgrade_response(response)
+        return response
+
+
+class Browser(UserAgent):
     """Browser-like class with support for history, forms and links.
 
     BrowserStateError is raised whenever the browser is in the wrong state to
@@ -80,6 +110,11 @@ class Browser(UserAgent, OpenerMixin):
     form: currently selected form (see .select_form())
 
     """
+
+    handler_classes = UserAgent.handler_classes.copy()
+    handler_classes["_response_upgrade"] = ResponseUpgradeProcessor
+    default_others = copy.copy(UserAgent.default_others)
+    default_others.append("_response_upgrade")
 
     def __init__(self,
                  factory=None,
@@ -193,7 +228,6 @@ class Browser(UserAgent, OpenerMixin):
 
     def set_response(self, response):
         """Replace current response with (a copy of) response."""
-        from _Util import closeable_response
         # sanity check, necessary but far from sufficient
         if not (hasattr(response, "info") and hasattr(response, "geturl") and
                 hasattr(response, "read")):
@@ -201,32 +235,13 @@ class Browser(UserAgent, OpenerMixin):
 
         self.form = None
 
-        # XXX bleah!!
-
-        if not hasattr(response, 'closeable_response'):
-            # we expect to get here if a urllib2 handler constructed the
-            # response, i.e. the response is an urllib.addinfourl, instead of a
-            # _Util.closeable_response as returned by
-            # e.g. mechanize.HTTPHandler
-            try:
-                code = response.code
-            except AttributeError:
-                code = None
-            try:
-                msg = response.msg
-            except AttributeError:
-                msg = None
-            # assume response has an .fp attribute, the socket fileobject
-            # (i.e. is an urllib.addinfourl, really).
-            response = closeable_response(
-                response.fp, response.info(), response.geturl(), code, msg)
         if not hasattr(response, "seek"):
             response = response_seek_wrapper(response)
-        # 0) don't want to copy here, but
-        # 1) don't want to copy some of the time and not other times
-        # 2) need response to be .close()able and .seek()able
-        # 3) 2) and 1) imply must always be copy.copy()ed
-        response = copy.copy(response)
+        if not hasattr(response, "closeable_response"):
+            response = ResponseUpgradeProcessor().any_response(
+                'junk', response)
+        else:
+            response = copy.copy(response)
 
         self._response = response
         self._factory.set_response(self._response)

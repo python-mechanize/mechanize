@@ -14,6 +14,7 @@ COPYING.txt included with the distribution).
 import copy, time, tempfile, htmlentitydefs, re
 
 from _ClientCookie import CookieJar, request_host
+import _Opener
 from _Util import isstringlike, startswith, getheaders, closeable_response
 from _HeadersUtil import is_html
 from _Debug import getLogger
@@ -406,17 +407,13 @@ else:
 
         https_response = http_response
 
-    # XXX ATM this only takes notice of http responses -- probably
-    #   should be independent of protocol scheme (http, ftp, etc.)
     class SeekableProcessor(BaseHandler):
         """Make responses seekable."""
 
-        def http_response(self, request, response):
+        def any_response(self, request, response):
             if not hasattr(response, "seek"):
                 return response_seek_wrapper(response)
             return response
-
-        https_response = http_response
 
     class HTTPCookieProcessor(BaseHandler):
         """Handle HTTP cookies.
@@ -731,14 +728,6 @@ else:
 
 ##             https_request = AbstractHTTPHandler.do_request_
 
-    if int(10*float(urllib2.__version__[:3])) >= 24:
-        # urllib2 supports processors already
-        from _Opener import OpenerMixin
-        class OpenerDirector(urllib2.OpenerDirector, OpenerMixin):
-            pass
-    else:
-        from _Opener import OpenerDirector
-
     class OpenerFactory:
         """This class's interface is quite likely to change."""
 
@@ -763,7 +752,7 @@ else:
         handlers = []
         replacement_handlers = []
 
-        def __init__(self, klass=OpenerDirector):
+        def __init__(self, klass=_Opener.OpenerDirector):
             self.klass = klass
 
         def build_opener(self, *handlers):

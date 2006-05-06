@@ -349,8 +349,7 @@ using the constructor arguments.
 <dd><p>This makes ClientCookie's response objects <code>seek()</code>able.
 Seeking is done lazily (ie. the response object only reads from the socket as
 necessary, rather than slurping in all the data before the response is returned
-to you).  XXX only works for HTTP ATM, I think, and also doesn't work for
-HTTPError exceptions...
+to you).
 
 <dt><code>HTTPRefererProcessor</code>
 

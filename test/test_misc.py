@@ -202,28 +202,12 @@ A Seeming somwhat more than View;
         rsw.seek(0)
         self._test4(rsw)
 
-    def testSetResponseData(self):
+    def testGetResponseData(self):
         from mechanize import response_seek_wrapper
         r = TestUnSeekableResponse(self.text, {'blah': 'yawn'})
         rsw = response_seek_wrapper(r)
-        rsw.set_data("""\
-A Seeming somwhat more than View;
-  That doth instruct the Mind
-  In Things that ly behind,
-""")
-        self.assertEqual(rsw.read(9), "A Seeming")
-        self.assertEqual(rsw.read(13), " somwhat more")
-        rsw.seek(0)
-        self.assertEqual(rsw.read(9), "A Seeming")
-        self.assertEqual(rsw.readline(), " somwhat more than View;\n")
-        rsw.seek(0)
-        self.assertEqual(rsw.readline(), "A Seeming somwhat more than View;\n")
-        rsw.seek(-1, 1)
-        self.assertEqual(rsw.read(7), "\n  That")
 
-        r = TestUnSeekableResponse(self.text, {'blah': 'yawn'})
-        rsw = response_seek_wrapper(r)
-        rsw.set_data(self.text)
+        self.assertEqual(rsw.get_data(), self.text)
         self._test2(rsw)
         rsw.seek(0)
         self._test4(rsw)
