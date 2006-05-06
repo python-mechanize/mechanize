@@ -38,8 +38,6 @@ from __future__ import generators
 import re, htmlentitydefs
 import HTMLParser
 
-__version__ = (0, 1, 0, None, None)  # 0.1.0
-
 
 class NoMoreTokensError(Exception): pass
 

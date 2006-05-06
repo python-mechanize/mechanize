@@ -32,12 +32,6 @@ COPYING.txt included with the distribution).
 
 """
 
-VERSION = "1.3.0"
-
-
-# Public health warning: anyone who thought 'cookies are simple, aren't they?',
-# run away now :-(
-
 import sys, re, urlparse, string, copy, time, struct, urllib, types
 try:
     import threading
