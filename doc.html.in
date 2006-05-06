@@ -2,20 +2,24 @@
         "http://www.w3.org/TR/html4/strict.dtd">
 @# This file is processed by EmPy to colorize Python source code
 @# http://wwwsearch.sf.net/bits/colorize.py
-@{from colorize import colorize}
-@{import time}
-@{import release}
-@{last_modified = release.svn_id_to_time("$Id$")}
+@{
+from colorize import colorize
+import time
+import release
+last_modified = release.svn_id_to_time("$Id$")
+try:
+    base
+except NameError:
+    base = False
+}
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
   <meta name="author" content="John J. Lee &lt;jjl@@pobox.com&gt;">
   <meta name="date" content="@(time.strftime("%Y-%m-%d", last_modified))">
-  <meta name="keywords" content="cookie,HTTP,Python,web,client,client-side,HTML,META,HTTP-EQUIV,Refresh">
-  <title>ClientCookie documentation</title>
+  <title>mechanize documentation</title>
   <style type="text/css" media="screen">@@import "../styles/style.css";</style>
-  <style type="text/css" media="screen">@@import "../styles/cookie_style.css";</style>
-  <base href="http://wwwsearch.sourceforge.net/ClientCookie/">
+  @[if base]<base href="http://wwwsearch.sourceforge.net/mechanize/">@[end if]
 </head>
 <body>
 
@@ -23,35 +27,41 @@
 <img src="http://sourceforge.net/sflogo.php?group_id=48205&amp;type=2"
  width="125" height="37" alt="SourceForge.net Logo"></a></div>
 
-<h1>ClientCookie</h1>
+<h1>mechanize handlers</h1>
 
 <div id="Content">
+
+<p class="docwarning">This documentation is in need of reorganisation!</p>
+
+<p>This page is the old ClientCookie documentation.  It deals with operation on
+the level of urllib2 Handler objects, and also with adding headers, debugging,
+and cookie handling.  Documentation for the higher-level browser-style
+interface is <a href="./mechanize">elsewhere</a>.
+
 
 <a name="examples"></a>
 <h2>Examples</h2>
 
 @{colorize(r"""
-import ClientCookie
-response = ClientCookie.urlopen("http://foo.bar.com/")
+import mechanize
+response = mechanize.urlopen("http://foo.bar.com/")
 """)}
 
 <p>This function behaves identically to <code>urllib2.urlopen()</code>, except
-that it deals with cookies automatically.  That's probably all you need to know
-(except that ClientCookie provides <a href="./doc.html#extras">features other
-than cookie handling</a> that you can turn on).
+that it deals with cookies automatically.
 
 <p>Here is a more complicated example, involving <code>Request</code> objects
 (useful if you want to pass <code>Request</code>s around, add headers to them,
 etc.):
 
 @{colorize(r"""
-import ClientCookie
-request = ClientCookie.Request("http://www.acme.com/")
-# note we're using the urlopen from ClientCookie, not urllib2
-response = ClientCookie.urlopen(request)
+import mechanize
+request = mechanize.Request("http://www.acme.com/")
+# note we're using the urlopen from mechanize, not urllib2
+response = mechanize.urlopen(request)
 # let's say this next request requires a cookie that was set in response
-request2 = ClientCookie.Request("http://www.acme.com/flying_machines.html")
-response2 = ClientCookie.urlopen(request2)
+request2 = mechanize.Request("http://www.acme.com/flying_machines.html")
+response2 = mechanize.urlopen(request2)
 
 print response2.geturl()
 print response2.info()  # headers
@@ -59,12 +69,12 @@ print response2.read()  # body (readline and readlines work too)
 """)}
 
 <p>(The above example would also work with <code>urllib2.Request</code> objects
-too, since <code>ClientCookie.HTTPRequestUpgradeProcessor</code> knows about
+too, since <code>mechanize.HTTPRequestUpgradeProcessor</code> knows about
 that class, but don't if you can avoid it, because this is an obscure hack for
 compatibility purposes only).
 
 <p>In these examples, the workings are hidden inside the
-<code>ClientCookie.urlopen()</code> function, which is an extension of
+<code>mechanize.urlopen()</code> function, which is an extension of
 <code>urllib2.urlopen()</code>.  Redirects, proxies and cookies are handled
 automatically by this function (note that you may need a bit of configuration
 to get your proxies correctly set up: see <code>urllib2</code> documentation).
@@ -75,8 +85,8 @@ extension of <code>urllib2</code>'s handlers: <code>HTTPCookieProcessor</code>,
 are used like any other handler.  There is quite a bit of other
 <code>urllib2</code>-workalike code, too.  Note: This duplication has gone away
 in Python 2.4, since 2.4's <code>urllib2</code> contains the processor
-extensions from ClientCookie, so you can simply use ClientCookie's processor
-classes direct with 2.4's <code>urllib2</code>; also, ClientCookie's cookie
+extensions from mechanize, so you can simply use mechanize's processor
+classes direct with 2.4's <code>urllib2</code>; also, mechanize's cookie
 functionality is included in Python 2.4 as module <code>cookielib</code> and
 <code>urllib2.HTTPCookieProcessor</code>.
 
@@ -89,23 +99,23 @@ cookies more clearly:
 @{colorize(r"""
 # Don't copy this blindly!  You probably want to follow the examples
 # above, not this one.
-import ClientCookie
+import mechanize
 
 # Build an opener that *doesn't* automatically call .add_cookie_header()
 # and .extract_cookies(), so we can do it manually without interference.
-class NullCookieProcessor(ClientCookie.HTTPCookieProcessor):
+class NullCookieProcessor(mechanize.HTTPCookieProcessor):
     def http_request(self, request): return request
     def http_response(self, request, response): return response
-opener = ClientCookie.build_opener(NullCookieProcessor)
+opener = mechanize.build_opener(NullCookieProcessor)
 
-request = ClientCookie.Request("http://www.acme.com/")
-response = ClientCookie.urlopen(request)
-cj = ClientCookie.CookieJar()
+request = mechanize.Request("http://www.acme.com/")
+response = mechanize.urlopen(request)
+cj = mechanize.CookieJar()
 cj.extract_cookies(response, request)
 # let's say this next request requires a cookie that was set in response
-request2 = ClientCookie.Request("http://www.acme.com/flying_machines.html")
+request2 = mechanize.Request("http://www.acme.com/flying_machines.html")
 cj.add_cookie_header(request2)
-response2 = ClientCookie.urlopen(request2)
+response2 = mechanize.urlopen(request2)
 """)}
 
 <p>The <code>CookieJar</code> class does all the work.  There are essentially
@@ -120,8 +130,8 @@ if they are appropriate for a particular HTTP request.  Incoming cookies are
 checked for acceptability based on the host name, etc.  Cookies are only set on
 outgoing requests if they match the request's host name, path, etc.
 
-<p><strong>Note that if you're using <code>ClientCookie.urlopen()</code> (or if
-you're using <code>ClientCookie.HTTPCookieProcessor</code> by some other
+<p><strong>Note that if you're using <code>mechanize.urlopen()</code> (or if
+you're using <code>mechanize.HTTPCookieProcessor</code> by some other
 means), you don't need to call <code>.extract_cookies()</code> or
 <code>.add_cookie_header()</code> yourself</strong>.  If, on the other hand,
 you don't want to use <code>urllib2</code>, you will need to use this pair of
@@ -137,10 +147,10 @@ libwww-perl library.  This class is convenient if you want to store cookies in
 a human-readable file:
 
 @{colorize(r"""
-import ClientCookie
-cj = ClientCookie.LWPCookieJar()
+import mechanize
+cj = mechanize.LWPCookieJar()
 cj.revert("cookie3.txt")
-opener = ClientCookie.build_opener(ClientCookie.HTTPCookieProcessor(cj))
+opener = mechanize.build_opener(mechanize.HTTPCookieProcessor(cj))
 r = opener.open("http://foobar.com/")
 cj.save("cookie3.txt")
 """)}
@@ -164,7 +174,7 @@ than storing copies of cookies as <code>MSIECookieJar</code> does.
 
 <h2>Important note</h2>
 
-<p>Only use names you can import directly from the <code>ClientCookie</code>
+<p>Only use names you can import directly from the <code>mechanize</code>
 package, and that don't start with a single underscore.  Everything else is
 subject to change or disappearance without notice.
 
@@ -185,8 +195,8 @@ if you use <code>MozillaCookieJar</code> to save cookies.  I <em>think</em> it
 works, but there have been bugs in the past!
 
 @{colorize(r"""
-import os, ClientCookie
-cookies = ClientCookie.MozillaCookieJar()
+import os, mechanize
+cookies = mechanize.MozillaCookieJar()
 cookies.load(os.path.join(os.environ["HOME"], "/.netscape/cookies.txt"))
 # see also the save and revert methods
 """)}
@@ -203,8 +213,8 @@ AFAIK; there's also an unfinished <code>MSIEDBCookieJar</code>, which uses
 storing copies of cookies as <code>MSIECookieJar</code> does).
 
 @{colorize(r"""
-import ClientCookie
-cj = ClientCookie.MSIECookieJar(delayload=True)
+import mechanize
+cj = mechanize.MSIECookieJar(delayload=True)
 cj.load_from_registry()  # finds cookie index file from registry
 """)}
 
@@ -229,22 +239,6 @@ save cookies on disk between sessions in human-readable form is to use
 (`Set-Cookie3').  Unlike <code>MozilliaCookieJar</code>, this file format
 doesn't lose information.
 
-<a name="database"></a>
-<h2>Saving cookies in a database</h2>
-
-<p><code>BSDDBCookieJar</code> (NOT FULLY TESTED!) saves to a BSDDB database
-using the standard library's <code>bsddb</code> module.  Rather than using the
-constructor directly, you probably want to use
-<code>CreateBSDDBCookieJar<code>, which will create the named database file if
-it doesn't exist; otherwise, it will be opened.
-
-@{colorize(r"""
-import ClientCookie
-cj = ClientCookie.CreateBSDDBCookieJar("cookies.db")
-""")}
-
-<p>See also <code>MSIEDBCookieJar</code> <a href="browsers">above</a>.
-
 <a name="cookiejar"></a>
 <h2>Using your own CookieJar instance</h2>
 
@@ -258,12 +252,12 @@ passing constructor arguments, or to be able to get at the cookies it will hold
 <code>CookieJar</code> it should use:
 
 @{colorize(r"""
-import ClientCookie
-cookies = ClientCookie.CookieJar()
+import mechanize
+cookies = mechanize.CookieJar()
 # build_opener() adds standard handlers (such as HTTPHandler and
 # HTTPCookieProcessor) by default.  The cookie processor we supply
 # will replace the default one.
-opener = ClientCookie.build_opener(ClientCookie.HTTPCookieProcessor(cookies))
+opener = mechanize.build_opener(mechanize.HTTPCookieProcessor(cookies))
 
 r = opener.open("http://acme.com/")  # GET
 r = opener.open("http://acme.com/", data)  # POST
@@ -273,11 +267,11 @@ r = opener.open("http://acme.com/", data)  # POST
 <code>OpenerDirector</code> instance to do its work, so if you want to use
 <code>urlopen()</code> with your own <code>CookieJar</code>, install the
 <code>OpenerDirector</code> you built with <code>build_opener()</code> using
-the <code>ClientCookie.install_opener()</code> function, then proceed as usual:
+the <code>mechanize.install_opener()</code> function, then proceed as usual:
 
 @{colorize(r"""
-ClientCookie.install_opener(opener)
-r = ClientCookie.urlopen("http://www.acme.com/")
+mechanize.install_opener(opener)
+r = mechanize.urlopen("http://www.acme.com/")
 """)}
 
 <p>Of course, everyone using <code>urlopen</code> is using the same global
@@ -286,13 +280,13 @@ r = ClientCookie.urlopen("http://www.acme.com/")
 <a name="policy"></a>
 
 <p>You can set a policy object (must satisfy the interface defined by
-<code>ClientCookie.CookiePolicy</code>), which determines which cookies are
+<code>mechanize.CookiePolicy</code>), which determines which cookies are
 allowed to be set and returned.  Use the policy argument to the
 <code>CookieJar</code> constructor, or use the .set_policy() method.  The
 default implementation has some useful switches:
 
 @{colorize(r"""
-from ClientCookie import CookieJar, DefaultCookiePolicy as Policy
+from mechanize import CookieJar, DefaultCookiePolicy as Policy
 cookies = CookieJar()
 # turn on RFC 2965 cookies, be more strict about domains when setting and
 # returning Netscape cookies, and block some domains from setting cookies
@@ -322,7 +316,7 @@ href="http://www.robotstxt.org/wc/norobots.html">standard</a> for a <code>
 robots.txt</code> file by which web site operators can request robots to keep
 out of their site, or out of particular areas of it.  This processor uses the
 standard Python library's <code>robotparser</code> module.  It raises
-<code>ClientCookie.RobotExclusionError</code> (subclass of
+<code>mechanize.RobotExclusionError</code> (subclass of
 <code>urllib2.HTTPError</code>) if an attempt is made to open a URL prohibited
 by <code>robots.txt</code>.  XXX ATM, this makes use of code in the
 <code>robotparser</code> module that uses <code>urllib</code> - this will
@@ -331,7 +325,7 @@ likely change in future to use <code>urllib2</code>.
 <dt><code>HTTPEquivProcessor</code>
 
 <dd><p>The <code>&lt;META HTTP-EQUIV&gt;</code> tag is a way of including data
-in HTML to be treated as if it were part of the HTTP headers.  ClientCookie can
+in HTML to be treated as if it were part of the HTTP headers.  mechanize can
 automatically read these tags and add the <code>HTTP-EQUIV</code> headers to
 the response object's real HTTP headers.  The HTML is left unchanged.
 
@@ -339,14 +333,14 @@ the response object's real HTTP headers.  The HTML is left unchanged.
 
 <dd><p>The <code>Refresh</code> HTTP header is a non-standard header which is
 widely used.  It requests that the user-agent follow a URL after a specified
-time delay.  ClientCookie can treat these headers (which may have been set in
+time delay.  mechanize can treat these headers (which may have been set in
 <code>&lt;META HTTP-EQUIV&gt;</code> tags) as if they were 302 redirections.
 Exactly when and how <code>Refresh</code> headers are handled is configurable
 using the constructor arguments.
 
 <dt><code>SeekableProcessor</code>
 
-<dd><p>This makes ClientCookie's response objects <code>seek()</code>able.
+<dd><p>This makes mechanize's response objects <code>seek()</code>able.
 Seeking is done lazily (ie. the response object only reads from the socket as
 necessary, rather than slurping in all the data before the response is returned
 to you).
@@ -364,13 +358,13 @@ HTTPRefererProcessor to fetch a series of URLs extracted from a single page,
 package does this properly.</p></dd>
 
 @{colorize(r"""
-import ClientCookie
-cookies = ClientCookie.CookieJar()
+import mechanize
+cookies = mechanize.CookieJar()
 
-opener = ClientCookie.build_opener(ClientCookie.HTTPRefererProcessor,
-                                   ClientCookie.HTTPEquivProcessor,
-                                   ClientCookie.HTTPRefreshProcessor,
-                                   ClientCookie.SeekableProcessor)
+opener = mechanize.build_opener(mechanize.HTTPRefererProcessor,
+                                mechanize.HTTPEquivProcessor,
+                                mechanize.HTTPRefreshProcessor,
+                                mechanize.SeekableProcessor)
 opener.open("http://www.rhubarb.com/")
 """)}
 
@@ -380,10 +374,10 @@ opener.open("http://www.rhubarb.com/")
 <a name="requests"></a>
 <h2>Confusing fact about headers and Requests</h2>
 
-<p>ClientCookie automatically upgrades <code>urllib2.Request</code> objects to
-<code>ClientCookie.Request</code>, as a backwards-compatibility hack.  This
+<p>mechanize automatically upgrades <code>urllib2.Request</code> objects to
+<code>mechanize.Request</code>, as a backwards-compatibility hack.  This
 means that you won't see any headers that are added to Request objects by
-handlers unless you use <code>ClientCookie.Request</code> in the first place.
+handlers unless you use <code>mechanize.Request</code> in the first place.
 Sorry about that.
 
 
@@ -393,16 +387,16 @@ Sorry about that.
 <p>Adding headers is done like so:
 
 @{colorize(r"""
-import ClientCookie, urllib2
+import mechanize, urllib2
 req = urllib2.Request("http://foobar.com/")
-req.add_header("Referer", "http://wwwsearch.sourceforge.net/ClientCookie/")
-r = ClientCookie.urlopen(req)
+req.add_header("Referer", "http://wwwsearch.sourceforge.net/mechanize/")
+r = mechanize.urlopen(req)
 """)}
 
 <p>You can also use the headers argument to the <code>urllib2.Request</code>
 constructor.
 
-<p><code>urllib2</code> (in fact, ClientCookie takes over this task from
+<p><code>urllib2</code> (in fact, mechanize takes over this task from
 <code>urllib2</code>) adds some headers to <code>Request</code> objects
 automatically - see the next section for details.
 
@@ -416,9 +410,9 @@ header to every <code>Request</code>.
 <code>OpenerDirector</code>:
 
 @{colorize(r"""
-import ClientCookie
-cookies = ClientCookie.CookieJar()
-opener = ClientCookie.build_opener(ClientCookie.HTTPCookieProcessor(cookies))
+import mechanize
+cookies = mechanize.CookieJar()
+opener = mechanize.build_opener(mechanize.HTTPCookieProcessor(cookies))
 opener.addheaders = [("User-agent", "Mozilla/5.0 (compatible; MyProgram/0.1)"),
                      ("From", "responsible.person@example.com")]
 """)}
@@ -427,14 +421,14 @@ opener.addheaders = [("User-agent", "Mozilla/5.0 (compatible; MyProgram/0.1)"),
 <code>OpenerDirector</code> globally:
 
 @{colorize(r"""
-ClientCookie.install_opener(opener)
-r = ClientCookie.urlopen("http://acme.com/")
+mechanize.install_opener(opener)
+r = mechanize.urlopen("http://acme.com/")
 """)}
 
 <p>Also, a few standard headers (<code>Content-Length</code>,
 <code>Content-Type</code> and <code>Host</code>) are added when the
 <code>Request</code> is passed to <code>urlopen()</code> (or
-<code>OpenerDirector.open()</code>).  ClientCookie explictly adds these (and
+<code>OpenerDirector.open()</code>).  mechanize explictly adds these (and
 <code>User-Agent</code>) to the <code>Request</code> object, unlike versions of
 <code>urllib2</code> before Python 2.4 (but <strong>note</strong> that
 Content-Length is an exception to this rule: it is sent, but not explicitly
@@ -465,7 +459,7 @@ had no option to approve the fetching of the image from a particular URL.
 by the user.  For example, if the request is for an image in an HTML document,
 this is the request-host of the request for the page containing the image.
 
-<p><strong>ClientCookie knows that redirected transactions are unverifiable,
+<p><strong>mechanize knows that redirected transactions are unverifiable,
 and will handle that on its own (ie. you don't need to think about the origin
 request-host or verifiability yourself).</strong>
 
@@ -485,7 +479,7 @@ request.origin_req_host = "www.example.com"
 """)}
 
   <li>If you're using a <code>urllib2.Request</code> from Python 2.4 or later,
-  or you're using a <code>ClientCookie.Request<code>, use the
+  or you're using a <code>mechanize.Request<code>, use the
   <code>unverifiable</code> and <code>origin_req_host</code> arguments to the
   constructor:
 
@@ -510,9 +504,9 @@ switch it on, see <a href="./doc.html#policy">here</a>.
 <!--XXX move as much as poss. to General page-->
 
 <p>First, a few common problems.  The most frequent mistake people seem to make
-is to use <code>ClientCookie.urlopen()</code>, <em>and</em> the
+is to use <code>mechanize.urlopen()</code>, <em>and</em> the
 <code>.extract_cookies()</code> and <code>.add_cookie_header()</code> methods
-on a cookie object themselves.  If you use <code>ClientCookie.urlopen()</code>
+on a cookie object themselves.  If you use <code>mechanize.urlopen()</code>
 (or <code>OpenerDirector.open()</code>), the module handles extraction and
 adding of cookies by itself, so you should not call
 <code>.extract_cookies()</code> or <code>.add_cookie_header()</code>.
@@ -544,11 +538,11 @@ will expire unless you explicitly request otherwise with the
 cookies are going away after saving and loading.
 
 @{colorize(r"""
-import ClientCookie
-cj = ClientCookie.LWPCookieJar()
-opener = ClientCookie.build_opener(ClientCookie.HTTPCookieProcessor(cj))
-ClientCookie.install_opener(opener)
-r = ClientCookie.urlopen("http://foobar.com/")
+import mechanize
+cj = mechanize.LWPCookieJar()
+opener = mechanize.build_opener(mechanize.HTTPCookieProcessor(cj))
+mechanize.install_opener(opener)
+r = mechanize.urlopen("http://foobar.com/")
 cj.save("/some/file", ignore_discard=True, ignore_expires=True)
 """)}
 
@@ -573,24 +567,24 @@ find your problem.
 <p>You can turn on display of HTTP headers:
 
 @{colorize(r"""
-import ClientCookie
-hh = ClientCookie.HTTPHandler()  # you might want HTTPSHandler, too
+import mechanize
+hh = mechanize.HTTPHandler()  # you might want HTTPSHandler, too
 hh.set_http_debuglevel(1)
-opener = ClientCookie.build_opener(hh)
+opener = mechanize.build_opener(hh)
 response = opener.open(url)
 """)}
 
 <p>Alternatively, you can examine your individual request and response objects
-to see what's going on.  Note, though, that ClientCookie upgrades
-urllib2.Request objects to ClientCookie.Request, so you won't see any headers
-that are added to requests by handlers unless you use ClientCookie.Request in
-the first place.  ClientCookie's responses can be made <code>.seek()</code>able
+to see what's going on.  Note, though, that mechanize upgrades
+urllib2.Request objects to mechanize.Request, so you won't see any headers
+that are added to requests by handlers unless you use mechanize.Request in
+the first place.  mechanize's responses can be made <code>.seek()</code>able
 using <code>SeekableProcessor</code>.  It's often useful to use the
 <code>.seek()</code> method like this during debugging:
 
 @{colorize(r"""
 ...
-response = ClientCookie.urlopen("http://spam.eggs.org/")
+response = mechanize.urlopen("http://spam.eggs.org/")
 print response.read()
 response.seek(0)
 # rest of code continues as if you'd never .read() the response
@@ -605,16 +599,16 @@ out all response bodies, including those that are read during redirections).
 <code>build_opener()</code>) you have to turn on logging at the
 <code>INFO</code> level or lower in order to see any output.
 
-<p>If you would like to see what is going on in ClientCookie's tiny mind, do
+<p>If you would like to see what is going on in mechanize's tiny mind, do
 this:
 
 @{colorize(r"""
-import ClientCookie
-# ClientCookie.DEBUG covers masses of debugging information,
-# ClientCookie.INFO just shows the output from HTTPRedirectDebugProcessor,
-logger = ClientCookie.getLogger("ClientCookie")
-logger.addHandler(ClientCookie.StreamHandler())
-logger.setLevel(ClientCookie.DEBUG)
+import sys, logging
+# logging.DEBUG covers masses of debugging information,
+# logging.INFO just shows the output from HTTPRedirectDebugProcessor,
+logger = logging.getLogger("mechanize")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel(logging.DEBUG)
 """)}
 
 <p>(In Python 2.3 or newer, <code>logging.getLogger</code>,
@@ -627,7 +621,7 @@ rejected and why they are or are not returned.
 <p>One final thing to note is that there are some catch-all bare
 <code>except:</code> statements in the module, which are there to handle
 unexpected bad input without crashing your program.  If this happens, it's a
-bug in ClientCookie, so please mail me the warning text.
+bug in mechanize, so please mail me the warning text.
 
 
 <a name="script"></a>
@@ -661,11 +655,11 @@ form, though the supported date/time formats may change.
 
 @{colorize("""\
 import copy
-import ClientCookie
-class CommentCleanProcessor(ClientCookie.BaseProcessor):
+import mechanize
+class CommentCleanProcessor(mechanize.BaseProcessor):
       def http_response(self, request, response):
           if not hasattr(response, "seek"):
-              response = ClientCookie.response_seek_wrapper(response)
+              response = mechanize.response_seek_wrapper(response)
           response.seek(0)
           new_response = copy.copy(response)
           new_response.set_data(
@@ -692,7 +686,7 @@ want to know the gory details.
 protocol</a> (cookie_spec.html) is still the only standard supported by most
 browsers (including Internet Explorer and Netscape).  Be aware that
 cookie_spec.html is not, and never was, actually followed to the letter (or
-anything close) by anyone (including Netscape, IE and ClientCookie): the
+anything close) by anyone (including Netscape, IE and mechanize): the
 Netscape protocol standard is really defined by the behaviour of Netscape (and
 now IE).  Netscape cookies are also known as V0 cookies, to distinguish them
 from RFC 2109 or RFC 2965 cookies, which have a version cookie-attribute with a
@@ -730,7 +724,7 @@ but was starting to be very popular when the standard was finalised.  XXX P3P,
 and MSIE & Mozilla options
 
 <p>XXX Apparently MSIE implements bits of RFC 2109 - but not very compliant
-(surprise).  Presumably other browsers do too, as a result.  ClientCookie
+(surprise).  Presumably other browsers do too, as a result.  mechanize
 already does allow Netscape cookies to have <code>max-age</code> and
 <code>port</code> cookie-attributes, and as far as I know that's the extent of
 the support present in MSIE.  I haven't tested, though!
@@ -763,6 +757,55 @@ of the module's Netscape cookie implementation is to start with RFC 2965
 and open holes where required for Netscape protocol-compatibility.  RFC
 2965 cookies are <em>always</em> treated as RFC 2965 requires, of course!
 
+
+<a name="faq_pre"></a>
+<h2>FAQs - pre install</h2>
+<ul>
+  <li>Doesn't the standard Python library module, <code>Cookie</code>, do
+     this?
+  <p>No: Cookie.py does the server end of the job.  It doesn't know when to
+     accept cookies from a server or when to pass them back.
+  <li>Is urllib2.py required?
+  <p>No.  You probably want it, though.
+  <li>Where can I find out more about the HTTP cookie protocol?
+  <p>There is more than one protocol, in fact (see the <a href="./doc.html">docs</a>
+     for a brief explanation of the history):
+  <ul>
+    <li>The original <a href="http://www.netscape.com/newsref/std/cookie_spec.html">
+        Netscape cookie protocol</a> - the standard still in use today, in
+        theory (in reality, the protocol implemented by all the major browsers
+        only bears a passing resemblance to the protocol sketched out in this
+        document).
+    <li><a href="http://www.ietf.org/rfcs/rfc2109.txt">RFC 2109</a> - obsoleted
+        by RFC 2965.
+     <li><a href="http://www.ietf.org/rfcs/rfc2965.txt">RFC 2965</a> - the
+        Netscape protocol with the bugs fixed (not widely used - the Netscape
+        protocol still dominates, and seems likely to remain dominant
+        indefinitely, at least on the Internet).
+        <a href="http://www.ietf.org/rfcs/rfc2964.txt">RFC 2964</a> discusses use
+        of the protocol.
+        <a href="http://kristol.org/cookie/errata.html">Errata</a> to RFC 2965
+        are currently being discussed on the
+        <a href="http://lists.bell-labs.com/mailman/listinfo/http-state">
+        http-state mailing list</a> (update: list traffic died months ago and
+        hasn't revived).
+    <li>A <a href="http://doi.acm.org/10.1145/502152.502153">paper</a> by David
+        Kristol setting out the history of the cookie standards in exhausting
+        detail.
+    <li>HTTP cookies <a href="http://www.cookiecentral.com/">FAQ</a>.
+  </ul>
+  <li>Which protocols does ClientCookie support?
+     <p>Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
+  <li>What about RFC 2109?
+     <p>RFC 2109 cookies are currently parsed as Netscape cookies, and treated
+     by default as RFC 2965 cookies thereafter if RFC 2965 handling is enabled,
+     or as Netscape cookies otherwise.  RFC 2109 is officially obsoleted by RFC
+     2965.  Browsers do use a few RFC 2109 features in their Netscape cookie
+     implementations (<code>port</code> and <code>max-age</code>), and
+     ClientCookie knows about that, too.
+</ul>
+
+
 <a name="faq_use"></a>
 <h2>FAQs - usage</h2>
 <ul>
@@ -786,7 +829,7 @@ and open holes where required for Netscape protocol-compatibility.  RFC
      the loading fails).
   <li>Is it threadsafe?
   <p>No.  <em>Tested</em> patches welcome.  Clarification: As far as I know,
-     it's perfectly possible to use ClientCookie in threaded code, but it
+     it's perfectly possible to use mechanize in threaded code, but it
      provides no synchronisation: you have to provide that yourself.
   <li>How do I do &lt;X&gt;
   <p>The module docstrings are worth reading if you want to do something
@@ -799,7 +842,7 @@ and open holes where required for Netscape protocol-compatibility.  RFC
      in Python 2.4.
   <li>How do I use it without urllib2.py?
   <p>@{colorize(r"""
-from ClientCookie import CookieJar
+from mechanize import CookieJar
 print CookieJar.extract_cookies.__doc__
 print CookieJar.add_cookie_header.__doc__
 """)}
@@ -825,7 +868,6 @@ mailing list</a> rather than direct to me.
 <a href="./doc.html#examples">Examples</a><br>
 <a href="./doc.html#browsers">Mozilla & MSIE</a><br>
 <a href="./doc.html#file">Cookies in a file</a><br>
-<a href="./doc.html#database">Cookies in a database</a><br>
 <a href="./doc.html#cookiejar">Using a <code>CookieJar</code></a><br>
 <a href="./doc.html#extras">Processors</a><br>
 <a href="./doc.html#requests">Request confusion</a><br>

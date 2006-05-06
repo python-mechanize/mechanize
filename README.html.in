@@ -2,10 +2,16 @@
         "http://www.w3.org/TR/html4/strict.dtd">
 @# This file is processed by EmPy: do not edit
 @# http://wwwsearch.sf.net/bits/colorize.py
-@{from colorize import colorize}
-@{import time}
-@{import release}
-@{last_modified = release.svn_id_to_time("$Id$")}
+@{
+from colorize import colorize
+import time
+import release
+last_modified = release.svn_id_to_time("$Id$")
+try:
+    base
+except NameError:
+    base = False
+}
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -15,7 +21,7 @@
   <meta name="keywords" content="cookie,HTTP,Python,web,client,client-side,HTML,META,HTTP-EQUIV,Refresh">
   <title>mechanize</title>
   <style type="text/css" media="screen">@@import "../styles/style.css";</style>
-  <base href="http://wwwsearch.sourceforge.net/mechanize/">
+  @[if base]<base href="http://wwwsearch.sourceforge.net/mechanize/">@[end if]
 </head>
 <body>
 
@@ -34,10 +40,11 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 </a>.
 
 <ul>
+
   <li><code>mechanize.Browser</code> is a subclass of
     <code>mechanize.UserAgent</code>, which is, in turn, a subclass of
-    <code>urllib2.OpenerDirector</code> (or of
-    <code>ClientCookie.OpenerDirector</code> for pre-2.4 versions of Python), so:
+    <code>urllib2.OpenerDirector</code> (in fact, of
+    <code>mechanize.OpenerDirector</code>), so:
     <ul>
       <li>any URL can be opened, not just <code>http:</code>
       <li><code>mechanize.UserAgent</code> offers easy dynamic configuration of
@@ -55,13 +62,15 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
   <li>Automatic observance of <a
     href="http://www.robotstxt.org/wc/norobots.html">
     <code>robots.txt</code></a>.
-  <li>Automatic handling of HTTP-Equiv and Refresh, using <a
-    href="../ClientCookie/">ClientCookie</a>.
+  <li>Automatic handling of HTTP-Equiv and Refresh.
 </ul>
 
 
 <a name="examples"></a>
 <h2>Examples</h2>
+
+<p class="docwarning">This documentation is in need of reorganisation and
+extension!</p>
 
 <p>The two below are just to give the gist.  There are also some <a
 href="./#tests">actual working examples</a>.
@@ -115,7 +124,7 @@ br.set_handle_equiv(False)
 br.set_handle_robots(False)
 # Don't handle cookies
 br.set_cookiejar()
-# Supply your own ClientCookie.CookieJar (NOTE: cookie handling is ON by
+# Supply your own mechanize.CookieJar (NOTE: cookie handling is ON by
 # default: no need to do this unless you have some reason to use a
 # particular cookiejar)
 br.set_cookiejar(cj)
@@ -127,13 +136,54 @@ br.set_debug_responses(True)
 br.set_debug_http(True)
 
 # To make sure you're seeing all debug output:
-for logger in [
-    logging.getLogger("ClientCookie"),
-    logging.getLogger("cookielib"),
-    ]:
-    logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.setLevel(logging.INFO)
+logger = logging.getLogger("mechanize")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel(logging.INFO)
 """)}
+
+
+<a name="compatnotes"></a>
+<h2>Compatibility</h2>
+
+<p>This note explains the relationship between mechanize, ClientCookie,
+<code>cookielib</code> and <code>urllib2</code>, and which to use when.
+
+<ol>
+
+  <li>ClientCookie is no longer maintained separately, and its interface is now
+      exported through module mechanize (since mechanize 0.1.0).  Old code may
+      simply be changed to <code>import mechanize as ClientCookie</code> and
+      should continue to work.
+
+  <li>The cookie handling parts of mechanize are in Python 2.4 standard library
+      as module <code>cookielib</code> and extensions to module
+      <code>urllib2</code>.
+
+  <li>mechanize works with Python 2.3, Python 2.4 and Python 2.5.
+
+  <li>Handler classes that are missing from 2.4's <code>urllib2</code>
+      (eg. <code>HTTPRefreshProcessor</code>) may be used with 2.4's
+      <code>urllib2</code> (however, note the paragraph below).  With any
+      version of Python, <code>urllib2</code> handlers that are missing from
+      mechanize (eg. <code>ProxyHandler</code>) may be used with mechanize, and
+      <code>urllib2.Request</code> objects may be used with mechanize.
+      <strong>IMPORTANT:</strong> For all other code, use mechanize
+      <em><strong>exclusively</strong></em>: do NOT mix use of mechanize and
+      <code>urllib2</code>!
+
+  <li>If you want to use <code>mechanize.RefreshProcessor</code> with Python
+      >= 2.4's <code>urllib2</code>, you must also use
+      <code>mechanize.HTTPRedirectHandler</code>.
+
+  <li><code>mechanize.HTTPRefererProcessor</code> requires special support from
+      <code>mechanize.Browser</code>, so cannot be used with vanilla
+      <code>urllib2</code>.
+
+  <li><code>mechanize.HTTPRequestUpgradeProcessor</code> and
+      <code>mechanize.ResponseUpgradeProcessor</code> are not useful outside of
+      mechanize.
+
+</ol>
 
 
 <a name="docs"></a>
@@ -141,16 +191,23 @@ for logger in [
 
 <p>Full documentation is in the docstrings.
 
+<p>The documentation in the web pages is in need of reorganisation at the
+moment, after the merge of ClientCookie into mechanize.
+
 
 <a name="credits"></a>
 <h2>Credits</h2>
 
-<p>Thanks to Ian Bicking, for persuading me that a <code>UserAgent</code> class
-would be useful, and to everyone who has reported bugs.
+<p>Thanks to all the too-numerous-to-list people who reported bugs and provided
+patches.  Also thanks to Ian Bicking, for persuading me that a
+<code>UserAgent</code> class would be useful, and to Ronald Tschalar for advice
+on Netscape cookies.
 
-<p>And of course thanks to Andy Lester for the original, <a
-href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
-</a>.
+<p>A lot of credit must go to Gisle Aas, who wrote libwww-perl, from which
+large parts of mechanize originally derived, and Andy Lester for the original,
+<a href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
+</a>.  Finally, thanks to the (coincidentally-named) Johnny Lee for the MSIE
+CookieJar Perl code from which mechanize's support for that is derived.
 
 
 <a name="todo"></a>
@@ -191,10 +248,10 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
   <li>Implement RFC 3986 URL absolutization.
   <li>Figure out the Right Thing (if such a thing exists) for %-encoding.
   <li>How do IRIs fit into the world?
-  <li>IDNA (ClientCookie) -- must read about security stuff first.
+  <li>IDNA -- must read about security stuff first.
   <li>Unicode support in general (not sure yet how/when/whether this will
     happen).
-  <li>Provide per-connection access to timeouts (ClientCookie).
+  <li>Provide per-connection access to timeouts.
   <li>Keep-alive / connection caching.
   <li>Pipelining??
   <li>Content negotiation.
@@ -222,9 +279,7 @@ documentation if you need more detailed or up-to-date instructions.
 <h2>EasyInstall / setuptools</h2>
 
 <p>The benefit of EasyInstall and the new <code>setuptools</code>-supporting
-<code>setup.py</code> is that they grab all dependencies for you (viz,
-ClientForm, ClientCookie, and either pullparser or
-<a href="http://www.crummy.com/software/BeautifulSoup/">Beautiful Soup</a>).
+<code>setup.py</code> is that they grab all dependencies for you.
 
 <p><strong>You need EasyInstall version 0.6a8 or newer.</strong>
 
@@ -259,7 +314,7 @@ package.
 <pre>easy_install "mechanize==dev"</pre>
 
 <p>Note that that will not necessarily grab the SVN versions of dependencies,
-such as ClientCookie: It will use SVN to fetch dependencies if and only if the
+such as ClientForm: It will use SVN to fetch dependencies if and only if the
 SVN HEAD version of mechanize declares itself to depend on the SVN versions of
 those dependencies; even then, those declared dependencies won't necessarily be
 on SVN HEAD, but rather a particular revision.  If you want SVN HEAD for a
@@ -359,10 +414,18 @@ know, though!
 href="../ClientForm/">ClientForm web page</a> are useful for mechanize users,
 and are now real run-able scripts rather than just documentation.
 
+<h3>Functional tests</h3>
+
+<p>To run the functional tests (which <strong>do</strong> access the network),
+run the following
+
+command:
+<pre>python functional_tests.py</pre>
+
 <h3>Unit tests</h3>
 
-<p>Note that the dependencies of mechanize (ClientCookie, ClientForm, and
-pullparser) have their own unit tests, which must be run separately.
+<p>Note that ClientForm (a dependency of mechanize) has its own unit tests,
+which must be run separately.
 
 <p>To run the unit tests (none of which access the network), run the following
 command:
@@ -411,9 +474,7 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
   <li>Which version of Python do I need?
   <p>2.3 or above.
   <li>What else do I need?
-  <p><a href="../ClientCookie/">ClientCookie</a>,
-   <a href="../ClientForm/">ClientForm</a> and
-   <a href="../pullparser/">pullparser</a>.
+  <p>mechanize depends on <a href="../ClientForm/">ClientForm</a>.
   <p>The versions of those required modules are listed in the
      <code>setup.py</code> for mechanize (included with the download).  The
      dependencies are automatically fetched by <a
@@ -428,6 +489,7 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
      or the <a href="http://www.zope.org/Resources/ZPL">ZPL 2.1</a> (both are
      included in the distribution).
 </ul>
+
 
 <p>I prefer questions and comments to be sent to the <a
 href="http://lists.sourceforge.net/lists/listinfo/wwwsearch-general">
@@ -447,6 +509,7 @@ mailing list</a> rather than direct to me.
 <br>
 
 <a href="./#examples">Examples</a><br>
+<a href="./#compatnotes">Compatibility</a><br>
 <a href="./#docs">Documentation</a><br>
 <a href="./#todo">To-do</a><br>
 <a href="./#download">Download</a><br>

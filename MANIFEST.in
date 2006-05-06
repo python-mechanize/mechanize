@@ -8,5 +8,6 @@ include README.txt
 include doc.html.in
 include doc.html
 include ChangeLog.txt
+include 0.1.0-changes.txt
 include *.py
 recursive-include examples *.py
