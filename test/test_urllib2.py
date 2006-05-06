@@ -12,21 +12,16 @@
 import unittest, StringIO, os, sys, UserDict
 
 import urllib2
-from ClientCookie._urllib2_support import Request, AbstractHTTPHandler, \
+from mechanize._urllib2_support import Request, AbstractHTTPHandler, \
      build_opener, parse_head, urlopen
-from ClientCookie._Util import startswith
-from ClientCookie import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
+from mechanize._Util import startswith
+from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
      HTTPEquivProcessor, HTTPRefreshProcessor, SeekableProcessor, \
      HTTPCookieProcessor, HTTPRefererProcessor, \
      HTTPErrorProcessor, HTTPHandler
-from ClientCookie import OpenerDirector
+from mechanize import OpenerDirector
 
-try: True
-except NameError:
-    True = 1
-    False = 0
-
-## from ClientCookie import getLogger, DEBUG
+## from mechanize import getLogger, DEBUG
 ## l = getLogger("ClientCookie")
 ## l.setLevel(DEBUG)
 
@@ -580,7 +575,7 @@ class HandlerTests(unittest.TestCase):
         except ImportError:
             return  # skip test
         else:
-            from ClientCookie import HTTPRobotRulesProcessor
+            from mechanize import HTTPRobotRulesProcessor
         rfpc = MockRobotFileParserClass()
         h = HTTPRobotRulesProcessor(rfpc)
 
@@ -770,7 +765,7 @@ class HandlerTests(unittest.TestCase):
 class UnescapeTests(unittest.TestCase):
 
     def test_unescape_charref(self):
-        from ClientCookie._urllib2_support import \
+        from mechanize._urllib2_support import \
              unescape_charref, get_entitydefs
         mdash_utf8 = u"\u2014".encode("utf-8")
         for ref, codepoint, utf8, latin1 in [
@@ -783,7 +778,7 @@ class UnescapeTests(unittest.TestCase):
             self.assertEqual(unescape_charref(ref, 'utf-8'), utf8)
 
     def test_get_entitydefs(self):
-        from ClientCookie._urllib2_support import get_entitydefs
+        from mechanize._urllib2_support import get_entitydefs
         ed = get_entitydefs()
         for name, codepoint in [
             ("amp", ord(u"&")),
@@ -796,7 +791,7 @@ class UnescapeTests(unittest.TestCase):
 
     def test_unescape(self):
         import htmlentitydefs
-        from ClientCookie._urllib2_support import unescape, get_entitydefs
+        from mechanize._urllib2_support import unescape, get_entitydefs
         data = "&amp; &lt; &mdash; &#8212; &#x2014;"
         mdash_utf8 = u"\u2014".encode("utf-8")
         ue = unescape(data, get_entitydefs(), "utf-8")
@@ -814,7 +809,7 @@ class HeadParserTests(unittest.TestCase):
 
     def test(self):
         # XXX XHTML
-        from ClientCookie import HeadParser
+        from mechanize import HeadParser
         htmls = [
             ("""<meta http-equiv="refresh" content="1; http://example.com/">
             """,
@@ -855,7 +850,7 @@ class MiscTests(unittest.TestCase):
 
     def test_cookie_redirect(self):
         # cookies shouldn't leak into redirected requests
-        from ClientCookie import CookieJar, build_opener, HTTPHandler, \
+        from mechanize import CookieJar, build_opener, HTTPHandler, \
              HTTPCookieProcessor
         from urllib2 import HTTPError
 
@@ -920,7 +915,7 @@ class FunctionTests(unittest.TestCase):
             self.assert_(False)
 
     def _methnames(self, *objs):
-        from ClientCookie._Opener import methnames
+        from mechanize._Opener import methnames
         r = []
         for i in range(len(objs)):
             obj = objs[i]

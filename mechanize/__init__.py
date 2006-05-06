@@ -27,7 +27,7 @@ try:
     from _urllib2_support import XHTMLCompatibleHeadParser
 except ImportError:
     pass
-from ClientCookie._urllib2_support import \
+from _urllib2_support import \
      HTTPHandler, HTTPRedirectHandler, \
      HTTPRequestUpgradeProcessor, \
      HTTPEquivProcessor, SeekableProcessor, HTTPCookieProcessor, \
@@ -38,7 +38,7 @@ from ClientCookie._urllib2_support import \
 
 import httplib
 if hasattr(httplib, 'HTTPS'):
-    from ClientCookie._urllib2_support import HTTPSHandler
+    from _urllib2_support import HTTPSHandler
 del httplib
 
 from _Util import http2time as str2time

@@ -2,14 +2,9 @@
 
 from unittest import TestCase
 
-try: True
-except NameError:
-    True = 1
-    False = 0
-
 class IsHtmlTests(TestCase):
     def test_is_html(self):
-        from ClientCookie._HeadersUtil import is_html
+        from mechanize._HeadersUtil import is_html
         for allow_xhtml in False, True:
             for cths, ext, expect in [
                 (["text/html"], ".html", True),
@@ -30,7 +25,7 @@ class IsHtmlTests(TestCase):
 
 class HeaderTests(TestCase):
     def test_parse_ns_headers(self):
-        from ClientCookie._HeadersUtil import parse_ns_headers
+        from mechanize._HeadersUtil import parse_ns_headers
 
         # quotes should be stripped
         assert parse_ns_headers(['foo=bar; expires=01 Jan 2040 22:23:32 GMT']) == \
@@ -41,7 +36,7 @@ class HeaderTests(TestCase):
     def test_parse_ns_headers_special_names(self):
         # names such as 'expires' are not special in first name=value pair
         # of Set-Cookie: header
-        from ClientCookie._HeadersUtil import parse_ns_headers
+        from mechanize._HeadersUtil import parse_ns_headers
 
         # Cookie with name 'expires'
         hdr = 'expires=01 Jan 2040 22:23:32 GMT'
@@ -49,7 +44,7 @@ class HeaderTests(TestCase):
         self.assertEquals(parse_ns_headers([hdr]), expected)
 
     def test_join_header_words(self):
-        from ClientCookie._HeadersUtil import join_header_words
+        from mechanize._HeadersUtil import join_header_words
 
         assert join_header_words([[
             ("foo", None), ("bar", "baz"), (None, "value")
@@ -58,7 +53,7 @@ class HeaderTests(TestCase):
         assert join_header_words([[]]) == ""
 
     def test_split_header_words(self):
-        from ClientCookie._HeadersUtil import split_header_words
+        from mechanize._HeadersUtil import split_header_words
 
         tests = [
             ("foo", [[("foo", None)]]),
@@ -94,7 +89,7 @@ Got:          '%s'
 """ % (arg, expect, result)
 
     def test_roundtrip(self):
-        from ClientCookie._HeadersUtil import split_header_words, join_header_words
+        from mechanize._HeadersUtil import split_header_words, join_header_words
 
         tests = [
             ("foo", "foo"),

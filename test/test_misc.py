@@ -4,11 +4,6 @@ import copy
 import cStringIO, string
 from unittest import TestCase
 
-try:
-    StopIteration
-except NameError:
-    from ClientCookie._ClientCookie import StopIteration
-
 class TestUnSeekable:
     def __init__(self, text):
         self._file = cStringIO.StringIO(text)
@@ -60,7 +55,7 @@ dog.
     text_lines = map(lambda l: l+"\n", string.split(text, "\n")[:-1])
 
     def testSeekable(self):
-        from ClientCookie._Util import seek_wrapper
+        from mechanize._Util import seek_wrapper
         text = self.text
         text_lines = self.text_lines
 
@@ -168,7 +163,7 @@ dog.
         self.assertEqual(sfh.read(), text)
 
     def testResponseSeekWrapper(self):
-        from ClientCookie import response_seek_wrapper
+        from mechanize import response_seek_wrapper
         hdrs = {"Content-type": "text/html"}
         r = TestUnSeekableResponse(self.text, hdrs)
         rsw = response_seek_wrapper(r)
@@ -182,7 +177,33 @@ dog.
         rsw2.close()
 
     def testSetResponseData(self):
-        from ClientCookie import response_seek_wrapper
+        from mechanize import response_seek_wrapper
+        r = TestUnSeekableResponse(self.text, {'blah': 'yawn'})
+        rsw = response_seek_wrapper(r)
+        rsw.set_data("""\
+A Seeming somwhat more than View;
+  That doth instruct the Mind
+  In Things that ly behind,
+""")
+        self.assertEqual(rsw.read(9), "A Seeming")
+        self.assertEqual(rsw.read(13), " somwhat more")
+        rsw.seek(0)
+        self.assertEqual(rsw.read(9), "A Seeming")
+        self.assertEqual(rsw.readline(), " somwhat more than View;\n")
+        rsw.seek(0)
+        self.assertEqual(rsw.readline(), "A Seeming somwhat more than View;\n")
+        rsw.seek(-1, 1)
+        self.assertEqual(rsw.read(7), "\n  That")
+
+        r = TestUnSeekableResponse(self.text, {'blah': 'yawn'})
+        rsw = response_seek_wrapper(r)
+        rsw.set_data(self.text)
+        self._test2(rsw)
+        rsw.seek(0)
+        self._test4(rsw)
+
+    def testSetResponseData(self):
+        from mechanize import response_seek_wrapper
         r = TestUnSeekableResponse(self.text, {'blah': 'yawn'})
         rsw = response_seek_wrapper(r)
         rsw.set_data("""\

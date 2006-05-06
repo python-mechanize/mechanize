@@ -1,15 +1,10 @@
-"""Tests for ClientCookie._ClientCookie."""
+"""Tests for _ClientCookie."""
 
 import urllib2, re, os, string, StringIO, mimetools, time
 from time import localtime
 from unittest import TestCase
 
-from ClientCookie._Util import startswith
-
-try: True
-except NameError:
-    True = 1
-    False = 0
+from mechanize._Util import startswith
 
 class FakeResponse:
     def __init__(self, headers=[], url=None):
@@ -30,7 +25,7 @@ def interact_netscape(cookiejar, url, *set_cookie_hdrs):
 
 def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
     """Perform a single request / response cycle, returning Cookie: header."""
-    from ClientCookie import Request
+    from mechanize import Request
     req = Request(url)
     cookiejar.add_cookie_header(req)
     cookie_hdr = req.get_header("Cookie", "")
@@ -95,8 +90,8 @@ class CookieTests(TestCase):
         # may require disk access -- in particular, with MSIECookieJar)
         # This is only a rough check for performance reasons, so it's not too
         # critical as long as it's sufficiently liberal.
-        import ClientCookie
-        pol = ClientCookie.DefaultCookiePolicy()
+        import mechanize
+        pol = mechanize.DefaultCookiePolicy()
         for url, domain, ok in [
             ("http://foo.bar.com/", "blah.com", False),
             ("http://foo.bar.com/", "rhubarb.blah.com", False),
@@ -115,13 +110,13 @@ class CookieTests(TestCase):
             ("http://foo/", "foo.local", True),
             ("http://foo/", ".local", True),
             ]:
-            request = ClientCookie.Request(url)
+            request = mechanize.Request(url)
             r = pol.domain_return_ok(domain, request)
             if ok: self.assert_(r)
             else: self.assert_(not r)
 
     def test_missing_name(self):
-        from ClientCookie import MozillaCookieJar, lwp_cookie_str
+        from mechanize import MozillaCookieJar, lwp_cookie_str
 
         # missing = sign in Cookie: header is regarded by Mozilla as a missing
         # NAME.  WE regard it as a missing VALUE.
@@ -155,7 +150,7 @@ class CookieTests(TestCase):
     def test_rfc2109_handling(self):
         # 2109 cookies have rfc2109 attr set correctly, and are handled
         # as 2965 or Netscape cookies depending on policy settings
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         for policy, version in [
             (DefaultCookiePolicy(), 0),
@@ -170,8 +165,8 @@ class CookieTests(TestCase):
             self.assertEqual(cookie.version, version)
 
     def test_ns_parser(self):
-        from ClientCookie import CookieJar
-        from ClientCookie._ClientCookie import DEFAULT_HTTP_PORT
+        from mechanize import CookieJar
+        from mechanize._ClientCookie import DEFAULT_HTTP_PORT
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/",
@@ -210,7 +205,7 @@ class CookieTests(TestCase):
     def test_ns_parser_special_names(self):
         # names such as 'expires' are not special in first name=value pair
         # of Set-Cookie: header
-        from ClientCookie import CookieJar
+        from mechanize import CookieJar
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/", 'expires=eggs')
@@ -221,8 +216,8 @@ class CookieTests(TestCase):
         self.assert_(cookies.has_key('version'))
 
     def test_expires(self):
-        from ClientCookie._Util import time2netscape
-        from ClientCookie import CookieJar
+        from mechanize._Util import time2netscape
+        from mechanize import CookieJar
 
         # if expires is in future, keep cookie...
         c = CookieJar()
@@ -262,7 +257,7 @@ class CookieTests(TestCase):
         # XXX RFC 2965 expiry rules (some apply to V0 too)
 
     def test_default_path(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         # RFC 2965
         pol = DefaultCookiePolicy(rfc2965=True)
@@ -304,7 +299,7 @@ class CookieTests(TestCase):
         assert c._cookies["www.acme.com"].has_key("/blah/rhubarb")
 
     def test_escape_path(self):
-        from ClientCookie._ClientCookie import escape_path
+        from mechanize._ClientCookie import escape_path
         cases = [
             # quoted safe
             ("/foo%2f/bar", "/foo%2F/bar"),
@@ -321,22 +316,15 @@ class CookieTests(TestCase):
             # unquoted unsafe
             ("/foo\031/bar", "/foo%19/bar"),
             ("/\175foo/bar", "/%7Dfoo/bar"),
-            ]
-        try:
-            unicode
-        except NameError:
-            pass
-        else:
-            cases.append(
             # unicode
-            (u"/foo/bar\uabcd", "/foo/bar%EA%AF%8D")  # UTF-8 encoded
-            )
+            (u"/foo/bar\uabcd", "/foo/bar%EA%AF%8D"),  # UTF-8 encoded
+            ]
         for arg, result in cases:
             self.assert_(escape_path(arg) == result)
 
     def test_request_path(self):
         from urllib2 import Request
-        from ClientCookie._ClientCookie import request_path
+        from mechanize._ClientCookie import request_path
         # with parameters
         req = Request("http://www.example.com/rheum/rhaponicum;"
                       "foo=bar;sing=song?apples=pears&spam=eggs#ni")
@@ -353,7 +341,7 @@ class CookieTests(TestCase):
 
     def test_request_port(self):
         from urllib2 import Request
-        from ClientCookie._ClientCookie import request_port, DEFAULT_HTTP_PORT
+        from mechanize._ClientCookie import request_port, DEFAULT_HTTP_PORT
         req = Request("http://www.acme.com:1234/",
                       headers={"Host": "www.acme.com:4321"})
         assert request_port(req) == "1234"
@@ -362,8 +350,8 @@ class CookieTests(TestCase):
         assert request_port(req) == DEFAULT_HTTP_PORT
 
     def test_request_host(self):
-        from ClientCookie import Request
-        from ClientCookie._ClientCookie import request_host
+        from mechanize import Request
+        from mechanize._ClientCookie import request_host
         # this request is illegal (RFC2616, 14.2.3)
         req = Request("http://1.1.1.1/",
                       headers={"Host": "www.acme.com:80"})
@@ -385,7 +373,7 @@ class CookieTests(TestCase):
         assert request_host(req) == "www.acme.com"
 
     def test_is_HDN(self):
-        from ClientCookie._ClientCookie import is_HDN
+        from mechanize._ClientCookie import is_HDN
         assert is_HDN("foo.bar.com")
         assert is_HDN("1foo2.3bar4.5com")
         assert not is_HDN("192.168.1.1")
@@ -396,7 +384,7 @@ class CookieTests(TestCase):
         assert not is_HDN("foo.")
 
     def test_reach(self):
-        from ClientCookie._ClientCookie import reach
+        from mechanize._ClientCookie import reach
         assert reach("www.acme.com") == ".acme.com"
         assert reach("acme.com") == "acme.com"
         assert reach("acme.local") == ".local"
@@ -407,7 +395,7 @@ class CookieTests(TestCase):
         assert reach("192.168.0.1") == "192.168.0.1"
 
     def test_domain_match(self):
-        from ClientCookie._ClientCookie import domain_match, user_domain_match
+        from mechanize._ClientCookie import domain_match, user_domain_match
         assert domain_match("192.168.1.1", "192.168.1.1")
         assert not domain_match("192.168.1.1", ".168.1.1")
         assert domain_match("x.y.com", "x.Y.com")
@@ -450,7 +438,7 @@ class CookieTests(TestCase):
 
         """
         # XXX far from complete
-        from ClientCookie import CookieJar
+        from mechanize import CookieJar
         c = CookieJar()
         interact_2965(c, "http://www.nasty.com/", 'foo=bar; domain=friendly.org; Version="1"')
         assert len(c) == 0
@@ -458,7 +446,7 @@ class CookieTests(TestCase):
     def test_strict_domain(self):
         # Cookies whose domain is a country-code tld like .co.uk should
         # not be set if CookiePolicy.strict_domain is true.
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         cp = DefaultCookiePolicy(strict_domain=True)
         cj = CookieJar(policy=cp)
@@ -477,7 +465,7 @@ class CookieTests(TestCase):
         # Netscape: .www.bar.com, www.bar.com, .bar.com, bar.com, no domain should
         #  all get accepted, as should .acme.com, acme.com and no domain for
         #  2-component domains like acme.com.
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         c = CookieJar()
 
@@ -521,7 +509,7 @@ class CookieTests(TestCase):
         assert len(c) == 4
 
     def test_two_component_domain_rfc2965(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         pol = DefaultCookiePolicy(rfc2965=True)
         c = CookieJar(pol)
@@ -563,8 +551,8 @@ class CookieTests(TestCase):
         assert len(c) == 3
 
     def test_domain_allow(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
-        from ClientCookie import Request
+        from mechanize import CookieJar, DefaultCookiePolicy
+        from mechanize import Request
 
         c = CookieJar(policy=DefaultCookiePolicy(
             blocked_domains=["acme.com"],
@@ -597,10 +585,10 @@ class CookieTests(TestCase):
         assert not req.has_header("Cookie")
 
     def test_domain_block(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
-        from ClientCookie import Request
+        from mechanize import CookieJar, DefaultCookiePolicy
+        from mechanize import Request
 
-        #import logging; logging.getLogger("ClientCookie").setLevel(logging.DEBUG)
+        #import logging; logging.getLogger("mechanize").setLevel(logging.DEBUG)
 
         pol = DefaultCookiePolicy(
             rfc2965=True, blocked_domains=[".acme.com"])
@@ -642,7 +630,7 @@ class CookieTests(TestCase):
         assert not req.has_header("Cookie")
 
     def test_secure(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         for ns in True, False:
             for whitespace in " ", "":
@@ -665,7 +653,7 @@ class CookieTests(TestCase):
                        "secure cookie registered non-secure"
 
     def test_quote_cookie_value(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
         c = CookieJar(policy=DefaultCookiePolicy(rfc2965=True))
         interact_2965(c, "http://www.acme.com/", r'foo=\b"a"r; Version=1')
         h = interact_2965(c, "http://www.acme.com/")
@@ -673,7 +661,7 @@ class CookieTests(TestCase):
 
     def test_missing_final_slash(self):
         # Missing slash from request URL's abs_path should be assumed present.
-        from ClientCookie import CookieJar, Request, DefaultCookiePolicy
+        from mechanize import CookieJar, Request, DefaultCookiePolicy
         url = "http://www.acme.com"
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
         interact_2965(c, url, "foo=bar; Version=1")
@@ -683,7 +671,7 @@ class CookieTests(TestCase):
         assert req.has_header("Cookie")
 
     def test_domain_mirror(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         pol = DefaultCookiePolicy(rfc2965=True)
 
@@ -710,7 +698,7 @@ class CookieTests(TestCase):
                "domain not returned"
 
     def test_path_mirror(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         pol = DefaultCookiePolicy(rfc2965=True)
 
@@ -728,7 +716,7 @@ class CookieTests(TestCase):
         assert string.find(h, '$Path="/"') != -1, "path not returned"
 
     def test_port_mirror(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         pol = DefaultCookiePolicy(rfc2965=True)
 
@@ -761,7 +749,7 @@ class CookieTests(TestCase):
                "port with multiple values not returned with multiple values"
 
     def test_no_return_comment(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
         url = "http://foo.bar.com/"
@@ -774,7 +762,7 @@ class CookieTests(TestCase):
 
 # just pondering security here -- this isn't really a test (yet)
 ##     def test_hack(self):
-##         from ClientCookie import CookieJar
+##         from mechanize import CookieJar
 
 ##         c = CookieJar()
 ##         interact_netscape(c, "http://victim.mall.com/",
@@ -787,7 +775,7 @@ class CookieTests(TestCase):
 ##         print h
 
     def test_Cookie_iterator(self):
-        from ClientCookie import CookieJar, Cookie, DefaultCookiePolicy
+        from mechanize import CookieJar, Cookie, DefaultCookiePolicy
 
         cs = CookieJar(DefaultCookiePolicy(rfc2965=True))
         # add some random cookies
@@ -833,7 +821,7 @@ class CookieTests(TestCase):
         self.assertRaises(IndexError, lambda cs=cs : cs[1])
 
     def test_parse_ns_headers(self):
-        from ClientCookie._HeadersUtil import parse_ns_headers
+        from mechanize._HeadersUtil import parse_ns_headers
 
         # missing domain value (invalid cookie)
         assert parse_ns_headers(["foo=bar; path=/; domain"]) == [
@@ -851,7 +839,7 @@ class CookieTests(TestCase):
     def test_bad_cookie_header(self):
 
         def cookiejar_from_cookie_headers(headers):
-            from ClientCookie import CookieJar, Request
+            from mechanize import CookieJar, Request
             c = CookieJar()
             req = Request("http://www.example.com/")
             r = FakeResponse(headers, "http://www.example.com/")
@@ -882,7 +870,7 @@ class LWPCookieTests(TestCase):
     # Tests taken from libwww-perl, with a few modifications.
 
     def test_netscape_example_1(self):
-        from ClientCookie import CookieJar, Request, DefaultCookiePolicy
+        from mechanize import CookieJar, Request, DefaultCookiePolicy
 
         #-------------------------------------------------------------------
         # First we check that it works for the original example at
@@ -977,7 +965,7 @@ class LWPCookieTests(TestCase):
                 startswith(h, "SHIPPING=FEDEX;"))
 
     def test_netscape_example_2(self):
-        from ClientCookie import CookieJar, Request
+        from mechanize import CookieJar, Request
 
         # Second Example transaction sequence:
         # 
@@ -1029,7 +1017,7 @@ class LWPCookieTests(TestCase):
                          req.get_header("Cookie"))
 
     def test_ietf_example_1(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
         #-------------------------------------------------------------------
         # Then we test with the examples from draft-ietf-http-state-man-mec-03.txt
         #
@@ -1143,7 +1131,7 @@ class LWPCookieTests(TestCase):
         # contains all the cookies received so far.
 
     def test_ietf_example_2(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         # 5.2  Example 2
         # 
@@ -1199,7 +1187,7 @@ class LWPCookieTests(TestCase):
 
     def test_rejection(self):
         # Test rejection of Set-Cookie2 responses based on domain, path, port.
-        from ClientCookie import LWPCookieJar, DefaultCookiePolicy
+        from mechanize import LWPCookieJar, DefaultCookiePolicy
 
         pol = DefaultCookiePolicy(rfc2965=True)
 
@@ -1293,7 +1281,7 @@ class LWPCookieTests(TestCase):
     def test_url_encoding(self):
         # Try some URL encodings of the PATHs.
         # (the behaviour here has changed from libwww-perl)
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
 
@@ -1316,7 +1304,7 @@ class LWPCookieTests(TestCase):
 
     def test_mozilla(self):
         # Save / load Mozilla/Netscape cookie file format.
-        from ClientCookie import MozillaCookieJar, DefaultCookiePolicy
+        from mechanize import MozillaCookieJar, DefaultCookiePolicy
 
         year_plus_one = localtime(time.time())[0] + 1
 
@@ -1339,7 +1327,7 @@ class LWPCookieTests(TestCase):
                           "fooc=bar; Domain=www.foo.com; %s" % expires)
 
         def save_and_restore(cj, ignore_discard, filename=filename):
-            from ClientCookie import MozillaCookieJar, DefaultCookiePolicy
+            from mechanize import MozillaCookieJar, DefaultCookiePolicy
             try:
                 cj.save(ignore_discard=ignore_discard)
                 new_c = MozillaCookieJar(filename,
@@ -1360,7 +1348,7 @@ class LWPCookieTests(TestCase):
 
     def test_netscape_misc(self):
         # Some additional Netscape cookies tests.
-        from ClientCookie import CookieJar, Request
+        from mechanize import CookieJar, Request
 
         c = CookieJar()
         headers = []
@@ -1387,7 +1375,7 @@ class LWPCookieTests(TestCase):
 
     def test_intranet_domains_2965(self):
         # Test handling of local intranet hostnames without a dot.
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
         interact_2965(c, "http://example/",
@@ -1401,7 +1389,7 @@ class LWPCookieTests(TestCase):
         assert string.find(cookie, "foo2=bar") >= 0 and len(c) == 3
 
     def test_intranet_domains_ns(self):
-        from ClientCookie import CookieJar, DefaultCookiePolicy
+        from mechanize import CookieJar, DefaultCookiePolicy
 
         c = CookieJar(DefaultCookiePolicy(rfc2965 = False))
         interact_netscape(c, "http://example/", "foo1=bar")
@@ -1414,7 +1402,7 @@ class LWPCookieTests(TestCase):
         assert string.find(cookie, "foo2=bar") >= 0 and len(c) == 2
 
     def test_empty_path(self):
-        from ClientCookie import CookieJar, Request, DefaultCookiePolicy
+        from mechanize import CookieJar, Request, DefaultCookiePolicy
 
         # Test for empty path
         # Broken web-server ORION/1.3.38 returns to the client response like
@@ -1447,7 +1435,7 @@ class LWPCookieTests(TestCase):
 # The correctness of this test is undefined, in the absence of RFC 2965 errata.
 ##     def test_netscape_rfc2965_interop(self):
 ##         # Test mixing of Set-Cookie and Set-Cookie2 headers.
-##         from ClientCookie import CookieJar
+##         from mechanize import CookieJar
 
 ##         # Example from http://www.trip.com/trs/trip/flighttracker/flight_tracker_home.xsl
 ##         # which gives up these headers:
@@ -1490,7 +1478,7 @@ class LWPCookieTests(TestCase):
 ##         """
 
     def test_session_cookies(self):
-        from ClientCookie import CookieJar, Request
+        from mechanize import CookieJar, Request
 
         year_plus_one = localtime(time.time())[0] + 1
 

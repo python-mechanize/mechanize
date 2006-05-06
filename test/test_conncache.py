@@ -1,11 +1,11 @@
-"""Tests for ClientCookie._ConnCache module."""
+"""Tests for mechanize._ConnCache module."""
 
 import unittest, sys
 
 class ConnCacheTests(unittest.TestCase):
 
     def test_ConnectionCache(self):
-        from ClientCookie import ConnectionCache
+        from mechanize import ConnectionCache
         ConnectionCache()
 
 

@@ -3,15 +3,10 @@
 import re, string, time
 from unittest import TestCase
 
-try: True
-except NameError:
-    True = 1
-    False = 0
-
 class DateTimeTests(TestCase):
 
     def test_time2isoz(self):
-        from ClientCookie._Util import time2isoz
+        from mechanize._Util import time2isoz
 
         base = 1019227000
         day = 24*3600
@@ -27,7 +22,7 @@ class DateTimeTests(TestCase):
                    "bad time2isoz format: %s %s" % (az, bz)
 
     def test_parse_date(self):
-        from ClientCookie._Util import http2time
+        from mechanize._Util import http2time
 
         def parse_date(text, http2time=http2time):
             return time.gmtime(http2time(text))[:6]
@@ -41,7 +36,7 @@ class DateTimeTests(TestCase):
         assert parse_date("03-Feb-98") == (1998, 2, 3, 0, 0, 0.0)
 
     def test_http2time_formats(self):
-        from ClientCookie._Util import http2time, time2isoz
+        from mechanize._Util import http2time, time2isoz
 
         # test http2time for supported dates.  Test cases with 2 digit year
         # will probably break in year 2044.
@@ -80,7 +75,7 @@ class DateTimeTests(TestCase):
                    "'%s'  =>  %s, %s, %s (%s)" % (s, t, t2, t3, test_t)
 
     def test_http2time_garbage(self):
-        from ClientCookie._Util import http2time
+        from mechanize._Util import http2time
 
         for test in [
             '', 'Garbage',
