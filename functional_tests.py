@@ -16,11 +16,11 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
 #from urllib2 import build_opener, install_opener, urlopen
 #from urllib2 import HTTPCookieProcessor, HTTPHandler
 
-#from ClientCookie import CreateBSDDBCookieJar
+#from mechanize import CreateBSDDBCookieJar
 
-## logger = ClientCookie.getLogger("ClientCookie")
-## logger.addHandler(ClientCookie.StreamHandler())
-## logger.setLevel(ClientCookie.DEBUG)
+## logger = logging.getLogger("mechanize")
+## logger.addHandler(logging.StreamHandler())
+## logger.setLevel(logging.DEBUG)
 
 
 def sanepathname2url(path):
@@ -79,7 +79,7 @@ class ResponseTests(TestCase):
         self.assertEqual(r.read(), html)
 
     def test_response_close_and_read(self):
-        opener = ClientCookie.build_opener(ClientCookie.SeekableProcessor)
+        opener = mechanize.build_opener(mechanize.SeekableProcessor)
         r = opener.open("http://wwwsearch.sf.net/bits/cctest2.txt")
         # closing response shouldn't stop methods working if we're using
         # SeekableProcessor (ie. _Util.response_seek_wrapper)
@@ -133,8 +133,9 @@ class ResponseTests(TestCase):
 
 
 class FunctionalTests(TestCase):
-    def test_clientcookie(self):
+    def test_cookies(self):
         import urllib2
+        from mechanize import _urllib2_support
         # this test page depends on cookies, and an http-equiv refresh
         #cj = CreateBSDDBCookieJar("/home/john/db.db")
         cj = CookieJar()
@@ -171,7 +172,7 @@ class FunctionalTests(TestCase):
         finally:
             o.close()
             # uninstall opener (don't try this at home)
-            ClientCookie._urllib2_support._opener = None
+            _urllib2_support._opener = None
 
     def test_urlretrieve(self):
         url = "http://www.python.org/"
