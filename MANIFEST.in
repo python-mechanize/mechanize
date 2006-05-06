@@ -11,3 +11,4 @@ include ChangeLog.txt
 include 0.1.0-changes.txt
 include *.py
 recursive-include examples *.py
+recursive-include attic *.py
