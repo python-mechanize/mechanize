@@ -469,7 +469,7 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
 
 
 <a name="faq"></a>
-<h2>FAQs</h2>
+<h2>FAQs - pre install</h2>
 <ul>
   <li>Which version of Python do I need?
   <p>2.3 or above.
@@ -490,6 +490,20 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
      included in the distribution).
 </ul>
 
+<a name="usagefaq"></a>
+<h2>FAQs - usage</h2>
+<ul>
+  <li>I'm <strong><em>sure</em></strong> this page is HTML, why does
+     <code>mechanize.Browser</code> think otherwise
+@{colorize("""
+b = mechanize.Browser(
+    # mechanize's XHTML support needs work, so is currently switched off.  If
+    # we want to get our work done, we have to turn it on by supplying a
+    # mechanize.Factory (with XHTML support turned on):
+    factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
+    )
+""")}
+</ul>
 
 <p>I prefer questions and comments to be sent to the <a
 href="http://lists.sourceforge.net/lists/listinfo/wwwsearch-general">

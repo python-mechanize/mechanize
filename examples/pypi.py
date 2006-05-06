@@ -10,7 +10,12 @@ import sys, os, re
 
 import mechanize
 
-b = mechanize.Browser()
+b = mechanize.Browser(
+    # mechanize's XHTML support needs work, so is currently switched off.  If
+    # we want to get our work done, we have to turn it on by supplying a
+    # mechanize.Factory (with XHTML support turned on):
+    factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
+    )
 
 # search PyPI
 b.open("http://www.python.org/pypi")
