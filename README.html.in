@@ -379,9 +379,8 @@ it's probably simplest to just set up your sys.path manually rather than using
 
 <ul>
 @{version = "0.1.1a"}
-@{win_version = release.win_version(version)}
 <li><a href="./src/mechanize-@(version).tar.gz">mechanize-@(version).tar.gz</a>
-<li><a href="./src/mechanize-@(win_version).zip">mechanize-@(win_version).zip</a>
+<li><a href="./src/mechanize-@(version).zip">mechanize-@(version).zip</a>
 <li><a href="./src/ChangeLog.txt">Change Log</a> (included in distribution)
 <li><a href="./src/">Older versions.</a>
 </ul>
