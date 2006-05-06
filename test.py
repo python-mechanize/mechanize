@@ -102,6 +102,13 @@ Examples:
 
 
 if __name__ == "__main__":
+    # XXX temporary stop-gap to run doctests
+    assert os.path.isdir('test')
+    sys.path.insert(0, 'test')
+    import test_mechanize
+    import doctest
+    doctest.testmod(test_mechanize)
+
     import unittest
     test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
     sys.path.insert(0, test_path)

@@ -798,8 +798,8 @@ class UserAgentTests(TestCase):
         ua._set_handler("_blah", True)
 
 if __name__ == "__main__":
-    import test
+    import test_mechanize
     import doctest
-    doctest.testmod(test)
+    doctest.testmod(test_mechanize)
     import unittest
     unittest.main()
