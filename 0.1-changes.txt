@@ -34,6 +34,12 @@ Recent public API changes:
 - Rename set_credentials --> set_password_manager (and add some new
   methods to improve auth and proxy support).
 
+- Added response.get_data() and .set_data() methods, and make responses
+  copy.copy()able.  Browser has a .set_response() method.  responses
+  returned by the Browser are now copies, which means that other code
+  altering headers and data and calling .seek() won't mess up your copy of
+  a response.
+
 - mechanize.Factory has changed completely, to make it easier to avoid
   re-parsing (principally: add .set_response() method and make
   factory methods take no args)
