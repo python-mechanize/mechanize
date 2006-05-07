@@ -50,7 +50,7 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
       <li><code>mechanize.UserAgent</code> offers easy dynamic configuration of
       user-agent features like protocol, cookie, redirection and
       <code>robots.txt</code> handling, without having to make a new
-      <code>OpenerDirector</code> each time, eg.  by calling
+      <code>OpenerDirector</code> each time, e.g.  by calling
       <code>build_opener()</code>.
     </ul>
   <li>Easy HTML form filling, using <a href="../ClientForm/">ClientForm</a>
@@ -173,10 +173,10 @@ logger.setLevel(logging.INFO)
   <li>mechanize works with Python 2.3, Python 2.4 and Python 2.5.
 
   <li>Handler classes that are missing from 2.4's <code>urllib2</code>
-      (eg. <code>HTTPRefreshProcessor</code>) may be used with 2.4's
+      (e.g. <code>HTTPRefreshProcessor</code>) may be used with 2.4's
       <code>urllib2</code> (however, note the paragraph below).  With any
       version of Python, <code>urllib2</code> handlers that are missing from
-      mechanize (eg. <code>ProxyHandler</code>) may be used with mechanize, and
+      mechanize (e.g. <code>ProxyHandler</code>) may be used with mechanize, and
       <code>urllib2.Request</code> objects may be used with mechanize.
       <strong>IMPORTANT:</strong> For all other code, use mechanize
       <em><strong>exclusively</strong></em>: do NOT mix use of mechanize and
