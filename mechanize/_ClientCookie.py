@@ -734,7 +734,10 @@ class DefaultCookiePolicy(CookiePolicy):
                 sld = domain[1:i]
                 if (string.lower(sld) in [
                     "co", "ac",
-                    "com", "edu", "org", "net", "gov", "mil", "int"] and
+                    "com", "edu", "org", "net", "gov", "mil", "int",
+                    "aero", "biz", "cat", "coop", "info", "jobs", "mobi",
+                    "museum", "name", "pro", "travel",
+                    ] and
                     len(tld) == 2):
                     # domain like .co.uk
                     return False

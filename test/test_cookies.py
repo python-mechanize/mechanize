@@ -454,12 +454,12 @@ class CookieTests(TestCase):
         interact_netscape(cj, "http://example.co.uk/",
                           'okey=dokey; Domain=.example.co.uk')
         self.assertEquals(len(cj), 2)
-        for pseudo_tld in [".co.uk", ".org.za", ".tx.us"]:
+        for pseudo_tld in [".co.uk", ".org.za", ".tx.us", ".name.us"]:
             interact_netscape(cj, "http://example.%s/" % pseudo_tld,
                               'spam=eggs; Domain=.co.uk')
             self.assertEquals(len(cj), 2)
-        # XXXX what about blah.tv, .name, etc etc?  See Konqueror
-        # (kcookiejar.cpp) and Mozilla implementations.
+        # XXXX This should be compared with the Konqueror (kcookiejar.cpp) and
+        # Mozilla implementations.
 
     def test_two_component_domain_ns(self):
         # Netscape: .www.bar.com, www.bar.com, .bar.com, bar.com, no domain should
