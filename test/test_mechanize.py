@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import generators
-
 import sys, random
 from unittest import TestCase
 import StringIO, re, UserDict, urllib2

@@ -18,8 +18,6 @@ included with the distribution).
 # The stuff on web page's todo list.
 # Moof's emails about response object, .back(), etc.
 
-from __future__ import generators
-
 import urllib2, urlparse, sys, copy, re
 
 from _useragent import UserAgent

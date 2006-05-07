@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import generators
-
 import sys
 from unittest import TestCase
 
