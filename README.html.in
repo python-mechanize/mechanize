@@ -228,11 +228,15 @@ CookieJar Perl code from which mechanize's support for that is derived.
 
 <h3>Specific to mechanize</h3>
 <ul>
-  <li>Make encoding_finder public, I guess.
+  <li>Export all urllib2 handlers &c. from mechanize, even if they come
+    straight from urllib2!
+  <li>Proper XHTML support!
+  <li>Auth / proxies.
+  <li>Make encoding_finder public, I guess (but probably improve it first).
+    (For example: support Mark Pilgrim's universal encoding detector?)
   <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
     per page.
   <li>Test BeautifulSoup support better / fix encoding issue.
-  <li>Support Mark Pilgrim's universal encoding detector?
   <li>Add another History implementation or two and finalise interface.
   <li>History cache expiration.
   <li>Investigate possible leak (see Balazs Ree's list posting).
@@ -241,15 +245,18 @@ CookieJar Perl code from which mechanize's support for that is derived.
 
 <h3>mechanize documentation</h3>
 <ul>
-  <li>Auth / proxies.
   <li>Document means of processing response on ad-hoc basis with
     .set_response() - e.g. to fix bad encoding in Content-type header or
     clean up bad HTML.
   <li>Add example to documentation showing can pass None as handle arg
     to <code>mechanize.UserAgent</code> methods and then .add_handler()
     if need to give it a specific handler instance to use for one of the
-    things it UserAgent already handles.
+    things it UserAgent already handles.  Hmm, think this contradicts docs
+    ATM!  And is it better to do this a different way...??
+  <li>Rearrange so have decent class-by-class docs,
+    a tutorial/background-info doc, and a howto/examples doc.
   <li>Add more functional tests.
+  <li>Auth / proxies.
 </ul>
 
 <h3>Basic protocols / standards support</h3>
@@ -258,12 +265,12 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>Figure out the Right Thing (if such a thing exists) for %-encoding.
   <li>How do IRIs fit into the world?
   <li>IDNA -- must read about security stuff first.
-  <li>Unicode support in general (not sure yet how/when/whether this will
-    happen).
+  <li>Unicode support in general.
   <li>Provide per-connection access to timeouts.
   <li>Keep-alive / connection caching.
   <li>Pipelining??
   <li>Content negotiation.
+  <li>gzip transfer encoding.
 </ul>
 
 
