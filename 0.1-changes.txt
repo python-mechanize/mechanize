@@ -46,6 +46,9 @@ Recent public API changes:
 
 - mechanize.Browser.default_encoding is gone.
 
+- mechanize.Browser.set_seekable_responses() is gone (they're always
+  .seek()able).
+
 - Added Browser.encoding().
 
 - Factory() takes an i_want_broken_xhtml_support argument, as a stop

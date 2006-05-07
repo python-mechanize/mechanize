@@ -290,10 +290,6 @@ class UserAgent(OpenerDirector):
         """
         self._set_handler("_referer", handle)
         self._handle_referer = bool(handle)
-    # XXXXX isn't this always true?
-    def set_seekable_responses(self, handle):
-        """Make response objects .seek()able."""
-        self._set_handler("_seek", handle)
     def set_debug_redirects(self, handle):
         """Log information about HTTP redirects (including refreshes).
 
