@@ -34,6 +34,14 @@ def isspace(string):
         if not SPACE_DICT.has_key(c): return False
     return True
 
+## def caller():
+##     try:
+##         raise SyntaxError
+##     except:
+##         import sys
+##     return sys.exc_traceback.tb_frame.f_back.f_back.f_code.co_name
+
+
 # this is here rather than in _HeadersUtil as it's just for
 # compatibility with old Python versions, rather than entirely new code
 def getheaders(msg, name):

@@ -33,10 +33,10 @@ under the terms of the BSD or ZPL 2.1 licenses.
 
 """
 
-from __future__ import generators
-
 import re, htmlentitydefs
 import HTMLParser
+
+from _html import unescape, unescape_charref
 
 
 class NoMoreTokensError(Exception): pass
@@ -92,66 +92,6 @@ def iter_until_exception(fn, exception, *args, **kwds):
         except exception:
             raise StopIteration
 
-def caller():
-    try:
-        raise SyntaxError
-    except:
-        import sys
-    return sys.exc_traceback.tb_frame.f_back.f_back.f_code.co_name
-
-def unescape(data, entities, encoding):
-    if data is None or "&" not in data:
-        return data
-
-    def replace_entities(match):
-        ent = match.group()
-        if ent[1] == "#":
-            return unescape_charref(ent[2:-1], encoding)
-
-        repl = entities.get(ent)
-        if repl is not None:
-            if type(repl) != type(""):
-                try:
-                    repl = repl.encode(encoding)
-                except UnicodeError:
-                    repl = ent
-        else:
-            repl = ent
-
-        return repl
-
-    return re.sub(r"&#?[A-Za-z0-9]+?;", replace_entities, data)
-
-def unescape_charref(data, encoding):
-    name, base = data, 10
-    if name.startswith("x"):
-        name, base= name[1:], 16
-    uc = unichr(int(name, base))
-    if encoding is None:
-        return uc
-    else:
-        try:
-            repl = uc.encode(encoding)
-        except UnicodeError:
-            repl = "&#%s;" % data
-        return repl
-
-def get_entitydefs():
-    entitydefs = {}
-    try:
-        htmlentitydefs.name2codepoint
-    except AttributeError:
-        entitydefs = {}
-        for name, char in htmlentitydefs.entitydefs.items():
-            uc = char.decode("latin-1")
-            if uc.startswith("&#") and uc.endswith(";"):
-                uc = unescape_charref(uc[2:-1], None)
-            entitydefs["&%s;" % name] = uc
-    else:
-        for name, codepoint in htmlentitydefs.name2codepoint.items():
-            entitydefs["&%s;" % name] = unichr(codepoint)
-    return entitydefs
-
 
 class _AbstractParser:
     chunk = 1024
@@ -166,7 +106,7 @@ class _AbstractParser:
         encoding: encoding used to encode numeric character references by
          .get_text() and .get_compressed_text() ("ascii" by default)
 
-        entitydefs: mapping like {"&amp;": "&", ...} containing HTML entity
+        entitydefs: mapping like {"amp": "&", ...} containing HTML entity
          definitions (a sensible default is used).  This is used to unescape
          entities in .get_text() (and .get_compressed_text()) and attribute
          values.  If the encoding can not represent the character, the entity
@@ -201,7 +141,7 @@ class _AbstractParser:
         self.textify = textify
         self.encoding = encoding
         if entitydefs is None:
-            entitydefs = get_entitydefs()
+            entitydefs = htmlentitydefs.name2codepoint
         self._entitydefs = entitydefs
 
     def __iter__(self): return self
