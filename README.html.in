@@ -122,10 +122,12 @@ For example:
 @{colorize("""
 br = Browser()
 # Explicitly configure proxies (Browser will attempt to set good defaults).
-br.set_proxies({'http': 'myproxy.example.com',
-                'ftp': 'joe:password@proxy.example.com:8080',
+# Note the userinfo ("joe:password@") and port number (":3128") are optional.
+br.set_proxies({"http": "joe:password@myproxy.example.com:3128",
+                "ftp": "proxy.example.com",
                 })
 # Add HTTP Basic/Digest auth username and password for HTTP proxy access.
+# (equivalent to using "joe:password@..." form above)
 br.add_proxy_password("joe", "password")
 # Add HTTP Basic/Digest auth username and password for website access.
 br.add_password("http://example.com/protected/", "joe", "password")
@@ -271,6 +273,7 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>Pipelining??
   <li>Content negotiation.
   <li>gzip transfer encoding.
+  <li>proxy.pac parsing (I don't think this needs JS interpretation)
 </ul>
 
 

@@ -233,8 +233,8 @@ class UserAgent(OpenerDirector):
     def set_proxies(self, proxies):
         """Set a dictionary mapping URL scheme to proxy specification, or None.
 
-        e.g. {'http': 'myproxy.example.com',
-              'ftp': 'joe:password@proxy.example.com:8080'}
+        e.g. {"http": "joe:password@myproxy.example.com:3128",
+              "ftp": "proxy.example.com"}
 
         """
         self._set_handler("_proxy", obj=proxies)
