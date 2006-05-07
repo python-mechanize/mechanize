@@ -647,15 +647,21 @@ class BrowserTests(TestCase):
                           b.find_link, text="da ya")
         l = b.find_link(text_regex=re.compile("da ya"))
         self.assertEqual(l.url, "one")
+        l = b.find_link(text_regex="da ya")
+        self.assertEqual(l.url, "one")
         # name
         l = b.find_link(name="name3")
         self.assertEqual(l.url, "one")
         l = b.find_link(name_regex=re.compile("oo"))
         self.assertEqual(l.url, "blah")
+        l = b.find_link(name_regex="oo")
+        self.assertEqual(l.url, "blah")
         # url
         l = b.find_link(url="spam")
         self.assertEqual(l.url, "spam")
         l = b.find_link(url_regex=re.compile("pam"))
+        self.assertEqual(l.url, "spam")
+        l = b.find_link(url_regex="pam")
         self.assertEqual(l.url, "spam")
         # tag
         l = b.find_link(tag="area")

@@ -20,7 +20,7 @@ included with the distribution).
 
 from __future__ import generators
 
-import urllib2, urlparse, sys, copy
+import urllib2, urlparse, sys, copy, re
 
 from _useragent import UserAgent
 from _html import DefaultFactory
@@ -466,7 +466,8 @@ class Browser(UserAgent):
          with opening tags "textified" as per the pullparser docs) must compare
          equal to this argument, if supplied
         text_regex: link text between tag (as defined above) must match the
-         regular expression object passed as this argument, if supplied
+         regular expression object or regular expression string passed as this
+         argument, if supplied
         name, name_regex: as for text and text_regex, but matched against the
          name HTML attribute of the link tag
         url, url_regex: as for text and text_regex, but matched against the
@@ -512,19 +513,19 @@ class Browser(UserAgent):
         for link in links:
             if url is not None and url != link.url:
                 continue
-            if url_regex is not None and not url_regex.search(link.url):
+            if url_regex is not None and not re.search(url_regex, link.url):
                 continue
             if (text is not None and
                 (link.text is None or text != link.text)):
                 continue
             if (text_regex is not None and
-                (link.text is None or not text_regex.search(link.text))):
+                (link.text is None or not re.search(text_regex, link.text))):
                 continue
             if name is not None and name != dict(link.attrs).get("name"):
                 continue
             if name_regex is not None:
                 link_name = dict(link.attrs).get("name")
-                if link_name is None or not name_regex.search(link_name):
+                if link_name is None or not re.search(name_regex, link_name):
                     continue
             if tag is not None and tag != link.tag:
                 continue
