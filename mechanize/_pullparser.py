@@ -34,7 +34,7 @@ under the terms of the BSD or ZPL 2.1 licenses.
 """
 
 import re, htmlentitydefs
-import HTMLParser
+import sgmllib, HTMLParser
 
 from _html import unescape, unescape_charref
 
@@ -315,9 +315,6 @@ class PullParser(_AbstractParser, HTMLParser.HTMLParser):
         # HTMLParser.HTMLParser's entitydefs.
         return self.unescape_attr(name)
 
-import sgmllib
-# monkeypatch to fix http://www.python.org/sf/803422 :-(
-sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
 class TolerantPullParser(_AbstractParser, sgmllib.SGMLParser):
     def __init__(self, *args, **kwds):
         sgmllib.SGMLParser.__init__(self)
