@@ -276,21 +276,6 @@ def unescape_charref(data, encoding):
             repl = "&#%s;" % data
         return repl
 
-def get_entitydefs():
-    try:
-        htmlentitydefs.name2codepoint
-    except AttributeError:
-        entitydefs = {}
-        for name, char in htmlentitydefs.entitydefs.items():
-            uc = char.decode("latin-1")
-            if uc.startswith("&#") and uc.endswith(";"):
-                uc = unescape_charref(uc[2:-1], None)
-            codepoint = ord(uc)
-            entitydefs[name] = codepoint
-    else:
-        entitydefs = htmlentitydefs.name2codepoint
-    return entitydefs
-
 
 try:
     import BeautifulSoup
@@ -301,7 +286,7 @@ else:
     # monkeypatch to fix http://www.python.org/sf/803422 :-(
     sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
     class MechanizeBs(BeautifulSoup.BeautifulSoup):
-        _entitydefs = get_entitydefs()
+        _entitydefs = htmlentitydefs.name2codepoint
         # don't want the magic Microsoft-char workaround
         PARSER_MASSAGE = [(re.compile('(<[^<>]*)/>'),
                            lambda(x):x.group(1) + ' />'),

@@ -16,6 +16,7 @@ import copy, time, tempfile, htmlentitydefs, re
 from _ClientCookie import CookieJar, request_host
 import _Opener
 from _Util import isstringlike, startswith, getheaders, closeable_response
+from _html import unescape, unescape_charref
 from _HeadersUtil import is_html
 from _Debug import getLogger
 debug = getLogger("mechanize.cookies").debug
@@ -162,67 +163,6 @@ else:
 
         https_request = http_request
 
-
-    # -------------------------------------------------------------------
-    # XXXXXXX fix me!!!
-    # This particular variant is identical to that in mechanize.
-
-    def unescape(data, entities, encoding):
-        if data is None or "&" not in data:
-            return data
-
-        def replace_entities(match, entities=entities, encoding=encoding):
-            ent = match.group()
-            if ent[1] == "#":
-                return unescape_charref(ent[2:-1], encoding)
-
-            repl = entities.get(ent[1:-1])
-            if repl is not None:
-                repl = unichr(repl)
-                if type(repl) != type(""):
-                    try:
-                        repl = repl.encode(encoding)
-                    except UnicodeError:
-                        repl = ent
-            else:
-                repl = ent
-            return repl
-
-        return re.sub(r"&#?[A-Za-z0-9]+?;", replace_entities, data)
-
-    def unescape_charref(data, encoding):
-        name, base = data, 10
-        if name.startswith("x"):
-            name, base= name[1:], 16
-        uc = unichr(int(name, base))
-        if encoding is None:
-            return uc
-        else:
-            try:
-                repl = uc.encode(encoding)
-            except UnicodeError:
-                repl = "&#%s;" % data
-            return repl
-
-    def get_entitydefs():
-        from codecs import latin_1_decode
-        try:
-            htmlentitydefs.name2codepoint
-        except AttributeError:
-            entitydefs = {}
-            for name, char in htmlentitydefs.entitydefs.items():
-                uc = latin_1_decode(char)[0]
-                if uc.startswith("&#") and uc.endswith(";"):
-                    uc = unescape_charref(uc[2:-1], None)
-                codepoint = ord(uc)
-                entitydefs[name] = codepoint
-        else:
-            entitydefs = htmlentitydefs.name2codepoint
-        return entitydefs
-
-    # -------------------------------------------------------------------
-
-
     # XXX would self.reset() work, instead of raising this exception?
     class EndOfHeadError(Exception): pass
     class AbstractHeadParser:
@@ -230,7 +170,7 @@ else:
         head_elems = ("html", "head",
                       "title", "base",
                       "script", "style", "meta", "link", "object")
-        _entitydefs = get_entitydefs()
+        _entitydefs = htmlentitydefs.name2codepoint
         _encoding = DEFAULT_ENCODING
 
         def __init__(self):
