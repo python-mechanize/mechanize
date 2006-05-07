@@ -367,7 +367,7 @@ else:
             self.request = request
 
     class HTTPRobotRulesProcessor(BaseHandler):
-        # before redirections and response debugging, after everything else
+        # before redirections, after everything else
         handler_order = 800
 
         try:
