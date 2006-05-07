@@ -158,7 +158,7 @@ class CachingGeneratorFunctionTests(TestCase):
 class UnescapeTests(TestCase):
 
     def test_unescape_charref(self):
-        from mechanize._html import unescape_charref, get_entitydefs
+        from mechanize._html import unescape_charref
         mdash_utf8 = u"\u2014".encode("utf-8")
         for ref, codepoint, utf8, latin1 in [
             ("38", 38, u"&".encode("utf-8"), "&"),
@@ -169,31 +169,19 @@ class UnescapeTests(TestCase):
             self.assertEqual(unescape_charref(ref, 'latin-1'), latin1)
             self.assertEqual(unescape_charref(ref, 'utf-8'), utf8)
 
-    def test_get_entitydefs(self):
-        from mechanize._html import get_entitydefs
-        ed = get_entitydefs()
-        for name, codepoint in [
-            ("amp", ord(u"&")),
-            ("lt", ord(u"<")),
-            ("gt", ord(u">")),
-            ("mdash", 0x2014),
-            ("spades", 0x2660),
-            ]:
-            self.assertEqual(ed[name], codepoint)
-
     def test_unescape(self):
         import htmlentitydefs
-        from mechanize._html import unescape, get_entitydefs
+        from mechanize._html import unescape
         data = "&amp; &lt; &mdash; &#8212; &#x2014;"
         mdash_utf8 = u"\u2014".encode("utf-8")
-        ue = unescape(data, get_entitydefs(), "utf-8")
+        ue = unescape(data, htmlentitydefs.name2codepoint, "utf-8")
         self.assertEqual("& < %s %s %s" % ((mdash_utf8,)*3), ue)
 
         for text, expect in [
             ("&a&amp;", "&a&"),
             ("a&amp;", "a&"),
             ]:
-            got = unescape(text, get_entitydefs(), "latin-1")
+            got = unescape(text, htmlentitydefs.name2codepoint, "latin-1")
             self.assertEqual(got, expect)
 
 

@@ -10,49 +10,6 @@ def peek_token(p):
     p.unget_token(tok)
     return tok
 
-class UnescapeTests(TestCase):
-
-    def test_unescape_charref(self):
-        from mechanize._pullparser import unescape_charref, get_entitydefs
-        mdash_utf8 = u"\u2014".encode("utf-8")
-        for ref, codepoint, utf8, latin1 in [
-            ("38", 38, u"&".encode("utf-8"), "&"),
-            ("x2014", 0x2014, mdash_utf8, "&#x2014;"),
-            ("8212", 8212, mdash_utf8, "&#8212;"),
-            ]:
-            self.assertEqual(unescape_charref(ref, None), unichr(codepoint))
-            self.assertEqual(unescape_charref(ref, 'latin-1'), latin1)
-            self.assertEqual(unescape_charref(ref, 'utf-8'), utf8)
-
-    def test_get_entitydefs(self):
-        from mechanize._pullparser import get_entitydefs
-        ed = get_entitydefs()
-        for name, char in [
-            ("&amp;", u"&"),
-            ("&lt;", u"<"),
-            ("&gt;", u">"),
-            ("&mdash;", u"\u2014"),
-            ("&spades;", u"\u2660"),
-            ]:
-            self.assertEqual(ed[name], char)
-
-    def test_unescape(self):
-        import htmlentitydefs
-        from mechanize import _pullparser
-        data = "&amp; &lt; &mdash; &#8212; &#x2014;"
-        mdash_utf8 = u"\u2014".encode("utf-8")
-        ue = _pullparser.unescape(data, _pullparser.get_entitydefs(), "utf-8")
-        self.assertEqual("& < %s %s %s" % ((mdash_utf8,)*3), ue)
-
-        for text, expect in [
-            ("&a&amp;", "&a&"),
-            ("a&amp;", "a&"),
-            ]:
-            got = _pullparser.unescape(text,
-                                      _pullparser.get_entitydefs(),
-                                      "latin-1")
-            self.assertEqual(got, expect)
-
 
 class PullParserTests(TestCase):
     from mechanize._pullparser import PullParser, TolerantPullParser
