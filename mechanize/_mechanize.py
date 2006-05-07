@@ -238,8 +238,7 @@ class Browser(UserAgent):
         if not hasattr(response, "seek"):
             response = response_seek_wrapper(response)
         if not hasattr(response, "closeable_response"):
-            response = ResponseUpgradeProcessor().any_response(
-                'junk', response)
+            response = upgrade_response(response)
         else:
             response = copy.copy(response)
 
