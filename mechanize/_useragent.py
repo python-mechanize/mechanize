@@ -353,25 +353,21 @@ class UserAgent(OpenerDirector):
             except:
                 pass
             else:
-                for table in (
-                    [self.handle_open,
-                     self.process_request, self.process_response]+
-                    self.handle_error.values()):
-                    for handlers in table.values():
-                        remove(handlers, handler)
-                    remove(self.handlers, handler)
+                try:
+                    self.handlers.remove(handler)
+                except ValueError:
+                    pass
+                else:
+                    for table in (
+                        [self.handle_open,
+                         self.process_request, self.process_response]+
+                        self.handle_error.values()):
+                        for handlers in table.values():
+                            try:
+                                handlers.remove(handler)
+                            except ValueError:
+                                pass
         # then add the replacement, if any
         if newhandler is not None:
             self.add_handler(newhandler)
             self._ua_handlers[name] = newhandler
-
-# XXXXX cruft
-def remove(sequence, obj):
-    # for use when can't use .remove() because of obj.__cmp__ :-(
-    # (ClientCookie only requires Python 2.0, which doesn't have __lt__)
-    i = 0
-    while i < len(sequence):
-        if sequence[i] is obj:
-            del sequence[i]
-        else:
-            i += 1

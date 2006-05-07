@@ -13,6 +13,8 @@ from _html import Link, \
 # import mechanize; mechanize.USE_BARE_EXCEPT = False
 USE_BARE_EXCEPT = True
 
+from urllib2 import BaseHandler
+
 from _ClientCookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
      CookieJar, FileCookieJar, LoadError, request_host
 from _LWPCookieJar import LWPCookieJar, lwp_cookie_str
@@ -21,7 +23,7 @@ from _MSIECookieJar import MSIECookieJar
 from _urllib2_support import \
      Request, \
      build_opener, install_opener, urlopen, \
-     OpenerFactory, urlretrieve, BaseHandler, HeadParser, \
+     OpenerFactory, urlretrieve, HeadParser, \
      RobotExclusionError
 from _Opener import OpenerDirector
 try:

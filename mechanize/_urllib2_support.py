@@ -33,7 +33,7 @@ else:
     import sgmllib
     # monkeypatch to fix http://www.python.org/sf/803422 :-(
     sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
-    from urllib2 import URLError, HTTPError
+    from urllib2 import URLError, HTTPError, BaseHandler
     import types, string, socket
     from cStringIO import StringIO
     try:
@@ -45,18 +45,6 @@ else:
 
     from _Util import response_seek_wrapper
     from _Request import Request
-
-
-    class BaseHandler(urllib2.BaseHandler):
-        handler_order = 500
-
-        def __cmp__(self, other):
-            if not hasattr(other, "handler_order"):
-                # Try to preserve the old behavior of having custom classes
-                # inserted after default ones (works only for custom user
-                # classes which are not aware of handler_order).
-                return 0
-            return cmp(self.handler_order, other.handler_order)
 
 
     # This fixes a bug in urllib2 as of Python 2.1.3 and 2.2.2
