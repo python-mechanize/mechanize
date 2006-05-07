@@ -217,6 +217,18 @@ class Browser(UserAgent):
             raise error
         return copy.copy(self._response)
 
+    def __str__(self):
+        text = []
+        text.append("<%s " % self.__class__.__name__)
+        if self._response:
+            text.append("visiting %s" % self._response.geturl())
+        else:
+            text.append("(not visiting a URL)")
+        if self.form:
+            text.append("\n selected form:\n %s\n" % str(self.form))
+        text.append(">")
+        return "".join(text)
+
     def response(self):
         """Return a copy of the current response.
 

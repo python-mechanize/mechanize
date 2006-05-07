@@ -96,6 +96,9 @@ br.select_form(name="order")
 br["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
 response2 = br.submit()  # submit current form
 
+# print currently selected form (don't call .submit() on this, use br.submit())
+print br.form
+
 response3 = br.back()  # back to cheese shop (same data as response1)
 # the history mechanism returns cached response objects
 # we can still use the response, even though we closed it:
@@ -225,8 +228,6 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>Add another History implementation or two and finalise interface.
   <li>History cache expiration.
   <li>Investigate possible leak (see Balazs Ree's list posting).
-  <li>Add <code>Browser.form_as_string()</code> and
-    <code>Browser.__str__()</code> methods.
   <li>Add two-way links between BeautifulSoup & ClientForm object models.
 </ul>
 

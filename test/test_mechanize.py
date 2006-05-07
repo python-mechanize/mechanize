@@ -757,6 +757,37 @@ class ResponseTests(TestCase):
         self.assertEqual(br.response().read(), newhtml)
         self.assertEqual(list(br.links())[0].url, "eggs")
 
+    def test_str(self):
+        import mimetools
+        from mechanize import _Util
+
+        br = TestBrowser()
+        self.assertEqual(
+            str(br),
+            "<TestBrowser (not visiting a URL)>"
+            )
+
+        fp = StringIO.StringIO('<html><form name="f"><input /></form></html>')
+        headers = mimetools.Message(
+            StringIO.StringIO("Content-type: text/html"))
+        response = _Util.response_seek_wrapper(_Util.closeable_response(
+            fp, headers, "http://example.com/", 200, "OK"))
+        br.set_response(response)
+        self.assertEqual(
+            str(br),
+            "<TestBrowser visiting http://example.com/>"
+            )
+
+        br.select_form(nr=0)
+        self.assertEqual(
+            str(br),
+            """\
+<TestBrowser visiting http://example.com/
+ selected form:
+ <f GET http://example.com/ application/x-www-form-urlencoded
+  <TextControl(<None>=)>>
+>""")
+
 
 class UserAgentTests(TestCase):
     def test_set_handled_schemes(self):
