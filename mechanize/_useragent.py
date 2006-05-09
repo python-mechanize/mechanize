@@ -11,8 +11,7 @@ included with the distribution).
 
 """
 
-import sys
-import urllib2
+import sys, warnings, urllib2
 
 from _Opener import OpenerDirector
 if sys.version_info[:2] >= (2, 4):
@@ -21,6 +20,8 @@ else:
     from _urllib2_support import BaseHandler, HTTPErrorProcessor
 
 import _urllib2_support
+import _gzip
+
 
 class HTTPRefererProcessor(BaseHandler):
     def http_request(self, request):
@@ -127,6 +128,7 @@ class UserAgent(OpenerDirector):
         "_proxy_basicauth": urllib2.ProxyBasicAuthHandler,
         "_proxy_digestauth": urllib2.ProxyDigestAuthHandler,
         "_robots": _urllib2_support.HTTPRobotRulesProcessor,
+        "_gzip": _gzip.HTTPGzipProcessor,  # experimental!
 
         # debug handlers
         "_debug_redirect": _urllib2_support.HTTPRedirectDebugProcessor,
@@ -290,6 +292,14 @@ class UserAgent(OpenerDirector):
         """
         self._set_handler("_referer", handle)
         self._handle_referer = bool(handle)
+    def set_handle_gzip(self, handle):
+        """Handle gzip transfer encoding.
+
+        """
+        if handle:
+            warnings.warn(
+                "gzip transfer encoding is experimental!", stacklevel=2)
+        self._set_handler("_gzip", handle)
     def set_debug_redirects(self, handle):
         """Log information about HTTP redirects (including refreshes).
 

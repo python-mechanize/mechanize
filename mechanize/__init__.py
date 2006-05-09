@@ -39,6 +39,8 @@ from _urllib2_support import \
      HTTPResponseDebugProcessor, HTTPRedirectDebugProcessor, \
      HTTPRobotRulesProcessor
 
+#from _gzip import HTTPGzipProcessor
+
 import httplib
 if hasattr(httplib, 'HTTPS'):
     from _urllib2_support import HTTPSHandler
