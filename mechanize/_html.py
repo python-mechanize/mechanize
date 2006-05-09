@@ -109,6 +109,7 @@ def clean_url(url, encoding):
     # percent-encode illegal URL characters
     if type(url) == type(""):
         url = url.decode(encoding, "replace")
+    url = url.strip()
     return urllib.quote(url.encode(encoding), URLQUOTE_SAFE_URL_CHARS)
 
 class LinksFactory:

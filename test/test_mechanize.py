@@ -571,11 +571,29 @@ class BrowserTests(TestCase):
 ##             print link
             self.assertEqual(link, exp)
 
+    def test_link_whitespace(self):
+        from mechanize import Link
+        for factory_class in FACTORY_CLASSES:
+            base_url = "http://example.com/"
+            url = "  http://example.com/foo.html%20+ "
+            stripped_url = url.strip()
+            html = '<a href="%s"></a>' % url
+            b = TestBrowser(factory=factory_class())
+            r = MockResponse(base_url, html, {"content-type": "text/html"})
+            b.add_handler(make_mock_handler()([("http_open", r)]))
+            r = b.open(base_url)
+            link = b.find_link(nr=0)
+            self.assertEqual(
+                link,
+                Link(base_url, stripped_url, "", "a", [("href", url)])
+                )
+
     def test_links(self):
         for factory_class in FACTORY_CLASSES:
             self._test_links(factory_class())
     def _test_links(self, factory):
         import mechanize
+        from mechanize import Link
         url = "http://example.com/"
 
         b = TestBrowser(factory=factory)
@@ -602,7 +620,6 @@ class BrowserTests(TestCase):
         b.add_handler(make_mock_handler()([("http_open", r)]))
         r = b.open(url)
 
-        Link = mechanize.Link
         exp_links = [
             # base_url, url, text, tag, attrs
             Link(url, "http://example.com/foo/bar.html", "", "a",
