@@ -9,6 +9,15 @@ included with the distribution).
 
 """
 
+# XXXX
+# spaces in URLs
+# clean_url(): test Moz behaviour against Apache rather than File->Open!
+# test referer bugs (frags and don't add in redirect unless orig req had Referer)
+
+# XXX
+# The stuff on web page's todo list.
+# Moof's emails about response object, .back(), etc.
+
 import urllib2, urlparse, sys, copy, re
 
 from _useragent import UserAgent
