@@ -129,13 +129,9 @@ class OpenerDirector(urllib2.OpenerDirector):
             self.handlers.remove(handler)
 
         # sort indexed methods
-        # XXX could be cleaned up, and sorting could be eliminated
-        # (we have to sort on .open() anyway, thanks to .any_request()/
-        # .any_response() methods
+        # XXX could be cleaned up
         for lookup in [process_request, process_response]:
             for scheme, handlers in lookup.iteritems():
-                handlers = list(handlers)
-                handlers.sort()
                 lookup[scheme] = handlers
         for scheme, lookup in handle_error.iteritems():
             for code, handlers in lookup.iteritems():
@@ -152,6 +148,8 @@ class OpenerDirector(urllib2.OpenerDirector):
         self.handle_open = handle_open
         self.process_request = process_request
         self.process_response = process_response
+        self._any_request = any_request
+        self._any_response = any_response
 
     def _request(self, url_or_req, data):
         if isstringlike(url_or_req):
@@ -172,8 +170,9 @@ class OpenerDirector(urllib2.OpenerDirector):
         # pre-process request
         # XXX should we allow a Processor to change the URL scheme
         #   of the request?
-        request_processors = list(self.process_request.get(req_scheme, []))
-        request_processors += self._any_request
+        request_processors = set(self.process_request.get(req_scheme, []))
+        request_processors.update(self._any_request)
+        request_processors = list(request_processors)
         request_processors.sort()
         for processor in request_processors:
             for meth_name in ["any_request", req_scheme+"_request"]:
@@ -188,8 +187,9 @@ class OpenerDirector(urllib2.OpenerDirector):
         response = urlopen(self, req, data)
 
         # post-process response
-        response_processors = list(self.process_response.get(req_scheme, []))
-        response_processors += self._any_response
+        response_processors = set(self.process_response.get(req_scheme, []))
+        response_processors.update(self._any_response)
+        response_processors = list(response_processors)
         response_processors.sort()
         for processor in response_processors:
             for meth_name in ["any_response", req_scheme+"_response"]:

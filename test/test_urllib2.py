@@ -167,6 +167,7 @@ class OpenerDirectorTests(unittest.TestCase):
             def http_open(self): pass
         class Processor(MockHandler):
             handler_order = 3
+            def any_response(self): pass
             def http_response(self): pass
         o.add_handler(NonHandler())
         h = Handler()
@@ -174,8 +175,10 @@ class OpenerDirectorTests(unittest.TestCase):
         p = Processor()
         o.add_handler(p)
         o._maybe_reindex_handlers()
-        self.assertEqual(o.handle_open, {'http': [h]})
-        self.assertEqual(o.process_response, {'http': [p]})
+        self.assertEqual(o.handle_open, {"http": [h]})
+        self.assertEqual(len(o.process_response.keys()), 1)
+        self.assertEqual(list(o.process_response["http"]), [p])
+        self.assertEqual(list(o._any_response), [p])
         self.assertEqual(o.handlers, [h, p])
 
     def test_handler_order(self):
@@ -302,7 +305,7 @@ class OpenerDirectorTests(unittest.TestCase):
                      (handler, "any_response"),
                      (handler, ("%s_response" % scheme)),
                      ]
-            #self.assertEqual(len(o.calls), len(calls))
+            self.assertEqual(len(o.calls), len(calls))
             for i, ((handler, name, args, kwds), calls) in (
                 enumerate(zip(o.calls, calls))):
                 if i < 2:
