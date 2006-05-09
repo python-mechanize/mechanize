@@ -348,25 +348,12 @@ class UserAgent(OpenerDirector):
     def _replace_handler(self, name, newhandler=None):
         # first, if handler was previously added, remove it
         if name is not None:
-            try:
-                handler = self._ua_handlers[name]
-            except:
-                pass
-            else:
+            handler = self._ua_handlers.get(name)
+            if handler:
                 try:
                     self.handlers.remove(handler)
                 except ValueError:
                     pass
-                else:
-                    for table in (
-                        [self.handle_open,
-                         self.process_request, self.process_response]+
-                        self.handle_error.values()):
-                        for handlers in table.values():
-                            try:
-                                handlers.remove(handler)
-                            except ValueError:
-                                pass
         # then add the replacement, if any
         if newhandler is not None:
             self.add_handler(newhandler)

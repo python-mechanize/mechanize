@@ -183,6 +183,7 @@ class UnescapeTests(TestCase):
             self.assertEqual(got, expect)
 
 
+# XXXXX these 'mock' classes are badly in need of simplification
 class MockMethod:
     def __init__(self, meth_name, action, handle):
         self.meth_name = meth_name
@@ -219,45 +220,49 @@ class MockResponse:
     def __setstate__(self, state):
         self.__dict__ = state
 
-class MockHandler:
-    processor_order = 500
-    handler_order = -1
-    def __init__(self, methods):
-        self._define_methods(methods)
-    def _define_methods(self, methods):
-        for name, action in methods:
-            if name.endswith("_open"):
-                meth = MockMethod(name, action, self.handle)
+def make_mock_handler():
+    class MockHandler:
+        processor_order = 500
+        handler_order = -1
+        def __init__(self, methods):
+            self._define_methods(methods)
+        def _define_methods(self, methods):
+            for name, action in methods:
+                if name.endswith("_open"):
+                    meth = MockMethod(name, action, self.handle)
+                else:
+                    meth = MockMethod(name, action, self.process)
+                setattr(self.__class__, name, meth)
+        def handle(self, fn_name, response, *args, **kwds):
+            self.parent.calls.append((self, fn_name, args, kwds))
+            if response:
+                if isinstance(response, urllib2.HTTPError):
+                    raise response
+                r = response
+                r.seek(0)
             else:
-                meth = MockMethod(name, action, self.process)
-            setattr(self.__class__, name, meth)
-    def handle(self, fn_name, response, *args, **kwds):
-        self.parent.calls.append((self, fn_name, args, kwds))
-        if response:
-            if isinstance(response, urllib2.HTTPError):
-                raise response
-            r = response
-            r.seek(0)
-        else:
-            r = MockResponse()
-        req = args[0]
-        r.url = req.get_full_url()
-        return r
-    def process(self, fn_name, action, *args, **kwds):
-        self.parent.calls.append((self, fn_name, args, kwds))
-        if fn_name.endswith("_request"):
-            return args[0]
-        else:
-            return args[1]
-    def close(self): pass
-    def add_parent(self, parent):
-        self.parent = parent
-        self.parent.calls = []
-    def __cmp__(self, other):
-        if hasattr(other, "handler_order"):
-            return cmp(self.handler_order, other.handler_order)
-        # No handler_order, leave in original order.  Yuck.
-        return -1
+                r = MockResponse()
+            req = args[0]
+            r.url = req.get_full_url()
+            return r
+        def process(self, fn_name, action, *args, **kwds):
+            self.parent.calls.append((self, fn_name, args, kwds))
+            if fn_name.endswith("_request"):
+                return args[0]
+            else:
+                return args[1]
+        def close(self): pass
+        def add_parent(self, parent):
+            self.parent = parent
+            self.parent.calls = []
+        def __lt__(self, other):
+            if not hasattr(other, "handler_order"):
+                # Try to preserve the old behavior of having custom classes
+                # inserted after default ones (works only for custom user
+                # classes which are not aware of handler_order).
+                return True
+            return self.handler_order < other.handler_order
+    return MockHandler
 
 class TestBrowser(mechanize.Browser):
     default_features = ["_seek"]
@@ -283,7 +288,7 @@ class BrowserTests(TestCase):
 </body>
 </html>
 """, {"content-type": "text/html"})
-        b.add_handler(MockHandler([("http_open", r)]))
+        b.add_handler(make_mock_handler()([("http_open", r)]))
 
         # Referer not added by .open()...
         req = mechanize.Request(url)
@@ -300,7 +305,7 @@ class BrowserTests(TestCase):
         req3 = b.click_link(name="apples")
         self.assertEqual(req3.get_header("Referer"), url+"?foo=bar")
         # Referer not added when going from https to http URL
-        b.add_handler(MockHandler([("https_open", r)]))
+        b.add_handler(make_mock_handler()([("https_open", r)]))
         r3 = b.open(req3)
         req4 = b.click_link(name="secure")
         self.assertEqual(req4.get_header("Referer"),
@@ -309,7 +314,7 @@ class BrowserTests(TestCase):
         req5 = b.click_link(name="apples")
         self.assert_(not req5.has_header("Referer"))
         # Referer not added for non-http, non-https requests
-        b.add_handler(MockHandler([("blah_open", r)]))
+        b.add_handler(make_mock_handler()([("blah_open", r)]))
         req6 = b.click_link(name="pears")
         self.assert_(not req6.has_header("Referer"))
         # Referer not added when going from non-http, non-https URL
@@ -349,7 +354,7 @@ class BrowserTests(TestCase):
             return ra.source == rb.source
 
         b = TestBrowser()
-        b.add_handler(MockHandler([("http_open", None)]))
+        b.add_handler(make_mock_handler()([("http_open", None)]))
         self.assertRaises(mechanize.BrowserStateError, b.back)
         r1 = b.open("http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back)
@@ -379,7 +384,7 @@ class BrowserTests(TestCase):
         # even if we get a HTTPError, history and .response() should still get updated
         error = urllib2.HTTPError("http://example.com/bad", 503, "Oops",
                                   MockHeaders(), StringIO.StringIO())
-        b.add_handler(MockHandler([("https_open", error)]))
+        b.add_handler(make_mock_handler()([("https_open", error)]))
         self.assertRaises(urllib2.HTTPError, b.open, "https://example.com/")
         self.assertEqual(b.response().geturl(), error.geturl())
         self.assert_(same_response(b.back(), r8))
@@ -412,7 +417,7 @@ class BrowserTests(TestCase):
                 hdrs = {}
                 if ct is not None:
                     hdrs["Content-Type"] = ct
-                b.add_handler(MockHandler([("http_open",
+                b.add_handler(make_mock_handler()([("http_open",
                                             MockResponse(url, "", hdrs))]))
                 r = b.open(url)
                 self.assertEqual(b.viewing_html(), expect)
@@ -433,7 +438,7 @@ class BrowserTests(TestCase):
                 b = TestBrowser(mechanize.DefaultFactory(
                     i_want_broken_xhtml_support=allow_xhtml))
                 url = "http://example.com/foo"+ext
-                b.add_handler(MockHandler(
+                b.add_handler(make_mock_handler()(
                     [("http_open", MockResponse(url, "", {}))]))
                 r = b.open(url)
                 self.assertEqual(b.viewing_html(), expect)
@@ -443,7 +448,7 @@ class BrowserTests(TestCase):
         url = "http://example.com/"
 
         b = TestBrowser()
-        b.add_handler(MockHandler([("http_open", MockResponse(url, "", {}))]))
+        b.add_handler(make_mock_handler()([("http_open", MockResponse(url, "", {}))]))
         r = b.open(url)
         self.assert_(not b.viewing_html())
         self.assertRaises(mechanize.BrowserStateError, b.links)
@@ -463,7 +468,7 @@ class BrowserTests(TestCase):
 </body>
 </html>
 """, {"content-type": "text/html"})
-        b.add_handler(MockHandler([("http_open", r)]))
+        b.add_handler(make_mock_handler()([("http_open", r)]))
         r = b.open(url)
         self.assertEqual(b.title(), "Title")
         self.assertEqual(len(list(b.links())), 0)
@@ -503,7 +508,7 @@ class BrowserTests(TestCase):
 </body>
 </html>
 """, {"content-type": "text/html"})
-        b.add_handler(MockHandler([("http_open", r)]))
+        b.add_handler(make_mock_handler()([("http_open", r)]))
         r = b.open(url)
 
         forms = list(b.forms())
@@ -545,7 +550,7 @@ class BrowserTests(TestCase):
    name="name0&mdash;&#x2014;">blah&mdash;&#x2014;</a>
 """, #"
 {"content-type": "text/html%s" % encoding_decl})
-            b.add_handler(MockHandler([("http_open", r)]))
+            b.add_handler(make_mock_handler()([("http_open", r)]))
             r = b.open(url)
 
             Link = mechanize.Link
@@ -594,7 +599,7 @@ class BrowserTests(TestCase):
 </body>
 </html>
 """, {"content-type": "text/html"})
-        b.add_handler(MockHandler([("http_open", r)]))
+        b.add_handler(make_mock_handler()([("http_open", r)]))
         r = b.open(url)
 
         Link = mechanize.Link
@@ -706,7 +711,7 @@ class BrowserTests(TestCase):
             ]:
             b = TestBrowser()
             r = MockResponse(url, html, {"content-type": "text/html"})
-            b.add_handler(MockHandler([("http_open", r)]))
+            b.add_handler(make_mock_handler()([("http_open", r)]))
             r = b.open(url)
             self.assertEqual([link.absolute_url for link in b.links()], urls)
 
@@ -721,7 +726,7 @@ class ResponseTests(TestCase):
         html = """<html><body><a href="spam">click me</a></body></html>"""
         headers = {"content-type": "text/html"}
         r = response_seek_wrapper(MockResponse(url, html, headers))
-        br.add_handler(MockHandler([("http_open", r)]))
+        br.add_handler(make_mock_handler()([("http_open", r)]))
 
         r = br.open(url)
         self.assertEqual(r.read(), html)
@@ -778,7 +783,7 @@ class ResponseTests(TestCase):
 class UserAgentTests(TestCase):
     def test_set_handled_schemes(self):
         import mechanize
-        class MockHandlerClass(MockHandler):
+        class MockHandlerClass(make_mock_handler()):
             def __call__(self): return self
         class BlahHandlerClass(MockHandlerClass): pass
         class BlahProcessorClass(MockHandlerClass): pass

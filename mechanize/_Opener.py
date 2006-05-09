@@ -14,6 +14,12 @@ import urllib2, string, bisect, urlparse
 from _Util import startswith, isstringlike
 from _Request import Request
 
+try:
+    set
+except NameError:
+    import sets
+    set = sets.Set
+
 def methnames(obj):
     """Return method names of class instance.
 
@@ -45,49 +51,107 @@ def methnames_of_class_as_dict(klass):
 class OpenerDirector(urllib2.OpenerDirector):
     def __init__(self):
         urllib2.OpenerDirector.__init__(self)
+        # really none of these are (sanely) public -- the lack of initial
+        # underscore on some is just due to following urllib2
         self.process_response = {}
         self.process_request = {}
+        self._any_request = {}
+        self._any_response = {}
+        self._handler_index_valid = True
 
     def add_handler(self, handler):
-        added = False
-        for meth in methnames(handler):
-            i = string.find(meth, "_")
-            protocol = meth[:i]
-            condition = meth[i+1:]
+        if handler in self.handlers:
+            return
+        # XXX why does self.handlers need to be sorted?
+        bisect.insort(self.handlers, handler)
+        handler.add_parent(self)
+        self._handler_index_valid = False
 
-            if startswith(condition, "error"):
-                j = string.find(meth[i+1:], "_") + i + 1
-                kind = meth[j+1:]
-                try:
-                    kind = int(kind)
-                except ValueError:
-                    pass
-                lookup = self.handle_error.get(protocol, {})
-                self.handle_error[protocol] = lookup
-            elif (condition == "open" and
-                  protocol not in ["do", "proxy"]):  # hack -- see below
-                kind = protocol
-                lookup = self.handle_open
-            elif (condition in ["response", "request"] and
-                  protocol != "redirect"):  # yucky hack
-                # hack above is to fix HTTPRedirectHandler problem, which
-                # appears to above line to be a processor because of the
-                # redirect_request method :-((
-                kind = protocol
-                lookup = getattr(self, "process_"+condition)
-            else:
-                continue
+    def _maybe_reindex_handlers(self):
+        if self._handler_index_valid:
+            return
 
-            if lookup.has_key(kind):
-                bisect.insort(lookup[kind], handler)
-            else:
-                lookup[kind] = [handler]
-            added = True
+        handle_error = {}
+        handle_open = {}
+        process_request = {}
+        process_response = {}
+        any_request = set()
+        any_response = set()
+        unwanted = []
 
-        if added:
-            # XXX why does self.handlers need to be sorted?
-            bisect.insort(self.handlers, handler)
-            handler.add_parent(self)
+        for handler in self.handlers:
+            added = False
+            for meth in methnames(handler):
+                if meth in ["redirect_request", "do_open", "proxy_open"]:
+                    # oops, coincidental match
+                    continue
+
+                if meth == "any_request":
+                    any_request.add(handler)
+                    added = True
+                    continue
+                elif meth == "any_response":
+                    any_response.add(handler)
+                    added = True
+                    continue
+
+                ii = meth.find("_")
+                scheme = meth[:ii]
+                condition = meth[ii+1:]
+
+                if startswith(condition, "error"):
+                    jj = string.find(meth[ii+1:], "_") + ii + 1
+                    kind = meth[jj+1:]
+                    try:
+                        kind = int(kind)
+                    except ValueError:
+                        pass
+                    lookup = handle_error.setdefault(scheme, {})
+                elif condition == "open":
+                    kind = scheme
+                    lookup = handle_open
+                elif condition == "request":
+                    kind = scheme
+                    lookup = process_request
+                elif condition == "response":
+                    kind = scheme
+                    lookup = process_response
+                else:
+                    continue
+
+                lookup.setdefault(kind, set()).add(handler)
+                added = True
+
+            if not added:
+                unwanted.append(handler)
+
+        for handler in unwanted:
+            self.handlers.remove(handler)
+
+        # sort indexed methods
+        # XXX could be cleaned up, and sorting could be eliminated
+        # (we have to sort on .open() anyway, thanks to .any_request()/
+        # .any_response() methods
+        for lookup in [process_request, process_response]:
+            for scheme, handlers in lookup.iteritems():
+                handlers = list(handlers)
+                handlers.sort()
+                lookup[scheme] = handlers
+        for scheme, lookup in handle_error.iteritems():
+            for code, handlers in lookup.iteritems():
+                handlers = list(handlers)
+                handlers.sort()
+                lookup[code] = handlers
+        for scheme, handlers in handle_open.iteritems():
+            handlers = list(handlers)
+            handlers.sort()
+            handle_open[scheme] = handlers
+
+        # cache the indexes
+        self.handle_error = handle_error
+        self.handle_open = handle_open
+        self.process_request = process_request
+        self.process_response = process_response
 
     def _request(self, url_or_req, data):
         if isstringlike(url_or_req):
@@ -103,14 +167,19 @@ class OpenerDirector(urllib2.OpenerDirector):
         req = self._request(fullurl, data)
         req_scheme = req.get_type()
 
+        self._maybe_reindex_handlers()
+
         # pre-process request
-        # XXX should we allow a Processor to change the type (URL
-        #   scheme) of the request?
-        for scheme in ["any", req_scheme]:
-            meth_name = scheme+"_request"
-            for processor in self.process_request.get(scheme, []):
-                meth = getattr(processor, meth_name)
-                req = meth(req)
+        # XXX should we allow a Processor to change the URL scheme
+        #   of the request?
+        request_processors = list(self.process_request.get(req_scheme, []))
+        request_processors += self._any_request
+        request_processors.sort()
+        for processor in request_processors:
+            for meth_name in ["any_request", req_scheme+"_request"]:
+                meth = getattr(processor, meth_name, None)
+                if meth:
+                    req = meth(req)
 
         # In Python >= 2.4, .open() supports processors already, so we must
         # call ._open() instead.
@@ -119,11 +188,14 @@ class OpenerDirector(urllib2.OpenerDirector):
         response = urlopen(self, req, data)
 
         # post-process response
-        for scheme in ["any", req_scheme]:
-            meth_name = scheme+"_response"
-            for processor in self.process_response.get(scheme, []):
-                meth = getattr(processor, meth_name)
-                response = meth(req, response)
+        response_processors = list(self.process_response.get(req_scheme, []))
+        response_processors += self._any_response
+        response_processors.sort()
+        for processor in response_processors:
+            for meth_name in ["any_response", req_scheme+"_response"]:
+                meth = getattr(processor, meth_name, None)
+                if meth:
+                    response = meth(req, response)
 
         return response
 

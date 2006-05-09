@@ -100,12 +100,13 @@ class MockHandler:
     def add_parent(self, parent):
         self.parent = parent
         self.parent.calls = []
-    def __cmp__(self, other):
-        if hasattr(other, "handler_order"):
-            return cmp(self.handler_order, other.handler_order)
-        # No handler_order, leave in original order.  Yuck.
-        return -1
-        #return cmp(id(self), id(other))
+    def __lt__(self, other):
+        if not hasattr(other, "handler_order"):
+            # Try to preserve the old behavior of having custom classes
+            # inserted after default ones (works only for custom user
+            # classes which are not aware of handler_order).
+            return True
+        return self.handler_order < other.handler_order
 
 
 def add_ordered_mock_handlers(opener, meth_spec):
@@ -147,6 +148,35 @@ class OpenerDirectorTests(unittest.TestCase):
             handler, name, args, kwds = o.calls[i]
             self.assert_((handler, name) == calls[i])
             self.assert_(args == (req,))
+
+    def test_reindex_handlers(self):
+        o = OpenerDirector()
+        class MockHandler:
+            def add_parent(self, parent): pass
+            def close(self):pass
+            def __lt__(self, other):
+                return self.handler_order < other.handler_order
+        # this first class is here as an obscure regression test for bug
+        # encountered during development: if something manages to get through
+        # to _maybe_reindex_handlers, make sure it's properly removed and
+        # doesn't affect adding of subsequent handlers
+        class NonHandler(MockHandler):
+            handler_order = 1
+        class Handler(MockHandler):
+            handler_order = 2
+            def http_open(self): pass
+        class Processor(MockHandler):
+            handler_order = 3
+            def http_response(self): pass
+        o.add_handler(NonHandler())
+        h = Handler()
+        o.add_handler(h)
+        p = Processor()
+        o.add_handler(p)
+        o._maybe_reindex_handlers()
+        self.assertEqual(o.handle_open, {'http': [h]})
+        self.assertEqual(o.process_response, {'http': [p]})
+        self.assertEqual(o.handlers, [h, p])
 
     def test_handler_order(self):
         o = OpenerDirector()
@@ -249,6 +279,7 @@ class OpenerDirectorTests(unittest.TestCase):
                              isinstance(args[1], MockResponse))
 
     def test_any(self):
+        # XXXXX two handlers case: ordering
         o = OpenerDirector()
         meth_spec = [[
             ("http_request", "return request"),
