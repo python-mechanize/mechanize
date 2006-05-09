@@ -117,7 +117,7 @@ class UserAgent(OpenerDirector):
 
         # feature handlers
         "_basicauth": urllib2.HTTPBasicAuthHandler,
-        "_digestauth": urllib2.HTTPBasicAuthHandler,
+        "_digestauth": urllib2.HTTPDigestAuthHandler,
         "_redirect": _urllib2_support.HTTPRedirectHandler,
         "_cookies": _urllib2_support.HTTPCookieProcessor,
         "_refresh": _urllib2_support.HTTPRefreshProcessor,

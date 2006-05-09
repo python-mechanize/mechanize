@@ -230,10 +230,13 @@ CookieJar Perl code from which mechanize's support for that is derived.
 
 <h3>Specific to mechanize</h3>
 <ul>
+  <li>Leading / trailing space in URLs
+  <li>clean_url(): test Moz behaviour against Apache rather than File->Open!
+  <li>Test referer bugs (frags and don't add in redirect unless orig req had Referer)
   <li>Export all urllib2 handlers &c. from mechanize, even if they come
     straight from urllib2!
   <li>Proper XHTML support!
-  <li>Auth / proxies.
+  <li>Auth / proxies: add fixed classes from 2.5.
   <li>Make encoding_finder public, I guess (but probably improve it first).
     (For example: support Mark Pilgrim's universal encoding detector?)
   <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
