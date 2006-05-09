@@ -183,7 +183,7 @@ class UnescapeTests(TestCase):
             self.assertEqual(got, expect)
 
 
-# XXXXX these 'mock' classes are badly in need of simplification
+# XXX these 'mock' classes are badly in need of simplification
 class MockMethod:
     def __init__(self, meth_name, action, handle):
         self.meth_name = meth_name

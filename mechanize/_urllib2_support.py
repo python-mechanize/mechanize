@@ -432,7 +432,6 @@ class HTTPRefererProcessor(BaseHandler):
     https_request = http_request
     https_response = http_response
 
-# XXXXX remove these two
 class HTTPResponseDebugProcessor(BaseHandler):
     handler_order = 900  # before redirections, after everything else
 
