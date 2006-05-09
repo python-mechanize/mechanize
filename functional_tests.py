@@ -86,7 +86,8 @@ class ResponseTests(TestCase):
         r.read()
         r.close()
         r.seek(0)
-        self.assertEqual(r.read(), "Hello ClientCookie functional test suite.\n")
+        self.assertEqual(r.read(),
+                         "Hello ClientCookie functional test suite.\n")
 
     def test_set_response(self):
         from mechanize import Browser

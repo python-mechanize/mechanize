@@ -646,11 +646,7 @@ class OpenerFactory:
         urllib2.FileHandler,
         # processors
         HTTPRequestUpgradeProcessor,
-        #HTTPEquivProcessor,
-        #SeekableProcessor,
         HTTPCookieProcessor,
-        #HTTPRefererProcessor,
-        #HTTPRefreshProcessor,
         HTTPErrorProcessor
         ]
     handlers = []
