@@ -271,14 +271,15 @@ CookieJar Perl code from which mechanize's support for that is derived.
 <p>Contributions welcome!
 
 <h3>Specific to mechanize</h3>
+
+<em>This is <strong>very</strong> roughly in order of priority</em>
+
 <ul>
-  <li>Leading / trailing space in URLs
-  <li>clean_url(): test Moz behaviour against Apache rather than File->Open!
-  <li>Test referer bugs (frags and don't add in redirect unless orig req had Referer)
-  <li>Export all urllib2 handlers &c. from mechanize, even if they come
-    straight from urllib2!
+  <li>Test <code>.any_response()</code> two handlers case: ordering.
+  <li>Test referer bugs (frags and don't add in redirect unless orig
+    req had Referer)
+  <li>Implement RFC 3986 URL absolutization.
   <li>Proper XHTML support!
-  <li>Auth / proxies: add fixed classes from 2.5.
   <li>Make encoding_finder public, I guess (but probably improve it first).
     (For example: support Mark Pilgrim's universal encoding detector?)
   <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
@@ -288,9 +289,24 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>History cache expiration.
   <li>Investigate possible leak (see Balazs Ree's list posting).
   <li>Add two-way links between BeautifulSoup & ClientForm object models.
+  <li>In 0.2: fork urllib2 &#8212; easier maintenance.
+  <li>In 0.2: switch to Python unicode strings everywhere appropriate
+    (HTTP level should still use byte strings, of course).
+  <li>clean_url(): test browser behaviour.  I <em>think</em> this is correct...
+  <li>Figure out the Right Thing (if such a thing exists) for %-encoding.
+  <li>How do IRIs fit into the world?
+  <li>IDNA -- must read about security stuff first.
+  <li>Unicode support in general.
+  <li>Provide per-connection access to timeouts.
+  <li>Keep-alive / connection caching.
+  <li>Pipelining??
+  <li>Content negotiation.
+  <li>gzip transfer encoding (there's already a handler for this in
+    mechanize, but it's poorly implemented ATM).
+  <li>proxy.pac parsing (I don't think this needs JS interpretation)
 </ul>
 
-<h3>mechanize documentation</h3>
+<h3>Documentation</h3>
 <ul>
   <li>Document means of processing response on ad-hoc basis with
     .set_response() - e.g. to fix bad encoding in Content-type header or
@@ -304,21 +320,6 @@ CookieJar Perl code from which mechanize's support for that is derived.
     a tutorial/background-info doc, and a howto/examples doc.
   <li>Add more functional tests.
   <li>Auth / proxies.
-</ul>
-
-<h3>Basic protocols / standards support</h3>
-<ul>
-  <li>Implement RFC 3986 URL absolutization.
-  <li>Figure out the Right Thing (if such a thing exists) for %-encoding.
-  <li>How do IRIs fit into the world?
-  <li>IDNA -- must read about security stuff first.
-  <li>Unicode support in general.
-  <li>Provide per-connection access to timeouts.
-  <li>Keep-alive / connection caching.
-  <li>Pipelining??
-  <li>Content negotiation.
-  <li>gzip transfer encoding.
-  <li>proxy.pac parsing (I don't think this needs JS interpretation)
 </ul>
 
 
