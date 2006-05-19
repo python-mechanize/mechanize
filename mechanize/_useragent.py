@@ -14,16 +14,13 @@ included with the distribution).
 import sys, warnings, urllib2
 
 from _Opener import OpenerDirector
-if sys.version_info[:2] >= (2, 4):
-    from urllib2 import BaseHandler, HTTPErrorProcessor
-else:
-    from _urllib2_support import BaseHandler, HTTPErrorProcessor
 
-import _urllib2_support
+import _urllib2
+import _auth
 import _gzip
 
 
-class HTTPRefererProcessor(BaseHandler):
+class HTTPRefererProcessor(_urllib2.BaseHandler):
     def http_request(self, request):
         # See RFC 2616 14.36.  The only times we know the source of the
         # request URI has a URI associated with it are redirect, and
@@ -36,51 +33,6 @@ class HTTPRefererProcessor(BaseHandler):
         return request
 
     https_request = http_request
-
-
-class HTTPProxyPasswordMgr(urllib2.HTTPPasswordMgr):
-    # has default realm and host/port
-    def add_password(self, realm, uri, user, passwd):
-        # uri could be a single URI or a sequence
-        if uri is None or isinstance(uri, basestring):
-            uris = [uri]
-        else:
-            uris = uri
-        passwd_by_domain = self.passwd.setdefault(realm, {})
-        for uri in uris:
-            uri = self.reduce_uri(uri)
-            passwd_by_domain[uri] = (user, passwd)
-
-    def find_user_password(self, realm, authuri):
-        perms = [(realm, authuri), (None, authuri)]
-        # bleh, want default realm to take precedence over default
-        # URI/authority, hence this outer loop
-        for default_uri in False, True:
-            for realm, authuri in perms:
-                authinfo_by_domain = self.passwd.get(realm, {})
-                reduced_authuri = self.reduce_uri(authuri)
-                for uri, authinfo in authinfo_by_domain.iteritems():
-                    if uri is None and not default_uri:
-                        continue
-                    if self.is_suburi(uri, reduced_authuri):
-                        return authinfo
-                user, password = None, None
-
-                if user is not None:
-                    break
-        return user, password
-
-    def reduce_uri(self, uri):
-        if uri is None:
-            return None
-        return urllib2.HTTPPasswordMgr.reduce_uri(self, uri)
-
-    def is_suburi(self, base, test):
-        if base is None:
-            # default to the proxy's host/port
-            hostport, path = test
-            base = (hostport, "/")
-        return urllib2.HTTPPasswordMgr.is_suburi(self, base, test)
 
 
 class UserAgent(OpenerDirector):
@@ -103,36 +55,37 @@ class UserAgent(OpenerDirector):
 
     handler_classes = {
         # scheme handlers
-        "http": _urllib2_support.HTTPHandler,
-        "ftp": urllib2.FTPHandler,  # CacheFTPHandler is buggy in 2.3
-        "file": urllib2.FileHandler,
-        "gopher": urllib2.GopherHandler,
+        "http": _urllib2.HTTPHandler,
+        # CacheFTPHandler is buggy, at least in 2.3, so we don't use it
+        "ftp": _urllib2.FTPHandler,
+        "file": _urllib2.FileHandler,
+        "gopher": _urllib2.GopherHandler,
 
         # other handlers
-        "_unknown": urllib2.UnknownHandler,
+        "_unknown": _urllib2.UnknownHandler,
         # HTTP{S,}Handler depend on HTTPErrorProcessor too
-        "_http_error": HTTPErrorProcessor,
-        "_http_request_upgrade": _urllib2_support.HTTPRequestUpgradeProcessor,
-        "_http_default_error": urllib2.HTTPDefaultErrorHandler,
+        "_http_error": _urllib2.HTTPErrorProcessor,
+        "_http_request_upgrade": _urllib2.HTTPRequestUpgradeProcessor,
+        "_http_default_error": _urllib2.HTTPDefaultErrorHandler,
 
         # feature handlers
-        "_basicauth": urllib2.HTTPBasicAuthHandler,
-        "_digestauth": urllib2.HTTPDigestAuthHandler,
-        "_redirect": _urllib2_support.HTTPRedirectHandler,
-        "_cookies": _urllib2_support.HTTPCookieProcessor,
-        "_refresh": _urllib2_support.HTTPRefreshProcessor,
+        "_basicauth": _urllib2.HTTPBasicAuthHandler,
+        "_digestauth": _urllib2.HTTPDigestAuthHandler,
+        "_redirect": _urllib2.HTTPRedirectHandler,
+        "_cookies": _urllib2.HTTPCookieProcessor,
+        "_refresh": _urllib2.HTTPRefreshProcessor,
         "_referer": HTTPRefererProcessor,  # from this module, note
-        "_equiv": _urllib2_support.HTTPEquivProcessor,
-        "_seek": _urllib2_support.SeekableProcessor,
-        "_proxy": urllib2.ProxyHandler,
-        "_proxy_basicauth": urllib2.ProxyBasicAuthHandler,
-        "_proxy_digestauth": urllib2.ProxyDigestAuthHandler,
-        "_robots": _urllib2_support.HTTPRobotRulesProcessor,
+        "_equiv": _urllib2.HTTPEquivProcessor,
+        "_seek": _urllib2.SeekableProcessor,
+        "_proxy": _urllib2.ProxyHandler,
+        "_proxy_basicauth": _urllib2.ProxyBasicAuthHandler,
+        "_proxy_digestauth": _urllib2.ProxyDigestAuthHandler,
+        "_robots": _urllib2.HTTPRobotRulesProcessor,
         "_gzip": _gzip.HTTPGzipProcessor,  # experimental!
 
         # debug handlers
-        "_debug_redirect": _urllib2_support.HTTPRedirectDebugProcessor,
-        "_debug_response_body": _urllib2_support.HTTPResponseDebugProcessor,
+        "_debug_redirect": _urllib2.HTTPRedirectDebugProcessor,
+        "_debug_response_body": _urllib2.HTTPResponseDebugProcessor,
         }
 
     default_schemes = ["http", "ftp", "file", "gopher"]
@@ -145,8 +98,8 @@ class UserAgent(OpenerDirector):
                         "_proxy", "_proxy_basicauth", "_proxy_digestauth",
                         "_seek", "_robots",
                         ]
-    if hasattr(_urllib2_support, 'HTTPSHandler'):
-        handler_classes["https"] = _urllib2_support.HTTPSHandler
+    if hasattr(_urllib2, 'HTTPSHandler'):
+        handler_classes["https"] = _urllib2.HTTPSHandler
         default_schemes.append("https")
 
     def __init__(self):
@@ -171,10 +124,10 @@ class UserAgent(OpenerDirector):
         # Ensure default password managers are installed.
         pm = ppm = None
         if "_basicauth" in ua_handlers or "_digestauth" in ua_handlers:
-            pm = urllib2.HTTPPasswordMgrWithDefaultRealm()
+            pm = _urllib2.HTTPPasswordMgrWithDefaultRealm()
         if ("_proxy_basicauth" in ua_handlers or
             "_proxy_digestauth" in ua_handlers):
-            ppm = HTTPProxyPasswordMgr()
+            ppm = _auth.HTTPProxyPasswordMgr()
         self.set_password_manager(pm)
         self.set_proxy_password_manager(ppm)
 
@@ -250,7 +203,7 @@ class UserAgent(OpenerDirector):
     # the following are rarely useful -- use add_password / add_proxy_password
     # instead
     def set_password_manager(self, password_manager):
-        """Set a urllib2.HTTPPasswordMgrWithDefaultRealm, or None."""
+        """Set a mechanize.HTTPPasswordMgrWithDefaultRealm, or None."""
         self._password_manager = password_manager
         self._set_handler("_basicauth", obj=password_manager)
         self._set_handler("_digestauth", obj=password_manager)

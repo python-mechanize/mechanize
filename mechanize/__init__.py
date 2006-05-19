@@ -13,59 +13,8 @@ from _html import \
      FormsFactory, LinksFactory, TitleFactory, \
      RobustFormsFactory, RobustLinksFactory, RobustTitleFactory
 
-# urllib2 work-alike interface
-# ...from urllib2...
-from urllib2 import \
-     URLError, \
-     HTTPError, \
-     GopherError, \
-     HTTPPasswordMgr, \
-     HTTPPasswordMgrWithDefaultRealm, \
-     AbstractBasicAuthHandler, \
-     AbstractDigestAuthHandler
-# ...and from mechanize
-from _Opener import OpenerDirector
-from _useragent import HTTPProxyPasswordMgr
-from _urllib2_support import \
-     Request, \
-     build_opener, install_opener, urlopen, \
-     OpenerFactory, urlretrieve, \
-     RobotExclusionError
-
-# handlers...
-# ...from urllib2...
-from urllib2 import \
-     BaseHandler, \
-     ProxyHandler, \
-     ProxyBasicAuthHandler, \
-     ProxyDigestAuthHandler, \
-     HTTPBasicAuthHandler, \
-     HTTPDigestAuthHandler, \
-     HTTPDefaultErrorHandler, \
-     UnknownHandler, \
-     FTPHandler, \
-     CacheFTPHandler, \
-     FileHandler, \
-     GopherHandler
-# ...and from mechanize
-from _urllib2_support import \
-     HTTPHandler, \
-     HTTPRedirectHandler, \
-     HTTPRequestUpgradeProcessor, \
-     HTTPEquivProcessor, \
-     SeekableProcessor, \
-     HTTPCookieProcessor, \
-     HTTPRefererProcessor, \
-     HTTPRefreshProcessor, \
-     HTTPErrorProcessor, \
-     HTTPResponseDebugProcessor, \
-     HTTPRedirectDebugProcessor, \
-     HTTPRobotRulesProcessor
-import httplib
-if hasattr(httplib, 'HTTPS'):
-    from _urllib2_support import HTTPSHandler
-del httplib
-#from _gzip import HTTPGzipProcessor
+# urllib2 work-alike interface (part from mechanize, part from urllib2)
+from _urllib2 import *
 
 # misc
 from _Util import http2time as str2time
@@ -76,6 +25,8 @@ try:
     from _urllib2_support import XHTMLCompatibleHeadParser
 except ImportError:
     pass
+#from _gzip import HTTPGzipProcessor  # crap ATM
+
 
 # cookies
 from _ClientCookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
