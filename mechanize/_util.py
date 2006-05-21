@@ -8,7 +8,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import re, string, time, copy, urllib
+import re, string, time, copy, urllib, mimetools
 from types import TupleType
 from cStringIO import StringIO
 
@@ -631,3 +631,20 @@ class closeable_response:
             self._url, self._headers, self.code, self.msg)
         state["wrapped"] = new_wrapped
         return state
+
+def make_response(data, headers, url, code, msg):
+    """Convenient factory for objects implementing response interface.
+
+    data: string containing response body data
+    headers: sequence of (name, value) pairs
+    url: URL of response
+    code: integer response code (e.g. 200)
+    msg: string response code message (e.g. "OK")
+
+    """
+    hdr_text = []
+    for name_value in headers:
+        hdr_text.append("%s: %s" % name_value)
+    mime_headers = mimetools.Message(StringIO("\n".join(hdr_text)))
+    r = closeable_response(StringIO(data), mime_headers, url, code, msg)
+    return response_seek_wrapper(r)

@@ -105,9 +105,14 @@ if __name__ == "__main__":
     # XXX temporary stop-gap to run doctests
     assert os.path.isdir('test')
     sys.path.insert(0, 'test')
-    import test_mechanize
     import doctest
+    import test_mechanize
     doctest.testmod(test_mechanize)
+    from mechanize import _headersutil, _auth, _clientcookie, _pullparser
+    doctest.testmod(_headersutil)
+    doctest.testmod(_auth)
+    doctest.testmod(_clientcookie)
+    doctest.testmod(_pullparser)
 
     import unittest
     test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")

@@ -50,7 +50,7 @@ class Token:
     >>> t = Token("starttag", "a", [("href", "http://www.python.org/")])
     >>> t == ("starttag", "a", [("href", "http://www.python.org/")])
     True
-    >>> t.type, t.data == "starttag", "a"
+    >>> (t.type, t.data) == ("starttag", "a")
     True
     >>> t.attrs == [("href", "http://www.python.org/")]
     True
@@ -324,3 +324,11 @@ class TolerantPullParser(_AbstractParser, sgmllib.SGMLParser):
         self._tokenstack.append(Token("starttag", tag, attrs))
     def unknown_endtag(self, tag):
         self._tokenstack.append(Token("endtag", tag))
+
+
+def _test():
+   import doctest, _pullparser
+   return doctest.testmod(_pullparser)
+
+if __name__ == "__main__":
+   _test()

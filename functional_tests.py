@@ -71,8 +71,7 @@ class SimpleTests(TestCase):
 class ResponseTests(TestCase):
 
     def test_seek(self):
-        from mechanize import Browser
-        br = Browser()
+        br = mechanize.Browser()
         r = br.open("http://wwwsearch.sourceforge.net/")
         html = r.read()
         r.seek(0)
@@ -90,8 +89,7 @@ class ResponseTests(TestCase):
                          "Hello ClientCookie functional test suite.\n")
 
     def test_set_response(self):
-        from mechanize import Browser
-        br = Browser()
+        br = mechanize.Browser()
         r = br.open("http://wwwsearch.sourceforge.net/")
         html = r.read()
         self.assertEqual(br.title(), "Python bits")
@@ -109,7 +107,20 @@ class ResponseTests(TestCase):
         self.assertEqual(br.response().read(), newhtml)
         self.assertEqual(list(br.links())[0].url, "spam")
 
-    def test_close_pickle_load(self):
+    def test_new_response(self):
+        br = mechanize.Browser()
+        data = "<html><head><title>Test</title></head><body><p>Hello.</p></body></html>"
+        response = mechanize.make_response(
+            data,
+            [("Content-type", "text/html")],
+            "http://example.com/",
+            200,
+            "OK"
+            )
+        br.set_response(response)
+        self.assertEqual(br.response().get_data(), data)
+
+    def hidden_test_close_pickle_load(self):
         print ("Test test_close_pickle_load is expected to fail unless Python "
                "standard library patch http://python.org/sf/1144636 has been "
                "applied")

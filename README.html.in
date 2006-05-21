@@ -152,6 +152,14 @@ br.set_debug_http(True)
 logger = logging.getLogger("mechanize")
 logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.INFO)
+
+# Sometimes it's useful to process bad headers or bad HTML:
+response = br.response()  # this is a copy of response
+headers = response.info()  # currently, this is a mimetools.Message
+del headers["Content-type"]  # get rid of (possibly multiple) existing headers
+headers["Content-type"] = "text/html; charset=utf-8"
+response.set_data(response.get_data().replace("<!---", "<!--"))
+br.set_response(response)
 """)}
 
 <p>mechanize exports the complete interface of <code>urllib2</code>:
@@ -275,6 +283,7 @@ CookieJar Perl code from which mechanize's support for that is derived.
 <em>This is <strong>very</strong> roughly in order of priority</em>
 
 <ul>
+  <li>Add .get_method() to Request.
   <li>Test <code>.any_response()</code> two handlers case: ordering.
   <li>Test referer bugs (frags and don't add in redirect unless orig
     req had Referer)
@@ -282,6 +291,7 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>Proper XHTML support!
   <li>Make encoding_finder public, I guess (but probably improve it first).
     (For example: support Mark Pilgrim's universal encoding detector?)
+  <li>Continue with the de-crufting enabled by requirement for Python 2.3.
   <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
     per page.
   <li>Test BeautifulSoup support better / fix encoding issue.

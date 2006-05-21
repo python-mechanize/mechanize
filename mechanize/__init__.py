@@ -18,8 +18,7 @@ from _urllib2 import *
 
 # misc
 from _util import http2time as str2time
-# XXXXX sort out what people should be using!
-from _util import response_seek_wrapper
+from _util import response_seek_wrapper, make_response
 from _urllib2_support import HeadParser
 try:
     from _urllib2_support import XHTMLCompatibleHeadParser
