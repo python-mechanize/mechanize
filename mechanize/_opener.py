@@ -11,8 +11,8 @@ COPYING.txt included with the distribution).
 
 import urllib2, string, bisect, urlparse
 
-from _Util import startswith, isstringlike
-from _Request import Request
+from _util import startswith, isstringlike
+from _request import Request
 
 try:
     set

@@ -15,7 +15,7 @@ import mechanize
 
 from mechanize._urllib2_support import Request, AbstractHTTPHandler, \
      build_opener, parse_head, urlopen
-from mechanize._Util import startswith
+from mechanize._util import startswith
 from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
      HTTPEquivProcessor, HTTPRefreshProcessor, SeekableProcessor, \
      HTTPCookieProcessor, HTTPRefererProcessor, \
@@ -1083,7 +1083,7 @@ class FunctionTests(unittest.TestCase):
             self.assert_(False)
 
     def _methnames(self, *objs):
-        from mechanize._Opener import methnames
+        from mechanize._opener import methnames
         r = []
         for i in range(len(objs)):
             obj = objs[i]

@@ -16,7 +16,7 @@ It's just a sketch, to check the base class is OK.
 """
 
 from ClientCookie import MSIEBase, CookieJar
-from _Util import time2netscape
+from _util import time2netscape
 
 def set_cookie_hdr_from_cookie(cookie):
     params = []

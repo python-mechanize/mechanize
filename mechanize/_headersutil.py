@@ -14,7 +14,7 @@ from types import StringType
 from types import UnicodeType
 STRING_TYPES = StringType, UnicodeType
 
-from _Util import startswith, endswith, http2time
+from _util import startswith, endswith, http2time
 
 def is_html(ct_headers, url, allow_xhtml=False):
     """
@@ -218,8 +218,8 @@ def parse_ns_headers(ns_headers):
 
 
 def _test():
-   import doctest, _HeadersUtil
-   return doctest.testmod(_HeadersUtil)
+   import doctest, _headersutil
+   return doctest.testmod(_headersutil)
 
 if __name__ == "__main__":
    _test()

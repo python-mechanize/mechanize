@@ -11,8 +11,8 @@ included with the distribution).
 import re, copy, urllib, htmlentitydefs
 from urlparse import urljoin
 
-import _Request
-from _HeadersUtil import split_header_words, is_html as _is_html
+import _request
+from _headersutil import split_header_words, is_html as _is_html
 
 ## # XXXX miserable hack
 ## def urljoin(base, url):
@@ -204,7 +204,7 @@ class FormsFactory:
             form_parser_class = ClientForm.FormParser
         self.form_parser_class = form_parser_class
         if request_class is None:
-            request_class = _Request.Request
+            request_class = _request.Request
         self.request_class = request_class
         self.backwards_compat = backwards_compat
         self._response = None

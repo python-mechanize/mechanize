@@ -15,9 +15,9 @@ import os, re, string, time, struct, logging
 if os.name == "nt":
     import _winreg
 
-from _ClientCookie import FileCookieJar, CookieJar, Cookie, \
+from _clientcookie import FileCookieJar, CookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
-from _Util import startswith
+from _util import startswith
 
 debug = logging.getLogger("mechanize").debug
 

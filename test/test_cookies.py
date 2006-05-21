@@ -4,7 +4,7 @@ import urllib2, re, os, string, StringIO, mimetools, time
 from time import localtime
 from unittest import TestCase
 
-from mechanize._Util import startswith
+from mechanize._util import startswith
 
 class FakeResponse:
     def __init__(self, headers=[], url=None):
@@ -166,7 +166,7 @@ class CookieTests(TestCase):
 
     def test_ns_parser(self):
         from mechanize import CookieJar
-        from mechanize._ClientCookie import DEFAULT_HTTP_PORT
+        from mechanize._clientcookie import DEFAULT_HTTP_PORT
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/",
@@ -216,7 +216,7 @@ class CookieTests(TestCase):
         self.assert_(cookies.has_key('version'))
 
     def test_expires(self):
-        from mechanize._Util import time2netscape
+        from mechanize._util import time2netscape
         from mechanize import CookieJar
 
         # if expires is in future, keep cookie...
@@ -299,7 +299,7 @@ class CookieTests(TestCase):
         assert c._cookies["www.acme.com"].has_key("/blah/rhubarb")
 
     def test_escape_path(self):
-        from mechanize._ClientCookie import escape_path
+        from mechanize._clientcookie import escape_path
         cases = [
             # quoted safe
             ("/foo%2f/bar", "/foo%2F/bar"),
@@ -324,7 +324,7 @@ class CookieTests(TestCase):
 
     def test_request_path(self):
         from urllib2 import Request
-        from mechanize._ClientCookie import request_path
+        from mechanize._clientcookie import request_path
         # with parameters
         req = Request("http://www.example.com/rheum/rhaponicum;"
                       "foo=bar;sing=song?apples=pears&spam=eggs#ni")
@@ -341,7 +341,7 @@ class CookieTests(TestCase):
 
     def test_request_port(self):
         from urllib2 import Request
-        from mechanize._ClientCookie import request_port, DEFAULT_HTTP_PORT
+        from mechanize._clientcookie import request_port, DEFAULT_HTTP_PORT
         req = Request("http://www.acme.com:1234/",
                       headers={"Host": "www.acme.com:4321"})
         assert request_port(req) == "1234"
@@ -351,7 +351,7 @@ class CookieTests(TestCase):
 
     def test_request_host(self):
         from mechanize import Request
-        from mechanize._ClientCookie import request_host
+        from mechanize._clientcookie import request_host
         # this request is illegal (RFC2616, 14.2.3)
         req = Request("http://1.1.1.1/",
                       headers={"Host": "www.acme.com:80"})
@@ -373,7 +373,7 @@ class CookieTests(TestCase):
         assert request_host(req) == "www.acme.com"
 
     def test_is_HDN(self):
-        from mechanize._ClientCookie import is_HDN
+        from mechanize._clientcookie import is_HDN
         assert is_HDN("foo.bar.com")
         assert is_HDN("1foo2.3bar4.5com")
         assert not is_HDN("192.168.1.1")
@@ -384,7 +384,7 @@ class CookieTests(TestCase):
         assert not is_HDN("foo.")
 
     def test_reach(self):
-        from mechanize._ClientCookie import reach
+        from mechanize._clientcookie import reach
         assert reach("www.acme.com") == ".acme.com"
         assert reach("acme.com") == "acme.com"
         assert reach("acme.local") == ".local"
@@ -395,7 +395,7 @@ class CookieTests(TestCase):
         assert reach("192.168.0.1") == "192.168.0.1"
 
     def test_domain_match(self):
-        from mechanize._ClientCookie import domain_match, user_domain_match
+        from mechanize._clientcookie import domain_match, user_domain_match
         assert domain_match("192.168.1.1", "192.168.1.1")
         assert not domain_match("192.168.1.1", ".168.1.1")
         assert domain_match("x.y.com", "x.Y.com")
@@ -821,7 +821,7 @@ class CookieTests(TestCase):
         self.assertRaises(IndexError, lambda cs=cs : cs[1])
 
     def test_parse_ns_headers(self):
-        from mechanize._HeadersUtil import parse_ns_headers
+        from mechanize._headersutil import parse_ns_headers
 
         # missing domain value (invalid cookie)
         assert parse_ns_headers(["foo=bar; path=/; domain"]) == [

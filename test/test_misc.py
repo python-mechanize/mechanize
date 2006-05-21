@@ -55,7 +55,7 @@ dog.
     text_lines = map(lambda l: l+"\n", string.split(text, "\n")[:-1])
 
     def testSeekable(self):
-        from mechanize._Util import seek_wrapper
+        from mechanize._util import seek_wrapper
         text = self.text
         text_lines = self.text_lines
 

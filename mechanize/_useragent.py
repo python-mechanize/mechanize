@@ -13,7 +13,7 @@ included with the distribution).
 
 import sys, warnings, urllib2
 
-from _Opener import OpenerDirector
+from _opener import OpenerDirector
 
 import _urllib2
 import _auth

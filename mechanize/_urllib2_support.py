@@ -13,11 +13,11 @@ COPYING.txt included with the distribution).
 
 import copy, time, tempfile, htmlentitydefs, re, logging
 
-from _ClientCookie import CookieJar, request_host
-import _Opener
-from _Util import isstringlike, startswith, getheaders, closeable_response
+from _clientcookie import CookieJar, request_host
+import _opener
+from _util import isstringlike, startswith, getheaders, closeable_response
 from _html import unescape, unescape_charref
-from _HeadersUtil import is_html
+from _headersutil import is_html
 import urlparse, urllib2, urllib, httplib
 import sgmllib
 from urllib2 import URLError, HTTPError, BaseHandler
@@ -28,8 +28,8 @@ try:
 except ImportError:
     import dummy_threading as _threading
 
-from _Util import response_seek_wrapper
-from _Request import Request
+from _util import response_seek_wrapper
+from _request import Request
 debug = logging.getLogger("mechanize.cookies").debug
 
 
@@ -651,7 +651,7 @@ class OpenerFactory:
     handlers = []
     replacement_handlers = []
 
-    def __init__(self, klass=_Opener.OpenerDirector):
+    def __init__(self, klass=_opener.OpenerDirector):
         self.klass = klass
 
     def build_opener(self, *handlers):

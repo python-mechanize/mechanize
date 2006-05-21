@@ -767,7 +767,7 @@ class ResponseTests(TestCase):
 
     def test_str(self):
         import mimetools
-        from mechanize import _Util
+        from mechanize import _util
 
         br = TestBrowser()
         self.assertEqual(
@@ -778,7 +778,7 @@ class ResponseTests(TestCase):
         fp = StringIO.StringIO('<html><form name="f"><input /></form></html>')
         headers = mimetools.Message(
             StringIO.StringIO("Content-type: text/html"))
-        response = _Util.response_seek_wrapper(_Util.closeable_response(
+        response = _util.response_seek_wrapper(_util.closeable_response(
             fp, headers, "http://example.com/", 200, "OK"))
         br.set_response(response)
         self.assertEqual(

@@ -13,8 +13,8 @@ import urllib2, urlparse, sys, copy, re
 
 from _useragent import UserAgent
 from _html import DefaultFactory
-from _Util import response_seek_wrapper, closeable_response
-import _Request
+from _util import response_seek_wrapper, closeable_response
+import _request
 
 __version__ = (0, 1, 1, "a", None)  # 0.1.1a
 
@@ -137,7 +137,7 @@ class Browser(UserAgent):
 
         if request_class is None:
             if not hasattr(urllib2.Request, "add_unredirected_header"):
-                request_class = _Request.Request
+                request_class = _request.Request
             else:
                 request_class = urllib2.Request  # Python >= 2.4
 

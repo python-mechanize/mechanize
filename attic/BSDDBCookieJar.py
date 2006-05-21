@@ -15,7 +15,7 @@ THIS WAS NEVER FULLY TESTED, AND IS NOT MAINTAINED!
 from mechanize import CookieJar
 
 # this is importing from a private module: don't do this in your own code!
-from _ClientCookie import MappingIterator
+from _clientcookie import MappingIterator
 
 import bsddb
 import cPickle as pickle

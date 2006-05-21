@@ -9,7 +9,7 @@ from urllib2 import \
      AbstractBasicAuthHandler, \
      AbstractDigestAuthHandler
 # ...and from mechanize
-from _Opener import OpenerDirector
+from _opener import OpenerDirector
 from _auth import \
      HTTPProxyPasswordMgr, \
      ProxyHandler, \
