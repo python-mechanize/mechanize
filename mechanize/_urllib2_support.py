@@ -11,25 +11,23 @@ COPYING.txt included with the distribution).
 
 """
 
-import copy, time, tempfile, htmlentitydefs, re, logging
-
-from _clientcookie import CookieJar, request_host
-import _opener
-from _util import isstringlike, startswith, getheaders, closeable_response
-from _html import unescape, unescape_charref
-from _headersutil import is_html
-import urlparse, urllib2, urllib, httplib
-import sgmllib
+import copy, time, tempfile, htmlentitydefs, re, logging, types, \
+       string, socket, urlparse, urllib2, urllib, httplib, sgmllib
 from urllib2 import URLError, HTTPError, BaseHandler
-import types, string, socket
 from cStringIO import StringIO
 try:
     import threading as _threading
 except ImportError:
     import dummy_threading as _threading
 
-from _util import response_seek_wrapper
+import _opener
 from _request import Request
+from _util import isstringlike, startswith, \
+     getheaders, closeable_response, response_seek_wrapper
+from _html import unescape, unescape_charref
+from _headersutil import is_html
+from _clientcookie import CookieJar, request_host
+
 debug = logging.getLogger("mechanize.cookies").debug
 
 
