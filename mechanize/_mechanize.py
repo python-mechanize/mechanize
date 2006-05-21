@@ -16,7 +16,7 @@ from _html import DefaultFactory
 from _util import response_seek_wrapper, closeable_response
 import _request
 
-__version__ = (0, 1, 1, "a", None)  # 0.1.1a
+__version__ = (0, 1, 2, "b", None)  # 0.1.2b
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
