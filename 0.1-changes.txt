@@ -16,8 +16,8 @@ Recent public API changes:
   longer supported.  Instead, it's just a purely internal
   implementation detail of mechanize.
 
-- ATM, auth support requires Python 2.5 (I hope to fix this soon for
-  older Pythons).  As a result, some tests fail for 2.3 and 2.4.
+- Removed mechanize.Browser.set_seekable_responses() (they're always
+  seekable anyway).
 
 - Some mechanize.Browser constructor args have been moved to
   mechanize.Factory (default_encoding, ...).
