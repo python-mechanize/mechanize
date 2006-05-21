@@ -60,7 +60,7 @@ LICENSE = "BSD"  # or ZPL 2.1
 PLATFORMS = ["any"]
 ZIP_SAFE = True
 CLASSIFIERS = """\
-Development Status :: 3 - Alpha
+Development Status :: 4 - Beta
 Intended Audience :: Developers
 Intended Audience :: System Administrators
 License :: OSI Approved :: BSD License

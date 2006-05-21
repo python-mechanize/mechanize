@@ -451,7 +451,7 @@ just set up your <code>sys.path</code> manually rather than using
 <h2>Download</h2>
 <p>All documentation (including this web page) is included in the distribution.
 
-<p>This is an alpha release: interfaces may change, and there will be bugs.
+<p>This is a beta release: there will be bugs.
 
 <p><em>Development release.</em>
 
