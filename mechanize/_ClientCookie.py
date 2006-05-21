@@ -32,7 +32,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import sys, re, urlparse, string, copy, time, struct, urllib, types
+import sys, re, urlparse, string, copy, time, struct, urllib, types, logging
 try:
     import threading
     _threading = threading; del threading
@@ -47,14 +47,15 @@ DEFAULT_HTTP_PORT = str(httplib.HTTP_PORT)
 
 from _HeadersUtil import split_header_words, parse_ns_headers
 from _Util import startswith, endswith, isstringlike, getheaders
-from _Debug import warn, getLogger
-debug = getLogger("mechanize.cookies").debug
+
+debug = logging.getLogger("mechanize.cookies").debug
 
 
 def reraise_unmasked_exceptions(unmasked=()):
     # There are a few catch-all except: statements in this module, for
     # catching input that's bad in unexpected ways.
     # This function re-raises some exceptions we don't want to trap.
+    import mechanize, warnings
     if not mechanize.USE_BARE_EXCEPT:
         raise
     unmasked = unmasked + (KeyboardInterrupt, SystemExit, MemoryError)
@@ -66,7 +67,7 @@ def reraise_unmasked_exceptions(unmasked=()):
     f = StringIO.StringIO()
     traceback.print_exc(None, f)
     msg = f.getvalue()
-    warn("mechanize bug!\n%s" % msg)
+    warnings.warn("mechanize bug!\n%s" % msg, stacklevel=2)
 
 
 IPV4_RE = re.compile(r"\.\d+$")

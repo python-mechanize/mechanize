@@ -9,13 +9,12 @@ COPYING.txt included with the distribution).
 
 """
 
-import re, string, time
+import re, string, time, logging
 
 from _ClientCookie import reraise_unmasked_exceptions, FileCookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
 from _Util import startswith, endswith
-from _Debug import getLogger
-debug = getLogger("ClientCookie").debug
+debug = logging.getLogger("ClientCookie").debug
 
 
 class MozillaCookieJar(FileCookieJar):

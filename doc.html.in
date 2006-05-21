@@ -611,9 +611,6 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 logger.setLevel(logging.DEBUG)
 """)}
 
-<p>(In Python 2.3 or newer, <code>logging.getLogger</code>,
-<code>logging.DEBUG</code>, <code>logging.INFO</code> etc. work just as well.)
-
 <p>The <code>DEBUG</code> level (as opposed to the <code>INFO</code> level) can
 actually be quite useful, as it explains why particular cookies are accepted or
 rejected and why they are or are not returned.

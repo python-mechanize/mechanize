@@ -11,20 +11,15 @@ COPYING.txt included with the distribution).
 
 # XXX names and comments are not great here
 
-import os, re, string, time, struct
+import os, re, string, time, struct, logging
 if os.name == "nt":
     import _winreg
 
 from _ClientCookie import FileCookieJar, CookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
 from _Util import startswith
-from _Debug import getLogger
-debug = getLogger("mechanize").debug
 
-try: True
-except NameError:
-    True = 1
-    False = 0
+debug = logging.getLogger("mechanize").debug
 
 
 def regload(path, leaf):

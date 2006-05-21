@@ -18,13 +18,14 @@ COPYING.txt included with the distribution).
 
 """
 
-import time, re, string
+import time, re, string, logging
+
 from _ClientCookie import reraise_unmasked_exceptions, FileCookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
 from _HeadersUtil import join_header_words, split_header_words
 from _Util import startswith, iso2time, time2isoz
-from _Debug import getLogger
-debug = getLogger("mechanize").debug
+
+debug = logging.getLogger("mechanize").debug
 
 
 def lwp_cookie_str(cookie):
