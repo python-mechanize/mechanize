@@ -616,6 +616,10 @@ class closeable_response:
         # 2. read to end
         # 3. close socket, pickle state including read position, then open
         #    again on unpickle and use Range header
+        # XXXX um, 4. refuse to pickle unless .close()d.  This is better,
+        #  actually ("errors should never pass silently").  Pickling doesn't
+        #  work anyway ATM, because of http://python.org/sf/1144636 so fix
+        #  this later
 
         # 2 breaks pickle protocol, because one expects the original object
         # to be left unscathed by pickling.  3 is too complicated and
