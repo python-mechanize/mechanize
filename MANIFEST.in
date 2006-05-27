@@ -12,3 +12,4 @@ include 0.1.0-changes.txt
 include *.py
 recursive-include examples *.py
 recursive-include attic *.py
+recursive-include test-tools *.py
