@@ -162,15 +162,10 @@ class HTTPPasswordMgr:
             scheme = parts[0]
             authority = parts[1]
             path = parts[2] or '/'
-        elif parts[0]:
-            # host:port
+        else:
+            # host or host:port
             scheme = None
             authority = uri
-            path = '/'
-        else:
-            # host
-            scheme = None
-            authority = parts[2]
             path = '/'
         host, port = splitport(authority)
         if default_port and port is None and scheme is not None:
