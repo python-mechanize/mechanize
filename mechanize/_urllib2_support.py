@@ -623,9 +623,29 @@ class HTTPHandler(AbstractHTTPHandler):
     http_request = AbstractHTTPHandler.do_request_
 
 if hasattr(httplib, 'HTTPS'):
+
+    class HTTPSConnectionFactory:
+        def __init__(self, key_file, cert_file):
+            self._key_file = key_file
+            self._cert_file = cert_file
+        def __call__(self, hostport):
+            return httplib.HTTPSConnection(
+                hostport,
+                key_file=self._key_file, cert_file=self._cert_file)
+
     class HTTPSHandler(AbstractHTTPHandler):
+        def __init__(self, client_cert_manager=None):
+            AbstractHTTPHandler.__init__(self)
+            self.client_cert_manager = client_cert_manager
+
         def https_open(self, req):
-            return self.do_open(httplib.HTTPSConnection, req)
+            if self.client_cert_manager is not None:
+                key_file, cert_file = self.client_cert_manager.find_key_cert(
+                    req.get_full_url())
+                conn_factory = HTTPSConnectionFactory(key_file, cert_file)
+            else:
+                conn_factory = httplib.HTTPSConnection
+            return self.do_open(conn_factory, req)
 
         https_request = AbstractHTTPHandler.do_request_
 

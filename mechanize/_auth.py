@@ -11,10 +11,11 @@ included with the distribution).
 
 """
 
-import re, base64, urlparse, posixpath, md5, sha
+import re, base64, urlparse, posixpath, md5, sha, sys
 
 from urllib2 import BaseHandler
-from urllib import getproxies, unquote, splittype, splituser, splitpasswd
+from urllib import getproxies, unquote, splittype, splituser, splitpasswd, \
+     splitport
 
 
 def _parse_proxy(proxy):
@@ -135,32 +136,50 @@ class HTTPPasswordMgr:
         # uri could be a single URI or a sequence
         if isinstance(uri, basestring):
             uri = [uri]
-        uri = tuple(map(self.reduce_uri, uri))
         if not realm in self.passwd:
             self.passwd[realm] = {}
-        self.passwd[realm][uri] = (user, passwd)
+        for default_port in True, False:
+            reduced_uri = tuple(
+                [self.reduce_uri(u, default_port) for u in uri])
+            self.passwd[realm][reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
         domains = self.passwd.get(realm, {})
-        authuri = self.reduce_uri(authuri)
-        for uris, authinfo in domains.iteritems():
-            for uri in uris:
-                if self.is_suburi(uri, authuri):
-                    return authinfo
+        for default_port in True, False:
+            reduced_authuri = self.reduce_uri(authuri, default_port)
+            for uris, authinfo in domains.iteritems():
+                for uri in uris:
+                    if self.is_suburi(uri, reduced_authuri):
+                        return authinfo
         return None, None
 
-    def reduce_uri(self, uri):
-        """Accept netloc or URI and extract only the netloc and path"""
+    def reduce_uri(self, uri, default_port=True):
+        """Accept authority or URI and extract only the authority and path."""
+        # note HTTP URLs do not have a userinfo component
         parts = urlparse.urlsplit(uri)
         if parts[1]:
             # URI
-            return parts[1], parts[2] or '/'
+            scheme = parts[0]
+            authority = parts[1]
+            path = parts[2] or '/'
         elif parts[0]:
             # host:port
-            return uri, '/'
+            scheme = None
+            authority = uri
+            path = '/'
         else:
             # host
-            return parts[2], '/'
+            scheme = None
+            authority = parts[2]
+            path = '/'
+        host, port = splitport(authority)
+        if default_port and port is None and scheme is not None:
+            dport = {"http": 80,
+                     "https": 443,
+                     }.get(scheme)
+            if dport is not None:
+                authority = "%s:%d" % (host, dport)
+        return authority, path
 
     def is_suburi(self, base, test):
         """Check if test is below base in a URI tree
@@ -425,7 +444,7 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
         return retry
 
 
-
+# XXX ugly implementation, should probably not bother deriving
 class HTTPProxyPasswordMgr(HTTPPasswordMgr):
     # has default realm and host/port
     def add_password(self, realm, uri, user, passwd):
@@ -436,32 +455,34 @@ class HTTPProxyPasswordMgr(HTTPPasswordMgr):
             uris = uri
         passwd_by_domain = self.passwd.setdefault(realm, {})
         for uri in uris:
-            uri = self.reduce_uri(uri)
-            passwd_by_domain[uri] = (user, passwd)
+            for default_port in True, False:
+                reduced_uri = self.reduce_uri(uri, default_port)
+                passwd_by_domain[reduced_uri] = (user, passwd)
 
     def find_user_password(self, realm, authuri):
-        perms = [(realm, authuri), (None, authuri)]
+        attempts = [(realm, authuri), (None, authuri)]
         # bleh, want default realm to take precedence over default
         # URI/authority, hence this outer loop
         for default_uri in False, True:
-            for realm, authuri in perms:
+            for realm, authuri in attempts:
                 authinfo_by_domain = self.passwd.get(realm, {})
-                reduced_authuri = self.reduce_uri(authuri)
-                for uri, authinfo in authinfo_by_domain.iteritems():
-                    if uri is None and not default_uri:
-                        continue
-                    if self.is_suburi(uri, reduced_authuri):
-                        return authinfo
-                user, password = None, None
+                for default_port in True, False:
+                    reduced_authuri = self.reduce_uri(authuri, default_port)
+                    for uri, authinfo in authinfo_by_domain.iteritems():
+                        if uri is None and not default_uri:
+                            continue
+                        if self.is_suburi(uri, reduced_authuri):
+                            return authinfo
+                    user, password = None, None
 
-                if user is not None:
-                    break
+                    if user is not None:
+                        break
         return user, password
 
-    def reduce_uri(self, uri):
+    def reduce_uri(self, uri, default_port=True):
         if uri is None:
             return None
-        return HTTPPasswordMgr.reduce_uri(self, uri)
+        return HTTPPasswordMgr.reduce_uri(self, uri, default_port)
 
     def is_suburi(self, base, test):
         if base is None:
@@ -469,3 +490,11 @@ class HTTPProxyPasswordMgr(HTTPPasswordMgr):
             hostport, path = test
             base = (hostport, "/")
         return HTTPPasswordMgr.is_suburi(self, base, test)
+
+
+class HTTPSClientCertMgr(HTTPPasswordMgr):
+    # implementation inheritance: this is not a proper subclass
+    def add_key_cert(self, uri, key_file, cert_file):
+        self.add_password(None, uri, key_file, cert_file)
+    def find_key_cert(self, authuri):
+        return HTTPPasswordMgr.find_user_password(self, None, authuri)

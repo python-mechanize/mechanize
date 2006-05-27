@@ -3,20 +3,21 @@
 from urllib2 import \
      URLError, \
      HTTPError, \
-     GopherError, \
-     HTTPPasswordMgr, \
-     HTTPPasswordMgrWithDefaultRealm, \
-     AbstractBasicAuthHandler, \
-     AbstractDigestAuthHandler
+     GopherError
 # ...and from mechanize
 from _opener import OpenerDirector
 from _auth import \
+     HTTPPasswordMgr, \
+     HTTPPasswordMgrWithDefaultRealm, \
+     AbstractBasicAuthHandler, \
+     AbstractDigestAuthHandler, \
      HTTPProxyPasswordMgr, \
      ProxyHandler, \
      ProxyBasicAuthHandler, \
      ProxyDigestAuthHandler, \
      HTTPBasicAuthHandler, \
-     HTTPDigestAuthHandler
+     HTTPDigestAuthHandler, \
+     HTTPSClientCertMgr
 from _urllib2_support import \
      Request, \
      build_opener, install_opener, urlopen, \

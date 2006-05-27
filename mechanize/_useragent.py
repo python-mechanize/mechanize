@@ -130,6 +130,10 @@ class UserAgent(OpenerDirector):
             ppm = _auth.HTTPProxyPasswordMgr()
         self.set_password_manager(pm)
         self.set_proxy_password_manager(ppm)
+        # set default certificate manager
+        if "https" in ua_handlers:
+            cm = _urllib2.HTTPSClientCertMgr()
+            self.set_client_cert_manager(cm)
 
         # special case, requires extra support from mechanize.Browser
         self._handle_referer = True
@@ -200,6 +204,25 @@ class UserAgent(OpenerDirector):
         self._proxy_password_manager.add_password(
             realm, hostport, user, password)
 
+    def add_client_certificate(self, url, key_file, cert_file):
+        """Add an SSL client certificate, for HTTPS client auth.
+
+        key_file and cert_file must be filenames of the key and certificate
+        files, in PEM format.  You can use e.g. OpenSSL to convert a p12 (PKCS
+        12) file to PEM format:
+
+        openssl pkcs12 -clcerts -nokeys -in cert.p12 -out cert.pem
+        openssl pkcs12 -nocerts -in cert.p12 -out key.pem
+
+
+        Note that client certificate password input is very inflexible ATM.  At
+        the moment this seems to be console only, which is presumably the
+        default behaviour of libopenssl.  In future mechanize may support
+        third-party libraries that (I assume) allow more options here.
+
+        """
+        self._client_cert_manager.add_key_cert(url, key_file, cert_file)
+
     # the following are rarely useful -- use add_password / add_proxy_password
     # instead
     def set_password_manager(self, password_manager):
@@ -212,6 +235,11 @@ class UserAgent(OpenerDirector):
         self._proxy_password_manager = password_manager
         self._set_handler("_proxy_basicauth", obj=password_manager)
         self._set_handler("_proxy_digestauth", obj=password_manager)
+    def set_client_cert_manager(self, cert_manager):
+        """Set a mechanize.HTTPClientCertMgr, or None."""
+        self._client_cert_manager = cert_manager
+        handler = self._ua_handlers["https"]
+        handler.client_cert_manager = cert_manager
 
     # these methods all take a boolean parameter
     def set_handle_robots(self, handle):
