@@ -42,33 +42,6 @@ def isspace(string):
 ##     return sys.exc_traceback.tb_frame.f_back.f_back.f_code.co_name
 
 
-# this is here rather than in _HeadersUtil as it's just for
-# compatibility with old Python versions, rather than entirely new code
-def getheaders(msg, name):
-    """Get all values for a header.
-
-    This returns a list of values for headers given more than once; each
-    value in the result list is stripped in the same way as the result of
-    getheader().  If the header is not given, return an empty list.
-    """
-    result = []
-    current = ''
-    have_header = 0
-    for s in msg.getallmatchingheaders(name):
-        if isspace(s[0]):
-            if current:
-                current = "%s\n %s" % (current, string.strip(s))
-            else:
-                current = string.strip(s)
-        else:
-            if have_header:
-                result.append(current)
-            current = string.strip(s[string.find(s, ":") + 1:])
-            have_header = 1
-    if have_header:
-        result.append(current)
-    return result
-
 from calendar import timegm
 
 # Date/time conversion routines for formats used by the HTTP protocol.

@@ -38,13 +38,10 @@ class MockFile:
     def readline(self, count=None): pass
     def close(self): pass
 
-class MockHeaders(UserDict.UserDict):
-    def getallmatchingheaders(self, name):
-        r = []
-        for k, v in self.data.items():
-            if k.lower() == name:
-                r.append("%s: %s" % (k, v))
-        return r
+class MockHeaders(dict):
+    def getheaders(self, name):
+        name = name.lower()
+        return [v for k, v in self.iteritems() if name == k.lower()]
 
 class MockResponse(StringIO.StringIO):
     def __init__(self, code, msg, headers, data, url=None):

@@ -94,11 +94,10 @@ class MockMethod:
     def __call__(self, *args):
         return apply(self.handle, (self.meth_name, self.action)+args)
 
-class MockHeaders(UserDict.UserDict):
-    def getallmatchingheaders(self, name):
-        return ["%s: %s" % (k, v) for k, v in self.data.iteritems()]
+class MockHeaders(dict):
     def getheaders(self, name):
-        return self.data.values()
+        name = name.lower()
+        return [v for k, v in self.iteritems() if name == k.lower()]
 
 class MockResponse:
     closeable_response = None

@@ -23,7 +23,7 @@ except ImportError:
 import _opener
 from _request import Request
 from _util import isstringlike, startswith, \
-     getheaders, closeable_response, response_seek_wrapper
+     closeable_response, response_seek_wrapper
 from _html import unescape, unescape_charref
 from _headersutil import is_html
 from _clientcookie import CookieJar, request_host
@@ -35,9 +35,8 @@ CHUNK = 1024  # size of chunks fed to HTML HEAD parser, in bytes
 DEFAULT_ENCODING = 'latin-1'
 
 
-# This fixes a bug in urllib2 as of Python 2.1.3 and 2.2.2
-#  (http://www.python.org/sf/549151)
-# 2.2.3 is broken here (my fault!), 2.3 is fixed.
+# This adds "refresh" to the list of redirectables and provides a redirection
+# algorithm that doesn't go into a loop in the presence of cookies.
 class HTTPRedirectHandler(BaseHandler):
     # maximum number of redirections to any single URL
     # this is needed because of the state that cookies introduce
@@ -91,9 +90,9 @@ class HTTPRedirectHandler(BaseHandler):
         # Some servers (incorrectly) return multiple Location headers
         # (so probably same goes for URI).  Use first header.
         if headers.has_key('location'):
-            newurl = getheaders(headers, 'location')[0]
+            newurl = headers.getheaders('location')[0]
         elif headers.has_key('uri'):
-            newurl = getheaders(headers, 'uri')[0]
+            newurl = headers.getheaders('uri')[0]
         else:
             return
         newurl = urlparse.urljoin(req.get_full_url(), newurl)
@@ -304,7 +303,7 @@ class HTTPEquivProcessor(BaseHandler):
             response = response_seek_wrapper(response)
         headers = response.info()
         url = response.geturl()
-        ct_hdrs = getheaders(response.info(), "content-type")
+        ct_hdrs = response.info().getheaders("content-type")
         if is_html(ct_hdrs, url, self._allow_xhtml):
             try:
                 try:
@@ -481,7 +480,7 @@ class HTTPRefreshProcessor(BaseHandler):
         code, msg, hdrs = response.code, response.msg, response.info()
 
         if code == 200 and hdrs.has_key("refresh"):
-            refresh = getheaders(hdrs, "refresh")[0]
+            refresh = hdrs.getheaders("refresh")[0]
             ii = string.find(refresh, ";")
             if ii != -1:
                 pause, newurl_spec = float(refresh[:ii]), refresh[ii+1:]

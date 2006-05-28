@@ -46,7 +46,7 @@ MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
 DEFAULT_HTTP_PORT = str(httplib.HTTP_PORT)
 
 from _headersutil import split_header_words, parse_ns_headers
-from _util import startswith, endswith, isstringlike, getheaders
+from _util import startswith, endswith, isstringlike
 
 debug = logging.getLogger("mechanize.cookies").debug
 
@@ -1365,8 +1365,8 @@ class CookieJar:
         """
         # get cookie-attributes for RFC 2965 and Netscape protocols
         headers = response.info()
-        rfc2965_hdrs = getheaders(headers, "Set-Cookie2")
-        ns_hdrs = getheaders(headers, "Set-Cookie")
+        rfc2965_hdrs = headers.getheaders("Set-Cookie2")
+        ns_hdrs = headers.getheaders("Set-Cookie")
 
         rfc2965 = self._policy.rfc2965
         netscape = self._policy.netscape
