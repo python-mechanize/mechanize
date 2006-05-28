@@ -1,6 +1,6 @@
 import urllib2
 from cStringIO import StringIO
-import _util
+import _response
 
 # GzipConsumer was taken from Fredrik Lundh's effbot.org-0.1-20041009 library
 class GzipConsumer:
@@ -65,7 +65,7 @@ class stupid_gzip_consumer:
     def __init__(self): self.data = []
     def feed(self, data): self.data.append(data)
 
-class stupid_gzip_wrapper(_util.closeable_response):
+class stupid_gzip_wrapper(_response.closeable_response):
     def __init__(self, response):
         self._response = response
 

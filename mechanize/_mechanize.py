@@ -13,7 +13,7 @@ import urllib2, urlparse, sys, copy, re
 
 from _useragent import UserAgent
 from _html import DefaultFactory
-from _util import response_seek_wrapper, closeable_response
+from _response import response_seek_wrapper, closeable_response
 import _request
 
 __version__ = (0, 1, 3, None, None)  # 0.1.3

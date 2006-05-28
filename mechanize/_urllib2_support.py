@@ -22,7 +22,8 @@ except ImportError:
 
 import _opener
 from _request import Request
-from _util import isstringlike, closeable_response, response_seek_wrapper
+from _util import isstringlike
+from _response import closeable_response, response_seek_wrapper
 from _html import unescape, unescape_charref
 from _headersutil import is_html
 from _clientcookie import CookieJar, request_host
