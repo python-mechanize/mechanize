@@ -20,34 +20,6 @@ except NameError:
     import sets
     set = sets.Set
 
-def methnames(obj):
-    """Return method names of class instance.
-
-    dir(obj) doesn't work across Python versions, this does.
-
-    """
-    return methnames_of_instance_as_dict(obj).keys()
-
-def methnames_of_instance_as_dict(inst):
-    names = {}
-    names.update(methnames_of_class_as_dict(inst.__class__))
-    for methname in dir(inst):
-        candidate = getattr(inst, methname)
-        if callable(candidate):
-            names[methname] = None
-    return names
-
-def methnames_of_class_as_dict(klass):
-    names = {}
-    for methname in dir(klass):
-        candidate = getattr(klass, methname)
-        if callable(candidate):
-            names[methname] = None
-    for baseclass in klass.__bases__:
-        names.update(methnames_of_class_as_dict(baseclass))
-    return names
-
-
 class OpenerDirector(urllib2.OpenerDirector):
     def __init__(self):
         urllib2.OpenerDirector.__init__(self)
@@ -81,7 +53,7 @@ class OpenerDirector(urllib2.OpenerDirector):
 
         for handler in self.handlers:
             added = False
-            for meth in methnames(handler):
+            for meth in dir(handler):
                 if meth in ["redirect_request", "do_open", "proxy_open"]:
                     # oops, coincidental match
                     continue

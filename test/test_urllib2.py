@@ -1079,36 +1079,6 @@ class FunctionTests(unittest.TestCase):
         else:
             self.assert_(False)
 
-    def _methnames(self, *objs):
-        from mechanize._opener import methnames
-        r = []
-        for i in range(len(objs)):
-            obj = objs[i]
-            names = methnames(obj)
-            names.sort()
-            # special methods vary over Python versions
-            names = filter(lambda mn: mn[0:2] != "__" , names)
-            r.append(names)
-        return r
-
-    def test_methnames(self):
-        a, b, c, d = A(), B(), C(), D()
-        a, b, c, d = self._methnames(a, b, c, d)
-        self.assert_(a == ["a"])
-        self.assert_(b == ["a", "b"])
-        self.assert_(c == ["a", "c"])
-        self.assert_(d == ["a", "b", "c", "d"])
-
-        a, b, c, d = A(), B(), C(), D()
-        a.x = lambda self: None
-        b.y = lambda self: None
-        d.z = lambda self: None
-        a, b, c, d = self._methnames(a, b, c, d)
-        self.assert_(a == ["a", "x"])
-        self.assert_(b == ["a", "b", "y"])
-        self.assert_(c == ["a", "c"])
-        self.assert_(d == ["a", "b", "c", "d", "z"])
-
 
 if __name__ == "__main__":
     unittest.main()
