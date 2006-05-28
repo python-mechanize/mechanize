@@ -582,7 +582,7 @@ class AbstractHTTPHandler(BaseHandler):
         h = http_class(host) # will parse host:port
         h.set_debuglevel(self._debuglevel)
 
-        headers = req.headers.copy()
+        headers = dict(req.headers)
         headers.update(req.unredirected_hdrs)
         # We want to make an HTTP/1.1 request, but the addinfourl
         # class isn't prepared to deal with a persistent connection.
@@ -609,7 +609,7 @@ class AbstractHTTPHandler(BaseHandler):
         # out of socket._fileobject() and into a base class.
 
         r.recv = r.read
-        fp = socket._fileobject(r, 'rb', -1)
+        fp = socket._fileobject(r)
 
         resp = closeable_response(fp, r.msg, req.get_full_url(),
                                   r.status, r.reason)
