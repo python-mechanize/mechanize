@@ -15,7 +15,7 @@ from _clientcookie import request_host
 
 class Request(urllib2.Request):
     def __init__(self, url, data=None, headers={},
-             origin_req_host=None, unverifiable=False):
+                 origin_req_host=None, unverifiable=False):
         urllib2.Request.__init__(self, url, data, headers)
         self.unredirected_hdrs = {}
 
@@ -43,10 +43,8 @@ class Request(urllib2.Request):
 
     def has_header(self, header_name):
         """True iff request has named header (regular or unredirected)."""
-        if (self.headers.has_key(header_name) or
-            self.unredirected_hdrs.has_key(header_name)):
-            return True
-        return False
+        return (header_name in self.headers or
+                header_name in self.unredirected_hdrs)
 
     def get_header(self, header_name, default=None):
         return self.headers.get(

@@ -283,8 +283,6 @@ CookieJar Perl code from which mechanize's support for that is derived.
 <em>This is <strong>very</strong> roughly in order of priority</em>
 
 <ul>
-  <li>Can maybe switch back to using some stuff direct from urllib2
-    now using 2.3 -- e.g. maybe HTTPRedirectHandler?
   <li>Test <code>.any_response()</code> two handlers case: ordering.
   <li>Test referer bugs (frags and don't add in redirect unless orig
     req had Referer)
