@@ -1,6 +1,6 @@
 """Tests for _ClientCookie."""
 
-import urllib2, re, os, string, StringIO, mimetools, time
+import urllib2, re, os, StringIO, mimetools, time
 from time import localtime
 from unittest import TestCase
 
@@ -11,7 +11,7 @@ class FakeResponse:
         """
         headers: list of RFC822-style 'Key: value' strings
         """
-        f = StringIO.StringIO(string.join(headers, "\n"))
+        f = StringIO.StringIO("\n".join(headers))
         self._headers = mimetools.Message(f)
         self._url = url
     def info(self): return self._headers
@@ -231,7 +231,7 @@ class CookieTests(TestCase):
                           now)
         h = interact_netscape(c, "http://www.acme.com/")
         assert len(c) == 1
-        assert string.find(h, 'spam="bar"') != -1 and string.find(h, "foo") == -1
+        assert h.find('spam="bar"') != -1 and h.find("foo") == -1
 
         # max-age takes precedence over expires, and zero max-age is request to
         # delete both new cookie and any old matching cookie
@@ -252,7 +252,7 @@ class CookieTests(TestCase):
         assert len(c) == 2
         c.clear_session_cookies()
         assert len(c) == 1
-        assert string.find(h, 'spam="bar"') != -1
+        assert h.find('spam="bar"') != -1
 
         # XXX RFC 2965 expiry rules (some apply to V0 too)
 
@@ -679,14 +679,14 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1")
         h = interact_2965(c, url)
-        assert string.find(h, "Domain") == -1, \
+        assert h.find( "Domain") == -1, \
                "absent domain returned with domain present"
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Domain=.bar.com')
         h = interact_2965(c, url)
-        assert string.find(h, '$Domain=".bar.com"') != -1, \
+        assert h.find('$Domain=".bar.com"') != -1, \
                "domain not returned"
 
         c = CookieJar(pol)
@@ -694,7 +694,7 @@ class CookieTests(TestCase):
         # note missing initial dot in Domain
         interact_2965(c, url, 'spam=eggs; Version=1; Domain=bar.com')
         h = interact_2965(c, url)
-        assert string.find(h, '$Domain="bar.com"') != -1, \
+        assert h.find('$Domain="bar.com"') != -1, \
                "domain not returned"
 
     def test_path_mirror(self):
@@ -706,14 +706,14 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1")
         h = interact_2965(c, url)
-        assert string.find(h, "Path") == -1, \
+        assert h.find("Path") == -1, \
                "absent path returned with path present"
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Path=/')
         h = interact_2965(c, url)
-        assert string.find(h, '$Path="/"') != -1, "path not returned"
+        assert h.find('$Path="/"') != -1, "path not returned"
 
     def test_port_mirror(self):
         from mechanize import CookieJar, DefaultCookiePolicy
@@ -724,7 +724,7 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1")
         h = interact_2965(c, url)
-        assert string.find(h, "Port") == -1, \
+        assert h.find("Port") == -1, \
                "absent port returned with port present"
 
         c = CookieJar(pol)
@@ -738,14 +738,14 @@ class CookieTests(TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Port="80"')
         h = interact_2965(c, url)
-        assert string.find(h, '$Port="80"') != -1, \
+        assert h.find('$Port="80"') != -1, \
                "port with single value not returned with single value"
 
         c = CookieJar(pol)
         url = "http://foo.bar.com/"
         interact_2965(c, url, 'spam=eggs; Version=1; Port="80,8080"')
         h = interact_2965(c, url)
-        assert string.find(h, '$Port="80,8080"') != -1, \
+        assert h.find('$Port="80,8080"') != -1, \
                "port with multiple values not returned with multiple values"
 
     def test_no_return_comment(self):
@@ -757,7 +757,7 @@ class CookieTests(TestCase):
                       'Comment="does anybody read these?"; '
                       'CommentURL="http://foo.bar.net/comment.html"')
         h = interact_2965(c, url)
-        assert string.find(h, "Comment") == -1, \
+        assert h.find("Comment") == -1, \
                "Comment or CommentURL cookie-attributes returned to server"
 
 # just pondering security here -- this isn't really a test (yet)
@@ -939,8 +939,8 @@ class LWPCookieTests(TestCase):
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        assert (string.find(h, "PART_NUMBER=ROCKET_LAUNCHER_0001") != -1 and
-                string.find(h, "CUSTOMER=WILE_E_COYOTE") != -1)
+        assert (h.find("PART_NUMBER=ROCKET_LAUNCHER_0001") != -1 and
+                h.find("CUSTOMER=WILE_E_COYOTE") != -1)
 
 
         headers.append('Set-Cookie: SHIPPING=FEDEX; path=/foo')
@@ -951,17 +951,17 @@ class LWPCookieTests(TestCase):
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        assert (string.find(h, "PART_NUMBER=ROCKET_LAUNCHER_0001") != -1 and
-                string.find(h, "CUSTOMER=WILE_E_COYOTE") != -1 and
-                not string.find(h, "SHIPPING=FEDEX") != -1)
+        assert (h.find("PART_NUMBER=ROCKET_LAUNCHER_0001") != -1 and
+                h.find("CUSTOMER=WILE_E_COYOTE") != -1 and
+                not h.find("SHIPPING=FEDEX") != -1)
 
 
         req = Request("http://www.acme.com/foo/")
         c.add_cookie_header(req)
 
         h = req.get_header("Cookie")
-        assert (string.find(h, "PART_NUMBER=ROCKET_LAUNCHER_0001") != -1 and
-                string.find(h, "CUSTOMER=WILE_E_COYOTE") != -1 and
+        assert (h.find("PART_NUMBER=ROCKET_LAUNCHER_0001") != -1 and
+                h.find("CUSTOMER=WILE_E_COYOTE") != -1 and
                 startswith(h, "SHIPPING=FEDEX;"))
 
     def test_netscape_example_2(self):
@@ -1121,7 +1121,7 @@ class LWPCookieTests(TestCase):
 
         cookie = interact_2965(c, "http://www.acme.com/acme/process")
         assert (re.search(r'Shipping="?FedEx"?;\s*\$Path="\/acme"', cookie) and
-                string.find(cookie, "WILE_E_COYOTE") != -1)
+                cookie.find("WILE_E_COYOTE") != -1)
 
         # 
         # The user agent makes a series of requests on the origin server, after
@@ -1182,8 +1182,8 @@ class LWPCookieTests(TestCase):
         # the server.
 
         cookie = interact_2965(c, "http://www.acme.com/acme/parts/")
-        assert (string.find(cookie, "Rocket_Launcher_0001") != -1 and
-                not string.find(cookie, "Riding_Rocket_0023") != -1)
+        assert (cookie.find("Rocket_Launcher_0001") != -1 and
+                not cookie.find("Riding_Rocket_0023") != -1)
 
     def test_rejection(self):
         # Test rejection of Set-Cookie2 responses based on domain, path, port.
@@ -1292,7 +1292,7 @@ class LWPCookieTests(TestCase):
             c, "http://www.acme.com/foo%2f%25/<<%0anew\345/\346\370\345",
             'bar=baz; path="/foo/"; version=1');
         version_re = re.compile(r'^\$version=\"?1\"?', re.I)
-        assert (string.find(cookie, "foo=bar") != -1 and
+        assert (cookie.find("foo=bar") != -1 and
                 version_re.search(cookie))
 
         cookie = interact_2965(
@@ -1340,11 +1340,11 @@ class LWPCookieTests(TestCase):
 
         new_c = save_and_restore(c, True)
         assert len(new_c) == 6  # none discarded
-        assert string.find(repr(new_c), "name='foo1', value='bar'") != -1
+        assert repr(new_c).find("name='foo1', value='bar'") != -1
 
         new_c = save_and_restore(c, False)
         assert len(new_c) == 4  # 2 of them discarded on save
-        assert string.find(repr(new_c), "name='foo1', value='bar'") != -1
+        assert repr(new_c).find("name='foo1', value='bar'") != -1
 
     def test_netscape_misc(self):
         # Some additional Netscape cookies tests.
@@ -1369,9 +1369,8 @@ class LWPCookieTests(TestCase):
         req = Request("http://foo.bar.acme.com/foo")
         c.add_cookie_header(req)
         assert (
-            string.find(req.get_header("Cookie"), "PART_NUMBER=3,4") != -1 and
-            string.find(
-            req.get_header("Cookie"), "Customer=WILE_E_COYOTE") != -1)
+            req.get_header("Cookie").find("PART_NUMBER=3,4") != -1 and
+            req.get_header("Cookie").find("Customer=WILE_E_COYOTE") != -1)
 
     def test_intranet_domains_2965(self):
         # Test handling of local intranet hostnames without a dot.
@@ -1382,11 +1381,11 @@ class LWPCookieTests(TestCase):
                       "foo1=bar; PORT; Discard; Version=1;")
         cookie = interact_2965(c, "http://example/",
                                'foo2=bar; domain=".local"; Version=1')
-        assert string.find(cookie, "foo1=bar") >= 0
+        assert cookie.find("foo1=bar") >= 0
 
         interact_2965(c, "http://example/", 'foo3=bar; Version=1')
         cookie = interact_2965(c, "http://example/")
-        assert string.find(cookie, "foo2=bar") >= 0 and len(c) == 3
+        assert cookie.find("foo2=bar") >= 0 and len(c) == 3
 
     def test_intranet_domains_ns(self):
         from mechanize import CookieJar, DefaultCookiePolicy
@@ -1396,10 +1395,10 @@ class LWPCookieTests(TestCase):
         cookie = interact_netscape(c, "http://example/",
                                    'foo2=bar; domain=.local')
         assert len(c) == 2
-        assert string.find(cookie, "foo1=bar") >= 0
+        assert cookie.find("foo1=bar") >= 0
 
         cookie = interact_netscape(c, "http://example/")
-        assert string.find(cookie, "foo2=bar") >= 0 and len(c) == 2
+        assert cookie.find("foo2=bar") >= 0 and len(c) == 2
 
     def test_empty_path(self):
         from mechanize import CookieJar, Request, DefaultCookiePolicy

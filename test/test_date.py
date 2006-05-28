@@ -1,6 +1,6 @@
 """Tests for ClientCookie._HTTPDate."""
 
-import re, string, time
+import re, time
 from unittest import TestCase
 
 class DateTimeTests(TestCase):
@@ -68,8 +68,8 @@ class DateTimeTests(TestCase):
 
         for s in tests:
             t = http2time(s)
-            t2 = http2time(string.lower(s))
-            t3 = http2time(string.upper(s))
+            t2 = http2time(s.lower())
+            t3 = http2time(s.upper())
 
             assert t == t2 == t3 == test_t, \
                    "'%s'  =>  %s, %s, %s (%s)" % (s, t, t2, t3, test_t)

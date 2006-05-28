@@ -1,7 +1,7 @@
 """Miscellaneous pyunit tests."""
 
 import copy
-import cStringIO, string
+import cStringIO
 from unittest import TestCase
 
 class TestUnSeekable:
@@ -52,7 +52,7 @@ jumps over the lazy
 dog.
 
 """
-    text_lines = map(lambda l: l+"\n", string.split(text, "\n")[:-1])
+    text_lines = map(lambda l: l+"\n", text.split("\n")[:-1])
 
     def testSeekable(self):
         from mechanize._util import seek_wrapper
