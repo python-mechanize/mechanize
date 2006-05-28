@@ -59,7 +59,7 @@ days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 months_lower = []
-for month in months: months_lower.append(string.lower(month))
+for month in months: months_lower.append(month.lower())
 
 
 def time2isoz(t=None):
@@ -117,7 +117,7 @@ def _str2time(day, mon, yr, hr, min, sec, tz):
     # translate month name to number
     # month numbers start with 1 (January)
     try:
-        mon = months_lower.index(string.lower(mon))+1
+        mon = months_lower.index(mon.lower())+1
     except ValueError:
         # maybe it's already a number
         try:
@@ -158,7 +158,7 @@ def _str2time(day, mon, yr, hr, min, sec, tz):
         # adjust time using timezone string, to get absolute time since epoch
         if tz is None:
             tz = "UTC"
-        tz = string.upper(tz)
+        tz = tz.upper()
         offset = offset_from_tz_string(tz)
         if offset is None:
             return None
@@ -220,7 +220,7 @@ def http2time(text):
     m = strict_re.search(text)
     if m:
         g = m.groups()
-        mon = months_lower.index(string.lower(g[1])) + 1
+        mon = months_lower.index(g[1].lower()) + 1
         tt = (int(g[2]), mon, int(g[0]),
               int(g[3]), int(g[4]), float(g[5]))
         return my_timegm(tt)
@@ -228,7 +228,7 @@ def http2time(text):
     # No, we need some messy parsing...
 
     # clean up
-    text = string.lstrip(text)
+    text = text.lstrip()
     text = wkday_re.sub("", text, 1)  # Useless weekday
 
     # tz is time zone specifier string
@@ -273,7 +273,7 @@ def iso2time(text):
 
     """
     # clean up
-    text = string.lstrip(text)
+    text = text.lstrip()
 
     # tz is time zone specifier string
     day, mon, yr, hr, min, sec, tz = [None]*7

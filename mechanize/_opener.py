@@ -9,7 +9,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import urllib2, string, bisect, urlparse
+import urllib2, bisect, urlparse
 
 from _util import startswith, isstringlike
 from _request import Request
@@ -72,7 +72,7 @@ class OpenerDirector(urllib2.OpenerDirector):
                 condition = meth[ii+1:]
 
                 if startswith(condition, "error"):
-                    jj = string.find(meth[ii+1:], "_") + ii + 1
+                    jj = meth[ii+1:].find("_") + ii + 1
                     kind = meth[jj+1:]
                     try:
                         kind = int(kind)

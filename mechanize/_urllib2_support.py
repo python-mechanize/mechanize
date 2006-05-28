@@ -12,7 +12,7 @@ COPYING.txt included with the distribution).
 """
 
 import copy, time, tempfile, htmlentitydefs, re, logging, types, \
-       string, socket, urlparse, urllib2, urllib, httplib, sgmllib
+       socket, urlparse, urllib2, urllib, httplib, sgmllib
 from urllib2 import URLError, HTTPError, BaseHandler
 from cStringIO import StringIO
 try:
@@ -482,10 +482,10 @@ class HTTPRefreshProcessor(BaseHandler):
 
         if code == 200 and hdrs.has_key("refresh"):
             refresh = hdrs.getheaders("refresh")[0]
-            ii = string.find(refresh, ";")
+            ii = refresh.find(";")
             if ii != -1:
                 pause, newurl_spec = float(refresh[:ii]), refresh[ii+1:]
-                jj = string.find(newurl_spec, "=")
+                jj = newurl_spec.find("=")
                 if jj != -1:
                     key, newurl = newurl_spec[:jj], newurl_spec[jj+1:]
                 if key.strip().lower() != "url":

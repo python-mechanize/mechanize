@@ -32,7 +32,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import sys, re, urlparse, string, copy, time, struct, urllib, types, logging
+import sys, re, urlparse, copy, time, struct, urllib, types, logging
 try:
     import threading
     _threading = threading; del threading
@@ -105,13 +105,13 @@ def domain_match(A, B):
     """
     # Note that, if A or B are IP addresses, the only relevant part of the
     # definition of the domain-match algorithm is the direct string-compare.
-    A = string.lower(A)
-    B = string.lower(B)
+    A = A.lower()
+    B = B.lower()
     if A == B:
         return True
     if not is_HDN(A):
         return False
-    i = string.rfind(A, B)
+    i = A.rfind(B)
     has_form_nb = not (i == -1 or i == 0)
     return (
         has_form_nb and
@@ -133,8 +133,8 @@ def user_domain_match(A, B):
     A and B may be host domain names or IP addresses.
 
     """
-    A = string.lower(A)
-    B = string.lower(B)
+    A = A.lower()
+    B = B.lower()
     if not (liberal_is_HDN(A) and liberal_is_HDN(B)):
         if A == B:
             # equal IP addresses
@@ -162,7 +162,7 @@ def request_host(request):
 
     # remove port, if present
     host = cut_port_re.sub("", host, 1)
-    return string.lower(host)
+    return host.lower()
 
 def eff_request_host(request):
     """Return a tuple (request-host, effective request-host name).
@@ -171,7 +171,7 @@ def eff_request_host(request):
 
     """
     erhn = req_host = request_host(request)
-    if string.find(req_host, ".") == -1 and not IPV4_RE.search(req_host):
+    if req_host.find(".") == -1 and not IPV4_RE.search(req_host):
         erhn = req_host + ".local"
     return req_host, erhn
 
@@ -192,7 +192,7 @@ def request_path(request):
 
 def request_port(request):
     host = request.get_host()
-    i = string.find(host, ':')
+    i = host.find(':')
     if i >= 0:
         port = host[i+1:]
         try:
@@ -209,7 +209,7 @@ def request_port(request):
 HTTP_PATH_SAFE = "%/;:@&=+$,!~*'()"
 ESCAPED_CHAR_RE = re.compile(r"%([0-9a-fA-F][0-9a-fA-F])")
 def uppercase_escaped_char(match):
-    return "%%%s" % string.upper(match.group(1))
+    return "%%%s" % match.group(1).upper()
 def escape_path(path):
     """Escape any invalid characters in HTTP URL, and uppercase all escapes."""
     # There's no knowing what character encoding was used to create URLs
@@ -252,11 +252,11 @@ def reach(h):
     '.local'
 
     """
-    i = string.find(h, ".")
+    i = h.find(".")
     if i >= 0:
         #a = h[:i]  # this line is only here to show what a is
         b = h[i+1:]
-        i = string.find(b, ".")
+        i = b.find(".")
         if is_HDN(h) and (i >= 0 or b == "local"):
             return "."+b
     return h
@@ -344,7 +344,7 @@ class Cookie:
         self.port = port
         self.port_specified = port_specified
         # normalise case, as per RFC 2965 section 3.3.3
-        self.domain = string.lower(domain)
+        self.domain = domain.lower()
         self.domain_specified = domain_specified
         # Sigh.  We need to know whether the domain given in the
         # cookie-attribute had an initial dot, in order to follow RFC 2965
@@ -397,7 +397,7 @@ class Cookie:
             args.append("%s=%s" % (name, repr(attr)))
         args.append("rest=%s" % repr(self._rest))
         args.append("rfc2109=%s" % repr(self.rfc2109))
-        return "Cookie(%s)" % string.join(args, ", ")
+        return "Cookie(%s)" % ", ".join(args)
 
 
 class CookiePolicy:
@@ -728,12 +728,12 @@ class DefaultCookiePolicy(CookiePolicy):
             domain = cookie.domain
             # since domain was specified, we know that:
             assert domain.startswith(".")
-            if string.count(domain, ".") == 2:
+            if domain.count(".") == 2:
                 # domain like .foo.bar
-                i = string.rfind(domain, ".")
+                i = domain.rfind(".")
                 tld = domain[i+1:]
                 sld = domain[1:i]
-                if (string.lower(sld) in [
+                if (sld.lower() in [
                     "co", "ac",
                     "com", "edu", "org", "net", "gov", "mil", "int",
                     "aero", "biz", "cat", "coop", "info", "jobs", "mobi",
@@ -761,7 +761,7 @@ class DefaultCookiePolicy(CookiePolicy):
                 undotted_domain = domain[1:]
             else:
                 undotted_domain = domain
-            embedded_dots = (string.find(undotted_domain, ".") >= 0)
+            embedded_dots = (undotted_domain.find(".") >= 0)
             if not embedded_dots and domain != ".local":
                 debug("   non-local domain %s contains no embedded dot",
                       domain)
@@ -783,7 +783,7 @@ class DefaultCookiePolicy(CookiePolicy):
             if (cookie.version > 0 or
                 (self.strict_ns_domain & self.DomainStrictNoDots)):
                 host_prefix = req_host[:-len(domain)]
-                if (string.find(host_prefix, ".") >= 0 and
+                if (host_prefix.find(".") >= 0 and
                     not IPV4_RE.search(req_host)):
                     debug("   host prefix %s for domain %s contains a dot",
                           host_prefix, domain)
@@ -797,7 +797,7 @@ class DefaultCookiePolicy(CookiePolicy):
                 req_port = "80"
             else:
                 req_port = str(req_port)
-            for p in string.split(cookie.port, ","):
+            for p in cookie.port.split(","):
                 try:
                     int(p)
                 except ValueError:
@@ -867,7 +867,7 @@ class DefaultCookiePolicy(CookiePolicy):
             req_port = request_port(request)
             if req_port is None:
                 req_port = "80"
-            for p in string.split(cookie.port, ","):
+            for p in cookie.port.split(","):
                 if p == req_port:
                     break
             else:
@@ -1137,8 +1137,7 @@ class CookieJar:
         attrs = self._cookie_attrs(cookies)
         if attrs:
             if not request.has_header("Cookie"):
-                request.add_unredirected_header(
-                    "Cookie", string.join(attrs, "; "))
+                request.add_unredirected_header("Cookie", "; ".join(attrs))
 
         # if necessary, advertise that we know RFC 2965
         if self._policy.rfc2965 and not self._policy.hide_cookie2:
@@ -1188,7 +1187,7 @@ class CookieJar:
             standard = {}
             rest = {}
             for k, v in cookie_attrs[1:]:
-                lc = string.lower(k)
+                lc = k.lower()
                 # don't lose case distinction for unknown fields
                 if lc in value_attrs or lc in boolean_attrs:
                     k = lc
@@ -1205,7 +1204,7 @@ class CookieJar:
                         bad_cookie = True
                         break
                     # RFC 2965 section 3.3.3
-                    v = string.lower(v)
+                    v = v.lower()
                 if k == "expires":
                     if max_age_set:
                         # Prefer max-age to expires (like Mozilla)
@@ -1272,7 +1271,7 @@ class CookieJar:
         else:
             path_specified = False
             path = request_path(request)
-            i = string.rfind(path, "/")
+            i = path.rfind("/")
             if i != -1:
                 if version == 0:
                     # Netscape spec parts company from reality here
@@ -1550,12 +1549,12 @@ class CookieJar:
     def __repr__(self):
         r = []
         for cookie in self: r.append(repr(cookie))
-        return "<%s[%s]>" % (self.__class__, string.join(r, ", "))
+        return "<%s[%s]>" % (self.__class__, ", ".join(r))
 
     def __str__(self):
         r = []
         for cookie in self: r.append(str(cookie))
-        return "<%s[%s]>" % (self.__class__, string.join(r, ", "))
+        return "<%s[%s]>" % (self.__class__, ", ".join(r))
 
 
 class LoadError(Exception): pass

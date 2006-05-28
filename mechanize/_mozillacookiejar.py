@@ -9,7 +9,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import re, string, time, logging
+import re, time, logging
 
 from _clientcookie import reraise_unmasked_exceptions, FileCookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
@@ -75,13 +75,13 @@ class MozillaCookieJar(FileCookieJar):
                 if endswith(line, "\n"): line = line[:-1]
 
                 # skip comments and blank lines XXX what is $ for?
-                if (startswith(string.strip(line), "#") or
-                    startswith(string.strip(line), "$") or
-                    string.strip(line) == ""):
+                if (startswith(line.strip(), "#") or
+                    startswith(line.strip(), "$") or
+                    line.strip() == ""):
                     continue
 
                 domain, domain_specified, path, secure, expires, name, value = \
-                        string.split(line, "\t")
+                        line.split("\t")
                 secure = (secure == "TRUE")
                 domain_specified = (domain_specified == "TRUE")
                 if name == "":
@@ -153,8 +153,8 @@ class MozillaCookieJar(FileCookieJar):
                     name = cookie.name
                     value = cookie.value
                 f.write(
-                    string.join([cookie.domain, initial_dot, cookie.path,
-                                 secure, expires, name, value], "\t")+
+                    "\t".join([cookie.domain, initial_dot, cookie.path,
+                               secure, expires, name, value])+
                     "\n")
         finally:
             f.close()

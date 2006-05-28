@@ -8,7 +8,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import urllib2, string
+import urllib2
 
 from _clientcookie import request_host
 
@@ -39,7 +39,7 @@ class Request(urllib2.Request):
 
     def add_unredirected_header(self, key, val):
         """Add a header that will not be added to a redirected request."""
-        self.unredirected_hdrs[string.capitalize(key)] = val
+        self.unredirected_hdrs[key.capitalize()] = val
 
     def has_header(self, header_name):
         """True iff request has named header (regular or unredirected)."""

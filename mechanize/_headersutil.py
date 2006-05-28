@@ -9,7 +9,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import os, re, string, urlparse
+import os, re, urlparse
 from types import StringType
 from types import UnicodeType
 STRING_TYPES = StringType, UnicodeType
@@ -113,14 +113,14 @@ def split_header_words(header_values):
                     if m:  # unquoted value
                         text = unmatched(m)
                         value = m.group(1)
-                        value = string.rstrip(value)
+                        value = value.rstrip()
                     else:
                         # no value, a lone token
                         value = None
                 pairs.append((name, value))
-            elif startswith(string.lstrip(text), ","):
+            elif startswith(text.lstrip(), ","):
                 # concatenated headers, as per RFC 2616 section 4.2
-                text = string.lstrip(text)[1:]
+                text = text.lstrip()[1:]
                 if pairs: result.append(pairs)
                 pairs = []
             else:
@@ -159,8 +159,8 @@ def join_header_words(lists):
                 else:
                     k = "%s=%s" % (k, v)
             attr.append(k)
-        if attr: headers.append(string.join(attr, "; "))
-    return string.join(headers, ", ")
+        if attr: headers.append("; ".join(attr))
+    return ", ".join(headers)
 
 def parse_ns_headers(ns_headers):
     """Ad-hoc parser for Netscape protocol cookie-attributes.
@@ -188,15 +188,15 @@ def parse_ns_headers(ns_headers):
         params = re.split(r";\s*", ns_header)
         for ii in range(len(params)):
             param = params[ii]
-            param = string.rstrip(param)
+            param = param.rstrip()
             if param == "": continue
             if "=" not in param:
                 k, v = param, None
             else:
                 k, v = re.split(r"\s*=\s*", param, 1)
-                k = string.lstrip(k)
+                k = k.lstrip()
             if ii != 0:
-                lc = string.lower(k)
+                lc = k.lower()
                 if lc in known_attrs:
                     k = lc
                 if k == "version":

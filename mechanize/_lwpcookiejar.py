@@ -18,7 +18,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import time, re, string, logging
+import time, re, logging
 
 from _clientcookie import reraise_unmasked_exceptions, FileCookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
@@ -89,7 +89,7 @@ class LWPCookieJar(FileCookieJar):
                 debug("   Not saving %s: expired", cookie.name)
                 continue
             r.append("Set-Cookie3: %s" % lwp_cookie_str(cookie))
-        return string.join(r+[""], "\n")
+        return "\n".join(r+[""])
 
     def save(self, filename=None, ignore_discard=False, ignore_expires=False):
         if filename is None:
@@ -129,7 +129,7 @@ class LWPCookieJar(FileCookieJar):
                 if line == "": break
                 if not startswith(line, header):
                     continue
-                line = string.strip(line[len(header):])
+                line = line[len(header):].strip()
 
                 for data in split_header_words([line]):
                     name, value = data[0]
@@ -139,7 +139,7 @@ class LWPCookieJar(FileCookieJar):
                         standard[k] = False
                     for k, v in data[1:]:
                         if k is not None:
-                            lc = string.lower(k)
+                            lc = k.lower()
                         else:
                             lc = None
                         # don't lose case distinction for unknown fields
