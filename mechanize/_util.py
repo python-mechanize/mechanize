@@ -12,14 +12,6 @@ import re, string, time, copy, urllib, mimetools
 from types import TupleType
 from cStringIO import StringIO
 
-def startswith(string, initial):
-    if len(initial) > len(string): return False
-    return string[:len(initial)] == initial
-
-def endswith(string, final):
-    if len(final) > len(string): return False
-    return string[-len(final):] == final
-
 def isstringlike(x):
     try: x+""
     except: return False

@@ -15,7 +15,6 @@ import mechanize
 
 from mechanize._urllib2_support import Request, AbstractHTTPHandler, \
      build_opener, parse_head, urlopen
-from mechanize._util import startswith
 from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
      HTTPEquivProcessor, HTTPRefreshProcessor, SeekableProcessor, \
      HTTPCookieProcessor, HTTPRefererProcessor, \
@@ -87,7 +86,7 @@ class MockHandler:
             return res
         elif action == "return request":
             return Request("http://blah/")
-        elif startswith(action, "error"):
+        elif action.startswith("error"):
             code = int(action[-3:])
             res = MockResponse(200, "OK", {}, "")
             return self.parent.error("http", args[0], res, code, "", {})

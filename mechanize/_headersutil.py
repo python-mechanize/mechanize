@@ -14,7 +14,7 @@ from types import StringType
 from types import UnicodeType
 STRING_TYPES = StringType, UnicodeType
 
-from _util import startswith, endswith, http2time
+from _util import http2time
 
 def is_html(ct_headers, url, allow_xhtml=False):
     """
@@ -118,7 +118,7 @@ def split_header_words(header_values):
                         # no value, a lone token
                         value = None
                 pairs.append((name, value))
-            elif startswith(text.lstrip(), ","):
+            elif text.lstrip().startswith(","):
                 # concatenated headers, as per RFC 2616 section 4.2
                 text = text.lstrip()[1:]
                 if pairs: result.append(pairs)
@@ -204,8 +204,8 @@ def parse_ns_headers(ns_headers):
                     version_set = True
                 if k == "expires":
                     # convert expires date to seconds since epoch
-                    if startswith(v, '"'): v = v[1:]
-                    if endswith(v, '"'): v = v[:-1]
+                    if v.startswith('"'): v = v[1:]
+                    if v.endswith('"'): v = v[:-1]
                     v = http2time(v)  # None if invalid
             pairs.append((k, v))
 

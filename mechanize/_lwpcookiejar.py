@@ -23,7 +23,7 @@ import time, re, logging
 from _clientcookie import reraise_unmasked_exceptions, FileCookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
 from _headersutil import join_header_words, split_header_words
-from _util import startswith, iso2time, time2isoz
+from _util import iso2time, time2isoz
 
 debug = logging.getLogger("mechanize").debug
 
@@ -127,7 +127,7 @@ class LWPCookieJar(FileCookieJar):
             while 1:
                 line = f.readline()
                 if line == "": break
-                if not startswith(line, header):
+                if not line.startswith(header):
                     continue
                 line = line[len(header):].strip()
 
@@ -161,7 +161,7 @@ class LWPCookieJar(FileCookieJar):
                     if expires is None:
                         discard = True
                     domain = h("domain")
-                    domain_specified = startswith(domain, ".")
+                    domain_specified = domain.startswith(".")
                     c = Cookie(h("version"), name, value,
                                h("port"), h("port_spec"),
                                domain, domain_specified, h("domain_dot"),

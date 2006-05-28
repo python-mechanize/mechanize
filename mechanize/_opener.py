@@ -11,7 +11,7 @@ COPYING.txt included with the distribution).
 
 import urllib2, bisect, urlparse
 
-from _util import startswith, isstringlike
+from _util import isstringlike
 from _request import Request
 
 try:
@@ -71,7 +71,7 @@ class OpenerDirector(urllib2.OpenerDirector):
                 scheme = meth[:ii]
                 condition = meth[ii+1:]
 
-                if startswith(condition, "error"):
+                if condition.startswith("error"):
                     jj = meth[ii+1:].find("_") + ii + 1
                     kind = meth[jj+1:]
                     try:

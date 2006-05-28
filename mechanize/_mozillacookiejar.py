@@ -13,7 +13,6 @@ import re, time, logging
 
 from _clientcookie import reraise_unmasked_exceptions, FileCookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
-from _util import startswith, endswith
 debug = logging.getLogger("ClientCookie").debug
 
 
@@ -72,11 +71,11 @@ class MozillaCookieJar(FileCookieJar):
                 if line == "": break
 
                 # last field may be absent, so keep any trailing tab
-                if endswith(line, "\n"): line = line[:-1]
+                if line.endswith("\n"): line = line[:-1]
 
                 # skip comments and blank lines XXX what is $ for?
-                if (startswith(line.strip(), "#") or
-                    startswith(line.strip(), "$") or
+                if (line.strip().startswith("#") or
+                    line.strip().startswith("$") or
                     line.strip() == ""):
                     continue
 
@@ -88,7 +87,7 @@ class MozillaCookieJar(FileCookieJar):
                     name = value
                     value = None
 
-                initial_dot = startswith(domain, ".")
+                initial_dot = domain.startswith(".")
                 assert domain_specified == initial_dot
 
                 discard = False
@@ -137,7 +136,7 @@ class MozillaCookieJar(FileCookieJar):
                     continue
                 if cookie.secure: secure = "TRUE"
                 else: secure = "FALSE"
-                if startswith(cookie.domain, "."): initial_dot = "TRUE"
+                if cookie.domain.startswith("."): initial_dot = "TRUE"
                 else: initial_dot = "FALSE"
                 if cookie.expires is not None:
                     expires = str(cookie.expires)

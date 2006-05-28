@@ -46,7 +46,7 @@ MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
 DEFAULT_HTTP_PORT = str(httplib.HTTP_PORT)
 
 from _headersutil import split_header_words, parse_ns_headers
-from _util import startswith, endswith, isstringlike
+from _util import isstringlike
 
 debug = logging.getLogger("mechanize.cookies").debug
 
@@ -115,7 +115,7 @@ def domain_match(A, B):
     has_form_nb = not (i == -1 or i == 0)
     return (
         has_form_nb and
-        startswith(B, ".") and
+        B.startswith(".") and
         is_HDN(B[1:])
         )
 
@@ -140,8 +140,8 @@ def user_domain_match(A, B):
             # equal IP addresses
             return True
         return False
-    initial_dot = startswith(B, ".")
-    if initial_dot and endswith(A, B):
+    initial_dot = B.startswith(".")
+    if initial_dot and A.endswith(B):
         return True
     if not initial_dot and A == B:
         return True
@@ -185,7 +185,7 @@ def request_path(request):
         path = "%s;%s" % (path, parameters)
     path = escape_path(path)
     req_path = urlparse.urlunparse(("", "", path, "", query, frag))
-    if not startswith(req_path, "/"):
+    if not req_path.startswith("/"):
         # fix bad RFC 2396 absoluteURI
         req_path = "/"+req_path
     return req_path
@@ -701,7 +701,7 @@ class DefaultCookiePolicy(CookiePolicy):
         # Try and stop servers setting V0 cookies designed to hack other
         # servers that know both V0 and V1 protocols.
         if (cookie.version == 0 and self.strict_ns_set_initial_dollar and
-            startswith(cookie.name, "$")):
+            cookie.name.startswith("$")):
             debug("   illegal name (starts with '$'): '%s'", cookie.name)
             return False
         return True
@@ -711,7 +711,7 @@ class DefaultCookiePolicy(CookiePolicy):
             req_path = request_path(request)
             if ((cookie.version > 0 or
                  (cookie.version == 0 and self.strict_ns_set_path)) and
-                not startswith(req_path, cookie.path)):
+                not req_path.startswith(cookie.path)):
                 debug("   path attribute %s is not a prefix of request "
                       "path %s", cookie.path, req_path)
                 return False
@@ -757,7 +757,7 @@ class DefaultCookiePolicy(CookiePolicy):
         if cookie.domain_specified:
             req_host, erhn = eff_request_host(request)
             domain = cookie.domain
-            if startswith(domain, "."):
+            if domain.startswith("."):
                 undotted_domain = domain[1:]
             else:
                 undotted_domain = domain
@@ -767,9 +767,9 @@ class DefaultCookiePolicy(CookiePolicy):
                       domain)
                 return False
             if cookie.version == 0:
-                if (not endswith(erhn, domain) and
-                    (not startswith(erhn, ".") and
-                     not endswith("."+erhn, domain))):
+                if (not erhn.endswith(domain) and
+                    (not erhn.startswith(".") and
+                     not ("."+erhn).endswith(domain))):
                     debug("   effective request-host %s (even with added "
                           "initial dot) does not end end with %s",
                           erhn, domain)
@@ -892,7 +892,7 @@ class DefaultCookiePolicy(CookiePolicy):
             debug("   effective request-host name %s does not domain-match "
                   "RFC 2965 cookie domain %s", erhn, domain)
             return False
-        if cookie.version == 0 and not endswith("."+erhn, domain):
+        if cookie.version == 0 and not ("."+erhn).endswith(domain):
             debug("   request-host %s does not match Netscape cookie domain "
                   "%s", req_host, domain)
             return False
@@ -905,12 +905,12 @@ class DefaultCookiePolicy(CookiePolicy):
         # Munge req_host and erhn to always start with a dot, so as to err on
         # the side of letting cookies through.
         dotted_req_host, dotted_erhn = eff_request_host(request)
-        if not startswith(dotted_req_host, "."):
+        if not dotted_req_host.startswith("."):
             dotted_req_host = "."+dotted_req_host
-        if not startswith(dotted_erhn, "."):
+        if not dotted_erhn.startswith("."):
             dotted_erhn = "."+dotted_erhn
-        if not (endswith(dotted_req_host, domain) or
-                endswith(dotted_erhn, domain)):
+        if not (dotted_req_host.endswith(domain) or
+                dotted_erhn.endswith(domain)):
             #debug("   request domain %s does not match cookie domain %s",
             #      req_host, domain)
             return False
@@ -927,7 +927,7 @@ class DefaultCookiePolicy(CookiePolicy):
     def path_return_ok(self, path, request):
         debug("- checking cookie path=%s", path)
         req_path = request_path(request)
-        if not startswith(req_path, path):
+        if not req_path.startswith(path):
             debug("  %s does not path-match %s", req_path, path)
             return False
         return True
@@ -1096,10 +1096,10 @@ class CookieJar:
             if version > 0:
                 if cookie.path_specified:
                     attrs.append('$Path="%s"' % cookie.path)
-                if startswith(cookie.domain, "."):
+                if cookie.domain.startswith("."):
                     domain = cookie.domain
                     if (not cookie.domain_initial_dot and
-                        startswith(domain, ".")):
+                        domain.startswith(".")):
                         domain = domain[1:]
                     attrs.append('$Domain="%s"' % domain)
                 if cookie.port is not None:
@@ -1285,11 +1285,11 @@ class CookieJar:
         # but first we have to remember whether it starts with a dot
         domain_initial_dot = False
         if domain_specified:
-            domain_initial_dot = bool(startswith(domain, "."))
+            domain_initial_dot = bool(domain.startswith("."))
         if domain is Absent:
             req_host, erhn = eff_request_host(request)
             domain = erhn
-        elif not startswith(domain, "."):
+        elif not domain.startswith("."):
             domain = "."+domain
 
         # set default port

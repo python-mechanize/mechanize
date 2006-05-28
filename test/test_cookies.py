@@ -4,8 +4,6 @@ import urllib2, re, os, StringIO, mimetools, time
 from time import localtime
 from unittest import TestCase
 
-from mechanize._util import startswith
-
 class FakeResponse:
     def __init__(self, headers=[], url=None):
         """
@@ -962,7 +960,7 @@ class LWPCookieTests(TestCase):
         h = req.get_header("Cookie")
         assert (h.find("PART_NUMBER=ROCKET_LAUNCHER_0001") != -1 and
                 h.find("CUSTOMER=WILE_E_COYOTE") != -1 and
-                startswith(h, "SHIPPING=FEDEX;"))
+                h.startswith("SHIPPING=FEDEX;"))
 
     def test_netscape_example_2(self):
         from mechanize import CookieJar, Request

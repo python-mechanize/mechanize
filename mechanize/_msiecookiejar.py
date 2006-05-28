@@ -17,7 +17,6 @@ if os.name == "nt":
 
 from _clientcookie import FileCookieJar, CookieJar, Cookie, \
      MISSING_FILENAME_TEXT, LoadError
-from _util import startswith
 
 debug = logging.getLogger("mechanize").debug
 
@@ -153,7 +152,7 @@ class MSIEBase:
             else:
                 discard = False
             domain = cookie["DOMAIN"]
-            initial_dot = startswith(domain, ".")
+            initial_dot = domain.startswith(".")
             if initial_dot:
                 domain_specified = True
             else:
