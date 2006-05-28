@@ -1,4 +1,4 @@
-"""Python backwards-compat., date/time routines, seekable file object wrapper.
+"""Utility functions and date/time routines.
 
  Copyright 2002-2006 John J Lee <jjl@pobox.com>
 
