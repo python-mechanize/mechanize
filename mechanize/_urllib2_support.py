@@ -36,7 +36,8 @@ DEFAULT_ENCODING = 'latin-1'
 
 
 # This adds "refresh" to the list of redirectables and provides a redirection
-# algorithm that doesn't go into a loop in the presence of cookies.
+# algorithm that doesn't go into a loop in the presence of cookies
+# (Python 2.4 has this new algorithm, 2.3 doesn't).
 class HTTPRedirectHandler(BaseHandler):
     # maximum number of redirections to any single URL
     # this is needed because of the state that cookies introduce
@@ -558,7 +559,7 @@ class AbstractHTTPHandler(BaseHandler):
         if not request.has_header('Host'):
             request.add_unredirected_header('Host', sel_host or host)
         for name, value in self.parent.addheaders:
-            name = string.capitalize(name)
+            name = name.capitalize()
             if not request.has_header(name):
                 request.add_unredirected_header(name, value)
 
