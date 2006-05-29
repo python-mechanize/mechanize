@@ -47,8 +47,10 @@ class CachingGeneratorFunction(object):
             cache.append(item)
             yield item
 
-def encoding_finder(default_encoding):
-    def encoding(response):
+class EncodingFinder:
+    def __init__(self, default_encoding):
+        self._default_encoding = default_encoding
+    def encoding(self, response):
         # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
         # headers may be in the response.  HTTP-EQUIV headers come last,
         # so try in order from first to last.
@@ -56,16 +58,16 @@ def encoding_finder(default_encoding):
             for k, v in split_header_words([ct])[0]:
                 if k == "charset":
                     return v
-        return default_encoding
-    return encoding
+        return self._default_encoding
 
-def make_is_html(allow_xhtml):
-    def is_html(response, encoding):
+class ResponseTypeFinder:
+    def __init__(self, allow_xhtml):
+        self._allow_xhtml = allow_xhtml
+    def is_html(self, response, encoding):
         ct_hdrs = response.info().getheaders("content-type")
         url = response.geturl()
         # XXX encoding
-        return _is_html(ct_hdrs, url, allow_xhtml)
-    return is_html
+        return _is_html(ct_hdrs, url, self._allow_xhtml)
 
 # idea for this argument-processing trick is from Peter Otten
 class Args:
@@ -437,8 +439,8 @@ class Factory:
     """
 
     def __init__(self, forms_factory, links_factory, title_factory,
-                 get_encoding=encoding_finder(DEFAULT_ENCODING),
-                 is_html_p=make_is_html(allow_xhtml=False),
+                 encoding_finder=EncodingFinder(DEFAULT_ENCODING),
+                 response_type_finder=ResponseTypeFinder(allow_xhtml=False),
                  ):
         """
 
@@ -454,8 +456,8 @@ class Factory:
         self._forms_factory = forms_factory
         self._links_factory = links_factory
         self._title_factory = title_factory
-        self._get_encoding = get_encoding
-        self._is_html_p = is_html_p
+        self._encoding_finder = encoding_finder
+        self._response_type_finder = response_type_finder
 
         self.set_response(None)
 
@@ -490,10 +492,11 @@ class Factory:
 
         try:
             if name == "encoding":
-                self.encoding = self._get_encoding(self._response)
+                self.encoding = self._encoding_finder.encoding(self._response)
                 return self.encoding
             elif name == "is_html":
-                self.is_html = self._is_html_p(self._response, self.encoding)
+                self.is_html = self._response_type_finder.is_html(
+                    self._response, self.encoding)
                 return self.is_html
             elif name == "title":
                 if self.is_html:
@@ -526,7 +529,8 @@ class DefaultFactory(Factory):
             forms_factory=FormsFactory(),
             links_factory=LinksFactory(),
             title_factory=TitleFactory(),
-            is_html_p=make_is_html(allow_xhtml=i_want_broken_xhtml_support),
+            response_type_finder=ResponseTypeFinder(
+                allow_xhtml=i_want_broken_xhtml_support),
             )
 
     def set_response(self, response):
@@ -551,7 +555,8 @@ class RobustFactory(Factory):
             forms_factory=RobustFormsFactory(),
             links_factory=RobustLinksFactory(),
             title_factory=RobustTitleFactory(),
-            is_html_p=make_is_html(allow_xhtml=i_want_broken_xhtml_support),
+            response_type_finder=ResponseTypeFinder(
+                allow_xhtml=i_want_broken_xhtml_support),
             )
         if soup_class is None:
             soup_class = MechanizeBs

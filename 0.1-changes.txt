@@ -1,5 +1,9 @@
 Recent public API changes:
 
+- Since 0.1.2b beta release: Factory now takes EncodingFinder and
+  ResponseTypeFinder class instances instead of functions (since
+  closures don't play well with module pickle).
+
 - ClientCookie has been moved into the mechanize package and is no
   longer a separate package.  The ClientCookie interface is still
   supported, but all names must be imported from module mechanize
