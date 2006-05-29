@@ -418,6 +418,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     """
 
     auth_header = 'Authorization'
+    handler_order = 490
 
     def http_error_401(self, req, fp, code, msg, headers):
         host = urlparse.urlparse(req.get_full_url())[1]
@@ -430,6 +431,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
     auth_header = 'Proxy-Authorization'
+    handler_order = 490
 
     def http_error_407(self, req, fp, code, msg, headers):
         host = req.get_host()

@@ -892,6 +892,8 @@ class HandlerTests(unittest.TestCase):
         realm = "ACME Widget Store"
         http_handler = MockHTTPHandler(
             401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler)
         self._test_basic_auth(opener, auth_handler, "Authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com/protected",
@@ -907,6 +909,8 @@ class HandlerTests(unittest.TestCase):
         realm = "ACME Networks"
         http_handler = MockHTTPHandler(
             407, 'Proxy-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        opener.add_handler(auth_handler)
+        opener.add_handler(http_handler)
         self._test_basic_auth(opener, auth_handler, "Proxy-authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com:3128/protected",
@@ -918,29 +922,54 @@ class HandlerTests(unittest.TestCase):
         # response (http://python.org/sf/1479302), where it should instead
         # return None to allow another handler (especially
         # HTTPBasicAuthHandler) to handle the response.
+
+        # Also (http://python.org/sf/1479302, RFC 2617 section 1.2), we must
+        # try digest first (since it's the strongest auth scheme), so we record
+        # order of calls here to check digest comes first:
+        class RecordingOpenerDirector(OpenerDirector):
+            def __init__(self):
+                OpenerDirector.__init__(self)
+                self.recorded = []
+            def record(self, info):
+                self.recorded.append(info)
         class TestDigestAuthHandler(mechanize.HTTPDigestAuthHandler):
-            handler_order = 400  # strictly before HTTPBasicAuthHandler
-        opener = OpenerDirector()
+            def http_error_401(self, *args, **kwds):
+                self.parent.record("digest")
+                mechanize.HTTPDigestAuthHandler.http_error_401(self,
+                                                             *args, **kwds)
+        class TestBasicAuthHandler(mechanize.HTTPBasicAuthHandler):
+            def http_error_401(self, *args, **kwds):
+                self.parent.record("basic")
+                mechanize.HTTPBasicAuthHandler.http_error_401(self,
+                                                            *args, **kwds)
+
+        opener = RecordingOpenerDirector()
         password_manager = MockPasswordManager()
         digest_handler = TestDigestAuthHandler(password_manager)
-        basic_handler = mechanize.HTTPBasicAuthHandler(password_manager)
-        opener.add_handler(digest_handler)
+        basic_handler = TestBasicAuthHandler(password_manager)
         realm = "ACME Networks"
         http_handler = MockHTTPHandler(
             401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % realm)
+        opener.add_handler(digest_handler)
+        opener.add_handler(basic_handler)
+        opener.add_handler(http_handler)
+        opener._maybe_reindex_handlers()
+
+        # check basic auth isn't blocked by digest handler failing
         self._test_basic_auth(opener, basic_handler, "Authorization",
                               realm, http_handler, password_manager,
                               "http://acme.example.com/protected",
                               "http://acme.example.com/protected",
                               )
+        # check digest was tried before basic (twice, because
+        # _test_basic_auth called .open() twice)
+        self.assertEqual(opener.recorded, ["digest", "basic"]*2)
 
     def _test_basic_auth(self, opener, auth_handler, auth_header,
                          realm, http_handler, password_manager,
                          request_url, protected_url):
         import base64, httplib
         user, password = "wile", "coyote"
-        opener.add_handler(auth_handler)
-        opener.add_handler(http_handler)
 
         # .add_password() fed through to password manager
         auth_handler.add_password(realm, request_url, user, password)

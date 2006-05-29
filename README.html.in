@@ -329,7 +329,7 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>Rearrange so have decent class-by-class docs,
     a tutorial/background-info doc, and a howto/examples doc.
   <li>Add more functional tests.
-  <li>Auth / proxies.
+  <li>Auth and proxies.
 </ul>
 
 
