@@ -108,15 +108,15 @@ if __name__ == "__main__":
 ##     __builtin__.jjl = jjl
 
     # XXX temporary stop-gap to run doctests
-    assert os.path.isdir('test')
-    sys.path.insert(0, 'test')
+    assert os.path.isdir("test")
+    sys.path.insert(0, "test")
     # needed for recent doctest / linecache -- this is only for testing
     # purposes, these don't get installed
     # doctest.py revision 45701 and linecache.py revision 45940.  Since
     # linecache is used by Python itself, linecache.py is renamed
     # linecache_copy.py, and this copy of doctest is modified (only) to use
     # that renamed module.
-    sys.path.insert(0, 'test-tools')
+    sys.path.insert(0, "test-tools")
     import doctest
     import mechanize
     common_globs = {"mechanize": mechanize}
@@ -126,10 +126,12 @@ if __name__ == "__main__":
         ]:
         globs.update(common_globs)
         doctest.testfile(
-            os.path.join('test', 'test_password_manager.doctest'),
-            #os.path.join('test', 'test_scratch.doctest'),
+            os.path.join("test", "test_password_manager.doctest"),
+            #os.path.join("test", "test_scratch.doctest"),
             globs=globs,
             )
+    
+    doctest.testfile(os.path.join("test", "test_rfc3986.doctest"))
     from mechanize import _headersutil, _auth, _clientcookie, _pullparser
     doctest.testmod(_headersutil)
     doctest.testmod(_auth)
