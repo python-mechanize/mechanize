@@ -276,6 +276,34 @@ class Browser(UserAgent):
         self._history.clear()
 
     def set_cookie(self, cookie_string):
+        """Request to set a cookie.
+
+        Note that it is NOT necessary to call this method under ordinary
+        circumstances: cookie handling is normally entirely automatic.  The
+        intended use case is rather to simulate the setting of a cookie by
+        client script in a web page (e.g. JavaScript).  In that case, use of
+        this method is necessary because mechanize currently does not support
+        JavaScript, VBScript, etc.
+
+        The cookie is added in the same way as if it had arrived with the
+        current response, as a result of the current request.  This means that,
+        for example, it is not appropriate to set the cookie based on the
+        current request, no cookie will be set.
+
+        The cookie will be returned automatically with subsequent responses
+        made by the Browser instance whenever that's appropriate.
+
+        cookie_string should be a valid value of the Set-Cookie header.
+
+        For example:
+
+        browser.set_cookie(
+            "sid=abcdef; expires=Wednesday, 09-Nov-06 23:12:40 GMT")
+
+        Currently, this method does not allow for adding RFC 2986 cookies.
+        This limitation will be lifted if anybody requests it.
+
+        """
         if self._response is None:
             raise BrowserStateError("not viewing any document")
         if self.request.get_type() not in ["http", "https"]:
