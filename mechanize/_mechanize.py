@@ -275,6 +275,20 @@ class Browser(UserAgent):
     def clear_history(self):
         self._history.clear()
 
+    def set_cookie(self, cookie_string):
+        if self._response is None:
+            raise BrowserStateError("not viewing any document")
+        if self.request.get_type() not in ["http", "https"]:
+            raise BrowserStateError("can't set cookie for non-HTTP/HTTPS "
+                                    "transactions")
+        cookiejar = self._ua_handlers["_cookies"].cookiejar
+        response = self.response()  # copy
+        headers = response.info()
+        if "Set-cookie" in headers:
+            del headers["Set-cookie"]
+        headers["Set-cookie"] = cookie_string
+        cookiejar.extract_cookies(response, self.request)
+
     def links(self, **kwds):
         """Return iterable over links (mechanize.Link objects)."""
         if not self.viewing_html():

@@ -633,6 +633,51 @@ class BrowserTests(TestCase):
             r = b.open(url)
             self.assertEqual([link.absolute_url for link in b.links()], urls)
 
+    def test_set_cookie(self):
+        class CookieTestBrowser(TestBrowser):
+            default_features = list(TestBrowser.default_features)+["_cookies"]
+
+        # have to be visiting HTTP/HTTPS URL
+        url = "ftp://example.com/"
+        br = CookieTestBrowser()
+        r = mechanize.make_response(
+            "<html><head><title>Title</title></head><body></body></html>",
+            [("content-type", "text/html")],
+            url,
+            200, "OK",
+            )
+        br.add_handler(make_mock_handler()([("http_open", r)]))
+        handler = br._ua_handlers["_cookies"]
+        cj = handler.cookiejar
+        self.assertRaises(mechanize.BrowserStateError,
+                          br.set_cookie, "foo=bar")
+        self.assertEqual(len(cj), 0)
+
+
+        url = "http://example.com/"
+        br = CookieTestBrowser()
+        r = mechanize.make_response(
+            "<html><head><title>Title</title></head><body></body></html>",
+            [("content-type", "text/html")],
+            url,
+            200, "OK",
+            )
+        br.add_handler(make_mock_handler()([("http_open", r)]))
+        handler = br._ua_handlers["_cookies"]
+        cj = handler.cookiejar
+
+        # have to be visiting a URL
+        self.assertRaises(mechanize.BrowserStateError,
+                          br.set_cookie, "foo=bar")
+        self.assertEqual(len(cj), 0)
+
+
+        # normal case
+        br.open(url)
+        br.set_cookie("foo=bar")
+        self.assertEqual(len(cj), 1)
+        self.assertEqual(cj._cookies["example.com"]["/"]["foo"].value, "bar")
+
 
 class ResponseTests(TestCase):
     def test_set_response(self):
