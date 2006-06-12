@@ -436,7 +436,7 @@ class HTTPResponseDebugProcessor(BaseHandler):
     def http_response(self, request, response):
         if not hasattr(response, "seek"):
             response = response_seek_wrapper(response)
-        info = getLogger("mechanize.http_responses").info
+        info = logging.getLogger("mechanize.http_responses").info
         try:
             info(response.read())
         finally:
@@ -449,7 +449,7 @@ class HTTPResponseDebugProcessor(BaseHandler):
 class HTTPRedirectDebugProcessor(BaseHandler):
     def http_request(self, request):
         if hasattr(request, "redirect_dict"):
-            info = getLogger("mechanize.http_redirects").info
+            info = logging.getLogger("mechanize.http_redirects").info
             info("redirecting to %s", request.get_full_url())
         return request
 
