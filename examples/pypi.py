@@ -16,6 +16,10 @@ b = mechanize.Browser(
     # mechanize.Factory (with XHTML support turned on):
     factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
     )
+# Addition 2005-06-13: Be naughty, since robots.txt asks not to
+# access /pypi now.  We're not madly searching for everything, so
+# I don't feel too guilty.
+b.set_handle_robots(False)
 
 # search PyPI
 b.open("http://www.python.org/pypi")
