@@ -278,12 +278,41 @@ CookieJar Perl code from which mechanize's support for that is derived.
 
 <p>Contributions welcome!
 
-<h3>Specific to mechanize</h3>
+<h3>Documentation</h3>
+<ul>
+  <li>Docs need reworking since merge with ClientCookie.  Comments are
+   especially welcome here!
+    <ul>
+      <li>Move install / FAQ / download to separate pages!
+      <li>Website menu is lame.  Pick something better.  Headings are badly
+       sized, too.
+      <li>Publish the docstrings on the website as HTML API docs.
+      <li>Integrate / rework non-docstring ClientCookie / mechanize docs.
+      <li>Non-docstring mechanize docs need extending.
+      <li>Consider structure of non-docstring docs: e.g. split into tutorial /
+       ref sections?
+      <li>Maybe change the format docs are written in, so can generate in
+       multiple formats (one page / multipage HTML, maybe PDF, man, info) and
+       integrate docstring and non-docstring docs.
+    </ul>
+  <li>Note BeautifulSoup 3.0 doesn't work yet (esp. in setup.py deps!).
+  <li>Document means of processing response on ad-hoc basis with
+    .set_response() - e.g. to fix bad encoding in Content-type header or
+    clean up bad HTML.
+  <li>Add example to documentation showing can pass None as handle arg
+    to <code>mechanize.UserAgent</code> methods and then .add_handler()
+    if need to give it a specific handler instance to use for one of the
+    things it UserAgent already handles.  Hmm, think this contradicts docs
+    ATM!  And is it better to do this a different way...??
+  <li>Add more functional tests.
+  <li>Auth and proxies.
+</ul>
+
+<h3>Code</h3>
 
 <em>This is <strong>very</strong> roughly in order of priority</em>
 
 <ul>
-  <li>Note BeautifulSoup 3.0 doesn't work yet (esp. in setup.py deps!).
   <li>Use RFC 3986 URL absolutization.
   <li>Test <code>.any_response()</code> two handlers case: ordering.
   <li>Test referer bugs (frags and don't add in redirect unless orig
@@ -298,12 +327,14 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>Add another History implementation or two and finalise interface.
   <li>History cache expiration.
   <li>Investigate possible leak further (see Balazs Ree's list posting).
-  <li>Make encoding_finder public, I guess (but probably improve it first).
-    (For example: support Mark Pilgrim's universal encoding detector?)
+  <li>Make <code>EncodingFinder</code> public, I guess (but probably
+    improve it first).  (For example: support Mark Pilgrim's universal
+    encoding detector?)
   <li>Add two-way links between BeautifulSoup & ClientForm object models.
   <li>In 0.2: switch to Python unicode strings everywhere appropriate
     (HTTP level should still use byte strings, of course).
-  <li>clean_url(): test browser behaviour.  I <em>think</em> this is correct...
+  <li><code>clean_url()</code>: test browser behaviour.  I <em>think</em>
+    this is correct...
   <li>Figure out the Right Thing (if such a thing exists) for %-encoding.
   <li>How do IRIs fit into the world?
   <li>IDNA -- must read about security stuff first.
@@ -315,22 +346,6 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>gzip transfer encoding (there's already a handler for this in
     mechanize, but it's poorly implemented ATM).
   <li>proxy.pac parsing (I don't think this needs JS interpretation)
-</ul>
-
-<h3>Documentation</h3>
-<ul>
-  <li>Document means of processing response on ad-hoc basis with
-    .set_response() - e.g. to fix bad encoding in Content-type header or
-    clean up bad HTML.
-  <li>Add example to documentation showing can pass None as handle arg
-    to <code>mechanize.UserAgent</code> methods and then .add_handler()
-    if need to give it a specific handler instance to use for one of the
-    things it UserAgent already handles.  Hmm, think this contradicts docs
-    ATM!  And is it better to do this a different way...??
-  <li>Rearrange so have decent class-by-class docs,
-    a tutorial/background-info doc, and a howto/examples doc.
-  <li>Add more functional tests.
-  <li>Auth and proxies.
 </ul>
 
 
