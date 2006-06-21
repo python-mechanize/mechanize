@@ -39,7 +39,6 @@ from _urllib2_support import \
      HTTPHandler, \
      HTTPRedirectHandler, \
      HTTPEquivProcessor, \
-     SeekableProcessor, \
      HTTPCookieProcessor, \
      HTTPRefererProcessor, \
      HTTPRefreshProcessor, \
@@ -51,6 +50,8 @@ from _upgrade import \
 from _debug import \
      HTTPResponseDebugProcessor, \
      HTTPRedirectDebugProcessor
+from _seek import \
+     SeekableProcessor
 # crap ATM
 ## from _gzip import \
 ##      HTTPGzipProcessor
