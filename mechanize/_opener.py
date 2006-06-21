@@ -261,6 +261,8 @@ class OpenerFactory:
         _urllib2_support.HTTPCookieProcessor,
         _urllib2_support.HTTPErrorProcessor,
         ]
+    if hasattr(httplib, 'HTTPS'):
+        default_classes.append(_urllib2_support.HTTPSHandler)
     handlers = []
     replacement_handlers = []
 
@@ -279,8 +281,6 @@ class OpenerFactory:
         """
         opener = self.klass()
         default_classes = list(self.default_classes)
-        if hasattr(httplib, 'HTTPS'):
-            default_classes.append(_urllib2_support.HTTPSHandler)
         skip = []
         for klass in default_classes:
             for check in handlers:
