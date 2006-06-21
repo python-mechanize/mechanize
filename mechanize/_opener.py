@@ -21,6 +21,7 @@ except NameError:
     set = sets.Set
 
 import _urllib2_support
+import _upgrade
 from _util import isstringlike
 from _request import Request
 
@@ -257,7 +258,7 @@ class OpenerFactory:
         urllib2.FTPHandler,
         urllib2.FileHandler,
         # processors
-        _urllib2_support.HTTPRequestUpgradeProcessor,
+        _upgrade.HTTPRequestUpgradeProcessor,
         _urllib2_support.HTTPCookieProcessor,
         _urllib2_support.HTTPErrorProcessor,
         ]

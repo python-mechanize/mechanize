@@ -14,6 +14,7 @@ import urllib2, urlparse, sys, copy, re
 from _useragent import UserAgent
 from _html import DefaultFactory
 from _response import response_seek_wrapper, closeable_response
+import _upgrade
 import _request
 
 __version__ = (0, 1, 3, None, None)  # 0.1.3
@@ -49,42 +50,6 @@ class History:
             response.close()
         del self._history[:]
 
-# Horrible, but needed, at least until fork urllib2.  Even then, may want
-# to preseve urllib2 compatibility.
-def upgrade_response(response):
-    # a urllib2 handler constructed the response, i.e. the response is an
-    # urllib.addinfourl, instead of a _Util.closeable_response as returned
-    # by e.g. mechanize.HTTPHandler
-    try:
-        code = response.code
-    except AttributeError:
-        code = None
-    try:
-        msg = response.msg
-    except AttributeError:
-        msg = None
-
-    # may have already-.read() data from .seek() cache
-    data = None
-    get_data = getattr(response, "get_data", None)
-    if get_data:
-        data = get_data()
-
-    response = closeable_response(
-        response.fp, response.info(), response.geturl(), code, msg)
-    response = response_seek_wrapper(response)
-    if data:
-        response.set_data(data)
-    return response
-class ResponseUpgradeProcessor(urllib2.BaseHandler):
-    # upgrade responses to be .close()able without becoming unusable
-    handler_order = 0  # before anything else
-    def any_response(self, request, response):
-        if not hasattr(response, 'closeable_response'):
-            response = upgrade_response(response)
-        return response
-
-
 class Browser(UserAgent):
     """Browser-like class with support for history, forms and links.
 
@@ -101,7 +66,7 @@ class Browser(UserAgent):
     """
 
     handler_classes = UserAgent.handler_classes.copy()
-    handler_classes["_response_upgrade"] = ResponseUpgradeProcessor
+    handler_classes["_response_upgrade"] = _upgrade.ResponseUpgradeProcessor
     default_others = copy.copy(UserAgent.default_others)
     default_others.append("_response_upgrade")
 
@@ -239,7 +204,7 @@ class Browser(UserAgent):
         if not hasattr(response, "seek"):
             response = response_seek_wrapper(response)
         if not hasattr(response, "closeable_response"):
-            response = upgrade_response(response)
+            response = _upgrade.upgrade_response(response)
         else:
             response = copy.copy(response)
 

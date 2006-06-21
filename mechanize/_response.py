@@ -342,3 +342,31 @@ def make_response(data, headers, url, code, msg):
     mime_headers = mimetools.Message(StringIO("\n".join(hdr_text)))
     r = closeable_response(StringIO(data), mime_headers, url, code, msg)
     return response_seek_wrapper(r)
+
+# Horrible, but needed, at least until fork urllib2.  Even then, may want
+# to preseve urllib2 compatibility.
+def upgrade_response(response):
+    # a urllib2 handler constructed the response, i.e. the response is an
+    # urllib.addinfourl, instead of a _Util.closeable_response as returned
+    # by e.g. mechanize.HTTPHandler
+    try:
+        code = response.code
+    except AttributeError:
+        code = None
+    try:
+        msg = response.msg
+    except AttributeError:
+        msg = None
+
+    # may have already-.read() data from .seek() cache
+    data = None
+    get_data = getattr(response, "get_data", None)
+    if get_data:
+        data = get_data()
+
+    response = closeable_response(
+        response.fp, response.info(), response.geturl(), code, msg)
+    response = response_seek_wrapper(response)
+    if data:
+        response.set_data(data)
+    return response

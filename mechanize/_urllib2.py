@@ -38,7 +38,6 @@ from urllib2 import \
 from _urllib2_support import \
      HTTPHandler, \
      HTTPRedirectHandler, \
-     HTTPRequestUpgradeProcessor, \
      HTTPEquivProcessor, \
      SeekableProcessor, \
      HTTPCookieProcessor, \
@@ -48,6 +47,12 @@ from _urllib2_support import \
      HTTPResponseDebugProcessor, \
      HTTPRedirectDebugProcessor, \
      HTTPRobotRulesProcessor
+from _upgrade import \
+     HTTPRequestUpgradeProcessor, \
+     ResponseUpgradeProcessor
+# crap ATM
+## from _gzip import \
+##      HTTPGzipProcessor
 import httplib
 if hasattr(httplib, 'HTTPS'):
     from _urllib2_support import HTTPSHandler

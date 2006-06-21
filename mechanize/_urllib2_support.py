@@ -127,24 +127,6 @@ class HTTPRedirectHandler(BaseHandler):
               "The last 30x error message was:\n"
 
 
-class HTTPRequestUpgradeProcessor(BaseHandler):
-    # upgrade urllib2.Request to this module's Request
-    # yuck!
-    handler_order = 0  # before anything else
-
-    def http_request(self, request):
-        if not hasattr(request, "add_unredirected_header"):
-            newrequest = Request(request._Request__original, request.data,
-                                 request.headers)
-            try: newrequest.origin_req_host = request.origin_req_host
-            except AttributeError: pass
-            try: newrequest.unverifiable = request.unverifiable
-            except AttributeError: pass
-            request = newrequest
-        return request
-
-    https_request = http_request
-
 # XXX would self.reset() work, instead of raising this exception?
 class EndOfHeadError(Exception): pass
 class AbstractHeadParser:

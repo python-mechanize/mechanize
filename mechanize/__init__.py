@@ -24,8 +24,6 @@ try:
     from _urllib2_support import XHTMLCompatibleHeadParser
 except ImportError:
     pass
-#from _gzip import HTTPGzipProcessor  # crap ATM
-
 
 # cookies
 from _clientcookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
