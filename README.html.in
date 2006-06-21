@@ -295,7 +295,10 @@ CookieJar Perl code from which mechanize's support for that is derived.
        multiple formats (one page / multipage HTML, maybe PDF, man, info) and
        integrate docstring and non-docstring docs.
     </ul>
-  <li>Note BeautifulSoup 3.0 doesn't work yet (esp. in setup.py deps!).
+  <li>Note BeautifulSoup 3.0 doesn't work yet.
+  <li>Add an "extra" to setup.py for BeautifulSoup (i.e. a declared
+    feature depending on BeautifulSoup)?
+  <li>Document use of BeautifulSoup (RobustFactory).
   <li>Document means of processing response on ad-hoc basis with
     .set_response() - e.g. to fix bad encoding in Content-type header or
     clean up bad HTML.
