@@ -11,16 +11,11 @@ COPYING.txt included with the distribution).
 
 """
 
-import copy, time, tempfile, htmlentitydefs, re, logging, types, \
-       socket, urlparse, urllib2, urllib, httplib, sgmllib
+import copy, time, tempfile, htmlentitydefs, re, logging, socket, urlparse, \
+       urllib2, urllib, httplib, sgmllib
 from urllib2 import URLError, HTTPError, BaseHandler
 from cStringIO import StringIO
-try:
-    import threading as _threading
-except ImportError:
-    import dummy_threading as _threading
 
-import _opener
 from _request import Request
 from _util import isstringlike
 from _response import closeable_response, response_seek_wrapper
@@ -648,91 +643,3 @@ if hasattr(httplib, 'HTTPS'):
             return self.do_open(conn_factory, req)
 
         https_request = AbstractHTTPHandler.do_request_
-
-class OpenerFactory:
-    """This class's interface is quite likely to change."""
-
-    default_classes = [
-        # handlers
-        urllib2.ProxyHandler,
-        urllib2.UnknownHandler,
-        HTTPHandler,  # from this module (derived from new AbstractHTTPHandler)
-        urllib2.HTTPDefaultErrorHandler,
-        HTTPRedirectHandler,  # from this module (bugfixed)
-        urllib2.FTPHandler,
-        urllib2.FileHandler,
-        # processors
-        HTTPRequestUpgradeProcessor,
-        HTTPCookieProcessor,
-        HTTPErrorProcessor
-        ]
-    handlers = []
-    replacement_handlers = []
-
-    def __init__(self, klass=_opener.OpenerDirector):
-        self.klass = klass
-
-    def build_opener(self, *handlers):
-        """Create an opener object from a list of handlers and processors.
-
-        The opener will use several default handlers and processors, including
-        support for HTTP and FTP.
-
-        If any of the handlers passed as arguments are subclasses of the
-        default handlers, the default handlers will not be used.
-
-        """
-        opener = self.klass()
-        default_classes = list(self.default_classes)
-        if hasattr(httplib, 'HTTPS'):
-            default_classes.append(HTTPSHandler)
-        skip = []
-        for klass in default_classes:
-            for check in handlers:
-                if type(check) == types.ClassType:
-                    if issubclass(check, klass):
-                        skip.append(klass)
-                elif type(check) == types.InstanceType:
-                    if isinstance(check, klass):
-                        skip.append(klass)
-        for klass in skip:
-            default_classes.remove(klass)
-
-        for klass in default_classes:
-            opener.add_handler(klass())
-        for h in handlers:
-            if type(h) == types.ClassType:
-                h = h()
-            opener.add_handler(h)
-
-        return opener
-
-build_opener = OpenerFactory().build_opener
-
-_opener = None
-urlopen_lock = _threading.Lock()
-def urlopen(url, data=None):
-    global _opener
-    if _opener is None:
-        urlopen_lock.acquire()
-        try:
-            if _opener is None:
-                _opener = build_opener()
-        finally:
-            urlopen_lock.release()
-    return _opener.open(url, data)
-
-def urlretrieve(url, filename=None, reporthook=None, data=None):
-    global _opener
-    if _opener is None:
-        urlopen_lock.acquire()
-        try:
-            if _opener is None:
-                _opener = build_opener()
-        finally:
-            urlopen_lock.release()
-    return _opener.retrieve(url, filename, reporthook, data)
-
-def install_opener(opener):
-    global _opener
-    _opener = opener

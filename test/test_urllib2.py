@@ -14,12 +14,12 @@ import unittest, StringIO, os, sys, UserDict
 import mechanize
 
 from mechanize._urllib2_support import Request, AbstractHTTPHandler, \
-     build_opener, parse_head, urlopen
+     parse_head
 from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
      HTTPEquivProcessor, HTTPRefreshProcessor, SeekableProcessor, \
      HTTPCookieProcessor, HTTPRefererProcessor, \
      HTTPErrorProcessor, HTTPHandler
-from mechanize import OpenerDirector
+from mechanize import OpenerDirector, build_opener, urlopen
 
 ## from logging import getLogger, DEBUG
 ## l = getLogger("mechanize")

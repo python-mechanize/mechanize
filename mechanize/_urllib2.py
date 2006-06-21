@@ -5,7 +5,9 @@ from urllib2 import \
      HTTPError, \
      GopherError
 # ...and from mechanize
-from _opener import OpenerDirector
+from _opener import OpenerDirector, \
+     build_opener, install_opener, urlopen, \
+     OpenerFactory, urlretrieve
 from _auth import \
      HTTPPasswordMgr, \
      HTTPPasswordMgrWithDefaultRealm, \
@@ -20,8 +22,6 @@ from _auth import \
      HTTPSClientCertMgr
 from _urllib2_support import \
      Request, \
-     build_opener, install_opener, urlopen, \
-     OpenerFactory, urlretrieve, \
      RobotExclusionError
 
 # handlers...
