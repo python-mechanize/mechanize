@@ -316,6 +316,8 @@ CookieJar Perl code from which mechanize's support for that is derived.
 <em>This is <strong>very</strong> roughly in order of priority</em>
 
 <ul>
+  <li>Topological sort for handlers, instead of .handler_order attribute.
+    Add new build_opener and deprecate the old one?
   <li>Use RFC 3986 URL absolutization.
   <li>Test <code>.any_response()</code> two handlers case: ordering.
   <li>Test referer bugs (frags and don't add in redirect unless orig
