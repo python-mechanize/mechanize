@@ -1,0 +1,4 @@
+>>> from mechanize import Request
+>>> r = Request("http://example.com/foo#frag")
+>>> r.get_selector()
+'/foo'

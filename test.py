@@ -132,6 +132,7 @@ if __name__ == "__main__":
             )
     
     doctest.testfile(os.path.join("test", "test_rfc3986.doctest"))
+    doctest.testfile(os.path.join("test", "test_request.doctest"))
     from mechanize import _headersutil, _auth, _clientcookie, _pullparser
     doctest.testmod(_headersutil)
     doctest.testmod(_auth)

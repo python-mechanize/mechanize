@@ -317,8 +317,6 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>Test <code>.any_response()</code> two handlers case: ordering.
   <li>Test referer bugs (frags and don't add in redirect unless orig
     req had Referer)
-  <li>Strip fragments before retrieving URLs (this should probably be
-    considered a bug in urllib2).
   <li>Proper XHTML support!
   <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
     per page.
