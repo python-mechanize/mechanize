@@ -14,14 +14,15 @@ from _html import \
      RobustFormsFactory, RobustLinksFactory, RobustTitleFactory
 
 # urllib2 work-alike interface (part from mechanize, part from urllib2)
+# This is a superset of the urllib2 interface.
 from _urllib2 import *
 
 # misc
 from _util import http2time as str2time
 from _response import response_seek_wrapper, make_response
-from _urllib2_support import HeadParser
+from _http import HeadParser
 try:
-    from _urllib2_support import XHTMLCompatibleHeadParser
+    from _http import XHTMLCompatibleHeadParser
 except ImportError:
     pass
 

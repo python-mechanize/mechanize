@@ -1,7 +1,8 @@
-"""Integration with Python standard library module urllib2.
+"""HTTP related handlers.
 
-Also includes a redirection bugfix, support for parsing HTML HEAD blocks for
-the META HTTP-EQUIV tag contents, and following Refresh header redirects.
+Note that some other HTTP handlers live in more specific modules: _auth.py,
+_gzip.py, etc.
+
 
 Copyright 2002-2006 John J Lee <jjl@pobox.com>
 

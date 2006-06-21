@@ -20,8 +20,9 @@ from _auth import \
      HTTPBasicAuthHandler, \
      HTTPDigestAuthHandler, \
      HTTPSClientCertMgr
-from _urllib2_support import \
-     Request, \
+from _request import \
+     Request
+from _http import \
      RobotExclusionError
 
 # handlers...
@@ -35,7 +36,7 @@ from urllib2 import \
      FileHandler, \
      GopherHandler
 # ...and from mechanize
-from _urllib2_support import \
+from _http import \
      HTTPHandler, \
      HTTPRedirectHandler, \
      HTTPEquivProcessor, \
@@ -57,5 +58,5 @@ from _seek import \
 ##      HTTPGzipProcessor
 import httplib
 if hasattr(httplib, 'HTTPS'):
-    from _urllib2_support import HTTPSHandler
+    from _http import HTTPSHandler
 del httplib

@@ -20,7 +20,7 @@ except NameError:
     import sets
     set = sets.Set
 
-import _urllib2_support
+import _http
 import _upgrade
 from _util import isstringlike
 from _request import Request
@@ -252,18 +252,18 @@ class OpenerFactory:
         # handlers
         urllib2.ProxyHandler,
         urllib2.UnknownHandler,
-        _urllib2_support.HTTPHandler,  # derived from new AbstractHTTPHandler
+        _http.HTTPHandler,  # derived from new AbstractHTTPHandler
         urllib2.HTTPDefaultErrorHandler,
-        _urllib2_support.HTTPRedirectHandler,  # bugfixed
+        _http.HTTPRedirectHandler,  # bugfixed
         urllib2.FTPHandler,
         urllib2.FileHandler,
         # processors
         _upgrade.HTTPRequestUpgradeProcessor,
-        _urllib2_support.HTTPCookieProcessor,
-        _urllib2_support.HTTPErrorProcessor,
+        _http.HTTPCookieProcessor,
+        _http.HTTPErrorProcessor,
         ]
     if hasattr(httplib, 'HTTPS'):
-        default_classes.append(_urllib2_support.HTTPSHandler)
+        default_classes.append(_http.HTTPSHandler)
     handlers = []
     replacement_handlers = []
 

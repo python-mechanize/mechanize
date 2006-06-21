@@ -147,7 +147,6 @@ class ResponseTests(TestCase):
 class FunctionalTests(TestCase):
     def test_cookies(self):
         import urllib2
-        from mechanize import _urllib2_support
         # this test page depends on cookies, and an http-equiv refresh
         #cj = CreateBSDDBCookieJar("/home/john/db.db")
         cj = CookieJar()
@@ -183,8 +182,7 @@ class FunctionalTests(TestCase):
             self.assert_(samedata == data)
         finally:
             o.close()
-            # uninstall opener (don't try this at home)
-            _urllib2_support._opener = None
+            install_opener(None)
 
     def test_urlretrieve(self):
         url = "http://www.python.org/"
