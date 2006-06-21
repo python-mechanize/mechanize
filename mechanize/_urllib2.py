@@ -44,12 +44,13 @@ from _urllib2_support import \
      HTTPRefererProcessor, \
      HTTPRefreshProcessor, \
      HTTPErrorProcessor, \
-     HTTPResponseDebugProcessor, \
-     HTTPRedirectDebugProcessor, \
      HTTPRobotRulesProcessor
 from _upgrade import \
      HTTPRequestUpgradeProcessor, \
      ResponseUpgradeProcessor
+from _debug import \
+     HTTPResponseDebugProcessor, \
+     HTTPRedirectDebugProcessor
 # crap ATM
 ## from _gzip import \
 ##      HTTPGzipProcessor
