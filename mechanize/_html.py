@@ -34,18 +34,28 @@ URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
 
 DEFAULT_ENCODING = "latin-1"
 
+
 class CachingGeneratorFunction(object):
     """Caching wrapper around a no-arguments iterable."""
+
     def __init__(self, iterable):
-        self._iterable = iterable
         self._cache = []
+
+        # wrap iterable to make it non-restartable (otherwise, __call__ would
+        # give incorrect results)
+        def make_gen():
+            for item in iterable:
+                yield item
+        self._generator = make_gen()
+
     def __call__(self):
         cache = self._cache
         for item in cache:
             yield item
-        for item in self._iterable:
+        for item in self._generator:
             cache.append(item)
             yield item
+
 
 class EncodingFinder:
     def __init__(self, default_encoding):
@@ -68,6 +78,7 @@ class ResponseTypeFinder:
         url = response.geturl()
         # XXX encoding
         return _is_html(ct_hdrs, url, self._allow_xhtml)
+
 
 # idea for this argument-processing trick is from Peter Otten
 class Args:
