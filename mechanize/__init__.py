@@ -2,7 +2,7 @@ from _mechanize import __version__
 
 # high-level stateful browser-style interface
 from _mechanize import \
-     Browser, \
+     Browser, History, \
      BrowserStateError, LinkNotFoundError, FormNotFoundError
 
 # configurable URL-opener interface
