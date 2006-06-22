@@ -41,8 +41,8 @@ class CachingGeneratorFunction(object):
     def __init__(self, iterable):
         self._cache = []
 
-        # wrap iterable to make it non-restartable (otherwise, __call__ would
-        # give incorrect results)
+        # wrap iterable to make it non-restartable (otherwise, repeated
+        # __call__ would give incorrect results)
         def make_gen():
             for item in iterable:
                 yield item
