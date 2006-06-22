@@ -1,0 +1,44 @@
+>>> from mechanize._html import CachingGeneratorFunction
+
+>>> i = [1]
+>>> func = CachingGeneratorFunction(i)
+>>> list(func())
+[1]
+>>> list(func())
+[1]
+
+>>> i = [1, 2, 3]
+>>> func = CachingGeneratorFunction(i)
+>>> list(func())
+[1, 2, 3]
+
+>>> i = func()
+>>> i.next()
+1
+>>> i.next()
+2
+>>> i.next()
+3
+
+>>> i = func()
+>>> j = func()
+>>> i.next()
+1
+>>> j.next()
+1
+>>> i.next()
+2
+>>> j.next()
+2
+>>> j.next()
+3
+>>> i.next()
+3
+>>> i.next()
+Traceback (most recent call last):
+...
+StopIteration
+>>> j.next()
+Traceback (most recent call last):
+...
+StopIteration
