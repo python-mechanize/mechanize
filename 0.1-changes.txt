@@ -31,7 +31,7 @@ Recent public API changes:
 - .forms() and .links() now both return iterators (in fact, generators),
   not sequences (not really an interface change: these were always
   documented to return iterables, but it will no doubt break some client
-  code).
+  code).  Use e.g. list(browser.forms()) if you want a list.
 
 - .links no longer raises LinkNotFoundError (was accidental -- only
   .click_link() / .find_link() should raise this).
