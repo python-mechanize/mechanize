@@ -778,14 +778,20 @@ class HandlerTests(unittest.TestCase):
         # XXX test processor constructor optional args
         h = HTTPRefreshProcessor(max_time=None, honor_time=False)
 
-        for val in ['0; url="http://example.com/foo/"', "2"]:
+        for val, valid in [
+            ('0; url="http://example.com/foo/"', True),
+            ("2", True),
+            # in the past, this failed with UnboundLocalError
+            ('0; "http://example.com/foo/"', False),
+            ]:
             o = h.parent = MockOpener()
             req = Request("http://example.com/")
             headers = MockHeaders({"refresh": val})
             r = MockResponse(200, "OK", headers, "")
             newr = h.http_response(req, r)
-            self.assertEqual(o.proto, "http")
-            self.assertEqual(o.args, (req, r, "refresh", "OK", headers))
+            if valid:
+                self.assertEqual(o.proto, "http")
+                self.assertEqual(o.args, (req, r, "refresh", "OK", headers))
 
     def test_redirect(self):
         from_url = "http://example.com/a.html"

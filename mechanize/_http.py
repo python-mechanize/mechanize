@@ -433,9 +433,10 @@ class HTTPRefreshProcessor(BaseHandler):
             if ii != -1:
                 pause, newurl_spec = float(refresh[:ii]), refresh[ii+1:]
                 jj = newurl_spec.find("=")
+                key = None
                 if jj != -1:
                     key, newurl = newurl_spec[:jj], newurl_spec[jj+1:]
-                if key.strip().lower() != "url":
+                if key is None or key.strip().lower() != "url":
                     debug("bad Refresh header: %r" % refresh)
                     return response
             else:
