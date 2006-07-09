@@ -171,7 +171,7 @@ print response.read()
 """)}
 
 
-so anything you would normally import from <code>urllib2</code> can
+<p>so anything you would normally import from <code>urllib2</code> can
 (and should, by preference, to insulate you from future changes) be
 imported from mechanize instead.  In many cases if you import an
 object from mechanize it will be the very same object you would get if
@@ -333,7 +333,8 @@ CookieJar Perl code from which mechanize's support for that is derived.
   <li>Make <code>EncodingFinder</code> public, I guess (but probably
     improve it first).  (For example: support Mark Pilgrim's universal
     encoding detector?)
-  <li>Add two-way links between BeautifulSoup & ClientForm object models.
+  <li>Add two-way links between BeautifulSoup &amp; ClientForm object
+    models.
   <li>In 0.2: switch to Python unicode strings everywhere appropriate
     (HTTP level should still use byte strings, of course).
   <li><code>clean_url()</code>: test browser behaviour.  I <em>think</em>
