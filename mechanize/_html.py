@@ -40,19 +40,15 @@ class CachingGeneratorFunction(object):
 
     def __init__(self, iterable):
         self._cache = []
-
         # wrap iterable to make it non-restartable (otherwise, repeated
         # __call__ would give incorrect results)
-        def make_gen():
-            for item in iterable:
-                yield item
-        self._generator = make_gen()
+        self._iterator = iter(iterable)
 
     def __call__(self):
         cache = self._cache
         for item in cache:
             yield item
-        for item in self._generator:
+        for item in self._iterator:
             cache.append(item)
             yield item
 
