@@ -413,7 +413,7 @@ class RobustTitleFactory:
         self._bs = soup
         self._encoding = encoding
 
-    def title(soup):
+    def title(self):
         import BeautifulSoup
         title = self._bs.first("title")
         if title == BeautifulSoup.Null:
