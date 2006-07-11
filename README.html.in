@@ -296,8 +296,6 @@ CookieJar Perl code from which mechanize's support for that is derived.
        integrate docstring and non-docstring docs.
     </ul>
   <li>Note BeautifulSoup 3.0 doesn't work yet.
-  <li>Add an "extra" to setup.py for BeautifulSoup (i.e. a declared
-    feature depending on BeautifulSoup)?
   <li>Document use of BeautifulSoup (RobustFactory).
   <li>Document means of processing response on ad-hoc basis with
     .set_response() - e.g. to fix bad encoding in Content-type header or
@@ -571,7 +569,14 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
   <li>Which version of Python do I need?
   <p>2.3 or above.
   <li>What else do I need?
-  <p>mechanize depends on <a href="../ClientForm/">ClientForm</a>.
+  <p>mechanize depends on <a href="../ClientForm/">ClientForm</a>.  The
+     setup.py script also declares a dependency on <a
+     href="http://www.crummy.com/software/BeautifulSoup/">BeautifulSoup</a>,
+     but there is no true dependency: the declaration is there only to avoid
+     confusing people who don't realise that mechanize is not compatible with
+     BeautifulSoup version 3 -- only BeautifulSoup version 2 is currently
+     supported.  A future version of mechanize will support BeautifulSoup
+     version 3.
   <p>The versions of those required modules are listed in the
      <code>setup.py</code> for mechanize (included with the download).  The
      dependencies are automatically fetched by <a
