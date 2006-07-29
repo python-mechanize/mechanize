@@ -14,7 +14,7 @@ MODULE_NAMES = ["test_date", "test_mechanize", "test_misc", "test_cookies",
                 "test_headers", "test_urllib2", "test_pullparser",
                 ]
 
-import sys, os, traceback, logging
+import sys, os, traceback, logging, glob
 from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase
 
 level = logging.DEBUG
@@ -108,6 +108,8 @@ if __name__ == "__main__":
 ##     __builtin__.jjl = jjl
 
     # XXX temporary stop-gap to run doctests
+
+    # import local copy of Python 2.5 doctest
     assert os.path.isdir("test")
     sys.path.insert(0, "test")
     # needed for recent doctest / linecache -- this is only for testing
@@ -118,29 +120,43 @@ if __name__ == "__main__":
     # that renamed module.
     sys.path.insert(0, "test-tools")
     import doctest
+
     import mechanize
+
+    # run .doctest files needing special support
     common_globs = {"mechanize": mechanize}
+    pm_doctest_filename = os.path.join("test", "test_password_manager.doctest")
     for globs in [
         {"mgr_class": mechanize.HTTPPasswordMgr},
         {"mgr_class": mechanize.HTTPProxyPasswordMgr},
         ]:
         globs.update(common_globs)
         doctest.testfile(
-            os.path.join("test", "test_password_manager.doctest"),
+            pm_doctest_filename,
             #os.path.join("test", "test_scratch.doctest"),
             globs=globs,
             )
-    
-    doctest.testfile(os.path.join("test", "test_rfc3986.doctest"))
-    doctest.testfile(os.path.join("test", "test_request.doctest"))
-    doctest.testfile(os.path.join("test", "test_history.doctest"))
-    doctest.testfile(os.path.join("test", "test_html.doctest"))
-    from mechanize import _headersutil, _auth, _clientcookie, _pullparser
+
+    # run .doctest files
+    special_doctests = [pm_doctest_filename,
+                        os.path.join("test", "test_scratch.doctest"),
+                        ]
+    doctest_files = glob.glob(os.path.join("test", "*.doctest"))
+    for dt in special_doctests:
+        doctest_files.remove(dt)
+    for df in doctest_files:
+        doctest.testfile(df)
+
+    # run doctests in docstrings
+    from mechanize import _headersutil, _auth, _clientcookie, _pullparser, \
+         _http
     doctest.testmod(_headersutil)
     doctest.testmod(_auth)
     doctest.testmod(_clientcookie)
     doctest.testmod(_pullparser)
+    doctest.testmod(_http)
 
+    # run vanilla unittest tests
     import unittest
     test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
     sys.path.insert(0, test_path)

@@ -400,6 +400,42 @@ class HTTPRefererProcessor(BaseHandler):
     https_request = http_request
     https_response = http_response
 
+
+def clean_refresh_url(url):
+    # e.g. Firefox 1.5 does (something like) this
+    if ((url.startswith('"') and url.endswith('"')) or
+        (url.startswith("'") and url.endswith("'"))):
+        return url[1:-1]
+    return url
+
+def parse_refresh_header(refresh):
+    """
+    >>> parse_refresh_header("1; url=http://example.com/")
+    (1.0, 'http://example.com/')
+    >>> parse_refresh_header("1; url='http://example.com/'")
+    (1.0, 'http://example.com/')
+    >>> parse_refresh_header("1")
+    (1.0, None)
+    >>> parse_refresh_header("blah")
+    Traceback (most recent call last):
+    ValueError: invalid literal for float(): blah
+
+    """
+
+    ii = refresh.find(";")
+    if ii != -1:
+        pause, newurl_spec = float(refresh[:ii]), refresh[ii+1:]
+        jj = newurl_spec.find("=")
+        key = None
+        if jj != -1:
+            key, newurl = newurl_spec[:jj], newurl_spec[jj+1:]
+            newurl = clean_refresh_url(newurl)
+        if key is None or key.strip().lower() != "url":
+            raise ValueError()
+    else:
+        pause, newurl = float(refresh), None
+    return pause, newurl
+
 class HTTPRefreshProcessor(BaseHandler):
     """Perform HTTP Refresh redirections.
 
@@ -429,18 +465,13 @@ class HTTPRefreshProcessor(BaseHandler):
 
         if code == 200 and hdrs.has_key("refresh"):
             refresh = hdrs.getheaders("refresh")[0]
-            ii = refresh.find(";")
-            if ii != -1:
-                pause, newurl_spec = float(refresh[:ii]), refresh[ii+1:]
-                jj = newurl_spec.find("=")
-                key = None
-                if jj != -1:
-                    key, newurl = newurl_spec[:jj], newurl_spec[jj+1:]
-                if key is None or key.strip().lower() != "url":
-                    debug("bad Refresh header: %r" % refresh)
-                    return response
-            else:
-                pause, newurl = float(refresh), response.geturl()
+            try:
+                pause, newurl = parse_refresh_header(refresh)
+            except ValueError:
+                debug("bad Refresh header: %r" % refresh)
+                return response
+            if newurl is None:
+                newurl = response.geturl()
             if (self.max_time is None) or (pause <= self.max_time):
                 if pause > 1E-3 and self.honor_time:
                     time.sleep(pause)
