@@ -9,7 +9,7 @@
 # ProxyHandler, CustomProxy, CustomProxyHandler (I don't use a proxy)
 # GopherHandler (haven't used gopher for a decade or so...)
 
-import unittest, StringIO, os, sys, UserDict
+import unittest, StringIO, os, sys, UserDict, httplib
 
 import mechanize
 
@@ -36,10 +36,18 @@ class MockFile:
     def readline(self, count=None): pass
     def close(self): pass
 
-class MockHeaders(dict):
-    def getheaders(self, name):
-        name = name.lower()
-        return [v for k, v in self.iteritems() if name == k.lower()]
+def http_message(mapping):
+    """
+    >>> http_message({"Content-Type": "text/html"}).items()
+    [('content-type', 'text/html')]
+
+    """
+    f = []
+    for kv in mapping.items():
+        f.append("%s: %s" % kv)
+    f.append("")
+    msg = httplib.HTTPMessage(StringIO.StringIO("\r\n".join(f)))
+    return msg
 
 class MockResponse(StringIO.StringIO):
     def __init__(self, code, msg, headers, data, url=None):
@@ -764,15 +772,19 @@ class HandlerTests(unittest.TestCase):
         req = Request("http://example.com/")
         r = MockResponse(
             200, "OK",
-            MockHeaders({"Foo": "Bar", "Content-type": "text/html"}),
+            http_message({"Foo": "Bar",
+                          "Content-type": "text/html",
+                          "Refresh": "blah"}),
             '<html><head>'
             '<meta http-equiv="Refresh" content="spam&amp;eggs">'
-            '</head></html>'
+            '</head></html>',
+            "http://example.com/"
             )
         newr = h.http_response(req, r)
         headers = newr.info()
-        self.assert_(headers["Refresh"] == "spam&eggs")
         self.assert_(headers["Foo"] == "Bar")
+        self.assert_(headers["Refresh"] == "spam&eggs")
+        self.assert_(headers.getheaders("Refresh") == ["blah", "spam&eggs"])
 
     def test_refresh(self):
         # XXX test processor constructor optional args
@@ -786,8 +798,8 @@ class HandlerTests(unittest.TestCase):
             ]:
             o = h.parent = MockOpener()
             req = Request("http://example.com/")
-            headers = MockHeaders({"refresh": val})
-            r = MockResponse(200, "OK", headers, "")
+            headers = http_message({"refresh": val})
+            r = MockResponse(200, "OK", headers, "", "http://example.com/")
             newr = h.http_response(req, r)
             if valid:
                 self.assertEqual(o.proto, "http")
@@ -809,7 +821,7 @@ class HandlerTests(unittest.TestCase):
                 req.origin_req_host = "example.com"  # XXX
                 try:
                     method(req, MockFile(), code, "Blah",
-                           MockHeaders({"location": to_url}))
+                           http_message({"location": to_url}))
                 except mechanize.HTTPError:
                     # 307 in response to POST requires user OK
                     self.assert_(code == 307 and data is not None)
@@ -825,7 +837,7 @@ class HandlerTests(unittest.TestCase):
         # loop detection
         def redirect(h, req, url=to_url):
             h.http_error_302(req, MockFile(), 302, "Blah",
-                             MockHeaders({"location": url}))
+                             http_message({"location": url}))
         # Note that the *original* request shares the same record of
         # redirections with the sub-requests caused by the redirections.
 
@@ -1025,7 +1037,10 @@ class HeadParserTests(unittest.TestCase):
             <meta http-equiv="moo" content="cow">
             </html>
             """,
-             [("refresh", "1; http://example.com/"), ("foo", "bar")])
+             [("refresh", "1; http://example.com/"), ("foo", "bar")]),
+            ("""<meta http-equiv="refresh">
+            """,
+             [])
             ]
         for html, result in htmls:
             self.assertEqual(parse_head(StringIO.StringIO(html), HeadParser()), result)
@@ -1114,4 +1129,6 @@ class FunctionTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
     unittest.main()

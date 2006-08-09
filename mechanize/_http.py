@@ -148,7 +148,7 @@ class AbstractHeadParser:
                 http_equiv = self.unescape_attr_if_required(value)
             elif key == "content":
                 content = self.unescape_attr_if_required(value)
-        if http_equiv is not None:
+        if http_equiv is not None and content is not None:
             self.http_equiv.append((http_equiv, content))
 
     def end_head(self):
@@ -280,9 +280,9 @@ class HTTPEquivProcessor(BaseHandler):
     def http_response(self, request, response):
         if not hasattr(response, "seek"):
             response = response_seek_wrapper(response)
-        headers = response.info()
+        http_message = response.info()
         url = response.geturl()
-        ct_hdrs = response.info().getheaders("content-type")
+        ct_hdrs = http_message.getheaders("content-type")
         if is_html(ct_hdrs, url, self._allow_xhtml):
             try:
                 try:
@@ -294,8 +294,11 @@ class HTTPEquivProcessor(BaseHandler):
                 pass
             else:
                 for hdr, val in html_headers:
-                    # rfc822.Message interprets this as appending, not clobbering
-                    headers[hdr] = val
+                    # add a header
+                    http_message.dict[hdr.lower()] = val
+                    text = hdr + ": " + val
+                    for line in text.split("\n"):
+                        http_message.headers.append(line + "\n")
         return response
 
     https_response = http_response
