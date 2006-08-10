@@ -394,6 +394,8 @@ class MockRobotFileParserClass:
         return self
     def set_url(self, url):
         self.calls.append(("set_url", url))
+    def set_opener(self, opener):
+        self.calls.append(("set_opener", opener))
     def read(self):
         self.calls.append("read")
     def can_fetch(self, ua, url):
@@ -669,8 +671,10 @@ class HandlerTests(unittest.TestCase):
             return  # skip test
         else:
             from mechanize import HTTPRobotRulesProcessor
+        opener = OpenerDirector()
         rfpc = MockRobotFileParserClass()
         h = HTTPRobotRulesProcessor(rfpc)
+        opener.add_handler(h)
 
         url = "http://example.com:80/foo/bar.html"
         req = Request(url)
@@ -679,6 +683,7 @@ class HandlerTests(unittest.TestCase):
         h.http_request(req)
         self.assert_(rfpc.calls == [
             "__call__",
+            ("set_opener", opener),
             ("set_url", "http://example.com:80/robots.txt"),
             "read",
             ("can_fetch", "", url),
@@ -718,6 +723,7 @@ class HandlerTests(unittest.TestCase):
         h.http_request(req)
         self.assert_(rfpc.calls == [
             "__call__",
+            ("set_opener", opener),
             ("set_url", "http://example.com/robots.txt"),
             "read",
             ("can_fetch", "", url),
@@ -729,10 +735,17 @@ class HandlerTests(unittest.TestCase):
         h.http_request(req)
         self.assert_(rfpc.calls == [
             "__call__",
+            ("set_opener", opener),
             ("set_url", "https://example.org/robots.txt"),
             "read",
             ("can_fetch", "", url),
             ])
+        # non-HTTP URL -> ignore robots.txt
+        rfpc.clear()
+        url = "ftp://example.com/"
+        req = Request(url)
+        h.http_request(req)
+        self.assert_(rfpc.calls == [])
 
     def test_cookies(self):
         cj = MockCookieJar()

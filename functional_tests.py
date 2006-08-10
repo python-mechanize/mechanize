@@ -18,9 +18,10 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
 
 #from mechanize import CreateBSDDBCookieJar
 
-## logger = logging.getLogger("mechanize")
-## logger.addHandler(logging.StreamHandler())
-## logger.setLevel(logging.DEBUG)
+import logging
+logger = logging.getLogger("mechanize")
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
 
 
 def sanepathname2url(path):
@@ -183,6 +184,16 @@ class FunctionalTests(TestCase):
         finally:
             o.close()
             install_opener(None)
+
+    def test_robots(self):
+        plain_opener = mechanize.build_opener(mechanize.HTTPRobotRulesProcessor)
+        browser = mechanize.Browser()
+        for opener in plain_opener, browser:
+            r = opener.open("http://wwwsearch.sourceforge.net/robots")
+            self.assertEqual(r.code, 200)
+            self.assertRaises(
+                mechanize.RobotExclusionError,
+                opener.open, "http://wwwsearch.sourceforge.net/norobots")
 
     def test_urlretrieve(self):
         url = "http://www.python.org/"

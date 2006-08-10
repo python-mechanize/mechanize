@@ -332,6 +332,46 @@ try:
 except ImportError:
     pass
 else:
+    class MechanizeRobotFileParser(robotparser.RobotFileParser):
+
+        def __init__(self, url='', opener=None):
+            import _opener
+            robotparser.RobotFileParser.__init__(self, url)
+            self._opener = opener
+
+        def set_opener(self, opener=None):
+            if opener is None:
+                opener = _opener.OpenerDirector()
+            self._opener = opener
+
+        def read(self):
+            """Reads the robots.txt URL and feeds it to the parser."""
+            if self._opener is None:
+                self.set_opener()
+            try:
+                f = self._opener.open(self.url)
+            except HTTPError, f:
+                pass
+            except (IOError, socket.error, OSError), exc:
+                robotparser._debug("ignoring error opening %r: %s" %
+                                   (self.url, exc))
+                return
+            lines = []
+            line = f.readline()
+            while line:
+                lines.append(line.strip())
+                line = f.readline()
+            status = f.code
+            if status == 401 or status == 403:
+                self.disallow_all = True
+                robotparser._debug("disallow all")
+            elif status >= 400:
+                self.allow_all = True
+                robotparser._debug("allow all")
+            elif status == 200 and lines:
+                robotparser._debug("parse lines")
+                self.parse(lines)
+
     class RobotExclusionError(urllib2.HTTPError):
         def __init__(self, request, *args):
             apply(urllib2.HTTPError.__init__, (self,)+args)
@@ -349,16 +389,29 @@ else:
         else:
             http_response_class = HTTPMessage
 
-        def __init__(self, rfp_class=robotparser.RobotFileParser):
+        def __init__(self, rfp_class=MechanizeRobotFileParser):
             self.rfp_class = rfp_class
             self.rfp = None
             self._host = None
 
         def http_request(self, request):
-            host = request.get_host()
             scheme = request.get_type()
+            if scheme not in ["http", "https"]:
+                # robots exclusion only applies to HTTP
+                return request
+
+            if request.get_selector() == "/robots.txt":
+                # /robots.txt is always OK to fetch
+                return request
+
+            host = request.get_host()
             if host != self._host:
                 self.rfp = self.rfp_class()
+                try:
+                    self.rfp.set_opener(self.parent)
+                except AttributeError:
+                    debug("%r instance does not support set_opener" %
+                          self.rfp.__class__)
                 self.rfp.set_url(scheme+"://"+host+"/robots.txt")
                 self.rfp.read()
                 self._host = host
