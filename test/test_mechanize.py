@@ -15,6 +15,17 @@ else:
     FACTORY_CLASSES.append(mechanize.RobustFactory)
 
 
+class RegressionTests(TestCase):
+
+    def test_close_base_tag(self):
+        # any document containing a </base> tag used to cause an exception
+        br = mechanize.Browser()
+        response = mechanize.make_response(
+            "</base>", [("Content-type", "text/html")], "", 200, "OK")
+        br.set_response(response)
+        list(br.links())
+
+
 class CachingGeneratorFunctionTests(TestCase):
 
     def _get_simple_cgenf(self, log):

@@ -163,10 +163,10 @@ class LinksFactory:
         p = self.link_parser_class(response, encoding=encoding)
 
         for token in p.tags(*(self.urltags.keys()+["base"])):
+            if token.type == "endtag":
+                continue
             if token.data == "base":
                 base_url = dict(token.attrs).get("href")
-                continue
-            if token.type == "endtag":
                 continue
             attrs = dict(token.attrs)
             tag = token.data
