@@ -479,7 +479,7 @@ request.origin_req_host = "www.example.com"
 """)}
 
   <li>If you're using a <code>urllib2.Request</code> from Python 2.4 or later,
-  or you're using a <code>mechanize.Request<code>, use the
+  or you're using a <code>mechanize.Request</code>, use the
   <code>unverifiable</code> and <code>origin_req_host</code> arguments to the
   constructor:
 
