@@ -718,7 +718,7 @@ headers.  This was not really RFC 2109's fault: it worked the way it did to
 keep compatibility with the Netscape protocol as implemented by Netscape.
 Microsoft Internet Explorer (MSIE) was very new when the standard was designed,
 but was starting to be very popular when the standard was finalised.  XXX P3P,
-and MSIE & Mozilla options
+and MSIE &amp; Mozilla options
 
 <p>XXX Apparently MSIE implements bits of RFC 2109 - but not very compliant
 (surprise).  Presumably other browsers do too, as a result.  mechanize
@@ -863,7 +863,7 @@ mailing list</a> rather than direct to me.
 <br>
 
 <a href="./doc.html#examples">Examples</a><br>
-<a href="./doc.html#browsers">Mozilla & MSIE</a><br>
+<a href="./doc.html#browsers">Mozilla &amp; MSIE</a><br>
 <a href="./doc.html#file">Cookies in a file</a><br>
 <a href="./doc.html#cookiejar">Using a <code>CookieJar</code></a><br>
 <a href="./doc.html#extras">Processors</a><br>
