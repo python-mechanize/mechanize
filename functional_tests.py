@@ -18,10 +18,10 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
 
 #from mechanize import CreateBSDDBCookieJar
 
-import logging
-logger = logging.getLogger("mechanize")
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
+## import logging
+## logger = logging.getLogger("mechanize")
+## logger.addHandler(logging.StreamHandler())
+## logger.setLevel(logging.DEBUG)
 
 
 def sanepathname2url(path):
