@@ -245,9 +245,6 @@ class closeable_response:
 
     .read()
     .readline()
-    .readlines()
-    .seek()
-    .tell()
     .info()
     .geturl()
     .__iter__()
@@ -282,10 +279,8 @@ class closeable_response:
             self.fileno = self.fp.fileno
         else:
             self.fileno = lambda: None
-        if hasattr(self.fp, "__iter__"):
-            self.__iter__ = self.fp.__iter__
-            if hasattr(self.fp, "next"):
-                self.next = self.fp.next
+        self.__iter__ = self.fp.__iter__
+        self.next = self.fp.next
 
     def __repr__(self):
         return '<%s at %s whose fp = %r>' % (
