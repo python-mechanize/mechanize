@@ -96,7 +96,7 @@ class UnescapeTests(TestCase):
             self.assertEqual(got, expect)
 
 
-# XXX these 'mock' classes are badly in need of simplification
+# XXX these 'mock' classes are badly in need of simplification / removal
 class MockMethod:
     def __init__(self, meth_name, action, handle):
         self.meth_name = meth_name
@@ -125,6 +125,7 @@ class MockResponse:
         assert whence == 0
         self.fp.seek(0)
     def close(self): pass
+    def get_data(self): pass
     def __getstate__(self):
         state = self.__dict__
         state['source'] = self.source
