@@ -168,6 +168,14 @@ class Browser(UserAgent):
 ##             # acceptable.
 ##             raise
         self.set_response(response)
+
+        # XXX
+        # Temporary hack to eagerly read data (otherwise, History can contain
+        # closed and partially-read responses).  Proper fix is for responses to
+        # know if they're partially read or not; .back() should then .reload()
+        # if required.
+        response.get_data()
+
         if not success:
             raise error
         return copy.copy(self._response)
