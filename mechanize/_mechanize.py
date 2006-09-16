@@ -155,6 +155,8 @@ class Browser(UserAgent):
             response = UserAgent.open(self, self.request, data)
         except urllib2.HTTPError, error:
             success = False
+            if error.fp is None:  # not a response
+                raise
             response = error
 ##         except (IOError, socket.error, OSError), error:
 ##             # Yes, urllib2 really does raise all these :-((
@@ -169,16 +171,11 @@ class Browser(UserAgent):
 ##             raise
         self.set_response(response)
 
-        # XXX
-        # Temporary hack to eagerly read data (otherwise, History can contain
-        # closed and partially-read responses).  Proper fix is for responses to
-        # know if they're partially read or not; .back() should then .reload()
-        # if required.
-        response.get_data()
+        response = copy.copy(self._response)
 
         if not success:
-            raise error
-        return copy.copy(self._response)
+            raise response
+        return response
 
     def __str__(self):
         text = []
@@ -209,15 +206,15 @@ class Browser(UserAgent):
             raise ValueError("not a response object")
 
         self.form = None
+        self._response = _upgrade.upgrade_response(response)
 
-        if not hasattr(response, "seek"):
-            response = response_seek_wrapper(response)
-        if not hasattr(response, "closeable_response"):
-            response = _upgrade.upgrade_response(response)
-        else:
-            response = copy.copy(response)
+        # XXX
+        # Temporary hack to eagerly read data (otherwise, History can contain
+        # closed and partially-read responses).  Proper fix is for responses to
+        # know if they're partially read or not; .back() should then .reload()
+        # if required.
+        self._response.get_data()
 
-        self._response = response
         self._factory.set_response(self._response)
 
     def geturl(self):

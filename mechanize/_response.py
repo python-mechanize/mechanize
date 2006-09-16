@@ -10,6 +10,7 @@ included with the distribution).
 
 import copy, mimetools
 from cStringIO import StringIO
+from urllib2 import HTTPError
 
 # XXX Andrew Dalke kindly sent me a similar class in response to my request on
 # comp.lang.python, which I then proceeded to lose.  I wrote this class
@@ -218,6 +219,27 @@ class response_seek_wrapper(seek_wrapper):
         self.seek(0)
 
 
+class httperror_seek_wrapper(response_seek_wrapper, HTTPError):
+
+    # this only derives from HTTPError in order to be a subclass --
+    # the HTTPError behaviour comes from delegation
+
+    def __init__(self, wrapped):
+        assert isinstance(wrapped, closeable_response), wrapped
+        response_seek_wrapper.__init__(self, wrapped)
+        # be compatible with undocumented HTTPError attributes :-(
+        self.hdrs = wrapped._headers
+        self.filename = wrapped._url
+
+    # we don't want the HTTPError implementation of these
+
+    def geturl(self):
+        return self.wrapped.geturl()
+
+    def close(self):
+        self.wrapped.close()
+
+
 class eoffile:
     # file-like object that always claims to be at end-of-file...
     def read(self, size=-1): return ""
@@ -338,12 +360,27 @@ def make_response(data, headers, url, code, msg):
     r = closeable_response(StringIO(data), mime_headers, url, code, msg)
     return response_seek_wrapper(r)
 
+
 # Horrible, but needed, at least until fork urllib2.  Even then, may want
 # to preseve urllib2 compatibility.
 def upgrade_response(response):
+    """Return a copy of response that supports mechanize response interface.
+
+    Accepts responses from both mechanize and urllib2 handlers.
+    """
+    if isinstance(response, HTTPError):
+        wrapper_class = httperror_seek_wrapper
+    else:
+        wrapper_class = response_seek_wrapper
+
+    if hasattr(response, "closeable_response"):
+        if not hasattr(response, "seek"):
+            response = wrapper_class(response)
+        return copy.copy(response)
+
     # a urllib2 handler constructed the response, i.e. the response is an
-    # urllib.addinfourl, instead of a _Util.closeable_response as returned
-    # by e.g. mechanize.HTTPHandler
+    # urllib.addinfourl or a urllib2.HTTPError, instead of a
+    # _Util.closeable_response as returned by e.g. mechanize.HTTPHandler
     try:
         code = response.code
     except AttributeError:
@@ -361,7 +398,7 @@ def upgrade_response(response):
 
     response = closeable_response(
         response.fp, response.info(), response.geturl(), code, msg)
-    response = response_seek_wrapper(response)
+    response = wrapper_class(response)
     if data:
         response.set_data(data)
     return response
