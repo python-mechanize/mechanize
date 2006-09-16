@@ -10,7 +10,7 @@ included with the distribution).
 
 import copy, mimetools
 from cStringIO import StringIO
-from urllib2 import HTTPError
+import urllib2
 
 # XXX Andrew Dalke kindly sent me a similar class in response to my request on
 # comp.lang.python, which I then proceeded to lose.  I wrote this class
@@ -219,27 +219,6 @@ class response_seek_wrapper(seek_wrapper):
         self.seek(0)
 
 
-class httperror_seek_wrapper(response_seek_wrapper, HTTPError):
-
-    # this only derives from HTTPError in order to be a subclass --
-    # the HTTPError behaviour comes from delegation
-
-    def __init__(self, wrapped):
-        assert isinstance(wrapped, closeable_response), wrapped
-        response_seek_wrapper.__init__(self, wrapped)
-        # be compatible with undocumented HTTPError attributes :-(
-        self.hdrs = wrapped._headers
-        self.filename = wrapped._url
-
-    # we don't want the HTTPError implementation of these
-
-    def geturl(self):
-        return self.wrapped.geturl()
-
-    def close(self):
-        self.wrapped.close()
-
-
 class eoffile:
     # file-like object that always claims to be at end-of-file...
     def read(self, size=-1): return ""
@@ -368,7 +347,25 @@ def upgrade_response(response):
 
     Accepts responses from both mechanize and urllib2 handlers.
     """
-    if isinstance(response, HTTPError):
+    if isinstance(response, urllib2.HTTPError):
+        class httperror_seek_wrapper(response_seek_wrapper, response.__class__):
+            # this only derives from HTTPError in order to be a subclass --
+            # the HTTPError behaviour comes from delegation
+
+            def __init__(self, wrapped):
+                assert isinstance(wrapped, closeable_response), wrapped
+                response_seek_wrapper.__init__(self, wrapped)
+                # be compatible with undocumented HTTPError attributes :-(
+                self.hdrs = wrapped._headers
+                self.filename = wrapped._url
+
+            # we don't want the HTTPError implementation of these
+
+            def geturl(self):
+                return self.wrapped.geturl()
+
+            def close(self):
+                self.wrapped.close()
         wrapper_class = httperror_seek_wrapper
     else:
         wrapper_class = response_seek_wrapper
