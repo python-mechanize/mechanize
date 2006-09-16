@@ -546,7 +546,7 @@ class DefaultFactory(Factory):
             self._forms_factory.set_response(
                 copy.copy(response), self.encoding)
             self._links_factory.set_response(
-                copy.copy(response), self._response.geturl(), self.encoding)
+                copy.copy(response), response.geturl(), self.encoding)
             self._title_factory.set_response(
                 copy.copy(response), self.encoding)
 
