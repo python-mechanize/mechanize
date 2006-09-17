@@ -274,42 +274,12 @@ CookieJar Perl code from which mechanize's support for that is derived.
 
 
 <a name="todo"></a>
-<h2>Todo</h2>
+<h2>To do</h2>
 
 <p>Contributions welcome!
 
-<h3>Documentation</h3>
-<ul>
-  <li>Docs need reworking since merge with ClientCookie.  Comments are
-   especially welcome here!
-    <ul>
-      <li>Move install / FAQ / download to separate pages!
-      <li>Website menu is lame.  Pick something better.  Headings are badly
-       sized, too.
-      <li>Publish the docstrings on the website as HTML API docs.
-      <li>Integrate / rework non-docstring ClientCookie / mechanize docs.
-      <li>Non-docstring mechanize docs need extending.
-      <li>Consider structure of non-docstring docs: e.g. split into tutorial /
-       ref sections?
-      <li>Maybe change the format docs are written in, so can generate in
-       multiple formats (one page / multipage HTML, maybe PDF, man, info) and
-       integrate docstring and non-docstring docs.
-    </ul>
-  <li>Note BeautifulSoup 3.0 doesn't work yet.
-  <li>Document use of BeautifulSoup (RobustFactory).
-  <li>Document means of processing response on ad-hoc basis with
-    .set_response() - e.g. to fix bad encoding in Content-type header or
-    clean up bad HTML.
-  <li>Add example to documentation showing can pass None as handle arg
-    to <code>mechanize.UserAgent</code> methods and then .add_handler()
-    if need to give it a specific handler instance to use for one of the
-    things it UserAgent already handles.  Hmm, think this contradicts docs
-    ATM!  And is it better to do this a different way...??
-  <li>Add more functional tests.
-  <li>Auth and proxies.
-</ul>
-
-<h3>Code</h3>
+<p>The documentation to-do list has moved to the new "docs-in-progress"
+directory in SVN.
 
 <em>This is <strong>very</strong> roughly in order of priority</em>
 
@@ -595,6 +565,10 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
 <a name="usagefaq"></a>
 <h2>FAQs - usage</h2>
 <ul>
+  <li>I'm getting odd exceptions from BeautifulSoup.
+  <p>You must install BeautifulSoup version 3, not version 2.  Note
+     that the BeautifulSoup support in mechanize is optional.  mechanize
+     will switch to BeautifulSoup version 3 at some point in the future.
   <li>I'm <strong><em>sure</em></strong> this page is HTML, why does
      <code>mechanize.Browser</code> think otherwise?
 @{colorize("""
