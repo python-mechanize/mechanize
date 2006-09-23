@@ -21,8 +21,8 @@ def killfile(filename):
     except OSError:
         if os.name=='nt':
             try:
-                os.chmod(arg, stat.S_IWRITE)
-                os.remove(arg)
+                os.chmod(filename, stat.S_IWRITE)
+                os.remove(filename)
             except OSError:
                 pass
 
