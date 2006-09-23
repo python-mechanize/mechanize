@@ -322,6 +322,10 @@ class closeable_response:
         state["wrapped"] = new_wrapped
         return state
 
+def test_response(data, headers,
+                  url="http://example.com/", code=200, msg="OK"):
+    return make_response(data, headers, url, code, msg)
+
 def make_response(data, headers, url, code, msg):
     """Convenient factory for objects implementing response interface.
 
@@ -332,12 +336,18 @@ def make_response(data, headers, url, code, msg):
     msg: string response code message (e.g. "OK")
 
     """
+    mime_headers = make_headers(headers)
+    r = closeable_response(StringIO(data), mime_headers, url, code, msg)
+    return response_seek_wrapper(r)
+
+def make_headers(headers):
+    """
+    headers: sequence of (name, value) pairs
+    """
     hdr_text = []
     for name_value in headers:
         hdr_text.append("%s: %s" % name_value)
-    mime_headers = mimetools.Message(StringIO("\n".join(hdr_text)))
-    r = closeable_response(StringIO(data), mime_headers, url, code, msg)
-    return response_seek_wrapper(r)
+    return mimetools.Message(StringIO("\n".join(hdr_text)))
 
 
 # Horrible, but needed, at least until fork urllib2.  Even then, may want

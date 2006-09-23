@@ -9,7 +9,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import urllib2, bisect, urlparse, httplib, types
+import os, urllib2, bisect, urllib, urlparse, httplib, types, tempfile
 try:
     import threading as _threading
 except ImportError:
@@ -26,6 +26,12 @@ from _util import isstringlike
 from _request import Request
 
 
+class ContentTooShortError(urllib2.URLError):
+    def __init__(self, reason, result):
+        urllib2.URLError.__init__(self, reason)
+        self.result = result
+
+
 class OpenerDirector(urllib2.OpenerDirector):
     def __init__(self):
         urllib2.OpenerDirector.__init__(self)
@@ -36,6 +42,7 @@ class OpenerDirector(urllib2.OpenerDirector):
         self._any_request = {}
         self._any_response = {}
         self._handler_index_valid = True
+        self._tempfiles = []
 
     def add_handler(self, handler):
         if handler in self.handlers:
@@ -198,51 +205,84 @@ class OpenerDirector(urllib2.OpenerDirector):
             args = (dict, 'default', 'http_error_default') + orig_args
             return apply(self._call_chain, args)
 
+    BLOCK_SIZE = 1024*8
     def retrieve(self, fullurl, filename=None, reporthook=None, data=None):
         """Returns (filename, headers).
 
         For remote objects, the default filename will refer to a temporary
-        file.
+        file.  Temporary files are removed when the OpenerDirector.close()
+        method is called.
+
+        For file: URLs, at present the returned filename is None.  This may
+        change in future.
+
+        If the actual number of bytes read is less than indicated by the
+        Content-Length header, raises ContentTooShortError (a URLError
+        subclass).  The exception's .result attribute contains the (filename,
+        headers) that would have been returned.
 
         """
         req = self._request(fullurl, data)
-        type_ = req.get_type()
+        scheme = req.get_type()
         fp = self.open(req)
         headers = fp.info()
-        if filename is None and type == 'file':
-            return url2pathname(req.get_selector()), headers
+        if filename is None and scheme == 'file':
+            # XXX req.get_selector() seems broken here, return None,
+            #   pending sanity :-/
+            return None, headers
+            #return urllib.url2pathname(req.get_selector()), headers
         if filename:
             tfp = open(filename, 'wb')
         else:
-            path = urlparse(fullurl)[2]
+            path = urlparse.urlparse(fullurl)[2]
             suffix = os.path.splitext(path)[1]
-            tfp = tempfile.TemporaryFile("wb", suffix=suffix)
+            fd, filename = tempfile.mkstemp(suffix)
+            self._tempfiles.append(filename)
+            tfp = os.fdopen(fd, 'wb')
+
         result = filename, headers
-        bs = 1024*8
+        bs = self.BLOCK_SIZE
         size = -1
         read = 0
-        blocknum = 1
+        blocknum = 0
         if reporthook:
-            if headers.has_key("content-length"):
+            if "content-length" in headers:
                 size = int(headers["Content-Length"])
-            reporthook(0, bs, size)
+            reporthook(blocknum, bs, size)
         while 1:
             block = fp.read(bs)
+            if block == "":
+                break
             read += len(block)
+            tfp.write(block)
+            blocknum += 1
             if reporthook:
                 reporthook(blocknum, bs, size)
-            blocknum = blocknum + 1
-            if not block:
-                break
-            tfp.write(block)
         fp.close()
         tfp.close()
         del fp
         del tfp
-        if size>=0 and read<size:
-            raise IOError("incomplete retrieval error",
-                          "got only %d bytes out of %d" % (read,size))
+
+        # raise exception if actual size does not match content-length header
+        if size >= 0 and read < size:
+            raise ContentTooShortError(
+                "retrieval incomplete: "
+                "got only %i out of %i bytes" % (read, size),
+                result
+                )
+
         return result
+
+    def close(self):
+        urllib2.OpenerDirector.close(self)
+
+        if self._tempfiles:
+            for filename in self._tempfiles:
+                try:
+                    os.unlink(filename)
+                except OSError:
+                    pass
+            del self._tempfiles[:]
 
 
 class OpenerFactory:

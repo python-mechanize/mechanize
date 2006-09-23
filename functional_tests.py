@@ -197,17 +197,34 @@ class FunctionalTests(TestCase):
 
     def test_urlretrieve(self):
         url = "http://www.python.org/"
-        verif = CallbackVerifier(self)
-        fn, hdrs = urlretrieve(url, "python.html", verif.callback)
-        try:
-            f = open(fn)
+        test_filename = "python.html"
+        def check_retrieve(opener, filename, headers):
+            self.assertEqual(headers.get('Content-Type'), 'text/html')
+            f = open(filename)
             data = f.read()
             f.close()
+            opener.close()
+            from urllib import urlopen
+            r = urlopen(url)
+            self.assertEqual(data, r.read())
+            r.close()
+
+        opener = mechanize.build_opener()
+        verif = CallbackVerifier(self)
+        filename, headers = opener.retrieve(url, test_filename, verif.callback)
+        try:
+            self.assertEqual(filename, test_filename)
+            check_retrieve(opener, filename, headers)
+            self.assert_(os.path.isfile(filename))
         finally:
-            os.remove(fn)
-        r = urlopen(url)
-        self.assert_(data == r.read())
-        r.close()
+            os.remove(filename)
+
+        opener = mechanize.build_opener()
+        verif = CallbackVerifier(self)
+        filename, headers = opener.retrieve(url, reporthook=verif.callback)
+        check_retrieve(opener, filename, headers)
+        # closing the opener removed the temporary file
+        self.failIf(os.path.isfile(filename))
 
 ##     def test_cacheftp(self):
 ##         from urllib2 import CacheFTPHandler, build_opener
@@ -226,8 +243,7 @@ class CallbackVerifier:
         self._count = 0
         self._testcase = testcase
     def callback(self, block_nr, block_size, total_size):
-        if block_nr != self._count:
-            self._testcase.fail()
+        self._testcase.assertEqual(block_nr, self._count)
         self._count = self._count + 1
 
 

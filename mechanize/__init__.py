@@ -5,6 +5,7 @@ __all__ = [
     'Browser',
     'BrowserStateError',
     'CacheFTPHandler',
+    'ContentTooShortError',
     'Cookie',
     'CookieJar',
     'CookiePolicy',
@@ -97,6 +98,7 @@ from _html import \
 from _urllib2 import *
 
 # misc
+from _opener import ContentTooShortError, OpenerFactory, urlretrieve
 from _util import http2time as str2time
 from _response import response_seek_wrapper, make_response
 from _http import HeadParser
