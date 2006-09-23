@@ -276,6 +276,9 @@ class OpenerDirector(urllib2.OpenerDirector):
     def close(self):
         urllib2.OpenerDirector.close(self)
 
+        # make it very obvious this object is no longer supposed to be used
+        self.open = self.error = self.retrieve = self.add_handler = None
+
         if self._tempfiles:
             for filename in self._tempfiles:
                 try:
