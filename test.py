@@ -142,8 +142,10 @@ if __name__ == "__main__":
                         os.path.join("test", "test_scratch.doctest"),
                         ]
     doctest_files = glob.glob(os.path.join("test", "*.doctest"))
+
     for dt in special_doctests:
-        doctest_files.remove(dt)
+        if dt in doctest_files:
+            doctest_files.remove(dt)
     for df in doctest_files:
         doctest.testfile(df)
 
