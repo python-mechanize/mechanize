@@ -207,14 +207,6 @@ class Browser(UserAgent):
 
         self.form = None
         self._response = _upgrade.upgrade_response(response)
-
-        # XXX
-        # Temporary hack to eagerly read data (otherwise, History can contain
-        # closed and partially-read responses).  Proper fix is for responses to
-        # know if they're partially read or not; .back() should then .reload()
-        # if required.
-        self._response.get_data()
-
         self._factory.set_response(self._response)
 
     def geturl(self):
@@ -241,6 +233,8 @@ class Browser(UserAgent):
             self._response.close()
         self.request, response = self._history.back(n, self._response)
         self.set_response(response)
+        if not response.read_complete:
+            self.reload()
         return response
 
     def clear_history(self):

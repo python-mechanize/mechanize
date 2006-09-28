@@ -130,6 +130,8 @@ class MockResponse:
         if info is None: info = {}
         self._info = MockHeaders(info)
         self.source = "%d%d" % (id(self), random.randint(0, sys.maxint-1))
+        # otherwise we can't test for "same_response" in test_history
+        self.read_complete = True
     def info(self): return self._info
     def geturl(self): return self.url
     def read(self, size=-1): return self.fp.read(size)
@@ -465,7 +467,8 @@ class BrowserTests(TestCase):
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
         r8 = b.open("/spam")
 
-        # even if we get a HTTPError, history and .response() should still get updated
+        # even if we get a HTTPError, history and .response() should still get
+        # updated
         error = urllib2.HTTPError("http://example.com/bad", 503, "Oops",
                                   MockHeaders(), StringIO.StringIO())
         b.add_handler(make_mock_handler()([("https_open", error)]))
@@ -475,6 +478,38 @@ class BrowserTests(TestCase):
 
         b.close()
         # XXX assert BrowserStateError
+
+    def test_reload_read_incomplete(self):
+        import mechanize
+        from mechanize._response import test_response
+        class Browser(TestBrowser):
+            def __init__(self):
+                TestBrowser.__init__(self)
+                self.reloaded = False
+            def reload(self):
+                self.reloaded = True
+                TestBrowser.reload(self)
+        br = Browser()
+        data = "<html><head><title></title></head><body>%s</body></html>"
+        data = data % ("The quick brown fox jumps over the lazy dog."*100)
+        r = test_response(data, [("content-type", "text/html")])
+        br.add_handler(make_mock_handler()([("http_open", r)]))
+
+        # .reload() on .back() if the whole response hasn't already been read
+        # (.read_incomplete is True)
+        r = br.open(r.geturl())
+        r.read(10)
+        br.open('http://www.example.com/blah')
+        self.failIf(br.reloaded)
+        br.back()
+        self.assert_(br.reloaded)
+
+        # don't reload if already read
+        br.reloaded = False
+        br.response().read()
+        br.open('http://www.example.com/blah')
+        br.back()
+        self.failIf(br.reloaded)
 
     def test_viewing_html(self):
         # XXX not testing multiple Content-Type headers

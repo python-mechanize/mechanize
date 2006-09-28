@@ -50,6 +50,7 @@ class seek_wrapper:
 
     def __init__(self, wrapped):
         self.wrapped = wrapped
+        self.__read_complete_state = [False]
         self.__have_readline = hasattr(self.wrapped, "readline")
         self.__cache = StringIO()
         self.__pos = 0  # seek position
@@ -60,10 +61,20 @@ class seek_wrapper:
         return self.wrapped.tell() == len(self.__cache.getvalue())
 
     def __getattr__(self, name):
+        if name == "read_complete":
+            return self.__read_complete_state[0]
+
         wrapped = self.__dict__.get("wrapped")
         if wrapped:
             return getattr(wrapped, name)
+
         return getattr(self.__class__, name)
+
+    def __setattr__(self, name, value):
+        if name == "read_complete":
+            self.__read_complete_state[0] = bool(value)
+        else:
+            self.__dict__[name] = value
 
     def seek(self, offset, whence=0):
         assert whence in [0,1,2]
@@ -93,9 +104,14 @@ class seek_wrapper:
             if to_read is None:
                 assert whence == 2
                 self.__cache.write(self.wrapped.read())
+                self.read_complete = True
                 self.__pos = self.__cache.tell() - offset
             else:
-                self.__cache.write(self.wrapped.read(to_read))
+                data = self.wrapped.read(to_read)
+                if not data:
+                    self.read_complete = True
+                else:
+                    self.__cache.write(data)
                 # Don't raise an exception even if we've seek()ed past the end
                 # of .wrapped, since fseek() doesn't complain in that case.
                 # Also like fseek(), pretend we have seek()ed past the end,
@@ -112,6 +128,7 @@ class seek_wrapper:
     def __copy__(self):
         cpy = self.__class__(self.wrapped)
         cpy.__cache = self.__cache
+        cpy.__read_complete_state = self.__read_complete_state
         return cpy
 
     def get_data(self):
@@ -137,10 +154,15 @@ class seek_wrapper:
         self.__cache.seek(0, 2)
         if size == -1:
             self.__cache.write(self.wrapped.read())
+            self.read_complete = True
         else:
             to_read = size - available
             assert to_read > 0
-            self.__cache.write(self.wrapped.read(to_read))
+            data = self.wrapped.read(to_read)
+            if not data:
+                self.read_complete = True
+            else:
+                self.__cache.write(data)
         self.__cache.seek(pos)
 
         data = self.__cache.read(size)
@@ -156,7 +178,11 @@ class seek_wrapper:
         # read another line first
         pos = self.__pos
         self.__cache.seek(0, 2)
-        self.__cache.write(self.wrapped.readline())
+        data = self.wrapped.readline()
+        if not data:
+            self.read_complete = True
+        else:
+            self.__cache.write(data)
         self.__cache.seek(pos)
 
         data = self.__cache.readline()
@@ -172,6 +198,7 @@ class seek_wrapper:
         pos = self.__pos
         self.__cache.seek(0, 2)
         self.__cache.write(self.wrapped.read())
+        self.read_complete = True
         self.__cache.seek(pos)
         data = self.__cache.readlines(sizehint)
         self.__pos = self.__cache.tell()

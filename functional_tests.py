@@ -226,6 +226,14 @@ class FunctionalTests(TestCase):
         # closing the opener removed the temporary file
         self.failIf(os.path.isfile(filename))
 
+    def test_reload_read_incomplete(self):
+        from mechanize import Browser
+        browser = Browser()
+        browser.open("http://plone.org")
+        browser.open("http://plone.org/products")
+        browser.back()
+        browser.follow_link(text="About")
+
 ##     def test_cacheftp(self):
 ##         from urllib2 import CacheFTPHandler, build_opener
 ##         o = build_opener(CacheFTPHandler())
