@@ -1,4 +1,4 @@
-"""Miscellaneous pyunit tests."""
+"""Tests for mechanize._response.seek_wrapper and friends."""
 
 import copy
 import cStringIO

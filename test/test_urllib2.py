@@ -1,12 +1,20 @@
-"""Tests for ClientCookie._urllib2_support (and for urllib2)."""
+"""Tests for urllib2-level functionality.
+
+This is made up of:
+
+ - tests that I've contributed back to stdlib test_urllib2.py
+
+ - tests for features that aren't in urllib2, but works on the level of the
+   interfaces exported by urllib2, especially urllib2 "handler" interface,
+   but *excluding* the extended interfaces provided by mechanize.UserAgent
+   and mechanize.Browser.
+
+"""
 
 # XXX
 # Request (I'm too lazy)
 # CacheFTPHandler (hard to write)
-# parse_keqv_list, parse_http_list (I'm leaving this for Anthony Baxter
-#  and Greg Stein, since they're doing Digest Authentication)
-# Authentication stuff (ditto)
-# ProxyHandler, CustomProxy, CustomProxyHandler (I don't use a proxy)
+# parse_keqv_list, parse_http_list
 # GopherHandler (haven't used gopher for a decade or so...)
 
 import unittest, StringIO, os, sys, UserDict, httplib
