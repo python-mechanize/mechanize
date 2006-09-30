@@ -10,8 +10,9 @@ python test.py --help
 
 # Modules containing tests to run -- a test is anything named *Tests, which
 # should be classes deriving from unittest.TestCase.
-MODULE_NAMES = ["test_date", "test_mechanize", "test_misc", "test_cookies",
+MODULE_NAMES = ["test_date", "test_browser", "test_response", "test_cookies",
                 "test_headers", "test_urllib2", "test_pullparser",
+                "test_useragent", "test_html", "test_opener",
                 ]
 
 import sys, os, traceback, logging, glob
