@@ -218,8 +218,8 @@ class BrowserTests(TestCase):
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
         r8 = b.open("/spam")
 
-        # even if we get a HTTPError, history and .response() should still get
-        # updated
+        # even if we get a HTTPError, history, .response() and .request should
+        # still get updated
         error = urllib2.HTTPError("http://example.com/bad", 503, "Oops",
                                   MockHeaders(), StringIO.StringIO())
         b.add_handler(make_mock_handler()([("https_open", error)]))
@@ -228,8 +228,17 @@ class BrowserTests(TestCase):
         self.assertEqual(b.request.get_full_url(), "https://example.com/badreq")
         self.assert_(same_response(b.back(), r8))
 
+        # .close() should make use of Browser methods and attributes complain
+        # noisily, since they should not be called after .close()
+        b.form = "blah"
         b.close()
-        # XXX assert BrowserStateError
+        for attr in ("form open error retrieve add_handler "
+                     "request response set_response geturl reload back "
+                     "clear_history set_cookie links forms viewing_html "
+                     "encoding title select_form click submit click_link "
+                     "follow_link find_link".split()
+                     ):
+            self.assert_(getattr(b, attr) is None)
 
     def test_reload_read_incomplete(self):
         import mechanize

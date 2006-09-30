@@ -116,13 +116,22 @@ class Browser(UserAgent):
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
     def close(self):
+        UserAgent.close(self)
         if self._response is not None:
             self._response.close()    
-        UserAgent.close(self)
         if self._history is not None:
             self._history.close()
             self._history = None
+
+        # make use after .close easy to spot
+        self.form = None
         self.request = self._response = None
+        self.request = self.response = self.set_response = None
+        self.geturl =  self.reload = self.back = None
+        self.clear_history = self.set_cookie = self.links = self.forms = None
+        self.viewing_html = self.encoding = self.title = None
+        self.select_form = self.click = self.submit = self.click_link = None
+        self.follow_link = self.find_link = None
 
     def open(self, url, data=None):
         if self._response is not None:
