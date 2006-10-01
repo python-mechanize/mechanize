@@ -178,16 +178,16 @@ if __name__ == "__main__":
 
     if run_coverage:
         # HTML coverage report
-        import colorize
+##         import colorize
         from mechanize import _mechanize
-        try:
-            os.mkdir("coverage")
-        except OSError:
-            pass
-        f, s, m, mf = coverage.analysis(_mechanize)
-        fo = open(os.path.join('coverage', os.path.basename(f)+'.html'), 'wb')
-        colorize.colorize_file(f, outstream=fo, not_covered=mf)
-        fo.close()
+##         try:
+##             os.mkdir("coverage")
+##         except OSError:
+##             pass
+##         f, s, m, mf = coverage.analysis(_mechanize)
+##         fo = open(os.path.join('coverage', os.path.basename(f)+'.html'), 'wb')
+##         colorize.colorize_file(f, outstream=fo, not_covered=mf)
+##         fo.close()
         coverage.report(_mechanize)
         #print coverage.analysis(_mechanize)
 
