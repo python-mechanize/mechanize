@@ -58,6 +58,7 @@ Examples:
         self.testLoader = testLoader
         self.progName = os.path.basename(argv[0])
         self.parseArgs(argv)
+        self.runTests()
 
     def usageExit(self, msg=None):
         if msg: print msg
@@ -98,7 +99,7 @@ Examples:
         if self.testRunner is None:
             self.testRunner = TextTestRunner(verbosity=self.verbosity)
         result = self.testRunner.run(self.test)
-        return result
+        sys.exit(not result.wasSuccessful())
 
 
 if __name__ == "__main__":
@@ -108,11 +109,6 @@ if __name__ == "__main__":
 ##     __builtin__.jjl = jjl
 
     # XXX temporary stop-gap to run doctests
-
-    # XXXX coverage output seems incorrect ATM
-    run_coverage = '-c' in sys.argv
-    if run_coverage:
-        sys.argv.remove("-c")
 
     # import local copy of Python 2.5 doctest
     assert os.path.isdir("test")
@@ -125,12 +121,6 @@ if __name__ == "__main__":
     # that renamed module.
     sys.path.insert(0, "test-tools")
     import doctest
-
-    import coverage
-    if run_coverage:
-        print 'running coverage'
-        coverage.erase()
-        coverage.start()
 
     import mechanize
 
@@ -173,23 +163,4 @@ if __name__ == "__main__":
     import unittest
     test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
     sys.path.insert(0, test_path)
-    prog = TestProgram(MODULE_NAMES)
-    result = prog.runTests()
-
-    if run_coverage:
-        # HTML coverage report
-        import colorize
-        from mechanize import _mechanize
-        try:
-            os.mkdir("coverage")
-        except OSError:
-            pass
-        f, s, m, mf = coverage.analysis(_mechanize)
-        fo = open(os.path.join('coverage', os.path.basename(f)+'.html'), 'wb')
-        colorize.colorize_file(f, outstream=fo, not_covered=mf)
-        fo.close()
-        coverage.report(_mechanize)
-        #print coverage.analysis(_mechanize)
-
-    # XXX exit status is wrong -- does not take account of doctests
-    sys.exit(not result.wasSuccessful())
+    TestProgram(MODULE_NAMES)

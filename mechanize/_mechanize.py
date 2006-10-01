@@ -138,14 +138,6 @@ class Browser(UserAgent):
             self._response.close()
         return self._mech_open(url, data)
 
-    def open_no_visit(self):
-        """Open without visiting the URL.
-
-        Useful for downloading image and CSS files, robots.txt, etc.
-
-        """
-        return self._mech_open(url, data)
-
     def _mech_open(self, url, data=None, update_history=True):
         try:
             url.get_full_url
