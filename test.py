@@ -179,17 +179,22 @@ if __name__ == "__main__":
     if run_coverage:
         # HTML coverage report
 ##         import colorize
-        from mechanize import _mechanize
 ##         try:
 ##             os.mkdir("coverage")
 ##         except OSError:
 ##             pass
-##         f, s, m, mf = coverage.analysis(_mechanize)
-##         fo = open(os.path.join('coverage', os.path.basename(f)+'.html'), 'wb')
-##         colorize.colorize_file(f, outstream=fo, not_covered=mf)
-##         fo.close()
-        coverage.report(_mechanize)
-        #print coverage.analysis(_mechanize)
+        private_modules = glob.glob("mechanize/_*.py")
+        private_modules.remove("mechanize/__init__.py")
+        for module_filename in private_modules:
+            module_name = module_filename.replace("/", ".")[:-3]
+            print module_name
+            module = sys.modules[module_name]
+##             f, s, m, mf = coverage.analysis(module)
+##             fo = open(os.path.join('coverage', os.path.basename(f)+'.html'), 'wb')
+##             colorize.colorize_file(f, outstream=fo, not_covered=mf)
+##             fo.close()
+            coverage.report(module)
+            #print coverage.analysis(module)
 
     # XXX exit status is wrong -- does not take account of doctests
     sys.exit(not result.wasSuccessful())
