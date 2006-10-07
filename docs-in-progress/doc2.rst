@@ -812,8 +812,6 @@ FAQs - pre install
 FAQs - usage
 ------------
 
-.. code-block:: python
-
   - Why don't I have any cookies?
 
     Read the `debugging section`_ of this page.
