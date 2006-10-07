@@ -349,7 +349,7 @@ class closeable_response:
         state["wrapped"] = new_wrapped
         return state
 
-def test_response(data, headers,
+def test_response(data='test data', headers=[],
                   url="http://example.com/", code=200, msg="OK"):
     return make_response(data, headers, url, code, msg)
 

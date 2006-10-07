@@ -17,7 +17,7 @@ else:
 
 
 # XXX these 'mock' classes are badly in need of simplification / removal
-# (note this stuff is also used by test_useragent.py)
+# (note this stuff is also used by test_useragent.py and test_browser.doctest)
 class MockMethod:
     def __init__(self, meth_name, action, handle):
         self.meth_name = meth_name
@@ -56,7 +56,7 @@ class MockResponse:
     def __setstate__(self, state):
         self.__dict__ = state
 
-def make_mock_handler():
+def make_mock_handler(response_class=MockResponse):
     class MockHandler:
         processor_order = 500
         handler_order = -1
@@ -77,7 +77,7 @@ def make_mock_handler():
                 r = response
                 r.seek(0)
             else:
-                r = MockResponse()
+                r = response_class()
             req = args[0]
             r.url = req.get_full_url()
             return r

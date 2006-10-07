@@ -1,9 +1,10 @@
->>> from test_browser import TestBrowser, TestBrowser2
+>>> from mechanize._response import test_response
+>>> from test_browser import TestBrowser2, make_mock_handler
 
 Warn early about some mistakes setting a response object
 
 >>> import StringIO
->>> br = TestBrowser()
+>>> br = TestBrowser2()
 >>> br.set_response("blah")
 Traceback (most recent call last):
 ...
@@ -30,3 +31,39 @@ with BrowserStateError
 Traceback (most recent call last):
 ...
 URLError: <urlopen error unknown url type: http>
+
+
+.clear_history() should do what it says on the tin.  Note that the
+history does not include the current response!
+
+>>> br = TestBrowser2()
+>>> br.add_handler(make_mock_handler(test_response)([("http_open", None)]))
+
+>>> br.response() is None
+True
+>>> len(br._history._history)
+0
+
+>>> r = br.open("http://example.com/1")
+>>> br.response() is not None
+True
+>>> len(br._history._history)
+0
+
+>>> br.clear_history()
+>>> br.response() is not None
+True
+>>> len(br._history._history)
+0
+
+>>> r = br.open("http://example.com/2")
+>>> br.response() is not None
+True
+>>> len(br._history._history)
+1
+
+>>> br.clear_history()
+>>> br.response() is not None
+True
+>>> len(br._history._history)
+0
