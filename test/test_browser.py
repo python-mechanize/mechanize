@@ -105,6 +105,15 @@ class TestBrowser(mechanize.Browser):
     default_others = []
     default_schemes = []
 
+class TestBrowser2(mechanize.Browser):
+    # XXX better name!
+    # As TestBrowser, this is neutered so doesn't know about protocol handling,
+    # but still knows what to do with unknown schemes, etc., because
+    # UserAgent's default_others list is left intact, including classes like
+    # UnknownHandler
+    default_features = ["_seek"]
+    default_schemes = []
+
 
 class BrowserTests(TestCase):
 
@@ -328,17 +337,44 @@ class BrowserTests(TestCase):
         url = "http://example.com/"
 
         b = TestBrowser()
-        b.add_handler(make_mock_handler()([("http_open", MockResponse(url, "", {}))]))
+
+        self.assert_(b.response() is None)
+
+        # To open a relative reference (often called a "relative URL"), you
+        # have to have already opened a URL for it "to be relative to".
+        self.assertRaises(mechanize.BrowserStateError, b.open, "relative_ref")
+
+        # we can still clear the history even if we've not visited any URL
+        b.clear_history()
+
+        # most methods raise BrowserStateError...
+        def test_state_error(method_names):
+            for attr in method_names:
+                method = getattr(b, attr)
+                #print attr
+                self.assertRaises(mechanize.BrowserStateError, method)
+            self.assertRaises(mechanize.BrowserStateError, b.select_form,
+                              name="blah")
+            self.assertRaises(mechanize.BrowserStateError, b.find_link,
+                              name="blah")
+        # ...if not visiting a URL...
+        test_state_error(("geturl reload back viewing_html encoding "
+                          "click links forms title select_form".split()))
+        self.assertRaises(mechanize.BrowserStateError, b.set_cookie, "foo=bar")
+        self.assertRaises(mechanize.BrowserStateError, b.submit, nr=0)
+        self.assertRaises(mechanize.BrowserStateError, b.click_link, nr=0)
+        self.assertRaises(mechanize.BrowserStateError, b.follow_link, nr=0)
+        self.assertRaises(mechanize.BrowserStateError, b.find_link, nr=0)
+        # ...and lots do so if visiting a non-HTML URL
+        b.add_handler(make_mock_handler()(
+            [("http_open", MockResponse(url, "", {}))]))
         r = b.open(url)
         self.assert_(not b.viewing_html())
-        self.assertRaises(mechanize.BrowserStateError, b.links)
-        self.assertRaises(mechanize.BrowserStateError, b.forms)
-        self.assertRaises(mechanize.BrowserStateError, b.title)
-        self.assertRaises(mechanize.BrowserStateError, b.select_form)
-        self.assertRaises(mechanize.BrowserStateError, b.select_form,
-                          name="blah")
-        self.assertRaises(mechanize.BrowserStateError, b.find_link,
-                          name="blah")
+        test_state_error("click links forms title select_form".split())
+        self.assertRaises(mechanize.BrowserStateError, b.submit, nr=0)
+        self.assertRaises(mechanize.BrowserStateError, b.click_link, nr=0)
+        self.assertRaises(mechanize.BrowserStateError, b.follow_link, nr=0)
+        self.assertRaises(mechanize.BrowserStateError, b.find_link, nr=0)
 
         b = TestBrowser()
         r = MockResponse(url,

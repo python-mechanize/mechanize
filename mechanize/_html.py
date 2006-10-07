@@ -480,8 +480,8 @@ class Factory:
     def set_response(self, response):
         """Set response.
 
-        The response must implement the same interface as objects returned by
-        urllib2.urlopen().
+        The response must either be None or implement the same interface as
+        objects returned by urllib2.urlopen().
 
         """
         self._response = response

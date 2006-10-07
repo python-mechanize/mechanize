@@ -1,0 +1,32 @@
+>>> from test_browser import TestBrowser, TestBrowser2
+
+Warn early about some mistakes setting a response object
+
+>>> import StringIO
+>>> br = TestBrowser()
+>>> br.set_response("blah")
+Traceback (most recent call last):
+...
+ValueError: not a response object
+>>> br.set_response(StringIO.StringIO())
+Traceback (most recent call last):
+...
+ValueError: not a response object
+
+
+.open() without an appropriate scheme handler should fail with
+URLError
+
+>>> br = TestBrowser2()
+>>> br.open("http://example.com")
+Traceback (most recent call last):
+...
+URLError: <urlopen error unknown url type: http>
+
+Reload after failed .open() should fail due to failure to open, not
+with BrowserStateError
+
+>>> br.reload()
+Traceback (most recent call last):
+...
+URLError: <urlopen error unknown url type: http>

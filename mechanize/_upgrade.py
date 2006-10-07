@@ -27,6 +27,7 @@ class ResponseUpgradeProcessor(BaseHandler):
     # upgrade responses to be .close()able without becoming unusable
     handler_order = 0  # before anything else
     def any_response(self, request, response):
-        if not hasattr(response, 'closeable_response'):
+        if (response is not None and
+            not hasattr(response, 'closeable_response')):
             response = upgrade_response(response)
         return response

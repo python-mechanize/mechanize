@@ -98,8 +98,6 @@ class Browser(UserAgent):
         if history is None:
             history = History()
         self._history = history
-        self.request = self._response = None
-        self.form = None
 
         if request_class is None:
             if not hasattr(urllib2.Request, "add_unredirected_header"):
@@ -112,6 +110,9 @@ class Browser(UserAgent):
         factory.set_request_class(request_class)
         self._factory = factory
         self.request_class = request_class
+
+        self.request = None
+        self.set_response(None)
 
         UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
 
@@ -208,15 +209,23 @@ class Browser(UserAgent):
         return copy.copy(self._response)
 
     def set_response(self, response):
-        """Replace current response with (a copy of) response."""
+        """Replace current response with (a copy of) response.
+
+        response may be None.
+        """
         # sanity check, necessary but far from sufficient
-        if not (hasattr(response, "info") and hasattr(response, "geturl") and
-                hasattr(response, "read")):
+        if not (response is None or
+                (hasattr(response, "info") and hasattr(response, "geturl") and
+                 hasattr(response, "read")
+                 )
+                ):
             raise ValueError("not a response object")
 
         self.form = None
-        self._response = _upgrade.upgrade_response(response)
-        self._factory.set_response(self._response)
+        if response is not None:
+            response = _upgrade.upgrade_response(response)
+        self._response = response
+        self._factory.set_response(response)
 
     def geturl(self):
         """Get URL of current document."""
