@@ -15,15 +15,6 @@ def isstringlike(x):
     except: return False
     else: return True
 
-SPACE_DICT = {}
-for c in string.whitespace:
-    SPACE_DICT[c] = None
-del c
-def isspace(string):
-    for c in string:
-        if not SPACE_DICT.has_key(c): return False
-    return True
-
 ## def caller():
 ##     try:
 ##         raise SyntaxError
