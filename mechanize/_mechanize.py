@@ -51,6 +51,7 @@ class History:
                 response.close()
         del self._history[:]
 
+
 class Browser(UserAgent):
     """Browser-like class with support for history, forms and links.
 
