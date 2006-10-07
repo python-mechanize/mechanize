@@ -22,6 +22,7 @@ import unittest, StringIO, os, sys, UserDict, httplib
 import mechanize
 
 from mechanize._http import AbstractHTTPHandler, parse_head
+from mechanize._response import test_response
 from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
      HTTPEquivProcessor, HTTPRefreshProcessor, SeekableProcessor, \
      HTTPCookieProcessor, HTTPRefererProcessor, \
@@ -1092,11 +1093,10 @@ class MockHTTPHandler(mechanize.BaseHandler):
             self._count = self._count + 1
             msg = mimetools.Message(StringIO(self.headers))
             return self.parent.error(
-                "http", req, MockFile(), self.code, "Blah", msg)
+                "http", req, test_response(), self.code, "Blah", msg)
         else:
             self.req = req
-            msg = mimetools.Message(StringIO("\r\n\r\n"))
-            return MockResponse(200, "OK", msg, "", req.get_full_url())
+            return test_response("", [], req.get_full_url())
 
 
 class MyHTTPHandler(HTTPHandler): pass

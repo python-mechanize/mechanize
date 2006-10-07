@@ -17,6 +17,8 @@ class HTTPRequestUpgradeProcessor(BaseHandler):
             except AttributeError: pass
             try: newrequest.unverifiable = request.unverifiable
             except AttributeError: pass
+            try: newrequest.visit = request.visit
+            except AttributeError: pass
             request = newrequest
         return request
 

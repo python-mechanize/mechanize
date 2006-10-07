@@ -76,10 +76,16 @@ class HTTPRedirectHandler(BaseHandler):
             # from the user (of urllib2, in this case).  In practice,
             # essentially all clients do redirect in this case, so we do
             # the same.
+            try:
+                visit = req.visit
+            except AttributeError:
+                visit = None
             return Request(newurl,
                            headers=req.headers,
                            origin_req_host=req.get_origin_req_host(),
-                           unverifiable=True)
+                           unverifiable=True,
+                           visit=visit,
+                           )
         else:
             raise HTTPError(req.get_full_url(), code, msg, headers, fp)
 
@@ -348,8 +354,9 @@ else:
             """Reads the robots.txt URL and feeds it to the parser."""
             if self._opener is None:
                 self.set_opener()
+            req = Request(self.url, unverifiable=True, visit=False)
             try:
-                f = self._opener.open(self.url)
+                f = self._opener.open(req)
             except HTTPError, f:
                 pass
             except (IOError, socket.error, OSError), exc:

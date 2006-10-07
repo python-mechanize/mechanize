@@ -135,12 +135,25 @@ class Browser(UserAgent):
         self.select_form = self.click = self.submit = self.click_link = None
         self.follow_link = self.find_link = None
 
+    def open_novisit(self, url, data=None):
+        """Open a URL without visiting it.
+
+        The browser state (including .request, .response(), history, forms and
+        links) are all left unchanged by calling this function.
+
+        The interface is the same as for .open().
+
+        This is useful for things like fetching images.
+
+        See also .retrieve().
+
+        """
+        return self._mech_open(url, data, visit=False)
+
     def open(self, url, data=None):
-        if self._response is not None:
-            self._response.close()
         return self._mech_open(url, data)
 
-    def _mech_open(self, url, data=None, update_history=True):
+    def _mech_open(self, url, data=None, update_history=True, visit=None):
         try:
             url.get_full_url
         except AttributeError:
@@ -154,16 +167,23 @@ class Browser(UserAgent):
                         "can't fetch relative URL: not viewing any document")
                 url = urlparse.urljoin(self._response.geturl(), url)
 
-        if self.request is not None and update_history:
-            self._history.add(self.request, self._response)
-        self._response = None
-        # we want self.request to be assigned even if UserAgent.open fails
-        self.request = self._request(url, data)
-        self._previous_scheme = self.request.get_type()
+        request = self._request(url, data, visit)
+        visit = request.visit
+        if visit is None:
+            visit = True
+
+        if visit:
+            if self._response is not None:
+                self._response.close()
+            if self.request is not None and update_history:
+                self._history.add(self.request, self._response)
+            self._response = None
+            # we want self.request to be assigned even if UserAgent.open fails
+            self.request = request
 
         success = True
         try:
-            response = UserAgent.open(self, self.request, data)
+            response = UserAgent.open(self, request, data)
         except urllib2.HTTPError, error:
             success = False
             if error.fp is None:  # not a response
@@ -180,9 +200,12 @@ class Browser(UserAgent):
 ##             # Python core, a fix would need some backwards-compat. hack to be
 ##             # acceptable.
 ##             raise
-        self.set_response(response)
 
-        response = copy.copy(self._response)
+        if visit:
+            self.set_response(response)
+            response = copy.copy(self._response)
+        elif response is not None:
+            response = _upgrade.upgrade_response(response)
 
         if not success:
             raise response

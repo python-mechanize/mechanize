@@ -136,18 +136,25 @@ class OpenerDirector(urllib2.OpenerDirector):
         self._any_request = any_request
         self._any_response = any_response
 
-    def _request(self, url_or_req, data):
+    def _request(self, url_or_req, data, visit):
         if isstringlike(url_or_req):
-            req = Request(url_or_req, data)
+            req = Request(url_or_req, data, visit=visit)
         else:
             # already a urllib2.Request or mechanize.Request instance
             req = url_or_req
             if data is not None:
                 req.add_data(data)
+            # XXX yuck, give request a .visit attribute if it doesn't have one
+            try:
+                req.visit
+            except AttributeError:
+                req.visit = None
+            if visit is not None:
+                req.visit = visit
         return req
 
     def open(self, fullurl, data=None):
-        req = self._request(fullurl, data)
+        req = self._request(fullurl, data, None)
         req_scheme = req.get_type()
 
         self._maybe_reindex_handlers()
@@ -222,7 +229,7 @@ class OpenerDirector(urllib2.OpenerDirector):
         headers) that would have been returned.
 
         """
-        req = self._request(fullurl, data)
+        req = self._request(fullurl, data, False)
         scheme = req.get_type()
         fp = self.open(req)
         headers = fp.info()

@@ -60,13 +60,27 @@ class SimpleTests(TestCase):
         self.assertEqual(self.browser.title(), 'Python bits')
 
     def test_redirect(self):
-        # 302 redirect due to missing final '/'
-        self.browser.open('http://wwwsearch.sourceforge.net')
+        # 301 redirect due to missing final '/'
+        r = self.browser.open('http://wwwsearch.sourceforge.net/bits')
+        self.assertEqual(r.code, 200)
+        self.assert_("GeneralFAQ.html" in r.read(2048))
 
     def test_file_url(self):
         url = "file://%s" % sanepathname2url(
             os.path.abspath('functional_tests.py'))
-        self.browser.open(url)
+        r = self.browser.open(url)
+        self.assert_("this string appears in this file ;-)" in r.read())
+
+    def test_open_novisit(self):
+        def test_state(br):
+            self.assert_(br.request is None)
+            self.assert_(br.response() is None)
+            self.assertRaises(mechanize.BrowserStateError, br.back)
+        test_state(self.browser)
+        # note this involves a redirect, which should itself be non-visiting
+        r = self.browser.open_novisit("http://wwwsearch.sourceforge.net/bits")
+        test_state(self.browser)
+        self.assert_("GeneralFAQ.html" in r.read(2048))
 
 
 class ResponseTests(TestCase):

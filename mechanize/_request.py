@@ -16,10 +16,11 @@ from _clientcookie import request_host
 
 class Request(urllib2.Request):
     def __init__(self, url, data=None, headers={},
-                 origin_req_host=None, unverifiable=False):
+                 origin_req_host=None, unverifiable=False, visit=None):
         urllib2.Request.__init__(self, url, data, headers)
         self.selector = None
         self.unredirected_hdrs = {}
+        self.visit = visit
 
         # All the terminology below comes from RFC 2965.
         self.unverifiable = unverifiable

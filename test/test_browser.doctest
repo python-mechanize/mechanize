@@ -67,3 +67,34 @@ True
 True
 >>> len(br._history._history)
 0
+
+
+.open()ing a Request with False .visit does not affect Browser state.
+Redirections during such a non-visiting request should also be
+non-visiting.
+
+>>> from mechanize import BrowserStateError, Request, HTTPRedirectHandler
+>>> from test_urllib2 import MockHTTPHandler
+
+>>> req = Request("http://example.com")
+>>> req.visit = False
+>>> br = TestBrowser2()
+>>> hh = MockHTTPHandler(301, "Location: http://example.com/\r\n\r\n")
+>>> br.add_handler(hh)
+>>> br.add_handler(HTTPRedirectHandler())
+>>> def raises(exc_class, fn, *args, **kwds):
+...     try:
+...         fn(*args, **kwds)
+...     except exc_class, exc:
+...         return True
+...     return False
+>>> def test_state(br):
+...     return (br.request is None and
+...             br.response() is None and
+...             raises(BrowserStateError, br.back)
+...             )
+>>> test_state(br)
+True
+>>> r = br.open(req)
+>>> test_state(br)
+True
