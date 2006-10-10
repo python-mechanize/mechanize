@@ -9,17 +9,10 @@ included with the distribution).
 """
 
 import re, copy, urllib, htmlentitydefs
-from urlparse import urljoin
 
 import _request
 from _headersutil import split_header_words, is_html as _is_html
-
-## # XXXX miserable hack
-## def urljoin(base, url):
-##     if url.startswith("?"):
-##         return base+url
-##     else:
-##         return urlparse.urljoin(base, url)
+import _rfc3986
 
 ## def chr_range(a, b):
 ##     return "".join(map(chr, range(ord(a), ord(b)+1)))
@@ -99,7 +92,7 @@ class Link:
     def __init__(self, base_url, url, text, tag, attrs):
         assert None not in [url, tag, attrs]
         self.base_url = base_url
-        self.absolute_url = urljoin(base_url, url)
+        self.absolute_url = _rfc3986.urljoin(base_url, url)
         self.url, self.text, self.tag, self.attrs = url, text, tag, attrs
     def __cmp__(self, other):
         try:
@@ -233,6 +226,9 @@ class FormsFactory:
             request_class=self.request_class,
             backwards_compat=self.backwards_compat,
             encoding=encoding,
+            _urljoin=_rfc3986.urljoin,
+            _urlparse=_rfc3986.urlsplit,
+            _urlunparse=_rfc3986.urlunsplit,
             )
 
 class TitleFactory:

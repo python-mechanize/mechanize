@@ -32,7 +32,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import sys, re, urlparse, copy, time, struct, urllib, types, logging
+import sys, re, copy, time, struct, urllib, types, logging
 try:
     import threading
     _threading = threading; del threading
@@ -47,6 +47,7 @@ DEFAULT_HTTP_PORT = str(httplib.HTTP_PORT)
 
 from _headersutil import split_header_words, parse_ns_headers
 from _util import isstringlike
+import _rfc3986
 
 debug = logging.getLogger("mechanize.cookies").debug
 
@@ -156,8 +157,8 @@ def request_host(request):
 
     """
     url = request.get_full_url()
-    host = urlparse.urlparse(url)[1]
-    if host == "":
+    host = _rfc3986.urlsplit(url)[1]
+    if host is None:
         host = request.get_header("Host", "")
 
     # remove port, if present
@@ -178,15 +179,10 @@ def eff_request_host(request):
 def request_path(request):
     """request-URI, as defined by RFC 2965."""
     url = request.get_full_url()
-    #scheme, netloc, path, parameters, query, frag = urlparse.urlparse(url)
-    #req_path = escape_path(string.join(urlparse.urlparse(url)[2:], ""))
-    path, parameters, query, frag = urlparse.urlparse(url)[2:]
-    if parameters:
-        path = "%s;%s" % (path, parameters)
+    path, query, frag = _rfc3986.urlsplit(url)[2:]
     path = escape_path(path)
-    req_path = urlparse.urlunparse(("", "", path, "", query, frag))
+    req_path = _rfc3986.urlunsplit((None, None, path, query, frag))
     if not req_path.startswith("/"):
-        # fix bad RFC 2396 absoluteURI
         req_path = "/"+req_path
     return req_path
 

@@ -12,7 +12,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import copy, time, tempfile, htmlentitydefs, re, logging, socket, urlparse, \
+import copy, time, tempfile, htmlentitydefs, re, logging, socket, \
        urllib2, urllib, httplib, sgmllib
 from urllib2 import URLError, HTTPError, BaseHandler
 from cStringIO import StringIO
@@ -23,6 +23,7 @@ from _response import closeable_response, response_seek_wrapper
 from _html import unescape, unescape_charref
 from _headersutil import is_html
 from _clientcookie import CookieJar, request_host
+import _rfc3986
 
 debug = logging.getLogger("mechanize.cookies").debug
 
@@ -98,7 +99,7 @@ class HTTPRedirectHandler(BaseHandler):
             newurl = headers.getheaders('uri')[0]
         else:
             return
-        newurl = urlparse.urljoin(req.get_full_url(), newurl)
+        newurl = _rfc3986.urljoin(req.get_full_url(), newurl)
 
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other

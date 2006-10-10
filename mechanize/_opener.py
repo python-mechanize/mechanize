@@ -9,7 +9,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import os, urllib2, bisect, urllib, urlparse, httplib, types, tempfile
+import os, urllib2, bisect, urllib, httplib, types, tempfile
 try:
     import threading as _threading
 except ImportError:
@@ -22,6 +22,7 @@ except NameError:
 
 import _http
 import _upgrade
+import _rfc3986
 from _util import isstringlike
 from _request import Request
 
@@ -241,7 +242,7 @@ class OpenerDirector(urllib2.OpenerDirector):
         if filename:
             tfp = open(filename, 'wb')
         else:
-            path = urlparse.urlparse(fullurl)[2]
+            path = _rfc3986.urlsplit(fullurl)[2]
             suffix = os.path.splitext(path)[1]
             fd, filename = tempfile.mkstemp(suffix)
             self._tempfiles.append(filename)

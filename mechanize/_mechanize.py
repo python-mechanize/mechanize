@@ -9,13 +9,14 @@ included with the distribution).
 
 """
 
-import urllib2, urlparse, sys, copy, re
+import urllib2, sys, copy, re
 
 from _useragent import UserAgent
 from _html import DefaultFactory
 from _response import response_seek_wrapper, closeable_response
 import _upgrade
 import _request
+import _rfc3986
 
 __version__ = (0, 1, 3, None, None)  # 0.1.3
 
@@ -158,14 +159,13 @@ class Browser(UserAgent):
             url.get_full_url
         except AttributeError:
             # string URL -- convert to absolute URL if required
-            scheme, netloc = urlparse.urlparse(url)[:2]
-            if not scheme:
+            scheme, authority = _rfc3986.urlsplit(url)[:2]
+            if scheme is None:
                 # relative URL
-                assert not netloc, "malformed URL"
                 if self._response is None:
                     raise BrowserStateError(
-                        "can't fetch relative URL: not viewing any document")
-                url = urlparse.urljoin(self._response.geturl(), url)
+                        "can't fetch relative reference: not viewing any document")
+                url = _rfc3986.urljoin(self._response.geturl(), url)
 
         request = self._request(url, data, visit)
         visit = request.visit
@@ -432,9 +432,9 @@ class Browser(UserAgent):
             original_scheme in ["http", "https"] and
             not (original_scheme == "https" and scheme != "https")):
             # strip URL fragment (RFC 2616 14.36)
-            parts = urlparse.urlparse(self.request.get_full_url())
-            parts = parts[:-1]+("",)
-            referer = urlparse.urlunparse(parts)
+            parts = _rfc3986.urlsplit(self.request.get_full_url())
+            parts = parts[:-1]+(None,)
+            referer = _rfc3986.urlunsplit(parts)
             request.add_unredirected_header("Referer", referer)
         return request
 

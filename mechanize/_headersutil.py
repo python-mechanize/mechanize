@@ -9,12 +9,13 @@ COPYING.txt included with the distribution).
 
 """
 
-import os, re, urlparse
+import os, re
 from types import StringType
 from types import UnicodeType
 STRING_TYPES = StringType, UnicodeType
 
 from _util import http2time
+import _rfc3986
 
 def is_html(ct_headers, url, allow_xhtml=False):
     """
@@ -24,7 +25,7 @@ def is_html(ct_headers, url, allow_xhtml=False):
     """
     if not ct_headers:
         # guess
-        ext = os.path.splitext(urlparse.urlparse(url)[2])[1]
+        ext = os.path.splitext(_rfc3986.urlsplit(url)[2])[1]
         html_exts = [".htm", ".html"]
         if allow_xhtml:
             html_exts += [".xhtml"]
