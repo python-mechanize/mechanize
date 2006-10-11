@@ -286,11 +286,11 @@ directory in SVN.
 <ul>
   <li>Topological sort for handlers, instead of .handler_order attribute.
     Add new build_opener and deprecate the old one?
-  <li>Use RFC 3986 URL absolutization.
   <li>Test <code>.any_response()</code> two handlers case: ordering.
   <li>Test referer bugs (frags and don't add in redirect unless orig
     req had Referer)
   <li>Proper XHTML support!
+  <li>Bundle BeautifulSoup 2, until support version 3.
   <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
     per page.
   <li>Test BeautifulSoup support better / fix encoding issue.
