@@ -52,7 +52,7 @@ import re
 ## VERSION_MATCH = re.search(r'__version__ = \((.*)\)',
 ##                           open("mechanize/_mechanize.py").read())
 ## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
-VERSION = "0.1.3"
+VERSION = "0.1.4b"
 INSTALL_REQUIRES = [
     "ClientForm>=0.2.2, ==dev",
     # there's no dependency on BeautifulSoup, but people get confused when

@@ -473,7 +473,7 @@ This is a stable release.
 Development release
 ~~~~~~~~~~~~~~~~~~~
 
-@{version = "0.1.3"}
+@{version = "0.1.4b"}
  - <a href="./src/mechanize-@(version).tar.gz">mechanize-@(version).tar.gz</a>
  - <a href="./src/mechanize-@(version).zip">mechanize-@(version).zip</a>
  - <a href="./src/ChangeLog.txt">Change Log</a> (included in distribution)

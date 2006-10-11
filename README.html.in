@@ -444,7 +444,7 @@ just set up your <code>sys.path</code> manually rather than using
 <p><em>Development release.</em>
 
 <ul>
-@{version = "0.1.3"}
+@{version = "0.1.4b"}
 <li><a href="./src/mechanize-@(version).tar.gz">mechanize-@(version).tar.gz</a>
 <li><a href="./src/mechanize-@(version).zip">mechanize-@(version).zip</a>
 <li><a href="./src/ChangeLog.txt">Change Log</a> (included in distribution)
