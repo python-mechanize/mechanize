@@ -42,16 +42,18 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 <ul>
 
   <li><code>mechanize.Browser</code> is a subclass of
-    <code>mechanize.UserAgent</code>, which is, in turn, a subclass of
+    <code>mechanize.UserAgentBase</code>, which is, in turn, a subclass of
     <code>urllib2.OpenerDirector</code> (in fact, of
     <code>mechanize.OpenerDirector</code>), so:
     <ul>
       <li>any URL can be opened, not just <code>http:</code>
-      <li><code>mechanize.UserAgent</code> offers easy dynamic configuration of
-      user-agent features like protocol, cookie, redirection and
-      <code>robots.txt</code> handling, without having to make a new
-      <code>OpenerDirector</code> each time, e.g.  by calling
-      <code>build_opener()</code>.
+
+      <li><code>mechanize.UserAgentBase</code> offers easy dynamic
+      configuration of user-agent features like protocol, cookie,
+      redirection and <code>robots.txt</code> handling, without having
+      to make a new <code>OpenerDirector</code> each time, e.g.  by
+      calling <code>build_opener()</code>.
+
     </ul>
   <li>Easy HTML form filling, using <a href="../ClientForm/">ClientForm</a>
     interface.
@@ -179,6 +181,21 @@ you imported from urllib2.  In many other cases, though, the
 implementation comes from mechanize, either because bug fixes have
 been applied or the functionality of urllib2 has been extended in some
 way.
+
+
+<a name="useragentbase"></a>
+<h2>UserAgent vs UserAgentBase</h2>
+
+<code>mechanize.UserAgent</code> is a trivial subclass of
+<code>mechanize.UserAgentBase</code>, adding just one method,
+<code>.set_seekable_responses()</code>, which allows switching off the
+addition of the <code>.seek()</code> method to response objects:
+
+@{colorize("""
+import mechanize
+response = mechanize.urlopen("http://www.example.com/")
+print response.read()
+""")}
 
 
 <a name="compatnotes"></a>

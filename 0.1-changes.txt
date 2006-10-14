@@ -52,7 +52,9 @@ Recent public API changes:
 - mechanize.Browser.default_encoding is gone.
 
 - mechanize.Browser.set_seekable_responses() is gone (they're always
-  .seek()able).
+  .seek()able).  Browser and UserAgent now both inherit from
+  mechanize.UserAgentBase, and UserAgent is now there only to add the
+  single method .set_seekable_responses().
 
 - Added Browser.encoding().
 

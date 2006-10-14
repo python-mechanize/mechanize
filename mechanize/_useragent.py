@@ -35,18 +35,24 @@ class HTTPRefererProcessor(_urllib2.BaseHandler):
     https_request = http_request
 
 
-class UserAgent(OpenerDirector):
+class UserAgentBase(OpenerDirector):
     """Convenient user-agent class.
 
     Do not use .add_handler() to add a handler for something already dealt with
     by this code.
+
+    The only reason at present for the distinction between UserAgent and
+    UserAgentBase is so that classes that depend on .seek()able responses
+    (e.g. mechanize.Browser) can inherit from UserAgentBase.  The subclass
+    UserAgent exposes a .set_seekable_responses() method that allows switching
+    off the adding of a .seek() method to responses.
 
     Public attributes:
 
     addheaders: list of (name, value) pairs specifying headers to send with
      every request, unless they are overridden in the Request instance.
 
-     >>> ua = UserAgent()
+     >>> ua = UserAgentBase()
      >>> ua.addheaders = [
      ...  ("User-agent", "Mozilla/5.0 (compatible)"),
      ...  ("From", "responsible.person@example.com")]
@@ -349,3 +355,10 @@ class UserAgent(OpenerDirector):
         if newhandler is not None:
             self.add_handler(newhandler)
             self._ua_handlers[name] = newhandler
+
+
+class UserAgent(UserAgentBase):
+
+    def set_seekable_responses(self, handle):
+        """Make response objects .seek()able."""
+        self._set_handler("_seek", handle)

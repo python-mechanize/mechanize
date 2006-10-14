@@ -82,6 +82,18 @@ class SimpleTests(TestCase):
         test_state(self.browser)
         self.assert_("GeneralFAQ.html" in r.read(2048))
 
+    def test_non_seekable(self):
+        # check everything still works without response_seek_wrapper and
+        # the .seek() method on response objects
+        ua = mechanize.UserAgent()
+        ua.set_seekable_responses(False)
+        ua.set_handle_equiv(False)
+        ua._maybe_reindex_handlers()
+        response = ua.open('http://wwwsearch.sourceforge.net/')
+        self.failIf(hasattr(response, "seek"))
+        data = response.read()
+        self.assert_("Python bits" in data)
+
 
 class ResponseTests(TestCase):
 

@@ -11,7 +11,7 @@ included with the distribution).
 
 import urllib2, sys, copy, re
 
-from _useragent import UserAgent
+from _useragent import UserAgentBase
 from _html import DefaultFactory
 from _response import response_seek_wrapper, closeable_response
 import _upgrade
@@ -53,7 +53,7 @@ class History:
         del self._history[:]
 
 
-class Browser(UserAgent):
+class Browser(UserAgentBase):
     """Browser-like class with support for history, forms and links.
 
     BrowserStateError is raised whenever the browser is in the wrong state to
@@ -68,9 +68,9 @@ class Browser(UserAgent):
 
     """
 
-    handler_classes = UserAgent.handler_classes.copy()
+    handler_classes = UserAgentBase.handler_classes.copy()
     handler_classes["_response_upgrade"] = _upgrade.ResponseUpgradeProcessor
-    default_others = copy.copy(UserAgent.default_others)
+    default_others = copy.copy(UserAgentBase.default_others)
     default_others.append("_response_upgrade")
 
     def __init__(self,
@@ -83,8 +83,8 @@ class Browser(UserAgent):
         Only named arguments should be passed to this constructor.
 
         factory: object implementing the mechanize.Factory interface.
-        history: object implementing the mechanize.History interface.  Note this
-         interface is still experimental and may change in future.
+        history: object implementing the mechanize.History interface.  Note
+         this interface is still experimental and may change in future.
         request_class: Request class to use.  Defaults to mechanize.Request
          by default for Pythons older than 2.4, urllib2.Request otherwise.
 
@@ -116,10 +116,11 @@ class Browser(UserAgent):
         self.request = None
         self.set_response(None)
 
-        UserAgent.__init__(self)  # do this last to avoid __getattr__ problems
+        # do this last to avoid __getattr__ problems
+        UserAgentBase.__init__(self)
 
     def close(self):
-        UserAgent.close(self)
+        UserAgentBase.close(self)
         if self._response is not None:
             self._response.close()    
         if self._history is not None:
@@ -164,7 +165,8 @@ class Browser(UserAgent):
                 # relative URL
                 if self._response is None:
                     raise BrowserStateError(
-                        "can't fetch relative reference: not viewing any document")
+                        "can't fetch relative reference: "
+                        "not viewing any document")
                 url = _rfc3986.urljoin(self._response.geturl(), url)
 
         request = self._request(url, data, visit)
@@ -178,12 +180,13 @@ class Browser(UserAgent):
             if self.request is not None and update_history:
                 self._history.add(self.request, self._response)
             self._response = None
-            # we want self.request to be assigned even if UserAgent.open fails
+            # we want self.request to be assigned even if UserAgentBase.open
+            # fails
             self.request = request
 
         success = True
         try:
-            response = UserAgent.open(self, request, data)
+            response = UserAgentBase.open(self, request, data)
         except urllib2.HTTPError, error:
             success = False
             if error.fp is None:  # not a response

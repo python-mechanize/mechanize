@@ -66,6 +66,7 @@ __all__ = [
     'USE_BARE_EXCEPT',
     'UnknownHandler',
     'UserAgent',
+    'UserAgentBase',
     'XHTMLCompatibleHeadParser',
     '__version__',
     'build_opener',
@@ -86,7 +87,7 @@ from _mechanize import \
      BrowserStateError, LinkNotFoundError, FormNotFoundError
 
 # configurable URL-opener interface
-from _useragent import UserAgent
+from _useragent import UserAgentBase, UserAgent
 from _html import \
      Link, \
      Factory, DefaultFactory, RobustFactory, \
