@@ -580,6 +580,11 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
 <a name="usagefaq"></a>
 <h2>FAQs - usage</h2>
 <ul>
+  <li>I'm not getting the HTML page I expected to see.
+    <ul>
+      <li><a href="http://wwwsearch.sourceforge.net/mechanize/doc.html#debugging">Debugging tips</a>
+      <li><a href="http://wwwsearch.sourceforge.net/bits/GeneralFAQ.html">More tips</a>
+     </ul>
   <li>I'm <strong><em>sure</em></strong> this page is HTML, why does
      <code>mechanize.Browser</code> think otherwise?
 @{colorize("""
