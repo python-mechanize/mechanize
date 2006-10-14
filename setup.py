@@ -53,12 +53,7 @@ import re
 ##                           open("mechanize/_mechanize.py").read())
 ## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
 VERSION = "0.1.4b"
-INSTALL_REQUIRES = [
-    "ClientForm>=0.2.2, ==dev",
-    # there's no dependency on BeautifulSoup, but people get confused when
-    # BeautifulSoup 3 doesn't work
-    "BeautifulSoup>=2.1.1, <3.0",
-    ]
+INSTALL_REQUIRES = ["ClientForm>=0.2.4, ==dev"]
 NAME = "mechanize"
 PACKAGE = True
 LICENSE = "BSD"  # or ZPL 2.1
