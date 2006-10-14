@@ -6,6 +6,6 @@ class SeekableProcessor(BaseHandler):
     """Make responses seekable."""
 
     def any_response(self, request, response):
-        if response is not None and not hasattr(response, "seek"):
+        if not hasattr(response, "seek"):
             return response_seek_wrapper(response)
         return response
