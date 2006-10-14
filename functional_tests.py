@@ -88,7 +88,6 @@ class SimpleTests(TestCase):
         ua = mechanize.UserAgent()
         ua.set_seekable_responses(False)
         ua.set_handle_equiv(False)
-        ua._maybe_reindex_handlers()
         response = ua.open('http://wwwsearch.sourceforge.net/')
         self.failIf(hasattr(response, "seek"))
         data = response.read()
