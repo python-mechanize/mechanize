@@ -305,12 +305,13 @@ CookieJar Perl code from which mechanize's support for that is derived.
 <p>The documentation to-do list has moved to the new "docs-in-progress"
 directory in SVN.
 
-<em>This is <strong>very</strong> roughly in order of priority</em>
+<p><em>This is <strong>very</strong> roughly in order of priority</em>
 
 <ul>
   <li>Test <code>.any_response()</code> two handlers case: ordering.
   <li>Test referer bugs (frags and don't add in redirect unless orig
     req had Referer)
+  <li>Remove use of urlparse from _auth.py.
   <li>Proper XHTML support!
   <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
     per page.
@@ -345,7 +346,7 @@ directory in SVN.
     should be defined separate from handlers themselves.  Add new
     build_opener and deprecate the old one?  Actually, _useragent is
     probably not far off what I'd have in mind (would just need a
-    method or two and a base class adding), and it's not a high
+    method or two and a base class adding I think), and it's not a high
     priority since I guess most people will just use the UserAgent and
     Browser classes.
 
