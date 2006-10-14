@@ -635,7 +635,7 @@ class AbstractHTTPHandler(BaseHandler):
         # request.
         headers["Connection"] = "close"
         headers = dict(
-            (name.title(), val) for name, val in headers.items())
+            [(name.title(), val) for name, val in headers.items()])
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
             r = h.getresponse()
