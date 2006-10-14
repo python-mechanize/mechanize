@@ -301,8 +301,6 @@ directory in SVN.
 <em>This is <strong>very</strong> roughly in order of priority</em>
 
 <ul>
-  <li>Topological sort for handlers, instead of .handler_order attribute.
-    Add new build_opener and deprecate the old one?
   <li>Test <code>.any_response()</code> two handlers case: ordering.
   <li>Test referer bugs (frags and don't add in redirect unless orig
     req had Referer)
@@ -323,6 +321,7 @@ directory in SVN.
     (HTTP level should still use byte strings, of course).
   <li><code>clean_url()</code>: test browser behaviour.  I <em>think</em>
     this is correct...
+  <li>Use a nicer RFC 3986 join / split / unsplit implementation.
   <li>Figure out the Right Thing (if such a thing exists) for %-encoding.
   <li>How do IRIs fit into the world?
   <li>IDNA -- must read about security stuff first.
@@ -334,7 +333,16 @@ directory in SVN.
   <li>gzip transfer encoding (there's already a handler for this in
     mechanize, but it's poorly implemented ATM).
   <li>proxy.pac parsing (I don't think this needs JS interpretation)
-</ul>
+  <li>Topological sort for handlers, instead of .handler_order
+    attribute.  Ordering and other dependencies (where unavoidable)
+    should be defined separate from handlers themselves.  Add new
+    build_opener and deprecate the old one?  Actually, _useragent is
+    probably not far off what I'd have in mind (would just need a
+    method or two and a base class adding), and it's not a high
+    priority since I guess most people will just use the UserAgent and
+    Browser classes.
+
+ </ul>
 
 
 <a name="download"></a>
