@@ -307,7 +307,6 @@ directory in SVN.
   <li>Test referer bugs (frags and don't add in redirect unless orig
     req had Referer)
   <li>Proper XHTML support!
-  <li>Bundle BeautifulSoup 2, until support version 3.
   <li>Fix BeautifulSoup support to use a single BeautifulSoup instance
     per page.
   <li>Test BeautifulSoup support better / fix encoding issue.
@@ -441,11 +440,10 @@ develop</code> to ensure that project's dependencies are updated if required.
 
 <p>Also note that, currently, if you also use the <code>develop</code>
 distutils command on the <em>dependencies</em> of mechanize (<em>viz</em>,
-ClientForm, and optionally BeautifulSoup) to keep up with SVN, you must run
-<code>setup.py develop</code> for each dependency of mechanize before running
-it for mechanize itself.  As a result, in this case it's probably simplest to
-just set up your <code>sys.path</code> manually rather than using
-<code>setup.py develop</code>.
+ClientForm) to keep up with SVN, you must run <code>setup.py develop</code> for
+each dependency of mechanize before running it for mechanize itself.  As a
+result, in this case it's probably simplest to just set up your
+<code>sys.path</code> manually rather than using <code>setup.py develop</code>.
 
 <p>One convenient way to get the latest source is:
 
@@ -556,14 +554,14 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
   <li>Which version of Python do I need?
   <p>2.3 or above.
   <li>What else do I need?
-  <p>mechanize depends on <a href="../ClientForm/">ClientForm</a>.  The
-     setup.py script also declares a dependency on <a
-     href="http://www.crummy.com/software/BeautifulSoup/">BeautifulSoup</a>,
-     but there is no true dependency: the declaration is there only to avoid
-     confusing people who don't realise that mechanize is not compatible with
-     BeautifulSoup version 3 -- only BeautifulSoup version 2 is currently
-     supported.  A future version of mechanize will support BeautifulSoup
-     version 3.
+  <p>mechanize depends on <a href="../ClientForm/">ClientForm</a>.
+  <li>Does mechanize depend on BeautifulSoup?
+     No.  mechanize offers a few (still rather experimental) classes that make
+     use of BeautifulSoup, but these classes are not required to use mechanize.
+     mechanize bundles BeautifulSoup version 2, so that module is no longer
+     required.  A future version of mechanize will support BeautifulSoup
+     version 3, at which point mechanize will likely no longer bundle the
+     module.
   <p>The versions of those required modules are listed in the
      <code>setup.py</code> for mechanize (included with the download).  The
      dependencies are automatically fetched by <a
@@ -582,10 +580,6 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
 <a name="usagefaq"></a>
 <h2>FAQs - usage</h2>
 <ul>
-  <li>I'm getting odd exceptions from BeautifulSoup.
-  <p>You must install BeautifulSoup version 3, not version 2.  Note
-     that the BeautifulSoup support in mechanize is optional.  mechanize
-     will switch to BeautifulSoup version 3 at some point in the future.
   <li>I'm <strong><em>sure</em></strong> this page is HTML, why does
      <code>mechanize.Browser</code> think otherwise?
 @{colorize("""

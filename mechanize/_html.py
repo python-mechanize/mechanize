@@ -289,41 +289,43 @@ def unescape_charref(data, encoding):
         return repl
 
 
-try:
-    import BeautifulSoup
-except ImportError:
-    pass
-else:
-    import sgmllib
-    # monkeypatch to fix http://www.python.org/sf/803422 :-(
-    sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
-    class MechanizeBs(BeautifulSoup.BeautifulSoup):
-        _entitydefs = htmlentitydefs.name2codepoint
-        # don't want the magic Microsoft-char workaround
-        PARSER_MASSAGE = [(re.compile('(<[^<>]*)/>'),
-                           lambda(x):x.group(1) + ' />'),
-                          (re.compile('<!\s+([^<>]*)>'),
-                           lambda(x):'<!' + x.group(1) + '>')
-                          ]
+# bizarre import gymnastics for bundled BeautifulSoup
+import _beautifulsoup
+import ClientForm
+RobustFormParser, NestingRobustFormParser = ClientForm._create_bs_classes(
+    _beautifulsoup.BeautifulSoup, _beautifulsoup.ICantBelieveItsBeautifulSoup
+    )
+# monkeypatch sgmllib to fix http://www.python.org/sf/803422 :-(
+import sgmllib
+sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
 
-        def __init__(self, encoding, text=None, avoidParserProblems=True,
-                     initialTextIsEverything=True):
-            self._encoding = encoding
-            BeautifulSoup.BeautifulSoup.__init__(
-                self, text, avoidParserProblems, initialTextIsEverything)
+class MechanizeBs(_beautifulsoup.BeautifulSoup):
+    _entitydefs = htmlentitydefs.name2codepoint
+    # don't want the magic Microsoft-char workaround
+    PARSER_MASSAGE = [(re.compile('(<[^<>]*)/>'),
+                       lambda(x):x.group(1) + ' />'),
+                      (re.compile('<!\s+([^<>]*)>'),
+                       lambda(x):'<!' + x.group(1) + '>')
+                      ]
 
-        def handle_charref(self, ref):
-            t = unescape("&#%s;"%ref, self._entitydefs, self._encoding)
-            self.handle_data(t)
-        def handle_entityref(self, ref):
-            t = unescape("&%s;"%ref, self._entitydefs, self._encoding)
-            self.handle_data(t)
-        def unescape_attrs(self, attrs):
-            escaped_attrs = []
-            for key, val in attrs:
-                val = unescape(val, self._entitydefs, self._encoding)
-                escaped_attrs.append((key, val))
-            return escaped_attrs
+    def __init__(self, encoding, text=None, avoidParserProblems=True,
+                 initialTextIsEverything=True):
+        self._encoding = encoding
+        _beautifulsoup.BeautifulSoup.__init__(
+            self, text, avoidParserProblems, initialTextIsEverything)
+
+    def handle_charref(self, ref):
+        t = unescape("&#%s;"%ref, self._entitydefs, self._encoding)
+        self.handle_data(t)
+    def handle_entityref(self, ref):
+        t = unescape("&%s;"%ref, self._entitydefs, self._encoding)
+        self.handle_data(t)
+    def unescape_attrs(self, attrs):
+        escaped_attrs = []
+        for key, val in attrs:
+            val = unescape(val, self._entitydefs, self._encoding)
+            escaped_attrs.append((key, val))
+        return escaped_attrs
 
 class RobustLinksFactory:
 
@@ -334,7 +336,7 @@ class RobustLinksFactory:
                  link_class=Link,
                  urltags=None,
                  ):
-        import BeautifulSoup
+        import _beautifulsoup
         if link_parser_class is None:
             link_parser_class = MechanizeBs
         self.link_parser_class = link_parser_class
@@ -357,13 +359,13 @@ class RobustLinksFactory:
         self._encoding = encoding
 
     def links(self):
-        import BeautifulSoup
+        import _beautifulsoup
         bs = self._bs
         base_url = self._base_url
         encoding = self._encoding
         gen = bs.recursiveChildGenerator()
         for ch in bs.recursiveChildGenerator():
-            if (isinstance(ch, BeautifulSoup.Tag) and
+            if (isinstance(ch, _beautifulsoup.Tag) and
                 ch.name in self.urltags.keys()+["base"]):
                 link = ch
                 attrs = bs.unescape_attrs(link.attrs)
@@ -377,7 +379,7 @@ class RobustLinksFactory:
                     continue
                 url = clean_url(url, encoding)
                 text = link.firstText(lambda t: True)
-                if text is BeautifulSoup.Null:
+                if text is _beautifulsoup.Null:
                     # follow _pullparser's weird behaviour rigidly
                     if link.name == "a":
                         text = ""
@@ -393,7 +395,7 @@ class RobustFormsFactory(FormsFactory):
         import ClientForm
         args = form_parser_args(*args, **kwds)
         if args.form_parser_class is None:
-            args.form_parser_class = ClientForm.RobustFormParser
+            args.form_parser_class = RobustFormParser
         FormsFactory.__init__(self, **args.dictionary)
 
     def set_response(self, response, encoding):
@@ -410,9 +412,9 @@ class RobustTitleFactory:
         self._encoding = encoding
 
     def title(self):
-        import BeautifulSoup
+        import _beautifulsoup
         title = self._bs.first("title")
-        if title == BeautifulSoup.Null:
+        if title == _beautifulsoup.Null:
             return None
         else:
             return title.firstText(lambda t: True)
@@ -566,7 +568,7 @@ class RobustFactory(Factory):
         self._soup_class = soup_class
 
     def set_response(self, response):
-        import BeautifulSoup
+        import _beautifulsoup
         Factory.set_response(self, response)
         if response is not None:
             data = response.read()

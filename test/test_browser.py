@@ -6,14 +6,7 @@ from unittest import TestCase
 import StringIO, re, urllib2
 
 import mechanize
-FACTORY_CLASSES = [mechanize.DefaultFactory]
-try:
-    import BeautifulSoup
-except ImportError:
-    import warnings
-    warnings.warn("skipping tests involving BeautifulSoup")
-else:
-    FACTORY_CLASSES.append(mechanize.RobustFactory)
+FACTORY_CLASSES = [mechanize.DefaultFactory, mechanize.RobustFactory]
 
 
 # XXX these 'mock' classes are badly in need of simplification / removal
