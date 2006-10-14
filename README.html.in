@@ -186,16 +186,23 @@ way.
 <a name="useragentbase"></a>
 <h2>UserAgent vs UserAgentBase</h2>
 
-<code>mechanize.UserAgent</code> is a trivial subclass of
+<p><code>mechanize.UserAgent</code> is a trivial subclass of
 <code>mechanize.UserAgentBase</code>, adding just one method,
 <code>.set_seekable_responses()</code>, which allows switching off the
 addition of the <code>.seek()</code> method to response objects:
 
 @{colorize("""
-import mechanize
-response = mechanize.urlopen("http://www.example.com/")
+ua = mechanize.UserAgent()
+ua.set_seekable_responses(False)
+ua.set_handle_equiv(False)  # handling HTTP-EQUIV would add the .seek() method too
+response = ua.open('http://wwwsearch.sourceforge.net/')
+assert not hasattr(response, "seek")
 print response.read()
 """)}
+
+<p>The reason for the extra class is that
+<code>mechanize.Browser</code> depends on seekable response objects
+(because response objects are used to implement the browser history).
 
 
 <a name="compatnotes"></a>
@@ -533,9 +540,9 @@ of web applications:
 
 <ul>
 
-  <li><a href="http://cheeseshop.python.org/pypi?:action=display&name=zope.testbrowser">
+  <li><a href="http://cheeseshop.python.org/pypi?:action=display&amp;name=zope.testbrowser">
     <code>zope.testbrowser</code></a> (or
-    <a href="http://cheeseshop.python.org/pypi?%3Aaction=display&name=ZopeTestbrowser">
+    <a href="http://cheeseshop.python.org/pypi?%3Aaction=display&amp;name=ZopeTestbrowser">
     <code>ZopeTestBrowser</code></a>, the standalone version).
   <li><a href="http://www.idyll.org/~t/www-tools/twill.html">twill</a>.
 </ul>
