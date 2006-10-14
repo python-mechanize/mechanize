@@ -377,13 +377,11 @@ documentation if you need more detailed or up-to-date instructions.
 EasyInstall is a one-liner for the common case, to be compared with the usual
 download-unpack-install cycle with <code>setup.py</code>.
 
-<p><strong>You need EasyInstall version 0.6a8 or newer.</strong>
-
 <h3>Using EasyInstall to download and install mechanize</h3>
 
 <ol>
   <li><a href="http://peak.telecommunity.com/DevCenter/EasyInstall#installing-easy-install">
-Install easy_install</a> (you need version 0.6a8 or newer)
+Install easy_install</a>
   <li><code>easy_install mechanize</code>
 </ol>
 
@@ -418,9 +416,7 @@ dependency project, you should ask for it explicitly by running
 <code>easy_install "projectname=dev"</code> for that project.
 
 <p>Note also that you can still carry on using a plain old SVN checkout as
-usual if you like (optionally in conjunction with <a
-href="./#develop"><code>setup.py develop</code></a> &#8211; this is
-particularly useful on Windows, since it functions rather like symlinks).
+usual if you like.
 
 <h3>Using setup.py from a .tar.gz, .zip or an SVN checkout to download and install mechanize</h3>
 
@@ -433,36 +429,6 @@ accepts, use the <code>easy_install</code> distutils command instead of
 <code>install</code> (see <code>python setup.py --help easy_install</code>)
 
 <pre>python setup.py easy_install mechanize</pre>
-
-<a name="develop"></a>
-<h3>Using setup.py to install mechanize for development work on mechanize</h3>
-
-<p><strong>Note: this section is only useful for people who want to change
-mechanize</strong>: It is not useful to do this if all you want is to <a
-href="./#svnhead">keep up with SVN</a>.
-
-<p>For development of mechanize using EasyInstall (see the <a
-href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</a> docs
-for details), you have the option of using the <code>develop</code> distutils
-command.  This is particularly useful on Windows, since it functions rather
-like symlinks.  Get the mechanize source, then:
-
-<pre>python setup.py develop</pre>
-
-<p>Note that after every <code>svn update</code> on a
-<code>develop</code>-installed project, you should run <code>setup.py
-develop</code> to ensure that project's dependencies are updated if required.
-
-<p>Also note that, currently, if you also use the <code>develop</code>
-distutils command on the <em>dependencies</em> of mechanize (<em>viz</em>,
-ClientForm) to keep up with SVN, you must run <code>setup.py develop</code> for
-each dependency of mechanize before running it for mechanize itself.  As a
-result, in this case it's probably simplest to just set up your
-<code>sys.path</code> manually rather than using <code>setup.py develop</code>.
-
-<p>One convenient way to get the latest source is:
-
-<pre>easy_install --editable --build-directory mybuilddir "mechanize==dev"</pre>
 
 
 <a name="source"></a>
