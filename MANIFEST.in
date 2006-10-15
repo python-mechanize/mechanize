@@ -10,6 +10,7 @@ include doc.html
 include ChangeLog.txt
 include 0.1.0-changes.txt
 include *.py
+prune docs-in-progress
 recursive-include examples *.py
 recursive-include attic *.py
 recursive-include test-tools *.py
