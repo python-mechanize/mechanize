@@ -1,0 +1,35 @@
+Integration regression test for case where ClientForm handled RFC 3986
+url unparsing incorrectly (it was using "" in place of None for
+fragment, due to continuing to support use of stdlib module urlparse
+as well as mechanize._rfc3986).  Fixed in ClientForm r33622 .
+
+>>> import mechanize
+>>> from mechanize._response import test_response
+
+>>> def forms():
+...     forms = []
+...     for method in ["GET", "POST"]:
+...         data = ('<form action="" method="%s">'
+...         '<input type="submit" name="s"/></form>' % method
+...         )
+...         br = mechanize.Browser()
+...         response = test_response(data, [("content-type", "text/html")])
+...         br.set_response(response)
+...         br.select_form(nr=0)
+...         forms.append(br.form)
+...     return forms
+
+>>> getform, postform = forms()
+>>> getform.click().get_full_url()
+'http://example.com/?s='
+>>> postform.click().get_full_url()
+'http://example.com/'
+
+>>> data = '<form action=""><isindex /></form>'
+>>> br = mechanize.Browser()
+>>> response = test_response(data, [("content-type", "text/html")])
+>>> br.set_response(response)
+>>> br.select_form(nr=0)
+>>> br.find_control(type="isindex").value = "blah"
+>>> br.click(type="isindex").get_full_url()
+'http://example.com/?blah'
