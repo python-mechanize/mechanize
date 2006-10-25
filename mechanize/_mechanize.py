@@ -18,7 +18,7 @@ import _upgrade
 import _request
 import _rfc3986
 
-__version__ = (0, 1, 4, "b", None)  # 0.1.4b
+__version__ = (0, 1, 5, "b", None)  # 0.1.5b
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
