@@ -12,7 +12,33 @@ included with the distribution).
 
 # XXX Wow, this is ugly.  Overly-direct translation of the RFC ATM.
 
-import sys, re, posixpath
+import sys, re, posixpath, urllib
+
+## def chr_range(a, b):
+##     return "".join(map(chr, range(ord(a), ord(b)+1)))
+
+## RESERVED_URL_CHARS = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+##                       "abcdefghijklmnopqrstuvwxyz"
+##                       "-_.~")
+## UNRESERVED_URL_CHARS = "!*'();:@&=+$,/?%#[]"
+# we want (RESERVED_URL_CHARS+UNRESERVED_URL_CHARS), minus those
+# 'safe'-by-default characters that urllib.urlquote never quotes
+URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
+
+
+def clean_url(url, encoding):
+    # percent-encode illegal URL characters
+    # Trying to come up with test cases for this gave me a headache, revisit
+    # when do switch to unicode.
+    # Somebody else's comments (lost the attribution):
+##     - IE will return you the url in the encoding you send it
+##     - Mozilla/Firefox will send you latin-1 if there's no non latin-1
+##     characters in your link. It will send you utf-8 however if there are...
+    if type(url) == type(""):
+        url = url.decode(encoding, "replace")
+    url = url.strip()
+    return urllib.quote(url.encode(encoding), URLQUOTE_SAFE_URL_CHARS)
+
 
 SPLIT_MATCH = re.compile(
     r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?").match

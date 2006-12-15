@@ -449,7 +449,7 @@ class BrowserTests(TestCase):
     def _test_link_encoding(self, factory):
         import urllib
         import mechanize
-        from mechanize._html import clean_url
+        from mechanize._rfc3986 import clean_url
         url = "http://example.com/"
         for encoding in ["UTF-8", "latin-1"]:
             encoding_decl = "; charset=%s" % encoding

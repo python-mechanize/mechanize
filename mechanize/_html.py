@@ -8,22 +8,11 @@ included with the distribution).
 
 """
 
-import re, copy, urllib, htmlentitydefs
+import re, copy, htmlentitydefs
 
 import _request
 from _headersutil import split_header_words, is_html as _is_html
 import _rfc3986
-
-## def chr_range(a, b):
-##     return "".join(map(chr, range(ord(a), ord(b)+1)))
-
-## RESERVED_URL_CHARS = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-##                       "abcdefghijklmnopqrstuvwxyz"
-##                       "-_.~")
-## UNRESERVED_URL_CHARS = "!*'();:@&=+$,/?%#[]"
-# we want (RESERVED_URL_CHARS+UNRESERVED_URL_CHARS), minus those
-# 'safe'-by-default characters that urllib.urlquote never quotes
-URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
 
 DEFAULT_ENCODING = "latin-1"
 
@@ -107,19 +96,6 @@ class Link:
             self.base_url, self.url, self.text, self.tag, self.attrs)
 
 
-def clean_url(url, encoding):
-    # percent-encode illegal URL characters
-    # Trying to come up with test cases for this gave me a headache, revisit
-    # when do switch to unicode.
-    # Somebody else's comments (lost the attribution):
-##     - IE will return you the url in the encoding you send it
-##     - Mozilla/Firefox will send you latin-1 if there's no non latin-1
-##     characters in your link. It will send you utf-8 however if there are...
-    if type(url) == type(""):
-        url = url.decode(encoding, "replace")
-    url = url.strip()
-    return urllib.quote(url.encode(encoding), URLQUOTE_SAFE_URL_CHARS)
-
 class LinksFactory:
 
     def __init__(self,
@@ -175,7 +151,7 @@ class LinksFactory:
                 # this.
                 continue
 
-            url = clean_url(url, encoding)
+            url = _rfc3986.clean_url(url, encoding)
             if tag == "a":
                 if token.type != "startendtag":
                     # hmm, this'd break if end tag is missing
@@ -377,7 +353,7 @@ class RobustLinksFactory:
                 url = attrs_dict.get(url_attr)
                 if not url:
                     continue
-                url = clean_url(url, encoding)
+                url = _rfc3986.clean_url(url, encoding)
                 text = link.firstText(lambda t: True)
                 if text is _beautifulsoup.Null:
                     # follow _pullparser's weird behaviour rigidly
