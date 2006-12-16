@@ -98,3 +98,27 @@ True
 >>> r = br.open(req)
 >>> test_state(br)
 True
+
+
+.global_form() is separate from the other forms (partly for backwards-
+compatibility reasons).
+
+>>> from mechanize._response import test_response
+>>> br = TestBrowser2()
+>>> html = """\
+... <html><body>
+... <input type="text" name="a" />
+... <form><input type="text" name="b" /></form>
+... </body></html>
+... """
+>>> response = test_response(html, headers=[("Content-type", "text/html")])
+>>> br.global_form()
+Traceback (most recent call last):
+BrowserStateError: not viewing any document
+>>> br.set_response(response)
+>>> len(list(br.forms()))
+1
+>>> iter(br.forms()).next().find_control(nr=0).name
+'b'
+>>> br.global_form().find_control(nr=0).name
+'a'

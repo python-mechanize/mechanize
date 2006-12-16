@@ -347,6 +347,24 @@ class Browser(UserAgentBase):
             raise BrowserStateError("not viewing HTML")
         return self._factory.forms()
 
+    def global_form(self):
+        """Return the global form object, or None if the factory implementation
+        did not supply one.
+
+        The "global" form object contains all controls that are not descendants of
+        any FORM element.
+
+        The returned form object implements the ClientForm.HTMLForm interface.
+
+        This is a separate method since the global form is not regarded as part
+        of the sequence of forms in the document -- mostly for
+        backwards-compatibility.
+
+        """
+        if not self.viewing_html():
+            raise BrowserStateError("not viewing HTML")
+        return self._factory.global_form
+
     def viewing_html(self):
         """Return whether the current response contains HTML data."""
         if self._response is None:
@@ -378,6 +396,10 @@ class Browser(UserAgentBase):
         If a form is selected, the Browser object supports the HTMLForm
         interface, so you can call methods like .set_value(), .set(), and
         .click().
+
+        Another way to select a form is to assign to the .form attribute.  The
+        form assigned should be one of the objects returned by the .forms()
+        method.
 
         At least one of the name, predicate and nr arguments must be supplied.
         If no matching form is found, mechanize.FormNotFoundError is raised.

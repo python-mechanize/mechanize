@@ -165,6 +165,9 @@ class FormsFactory:
 
     """Makes a sequence of objects satisfying ClientForm.HTMLForm interface.
 
+    After calling .forms(), the .global_form attribute is a form object
+    containing all controls not a descendant of any FORM element.
+
     For constructor argument docs, see ClientForm.ParseResponse
     argument docs.
 
@@ -187,25 +190,28 @@ class FormsFactory:
         self.backwards_compat = backwards_compat
         self._response = None
         self.encoding = None
+        self.global_form = None
 
     def set_response(self, response, encoding):
         self._response = response
         self.encoding = encoding
+        self.global_form = None
 
     def forms(self):
         import ClientForm
         encoding = self.encoding
-        return ClientForm.ParseResponse(
+        forms = ClientForm.ParseResponseEx(
             self._response,
             select_default=self.select_default,
             form_parser_class=self.form_parser_class,
             request_class=self.request_class,
-            backwards_compat=self.backwards_compat,
             encoding=encoding,
             _urljoin=_rfc3986.urljoin,
             _urlparse=_rfc3986.urlsplit,
             _urlunparse=_rfc3986.urlunsplit,
             )
+        self.global_form = forms[0]
+        return forms[1:]
 
 class TitleFactory:
     def __init__(self):
@@ -416,6 +422,9 @@ class Factory:
     is_html: true if response contains an HTML document (XHTML may be
      regarded as HTML too)
     title: page title, or None if no title or not HTML
+    global_form: form object containing all controls that are not descendants
+     of any FORM element, or None if the forms_factory does not support
+     supplying a global form
 
     """
 
@@ -461,7 +470,7 @@ class Factory:
         self._response = response
         self._forms_genf = self._links_genf = None
         self._get_title = None
-        for name in ["encoding", "is_html", "title"]:
+        for name in ["encoding", "is_html", "title", "global_form"]:
             try:
                 delattr(self, name)
             except AttributeError:
@@ -485,14 +494,21 @@ class Factory:
                 else:
                     self.title = None
                 return self.title
+            elif name == "global_form":
+                self.forms()
+                return self.global_form
         finally:
             self._response.seek(0)
 
     def forms(self):
         """Return iterable over ClientForm.HTMLForm-like objects."""
+        # this implementation sets .global_form as a side-effect, for benefit
+        # of __getattr__ impl
         if self._forms_genf is None:
             self._forms_genf = CachingGeneratorFunction(
                 self._forms_factory.forms())
+            self.global_form = getattr(
+                self._forms_factory, "global_form", None)
         return self._forms_genf()
 
     def links(self):
