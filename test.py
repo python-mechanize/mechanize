@@ -8,6 +8,9 @@ python test.py --help
 
 """
 
+import cgitb
+#cgitb.enable(format="text")
+
 # Modules containing tests to run -- a test is anything named *Tests, which
 # should be classes deriving from unittest.TestCase.
 MODULE_NAMES = ["test_date", "test_browser", "test_response", "test_cookies",
@@ -16,12 +19,32 @@ MODULE_NAMES = ["test_date", "test_browser", "test_response", "test_cookies",
                 ]
 
 import sys, os, traceback, logging, glob
-from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase
+from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
+     _TextTestResult
 
 level = logging.DEBUG
 #level = logging.INFO
 #level = logging.NOTSET
 #logging.getLogger("mechanize").setLevel(level)
+
+
+class CgitbTextResult(_TextTestResult):
+    def _exc_info_to_string(self, err, test):
+        """Converts a sys.exc_info()-style tuple of values into a string."""
+        exctype, value, tb = err
+        # Skip test runner traceback levels
+        while tb and self._is_relevant_tb_level(tb):
+            tb = tb.tb_next
+        if exctype is test.failureException:
+            # Skip assert*() traceback levels
+            length = self._count_relevant_tb_levels(tb)
+            return cgitb.text((exctype, value, tb))
+        return cgitb.text((exctype, value, tb))
+
+class CgitbTextTestRunner(TextTestRunner):
+    def _makeResult(self):
+        return CgitbTextResult(self.stream, self.descriptions, self.verbosity)
+
 
 class TestProgram:
     """A command-line program that runs a set of tests; this is primarily
@@ -110,9 +133,12 @@ if __name__ == "__main__":
     # XXX temporary stop-gap to run doctests
 
     # XXXX coverage output seems incorrect ATM
-    run_coverage = '-c' in sys.argv
+    run_coverage = "-c" in sys.argv
     if run_coverage:
         sys.argv.remove("-c")
+    use_cgitb = "-t" in sys.argv
+    if use_cgitb:
+        sys.argv.remove("-t")
 
     # import local copy of Python 2.5 doctest
     assert os.path.isdir("test")
@@ -173,7 +199,10 @@ if __name__ == "__main__":
     import unittest
     test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
     sys.path.insert(0, test_path)
-    prog = TestProgram(MODULE_NAMES)
+    test_runner = None
+    if use_cgitb:
+        test_runner = CgitbTextTestRunner()
+    prog = TestProgram(MODULE_NAMES, testRunner=test_runner)
     result = prog.runTests()
 
     if run_coverage:
