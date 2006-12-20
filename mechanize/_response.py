@@ -362,6 +362,11 @@ def test_response(data='test data', headers=[],
                   url="http://example.com/", code=200, msg="OK"):
     return make_response(data, headers, url, code, msg)
 
+def test_html_response(data='test data', headers=[],
+                       url="http://example.com/", code=200, msg="OK"):
+    headers += [("Content-type", "text/html")]
+    return make_response(data, headers, url, code, msg)
+
 def make_response(data, headers, url, code, msg):
     """Convenient factory for objects implementing response interface.
 

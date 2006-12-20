@@ -135,7 +135,9 @@ class LinksFactory:
             if token.type == "endtag":
                 continue
             if token.data == "base":
-                base_url = dict(token.attrs).get("href")
+                base_href = dict(token.attrs).get("href")
+                if base_href is not None:
+                    base_url = base_href
                 continue
             attrs = dict(token.attrs)
             tag = token.data
@@ -353,7 +355,9 @@ class RobustLinksFactory:
                 attrs = bs.unescape_attrs(link.attrs)
                 attrs_dict = dict(attrs)
                 if link.name == "base":
-                    base_url = attrs_dict.get("href")
+                    base_href = attrs_dict.get("href")
+                    if base_href is not None:
+                        base_url = base_href
                     continue
                 url_attr = self.urltags[link.name]
                 url = attrs_dict.get(url_attr)

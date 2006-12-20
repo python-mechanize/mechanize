@@ -3,6 +3,7 @@
 from unittest import TestCase
 
 import mechanize
+from mechanize._response import test_html_response
 
 
 class RegressionTests(TestCase):
@@ -10,10 +11,18 @@ class RegressionTests(TestCase):
     def test_close_base_tag(self):
         # any document containing a </base> tag used to cause an exception
         br = mechanize.Browser()
-        response = mechanize.make_response(
-            "</base>", [("Content-type", "text/html")], "", 200, "OK")
+        response = test_html_response("</base>")
         br.set_response(response)
         list(br.links())
+
+    def test_bad_base_tag(self):
+        # a document with a base tag with no href used to cause an exception
+        for factory in [mechanize.DefaultFactory(), mechanize.RobustFactory()]:
+            br = mechanize.Browser(factory=factory)
+            response = test_html_response(
+                "<BASE TARGET='_main'><a href='http://example.com/'>eg</a>")
+            br.set_response(response)
+            list(br.links())
 
 
 class CachingGeneratorFunctionTests(TestCase):
