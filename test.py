@@ -22,10 +22,12 @@ import sys, os, traceback, logging, glob
 from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
      _TextTestResult
 
-level = logging.DEBUG
+#level = logging.DEBUG
 #level = logging.INFO
+#level = logging.WARNING
 #level = logging.NOTSET
 #logging.getLogger("mechanize").setLevel(level)
+#logging.getLogger("mechanize").addHandler(logging.StreamHandler(sys.stdout))
 
 
 class CgitbTextResult(_TextTestResult):
@@ -188,8 +190,9 @@ if __name__ == "__main__":
 
     # run doctests in docstrings
     from mechanize import _headersutil, _auth, _clientcookie, _pullparser, \
-         _http
+         _http, _rfc3986
     doctest.testmod(_headersutil)
+    doctest.testmod(_rfc3986)
     doctest.testmod(_auth)
     doctest.testmod(_clientcookie)
     doctest.testmod(_pullparser)

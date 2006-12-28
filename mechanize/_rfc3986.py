@@ -17,17 +17,18 @@ import sys, re, posixpath, urllib
 ## def chr_range(a, b):
 ##     return "".join(map(chr, range(ord(a), ord(b)+1)))
 
-## RESERVED_URL_CHARS = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-##                       "abcdefghijklmnopqrstuvwxyz"
-##                       "-_.~")
-## UNRESERVED_URL_CHARS = "!*'();:@&=+$,/?%#[]"
-# we want (RESERVED_URL_CHARS+UNRESERVED_URL_CHARS), minus those
-# 'safe'-by-default characters that urllib.urlquote never quotes
-URLQUOTE_SAFE_URL_CHARS = "!*'();:@&=+$,/?%#[]~"
+## UNRESERVED_URI_CHARS = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+##                         "abcdefghijklmnopqrstuvwxyz"
+##                         "0123456789"
+##                         "-_.~")
+## RESERVED_URI_CHARS = "!*'();:@&=+$,/?#[]"
+## URI_CHARS = RESERVED_URI_CHARS+UNRESERVED_URI_CHARS+'%'
+# this re matches any character that's not in URI_CHARS
+BAD_URI_CHARS_RE = re.compile("[^A-Za-z0-9\-_.~!*'();:@&=+$,/?%#[\]]")
 
 
 def clean_url(url, encoding):
-    # percent-encode illegal URL characters
+    # percent-encode illegal URI characters
     # Trying to come up with test cases for this gave me a headache, revisit
     # when do switch to unicode.
     # Somebody else's comments (lost the attribution):
@@ -37,7 +38,28 @@ def clean_url(url, encoding):
     if type(url) == type(""):
         url = url.decode(encoding, "replace")
     url = url.strip()
-    return urllib.quote(url.encode(encoding), URLQUOTE_SAFE_URL_CHARS)
+    # for second param to urllib.quote(), we want URI_CHARS, minus the
+    # 'always_safe' characters that urllib.quote() never percent-encodes
+    return urllib.quote(url.encode(encoding), "!*'();:@&=+$,/?%#[]~")
+
+def is_clean_uri(uri):
+    """
+    >>> is_clean_uri("ABC!")
+    True
+    >>> is_clean_uri(u"ABC!")
+    True
+    >>> is_clean_uri("ABC|")
+    False
+    >>> is_clean_uri(u"ABC|")
+    False
+    >>> is_clean_uri("http://example.com/0")
+    True
+    >>> is_clean_uri(u"http://example.com/0")
+    True
+    """
+    # note module re treats bytestrings as through they were decoded as latin-1
+    # so this function accepts both unicode and bytestrings
+    return not bool(BAD_URI_CHARS_RE.search(uri))
 
 
 SPLIT_MATCH = re.compile(
@@ -211,3 +233,7 @@ def merge(base_authority, base_path, ref_path):
     if ii >= 0:
         return base_path[:ii+1] + ref_path
     return ref_path
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

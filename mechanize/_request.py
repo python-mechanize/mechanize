@@ -8,15 +8,27 @@ COPYING.txt included with the distribution).
 
 """
 
-import urllib2
-import urllib
+import urllib2, urllib, logging
 
 from _clientcookie import request_host
+import _rfc3986
+
+warn = logging.getLogger("mechanize").warning
 
 
 class Request(urllib2.Request):
     def __init__(self, url, data=None, headers={},
                  origin_req_host=None, unverifiable=False, visit=None):
+        # In mechanize 0.2, the interpretation of a unicode url argument will
+        # change: A unicode url argument will be interpreted as an IRI, and a
+        # bytestring as a URI. For now, we accept unicode or bytestring.  We
+        # don't insist that the value is always a URI (specifically, must only
+        # contain characters which are legal), because that might break working
+        # code (who knows what bytes some servers want to see, especially with
+        # browser plugins for internationalised URIs).
+        if not _rfc3986.is_clean_uri(url):
+            warn("url argument is not a URI "
+                 "(contains illegal characters) %r" % url)
         urllib2.Request.__init__(self, url, data, headers)
         self.selector = None
         self.unredirected_hdrs = {}
