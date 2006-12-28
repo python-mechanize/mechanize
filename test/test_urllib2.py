@@ -886,6 +886,39 @@ class HandlerTests(unittest.TestCase):
         except mechanize.HTTPError:
             self.assert_(count == HTTPRedirectHandler.max_redirections)
 
+    def test_redirect_bad_uri(self):
+        # bad URIs should be cleaned up before redirection
+        from mechanize._response import test_html_response
+        from_url = "http://example.com/a.html"
+        bad_to_url = "http://example.com/b. |html"
+        good_to_url = "http://example.com/b.%20%7Chtml"
+
+        h = HTTPRedirectHandler()
+        o = h.parent = MockOpener()
+
+        req = Request(from_url)
+        h.http_error_302(req, test_html_response(), 302, "Blah",
+                         http_message({"location": bad_to_url}),
+                         )
+        self.assertEqual(o.req.get_full_url(), good_to_url)
+
+    def test_refresh_bad_uri(self):
+        # bad URIs should be cleaned up before redirection
+        from mechanize._response import test_html_response
+        from_url = "http://example.com/a.html"
+        bad_to_url = "http://example.com/b. |html"
+        good_to_url = "http://example.com/b.%20%7Chtml"
+
+        h = HTTPRefreshProcessor(max_time=None, honor_time=False)
+        o = h.parent = MockOpener()
+
+        req = Request("http://example.com/")
+        r = test_html_response(
+            headers=[("refresh", '0; url="%s"' % bad_to_url)])
+        newr = h.http_response(req, r)
+        headers = o.args[-1]
+        self.assertEqual(headers["Location"], good_to_url)
+
     def test_cookie_redirect(self):
         # cookies shouldn't leak into redirected requests
         import mechanize
