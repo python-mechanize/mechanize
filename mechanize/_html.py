@@ -484,25 +484,24 @@ class Factory:
         if name not in ["encoding", "is_html", "title"]:
             return getattr(self.__class__, name)
 
-        try:
-            if name == "encoding":
-                self.encoding = self._encoding_finder.encoding(self._response)
-                return self.encoding
-            elif name == "is_html":
-                self.is_html = self._response_type_finder.is_html(
-                    self._response, self.encoding)
-                return self.is_html
-            elif name == "title":
-                if self.is_html:
-                    self.title = self._title_factory.title()
-                else:
-                    self.title = None
-                return self.title
-            elif name == "global_form":
-                self.forms()
-                return self.global_form
-        finally:
-            self._response.seek(0)
+        if name == "encoding":
+            self.encoding = self._encoding_finder.encoding(
+                copy.copy(self._response))
+            return self.encoding
+        elif name == "is_html":
+            self.is_html = self._response_type_finder.is_html(
+                copy.copy(self._response), self.encoding)
+            return self.is_html
+        elif name == "title":
+            if self.is_html:
+                self.title = self._title_factory.title()
+            else:
+                self.title = None
+            return self.title
+        elif name == "global_form":
+            assert False  # XXXX fixme!
+            self.forms()
+            return self.global_form
 
     def forms(self):
         """Return iterable over ClientForm.HTMLForm-like objects."""
@@ -512,7 +511,7 @@ class Factory:
             try:
                 self._forms_genf = CachingGeneratorFunction(
                     self._forms_factory.forms())
-            except:
+            except:  # XXXX define exception!
                 self.set_response(self._response)
                 raise
             self.global_form = getattr(
@@ -525,7 +524,7 @@ class Factory:
             try:
                 self._links_genf = CachingGeneratorFunction(
                     self._links_factory.links())
-            except:
+            except:  # XXXX define exception!
                 self.set_response(self._response)
                 raise
         return self._links_genf()
@@ -577,7 +576,8 @@ class RobustFactory(Factory):
         if response is not None:
             data = response.read()
             soup = self._soup_class(self.encoding, data)
-            self._forms_factory.set_response(response, self.encoding)
+            self._forms_factory.set_response(
+                copy.copy(response), self.encoding)
             self._links_factory.set_soup(
                 soup, response.geturl(), self.encoding)
             self._title_factory.set_soup(soup, self.encoding)
