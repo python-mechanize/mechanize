@@ -6,6 +6,7 @@ from unittest import TestCase
 import StringIO, re, urllib2
 
 import mechanize
+from mechanize._response import test_html_response
 FACTORY_CLASSES = [mechanize.DefaultFactory, mechanize.RobustFactory]
 
 
@@ -400,8 +401,11 @@ class BrowserTests(TestCase):
         url = "http://example.com"
 
         b = TestBrowser(factory=factory)
-        r = MockResponse(url,
-"""<html>
+        r = test_html_response(
+            url=url,
+            headers=[("content-type", "text/html")],
+            data="""\
+<html>
 <head><title>Title</title></head>
 <body>
 <form name="form1">
@@ -416,7 +420,8 @@ class BrowserTests(TestCase):
 </form>
 </body>
 </html>
-""", {"content-type": "text/html"})
+"""
+            )
         b.add_handler(make_mock_handler()([("http_open", r)]))
         r = b.open(url)
 
