@@ -509,8 +509,12 @@ class Factory:
         # this implementation sets .global_form as a side-effect, for benefit
         # of __getattr__ impl
         if self._forms_genf is None:
-            self._forms_genf = CachingGeneratorFunction(
-                self._forms_factory.forms())
+            try:
+                self._forms_genf = CachingGeneratorFunction(
+                    self._forms_factory.forms())
+            except:
+                self.set_response(self._response)
+                raise
             self.global_form = getattr(
                 self._forms_factory, "global_form", None)
         return self._forms_genf()
@@ -518,8 +522,12 @@ class Factory:
     def links(self):
         """Return iterable over mechanize.Link-like objects."""
         if self._links_genf is None:
-            self._links_genf = CachingGeneratorFunction(
-                self._links_factory.links())
+            try:
+                self._links_genf = CachingGeneratorFunction(
+                    self._links_factory.links())
+            except:
+                self.set_response(self._response)
+                raise
         return self._links_genf()
 
 class DefaultFactory(Factory):

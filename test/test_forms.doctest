@@ -33,3 +33,27 @@ as well as mechanize._rfc3986).  Fixed in ClientForm r33622 .
 >>> br.find_control(type="isindex").value = "blah"
 >>> br.click(type="isindex").get_full_url()
 'http://example.com/?blah'
+
+
+If something (e.g. calling .forms() triggers parsing, and parsing
+fails, the next attempt should not succeed!  This used to happen
+because the response held by LinksFactory etc was stale, since it had
+already been .read().  Fixed by calling Factory.set_response() on
+error.
+
+>>> import mechanize, sgmllib
+>>> br = mechanize.Browser()
+>>> r = mechanize._response.test_html_response("""\
+... <form>
+... <input type="text" name="foo" value="a"></input><!!!>
+... <input type="text" name="bar" value="b"></input>
+... </form>
+... """)
+>>> br.set_response(r)
+>>> try:
+...     br.select_form(nr=0)
+... except sgmllib.SGMLParseError:
+...     pass
+>>> br.select_form(nr=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+SGMLParseError: expected name token
