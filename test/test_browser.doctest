@@ -116,9 +116,9 @@ compatibility reasons).
 Traceback (most recent call last):
 BrowserStateError: not viewing any document
 >>> br.set_response(response)
+>>> br.global_form().find_control(nr=0).name
+'a'
 >>> len(list(br.forms()))
 1
 >>> iter(br.forms()).next().find_control(nr=0).name
 'b'
->>> br.global_form().find_control(nr=0).name
-'a'

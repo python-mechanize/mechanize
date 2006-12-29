@@ -432,6 +432,8 @@ class Factory:
 
     """
 
+    LAZY_ATTRS = ["encoding", "is_html", "title", "global_form"]
+
     def __init__(self, forms_factory, links_factory, title_factory,
                  encoding_finder=EncodingFinder(DEFAULT_ENCODING),
                  response_type_finder=ResponseTypeFinder(allow_xhtml=False),
@@ -474,14 +476,14 @@ class Factory:
         self._response = response
         self._forms_genf = self._links_genf = None
         self._get_title = None
-        for name in ["encoding", "is_html", "title", "global_form"]:
+        for name in self.LAZY_ATTRS:
             try:
                 delattr(self, name)
             except AttributeError:
                 pass
 
     def __getattr__(self, name):
-        if name not in ["encoding", "is_html", "title"]:
+        if name not in self.LAZY_ATTRS:
             return getattr(self.__class__, name)
 
         if name == "encoding":
@@ -499,7 +501,6 @@ class Factory:
                 self.title = None
             return self.title
         elif name == "global_form":
-            assert False  # XXXX fixme!
             self.forms()
             return self.global_form
 
