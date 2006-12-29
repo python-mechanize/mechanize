@@ -141,6 +141,9 @@ if __name__ == "__main__":
     use_cgitb = "-t" in sys.argv
     if use_cgitb:
         sys.argv.remove("-t")
+    run_doctests = "-d" not in sys.argv
+    if not run_doctests:
+        sys.argv.remove("-d")
 
     # import local copy of Python 2.5 doctest
     assert os.path.isdir("test")
@@ -162,41 +165,42 @@ if __name__ == "__main__":
 
     import mechanize
 
-    # run .doctest files needing special support
-    common_globs = {"mechanize": mechanize}
-    pm_doctest_filename = os.path.join("test", "test_password_manager.doctest")
-    for globs in [
-        {"mgr_class": mechanize.HTTPPasswordMgr},
-        {"mgr_class": mechanize.HTTPProxyPasswordMgr},
-        ]:
-        globs.update(common_globs)
-        doctest.testfile(
-            pm_doctest_filename,
-            #os.path.join("test", "test_scratch.doctest"),
-            globs=globs,
-            )
+    if run_doctests:
+        # run .doctest files needing special support
+        common_globs = {"mechanize": mechanize}
+        pm_doctest_filename = os.path.join("test", "test_password_manager.doctest")
+        for globs in [
+            {"mgr_class": mechanize.HTTPPasswordMgr},
+            {"mgr_class": mechanize.HTTPProxyPasswordMgr},
+            ]:
+            globs.update(common_globs)
+            doctest.testfile(
+                pm_doctest_filename,
+                #os.path.join("test", "test_scratch.doctest"),
+                globs=globs,
+                )
 
-    # run .doctest files
-    special_doctests = [pm_doctest_filename,
-                        os.path.join("test", "test_scratch.doctest"),
-                        ]
-    doctest_files = glob.glob(os.path.join("test", "*.doctest"))
+        # run .doctest files
+        special_doctests = [pm_doctest_filename,
+                            os.path.join("test", "test_scratch.doctest"),
+                            ]
+        doctest_files = glob.glob(os.path.join("test", "*.doctest"))
 
-    for dt in special_doctests:
-        if dt in doctest_files:
-            doctest_files.remove(dt)
-    for df in doctest_files:
-        doctest.testfile(df)
+        for dt in special_doctests:
+            if dt in doctest_files:
+                doctest_files.remove(dt)
+        for df in doctest_files:
+            doctest.testfile(df)
 
-    # run doctests in docstrings
-    from mechanize import _headersutil, _auth, _clientcookie, _pullparser, \
-         _http, _rfc3986
-    doctest.testmod(_headersutil)
-    doctest.testmod(_rfc3986)
-    doctest.testmod(_auth)
-    doctest.testmod(_clientcookie)
-    doctest.testmod(_pullparser)
-    doctest.testmod(_http)
+        # run doctests in docstrings
+        from mechanize import _headersutil, _auth, _clientcookie, _pullparser, \
+             _http, _rfc3986
+        doctest.testmod(_headersutil)
+        doctest.testmod(_rfc3986)
+        doctest.testmod(_auth)
+        doctest.testmod(_clientcookie)
+        doctest.testmod(_pullparser)
+        doctest.testmod(_http)
 
     # run vanilla unittest tests
     import unittest
