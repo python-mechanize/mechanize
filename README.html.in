@@ -158,7 +158,6 @@ logger.setLevel(logging.INFO)
 # Sometimes it's useful to process bad headers or bad HTML:
 response = br.response()  # this is a copy of response
 headers = response.info()  # currently, this is a mimetools.Message
-del headers["Content-type"]  # get rid of (possibly multiple) existing headers
 headers["Content-type"] = "text/html; charset=utf-8"
 response.set_data(response.get_data().replace("<!---", "<!--"))
 br.set_response(response)

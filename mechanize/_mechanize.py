@@ -322,8 +322,6 @@ class Browser(UserAgentBase):
         cookiejar = self._ua_handlers["_cookies"].cookiejar
         response = self.response()  # copy
         headers = response.info()
-        if "Set-cookie" in headers:
-            del headers["Set-cookie"]
         headers["Set-cookie"] = cookie_string
         cookiejar.extract_cookies(response, self.request)
 
