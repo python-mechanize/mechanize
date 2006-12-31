@@ -1,5 +1,30 @@
+>>> import mechanize
 >>> from mechanize._response import test_response
 >>> from test_browser import TestBrowser2, make_mock_handler
+
+
+Opening a new response should close the old one.
+
+>>> class TestHttpHandler(mechanize.BaseHandler):
+...     def http_open(self, request):
+...         return test_response()
+>>> class TestHttpBrowser(TestBrowser2):
+...     handler_classes = TestBrowser2.handler_classes.copy()
+...     handler_classes["http"] = TestHttpHandler
+...     default_schemes = ["http"]
+>>> def response_impl(response):
+...     return response.wrapped.fp.__class__.__name__
+
+>>> br = TestHttpBrowser()
+>>> r = br.open("http://example.com")
+>>> print response_impl(r)
+StringI
+>>> r2 = br.open("http://example.com")
+>>> print response_impl(r2)
+StringI
+>>> print response_impl(r)
+eofresponse
+
 
 Warn early about some mistakes setting a response object
 
