@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+# ------------------------------------------------------------------------
+# THIS SCRIPT IS CURRENTLY NOT WORKING, SINCE PYPI's SEARCH FEATURE HAS
+# BEEN REMOVED!
+# ------------------------------------------------------------------------
+
 # Search PyPI, the Python Package Index, and retrieve latest mechanize
 # tarball.
 
