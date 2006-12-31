@@ -25,7 +25,7 @@ from _headersutil import is_html
 from _clientcookie import CookieJar, request_host
 import _rfc3986
 
-debug = logging.getLogger("mechanize.cookies").debug
+debug = logging.getLogger("mechanize").debug
 
 
 CHUNK = 1024  # size of chunks fed to HTML HEAD parser, in bytes
