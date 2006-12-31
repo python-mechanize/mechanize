@@ -7,7 +7,7 @@ Opening a new response should close the old one.
 
 >>> class TestHttpHandler(mechanize.BaseHandler):
 ...     def http_open(self, request):
-...         return test_response()
+...         return test_response(url=request.get_full_url())
 >>> class TestHttpBrowser(TestBrowser2):
 ...     handler_classes = TestBrowser2.handler_classes.copy()
 ...     handler_classes["http"] = TestHttpHandler
@@ -24,6 +24,29 @@ StringI
 StringI
 >>> print response_impl(r)
 eofresponse
+
+So should .set_response()
+
+>>> br.set_response(test_response())
+>>> print response_impl(r2)
+eofresponse
+
+
+.visit_response() works very similarly to .open()
+
+>>> br = TestHttpBrowser()
+>>> r = br.open("http://example.com")
+>>> r2 = test_response(url="http://example.com/2")
+>>> print response_impl(r2)
+StringI
+>>> br.visit_response(r2)
+>>> print response_impl(r)
+eofresponse
+>>> br.geturl() == br.request.get_full_url() == "http://example.com/2"
+True
+>>> junk = br.back()
+>>> br.geturl() == br.request.get_full_url() == "http://example.com"
+True
 
 
 Warn early about some mistakes setting a response object
