@@ -254,10 +254,20 @@ class FunctionalTests(TestCase):
     def test_reload_read_incomplete(self):
         from mechanize import Browser
         browser = Browser()
-        browser.open("http://plone.org")
-        browser.open("http://plone.org/products")
-        browser.back()
-        browser.follow_link(text="About")
+        r1 = browser.open(
+            "http://wwwsearch.sf.net/bits/mechanize_reload_test.html")
+        # if we don't do anything and go straight to another page, most of the
+        # last page's response won't be .read()...
+        r2 = browser.open("http://wwwsearch.sf.net/mechanize")
+        self.assert_(len(r1.get_data()) < 4097)  # we only .read() a little bit
+        # ...so if we then go back, .follow_link() for a link near the end (a
+        # few kb in, past the point that always gets read in HTML files because
+        # of HEAD parsing) will only work if it causes a .reload()...
+        r3 = browser.back()
+        browser.follow_link(text="near the end")
+        # ... good, no LinkNotFoundError, so we did reload.
+        # we have .read() the whole file
+        self.assertEqual(len(r3._seek_wrapper__cache.getvalue()), 4202)
 
 ##     def test_cacheftp(self):
 ##         from urllib2 import CacheFTPHandler, build_opener

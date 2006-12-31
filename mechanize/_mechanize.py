@@ -300,8 +300,8 @@ class Browser(UserAgentBase):
         self.request, response = self._history.back(n, self._response)
         self.set_response(response)
         if not response.read_complete:
-            self.reload()
-        return response
+            return self.reload()
+        return copy.copy(response)
 
     def clear_history(self):
         self._history.clear()

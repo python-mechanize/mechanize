@@ -43,7 +43,10 @@ class seek_wrapper:
     readlines method is always supported.  xreadlines and iteration are
     supported only for Python 2.2 and above.
 
-    Public attribute: wrapped (the wrapped file object).
+    Public attributes:
+
+    wrapped: the wrapped file object
+    is_closed: true iff .close() has been called
 
     WARNING: All other attributes of the wrapped object (ie. those that are not
     one of wrapped, read, readline, readlines, xreadlines, __iter__ and next)
@@ -60,6 +63,7 @@ class seek_wrapper:
     def __init__(self, wrapped):
         self.wrapped = wrapped
         self.__read_complete_state = [False]
+        self.__is_closed_state = [False]
         self.__have_readline = hasattr(self.wrapped, "readline")
         self.__cache = StringIO()
         self.__pos = 0  # seek position
@@ -69,8 +73,14 @@ class seek_wrapper:
         # wrapped file.
         return self.wrapped.tell() == len(self.__cache.getvalue())
 
+    def close(self):
+        self.wrapped.close()
+        self.is_closed = True
+
     def __getattr__(self, name):
-        if name == "read_complete":
+        if name == "is_closed":
+            return self.__is_closed_state[0]
+        elif name == "read_complete":
             return self.__read_complete_state[0]
 
         wrapped = self.__dict__.get("wrapped")
@@ -80,8 +90,11 @@ class seek_wrapper:
         return getattr(self.__class__, name)
 
     def __setattr__(self, name, value):
-        if name == "read_complete":
-            self.__read_complete_state[0] = bool(value)
+        if name == "is_closed":
+            self.__is_closed_state[0] = bool(value)
+        elif name == "read_complete":
+            if not self.is_closed:
+                self.__read_complete_state[0] = bool(value)
         else:
             self.__dict__[name] = value
 
@@ -138,6 +151,7 @@ class seek_wrapper:
         cpy = self.__class__(self.wrapped)
         cpy.__cache = self.__cache
         cpy.__read_complete_state = self.__read_complete_state
+        cpy.__is_closed_state = self.__is_closed_state
         return cpy
 
     def get_data(self):
@@ -222,8 +236,9 @@ class seek_wrapper:
     xreadlines = __iter__
 
     def __repr__(self):
-        return ("<%s at %s whose wrapped object = %r>" %
-                (self.__class__.__name__, hex(id(self)), self.wrapped))
+        return ("<%s at %s (%d) whose wrapped object = %r>" %
+                (self.__class__.__name__, hex(id(self)), self.__pos,
+                 self.wrapped))
 
 
 class response_seek_wrapper(seek_wrapper):
