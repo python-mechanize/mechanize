@@ -9,12 +9,17 @@ included with the distribution).
 """
 
 import re, copy, htmlentitydefs
+import sgmllib, HTMLParser, ClientForm
 
 import _request
 from _headersutil import split_header_words, is_html as _is_html
 import _rfc3986
 
 DEFAULT_ENCODING = "latin-1"
+
+
+# the base classe is purely for backwards compatibility
+class ParseError(ClientForm.ParseError): pass
 
 
 class CachingGeneratorFunction(object):
@@ -131,37 +136,41 @@ class LinksFactory:
         base_url = self._base_url
         p = self.link_parser_class(response, encoding=encoding)
 
-        for token in p.tags(*(self.urltags.keys()+["base"])):
-            if token.type == "endtag":
-                continue
-            if token.data == "base":
-                base_href = dict(token.attrs).get("href")
-                if base_href is not None:
-                    base_url = base_href
-                continue
-            attrs = dict(token.attrs)
-            tag = token.data
-            name = attrs.get("name")
-            text = None
-            # XXX use attr_encoding for ref'd doc if that doc does not provide
-            #  one by other means
-            #attr_encoding = attrs.get("charset")
-            url = attrs.get(self.urltags[tag])  # XXX is "" a valid URL?
-            if not url:
-                # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
-                # For our purposes a link is something with a URL, so ignore
-                # this.
-                continue
+        try:
+            for token in p.tags(*(self.urltags.keys()+["base"])):
+                if token.type == "endtag":
+                    continue
+                if token.data == "base":
+                    base_href = dict(token.attrs).get("href")
+                    if base_href is not None:
+                        base_url = base_href
+                    continue
+                attrs = dict(token.attrs)
+                tag = token.data
+                name = attrs.get("name")
+                text = None
+                # XXX use attr_encoding for ref'd doc if that doc does not
+                #  provide one by other means
+                #attr_encoding = attrs.get("charset")
+                url = attrs.get(self.urltags[tag])  # XXX is "" a valid URL?
+                if not url:
+                    # Probably an <A NAME="blah"> link or <AREA NOHREF...>.
+                    # For our purposes a link is something with a URL, so
+                    # ignore this.
+                    continue
 
-            url = _rfc3986.clean_url(url, encoding)
-            if tag == "a":
-                if token.type != "startendtag":
-                    # hmm, this'd break if end tag is missing
-                    text = p.get_compressed_text(("endtag", tag))
-                # but this doesn't work for eg. <a href="blah"><b>Andy</b></a>
-                #text = p.get_compressed_text()
+                url = _rfc3986.clean_url(url, encoding)
+                if tag == "a":
+                    if token.type != "startendtag":
+                        # hmm, this'd break if end tag is missing
+                        text = p.get_compressed_text(("endtag", tag))
+                    # but this doesn't work for eg.
+                    # <a href="blah"><b>Andy</b></a>
+                    #text = p.get_compressed_text()
 
-            yield Link(base_url, url, text, tag, token.attrs)
+                yield Link(base_url, url, text, tag, token.attrs)
+        except sgmllib.SGMLParseError, exc:
+            raise ParseError(exc)
 
 class FormsFactory:
 
@@ -202,16 +211,19 @@ class FormsFactory:
     def forms(self):
         import ClientForm
         encoding = self.encoding
-        forms = ClientForm.ParseResponseEx(
-            self._response,
-            select_default=self.select_default,
-            form_parser_class=self.form_parser_class,
-            request_class=self.request_class,
-            encoding=encoding,
-            _urljoin=_rfc3986.urljoin,
-            _urlparse=_rfc3986.urlsplit,
-            _urlunparse=_rfc3986.urlunsplit,
-            )
+        try:
+            forms = ClientForm.ParseResponseEx(
+                self._response,
+                select_default=self.select_default,
+                form_parser_class=self.form_parser_class,
+                request_class=self.request_class,
+                encoding=encoding,
+                _urljoin=_rfc3986.urljoin,
+                _urlparse=_rfc3986.urlsplit,
+                _urlunparse=_rfc3986.urlunsplit,
+                )
+        except ClientForm.ParseError, exc:
+            raise ParseError(exc)
         self.global_form = forms[0]
         return forms[1:]
 
@@ -228,11 +240,14 @@ class TitleFactory:
         p = _pullparser.TolerantPullParser(
             self._response, encoding=self._encoding)
         try:
-            p.get_tag("title")
-        except _pullparser.NoMoreTokensError:
-            return None
-        else:
-            return p.get_text()
+            try:
+                p.get_tag("title")
+            except _pullparser.NoMoreTokensError:
+                return None
+            else:
+                return p.get_text()
+        except sgmllib.SGMLParseError, exc:
+            raise ParseError(exc)
 
 
 def unescape(data, entities, encoding):
@@ -420,6 +435,8 @@ class Factory:
 
     Public attributes:
 
+    Note that accessing these attributes may raise ParseError.
+
     encoding: string specifying the encoding of response if it contains a text
      document (this value is left unspecified for documents that do not have
      an encoding, e.g. an image file)
@@ -505,7 +522,10 @@ class Factory:
             return self.global_form
 
     def forms(self):
-        """Return iterable over ClientForm.HTMLForm-like objects."""
+        """Return iterable over ClientForm.HTMLForm-like objects.
+
+        Raises mechanize.ParseError on failure.
+        """
         # this implementation sets .global_form as a side-effect, for benefit
         # of __getattr__ impl
         if self._forms_genf is None:
@@ -520,7 +540,10 @@ class Factory:
         return self._forms_genf()
 
     def links(self):
-        """Return iterable over mechanize.Link-like objects."""
+        """Return iterable over mechanize.Link-like objects.
+
+        Raises mechanize.ParseError on failure.
+        """
         if self._links_genf is None:
             try:
                 self._links_genf = CachingGeneratorFunction(

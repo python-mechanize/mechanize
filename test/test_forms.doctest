@@ -41,7 +41,7 @@ because the response held by LinksFactory etc was stale, since it had
 already been .read().  Fixed by calling Factory.set_response() on
 error.
 
->>> import mechanize, sgmllib
+>>> import mechanize
 >>> br = mechanize.Browser()
 >>> r = mechanize._response.test_html_response("""\
 ... <form>
@@ -52,8 +52,8 @@ error.
 >>> br.set_response(r)
 >>> try:
 ...     br.select_form(nr=0)
-... except sgmllib.SGMLParseError:
+... except mechanize.ParseError:
 ...     pass
 >>> br.select_form(nr=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
 Traceback (most recent call last):
-SGMLParseError: expected name token
+ParseError: expected name token

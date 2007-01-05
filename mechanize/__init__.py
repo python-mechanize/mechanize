@@ -50,6 +50,7 @@ __all__ = [
     'MozillaCookieJar',
     'OpenerDirector',
     'OpenerFactory',
+    'ParseError',
     'ProxyBasicAuthHandler',
     'ProxyDigestAuthHandler',
     'ProxyHandler',
@@ -89,6 +90,7 @@ from _mechanize import \
 # configurable URL-opener interface
 from _useragent import UserAgentBase, UserAgent
 from _html import \
+     ParseError, \
      Link, \
      Factory, DefaultFactory, RobustFactory, \
      FormsFactory, LinksFactory, TitleFactory, \

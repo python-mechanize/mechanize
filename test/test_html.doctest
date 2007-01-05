@@ -1,3 +1,122 @@
+>>> import mechanize
+>>> from mechanize._response import test_html_response
+>>> from mechanize._html import LinksFactory, FormsFactory, TitleFactory, \
+... MechanizeBs, \
+... RobustLinksFactory,  RobustFormsFactory, RobustTitleFactory
+
+mechanize.ParseError should be raised on parsing erroneous HTML.
+
+For backwards compatibility, mechanize.ParseError derives from
+exception classes that mechanize used to raise, prior to version
+0.1.6.
+
+>>> import sgmllib
+>>> import HTMLParser
+>>> import ClientForm
+>>> issubclass(mechanize.ParseError, sgmllib.SGMLParseError)
+True
+>>> issubclass(mechanize.ParseError, HTMLParser.HTMLParseError)
+True
+>>> issubclass(mechanize.ParseError, ClientForm.ParseError)
+True
+
+>>> def create_response(error=True):
+...     extra = ""
+...     if error:
+...         extra = "<!!!>"
+...     html = """\
+... <html>
+... <head>
+...     <title>Title</title>
+...     %s
+... </head>
+... <body>
+...     <p>Hello world
+... </body>
+... </html>
+... """ % extra
+...     return test_html_response(html)
+
+>>> f = LinksFactory()
+>>> f.set_response(create_response(), "http://example.com", "latin-1")
+>>> list(f.links())  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+ParseError:
+>>> f = FormsFactory()
+>>> f.set_response(create_response(), "latin-1")
+>>> list(f.forms())  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+ParseError:
+>>> f = TitleFactory()
+>>> f.set_response(create_response(), "latin-1")
+>>> f.title()  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+ParseError:
+
+
+Accessing attributes on Factory may also raise ParseError
+
+>>> def factory_getattr(attr_name):
+...    fact = mechanize.DefaultFactory()
+...    fact.set_response(create_response())
+...    getattr(fact, attr_name)
+>>> factory_getattr("title")  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+ParseError:
+>>> factory_getattr("global_form")  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+ParseError:
+
+
+BeautifulSoup ParseErrors:
+
+XXX If I could come up with examples that break links and forms
+parsing, I'd uncomment these!
+
+>>> def create_soup(html):
+...     r = test_html_response(html)
+...     return MechanizeBs("latin-1", r.read())
+
+#>>> f = RobustLinksFactory()
+#>>> html = """\
+#... <a href="a">
+#... <frame src="b">
+#... <a href="c">
+#... <iframe src="d">
+#... </a>
+#... </area>
+#... </frame>
+#... """
+#>>> f.set_soup(create_soup(html), "http://example.com", "latin-1")
+#>>> list(f.links())  # doctest: +IGNORE_EXCEPTION_DETAIL
+#Traceback (most recent call last):
+#ParseError:
+
+>>> html = """\
+... <table>
+... <tr><td>
+... <input name='broken'>
+... </td>
+... </form>
+... </tr>
+... </form>
+... """
+>>> f = RobustFormsFactory()
+>>> f.set_response(create_response(), "latin-1")
+>>> list(f.forms())  # doctest: +IGNORE_EXCEPTION_DETAIL
+Traceback (most recent call last):
+ParseError:
+
+#>>> f = RobustTitleFactory()
+#>>> f.set_soup(create_soup(""), "latin-1")
+#>>> f.title()  # doctest: +IGNORE_EXCEPTION_DETAIL
+#Traceback (most recent call last):
+#ParseError:
+
+
+
+Utility class for caching forms etc.
+
 >>> from mechanize._html import CachingGeneratorFunction
 
 >>> i = [1]
