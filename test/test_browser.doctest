@@ -49,6 +49,24 @@ True
 True
 
 
+.back() may reload if the complete response was not read.  If so, it
+should return the new response, not the old one
+
+>>> class ReloadCheckBrowser(TestHttpBrowser):
+...     reloaded = False
+...     def reload(self):
+...         self.reloaded = True
+...         return TestHttpBrowser.reload(self)
+>>> br = ReloadCheckBrowser()
+>>> old = br.open("http://example.com")
+>>> junk = br.open("http://example.com/2")
+>>> new = br.back()
+>>> br.reloaded
+True
+>>> new.wrapped is not old.wrapped
+True
+
+
 Warn early about some mistakes setting a response object
 
 >>> import StringIO
