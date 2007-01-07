@@ -256,12 +256,14 @@ class BrowserTests(TestCase):
         br = Browser()
         data = "<html><head><title></title></head><body>%s</body></html>"
         data = data % ("The quick brown fox jumps over the lazy dog."*100)
-        r = test_response(data, [("content-type", "text/html")])
-        br.add_handler(make_mock_handler()([("http_open", r)]))
+        class Handler(mechanize.BaseHandler):
+            def http_open(self, requst):
+                return test_response(data, [("content-type", "text/html")])
+        br.add_handler(Handler())
 
         # .reload() on .back() if the whole response hasn't already been read
         # (.read_incomplete is True)
-        r = br.open(r.geturl())
+        r = br.open("http://example.com")
         r.read(10)
         br.open('http://www.example.com/blah')
         self.failIf(br.reloaded)
