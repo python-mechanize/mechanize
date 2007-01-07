@@ -3,6 +3,7 @@ has been read.  We want to know this because Browser.back() must
 .reload() the response if not.
 
 I've noted here the various cases where .read_complete may be set.
+
 >>> text = "To err is human, to moo, bovine.\n"*10
 >>> def get_wrapper():
 ...     import cStringIO
@@ -94,3 +95,18 @@ False
 True
 >>> wr2.read_complete
 True
+
+
+Fix from -r36082: .read() after .close() used to break
+.read_complete state
+
+>>> from mechanize._response import test_response
+>>> r = test_response(text)
+>>> junk = r.read(64)
+>>> r.close()
+>>> r.read_complete
+False
+>>> r.read()
+''
+>>> r.read_complete
+False
