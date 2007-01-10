@@ -413,7 +413,8 @@ def upgrade_response(response):
 
     Accepts responses from both mechanize and urllib2 handlers.
     """
-    if isinstance(response, urllib2.HTTPError):
+    if (isinstance(response, urllib2.HTTPError) and
+        not isinstance(response, response_seek_wrapper)):
         class httperror_seek_wrapper(response_seek_wrapper, response.__class__):
             # this only derives from HTTPError in order to be a subclass --
             # the HTTPError behaviour comes from delegation
