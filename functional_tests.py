@@ -45,6 +45,16 @@ class SimpleTests(TestCase):
         self.browser.open('/mechanize/')
         self.assertEqual(self.browser.title(), 'mechanize')
 
+    def test_302_and_404(self):
+        # the combination of 302 (caused by use of "sf.net") and 404 has caused
+        # problems in the past due to accidental double-wrapping of the error
+        # response
+        import urllib2
+        self.assertRaises(
+            urllib2.HTTPError,
+            self.browser.open, "http://wwwsearch.sf.net/doesnotexist"
+            )
+
     def test_reread(self):
         r = self.browser.open('http://wwwsearch.sourceforge.net/')
         data = r.read()
