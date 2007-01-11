@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, math
+import os, math, stat
 from unittest import TestCase
 
 import mechanize
