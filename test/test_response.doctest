@@ -110,3 +110,108 @@ False
 ''
 >>> r.read_complete
 False
+
+
+
+Tests for the truly horrendous upgrade_response()
+
+>>> def is_response(r):
+...     names = "get_data read readline readlines close seek code msg".split()
+...     for name in names:
+...         if not hasattr(r, name):
+...             return False
+...     return r.get_data() == "test data"
+
+>>> from cStringIO import StringIO
+>>> from mechanize._response import upgrade_response, make_headers, \
+...     make_response, closeable_response, seek_wrapper
+>>> data="test data"; url="http://example.com/"; code=200; msg="OK"
+
+Normal response (closeable_response wrapped with seek_wrapper): return a copy
+
+>>> r1 = make_response(data, [], url, code, msg)
+>>> r2 = upgrade_response(r1)
+>>> is_response(r2)
+True
+>>> r1 is not r2
+True
+>>> r1.wrapped is r2.wrapped
+True
+
+closeable_response with no seek_wrapper: wrap with seek_wrapper
+
+>>> r1 = closeable_response(StringIO(data), make_headers([]), url, code, msg)
+>>> is_response(r1)
+False
+>>> r2 = upgrade_response(r1)
+>>> is_response(r2)
+True
+>>> r1 is not r2
+True
+>>> r1 is r2.wrapped
+True
+
+urllib2.addinfourl: extract .fp and wrap it with closeable_response
+and seek_wrapper
+
+>>> import urllib2
+>>> r1= urllib2.addinfourl(StringIO(data), make_headers([]), url)
+>>> is_response(r1)
+False
+>>> r2 = upgrade_response(r1)
+>>> is_response(r2)
+True
+>>> r1 is not r2
+True
+>>> r1 is not r2.wrapped
+True
+>>> r1.fp is r2.wrapped.fp
+True
+
+addinfourl with code, msg
+
+>>> r1= urllib2.addinfourl(StringIO(data), make_headers([]), url)
+>>> r1.code = 206
+>>> r1.msg = "cool"
+>>> r2 = upgrade_response(r1)
+>>> is_response(r2)
+True
+>>> r2.code == r1.code
+True
+>>> r2.msg == r1.msg
+True
+
+addinfourl with seek wrapper: cached data is not lost
+
+>>> r1= urllib2.addinfourl(StringIO(data), make_headers([]), url)
+>>> r1 = seek_wrapper(r1)
+>>> r1.read(4)
+'test'
+>>> r2 = upgrade_response(r1)
+>>> is_response(r2)
+True
+
+addinfourl wrapped with HTTPError -- remains an HTTPError of the same
+subclass (through horrible trickery)
+
+>>> hdrs = make_headers([])
+>>> r1 = urllib2.addinfourl(StringIO(data), hdrs, url)
+>>> class MyHTTPError(urllib2.HTTPError): pass
+>>> r1 = MyHTTPError(url, code, msg, hdrs, r1)
+>>> is_response(r1)
+False
+>>> r2 = upgrade_response(r1)
+>>> is_response(r2)
+True
+>>> isinstance(r2, MyHTTPError)
+True
+
+The trickery does not cause double-wrapping
+
+>>> r3 = upgrade_response(r2)
+>>> is_response(r3)
+True
+>>> r3 is not r2
+True
+>>> r3.wrapped is r2.wrapped
+True
