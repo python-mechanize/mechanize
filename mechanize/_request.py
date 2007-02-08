@@ -49,9 +49,7 @@ class Request(urllib2.Request):
         self.origin_req_host = origin_req_host
 
     def get_selector(self):
-        if self.selector is None:
-            self.selector, self.__r_selector = urllib.splittag(self.__r_host)
-        return self.selector
+        return urllib.splittag(self.__r_host)[0]
 
     def get_origin_req_host(self):
         return self.origin_req_host
