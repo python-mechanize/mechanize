@@ -28,7 +28,6 @@ from _http import \
 # ...from urllib2...
 from urllib2 import \
      BaseHandler, \
-     HTTPDefaultErrorHandler, \
      UnknownHandler, \
      FTPHandler, \
      CacheFTPHandler, \
@@ -37,6 +36,7 @@ from urllib2 import \
 # ...and from mechanize
 from _http import \
      HTTPHandler, \
+     HTTPDefaultErrorHandler, \
      HTTPRedirectHandler, \
      HTTPEquivProcessor, \
      HTTPCookieProcessor, \

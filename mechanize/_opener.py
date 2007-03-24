@@ -304,7 +304,7 @@ class OpenerFactory:
         urllib2.ProxyHandler,
         urllib2.UnknownHandler,
         _http.HTTPHandler,  # derived from new AbstractHTTPHandler
-        urllib2.HTTPDefaultErrorHandler,
+        _http.HTTPDefaultErrorHandler,
         _http.HTTPRedirectHandler,  # bugfixed
         urllib2.FTPHandler,
         urllib2.FileHandler,

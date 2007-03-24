@@ -32,9 +32,6 @@ class MockResponse:
         self.fp = StringIO.StringIO(data)
         if info is None: info = {}
         self._info = MockHeaders(info)
-        self.source = "%d%d" % (id(self), random.randint(0, sys.maxint-1))
-        # otherwise we can't test for "same_response" in test_history
-        self.read_complete = True
     def info(self): return self._info
     def geturl(self): return self.url
     def read(self, size=-1): return self.fp.read(size)
@@ -43,12 +40,6 @@ class MockResponse:
         self.fp.seek(0)
     def close(self): pass
     def get_data(self): pass
-    def __getstate__(self):
-        state = self.__dict__
-        state['source'] = self.source
-        return state
-    def __setstate__(self, state):
-        self.__dict__ = state
 
 def make_mock_handler(response_class=MockResponse):
     class MockHandler:
@@ -189,12 +180,21 @@ class BrowserTests(TestCase):
 
     def test_history(self):
         import mechanize
+        from mechanize import _response
 
         def same_response(ra, rb):
-            return ra.source == rb.source
+            return ra.wrapped is rb.wrapped
 
-        b = TestBrowser()
-        b.add_handler(make_mock_handler()([("http_open", None)]))
+        class Handler(mechanize.BaseHandler):
+            def http_open(self, request):
+                r = _response.test_response(url=request.get_full_url())
+                # these tests aren't interested in auto-.reload() behaviour of
+                # .back(), so read the response to prevent that happening
+                r.get_data()
+                return r
+
+        b = TestBrowser2()
+        b.add_handler(Handler())
         self.assertRaises(mechanize.BrowserStateError, b.back)
         r1 = b.open("http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back)
@@ -204,6 +204,7 @@ class BrowserTests(TestCase):
         r4 = b.open("http://example.com/spam")
         self.assert_(same_response(b.back(), r3))
         self.assert_(same_response(b.back(), r1))
+        self.assertEquals(b.geturl(), "http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back)
         # reloading does a real HTTP fetch rather than using history cache
         r5 = b.reload()
@@ -221,13 +222,17 @@ class BrowserTests(TestCase):
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
         r8 = b.open("/spam")
 
-        # even if we get a HTTPError, history, .response() and .request should
+        # even if we get an HTTPError, history, .response() and .request should
         # still get updated
-        error = urllib2.HTTPError("http://example.com/bad", 503, "Oops",
-                                  MockHeaders(), StringIO.StringIO())
-        b.add_handler(make_mock_handler()([("https_open", error)]))
+        class Handler2(mechanize.BaseHandler):
+            def https_open(self, request):
+                r = urllib2.HTTPError(
+                    "https://example.com/bad", 503, "Oops",
+                    MockHeaders(), StringIO.StringIO())
+                return r
+        b.add_handler(Handler2())
         self.assertRaises(urllib2.HTTPError, b.open, "https://example.com/badreq")
-        self.assertEqual(b.response().geturl(), error.geturl())
+        self.assertEqual(b.response().geturl(), "https://example.com/bad")
         self.assertEqual(b.request.get_full_url(), "https://example.com/badreq")
         self.assert_(same_response(b.back(), r8))
 

@@ -578,6 +578,23 @@ class HTTPErrorProcessor(BaseHandler):
     https_response = http_response
 
 
+class HTTPDefaultErrorHandler(BaseHandler):
+    def http_error_default(self, req, fp, code, msg, hdrs):
+        # why these error methods took the code, msg, headers args in the first
+        # place rather than a response object, I don't know, but to avoid
+        # multiple wrapping, we're discarding them
+
+        if isinstance(fp, urllib2.HTTPError):
+            response = fp
+        else:
+            response = urllib2.HTTPError(
+                req.get_full_url(), code, msg, hdrs, fp)
+        assert code == response.code
+        assert msg == response.msg
+        assert hdrs == response.hdrs
+        raise response
+
+
 class AbstractHTTPHandler(BaseHandler):
 
     def __init__(self, debuglevel=0):

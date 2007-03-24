@@ -33,6 +33,10 @@ from mechanize import OpenerDirector, build_opener, urlopen, Request
 ## l = getLogger("mechanize")
 ## l.setLevel(DEBUG)
 
+class AlwaysEqual:
+    def __cmp__(self, other):
+        return 0
+
 class MockOpener:
     addheaders = []
     def open(self, req, data=None):
@@ -258,6 +262,20 @@ class OpenerDirectorTests(unittest.TestCase):
             for j in range(len(args)):
                 if expected_args[j] is not Unknown:
                     self.assert_(args[j] == expected_args[j])
+
+    def test_http_error_raised(self):
+        # should get an HTTPError if an HTTP handler raises a non-200 response
+        # XXX it worries me that this is the only test that excercises the else
+        # branch in HTTPDefaultErrorHandler
+        from mechanize import _response
+        o = mechanize.OpenerDirector()
+        o.add_handler(mechanize.HTTPErrorProcessor())
+        o.add_handler(mechanize.HTTPDefaultErrorHandler())
+        class HTTPHandler(AbstractHTTPHandler):
+            def http_open(self, req):
+                return _response.test_response(code=302)
+        o.add_handler(HTTPHandler())
+        self.assertRaises(mechanize.HTTPError, o.open, "http://example.com/")
 
     def test_processors(self):
         # *_request / *_response methods get called appropriately
@@ -656,21 +674,52 @@ class HandlerTests(unittest.TestCase):
         self.assert_(req.unredirected_hdrs["Referer"] == ref)
 
     def test_errors(self):
+        from mechanize import _response
         h = HTTPErrorProcessor()
         o = h.parent = MockOpener()
 
-        url = "http://example.com/"
-        req = Request(url)
+        req = Request("http://example.com")
         # 200 OK is passed through
-        r = MockResponse(200, "OK", {}, "", url)
+        r = _response.test_response()
         newr = h.http_response(req, r)
         self.assert_(r is newr)
         self.assert_(not hasattr(o, "proto"))  # o.error not called
         # anything else calls o.error (and MockOpener returns None, here)
-        r = MockResponse(201, "Created", {}, "", url)
+        r = _response.test_response(code=201, msg="Created")
         self.assert_(h.http_response(req, r) is None)
         self.assert_(o.proto == "http")  # o.error called
-        self.assert_(o.args == (req, r, 201, "Created", {}))
+        self.assert_(o.args == (req, r, 201, "Created", AlwaysEqual()))
+
+    def test_raise_http_errors(self):
+        # HTTPDefaultErrorHandler should raise HTTPError if no error handler
+        # handled the error response
+        from mechanize import _response
+        h = mechanize.HTTPDefaultErrorHandler()
+
+        url = "http://example.com"; code = 500; msg = "Error"
+        request = mechanize.Request(url)
+        response = _response.test_response(url=url, code=code, msg=msg)
+
+        # case 1. it's not an HTTPError
+        try:
+            h.http_error_default(
+                request, response, code, msg, response.info())
+        except mechanize.HTTPError, exc:
+            self.assert_(exc is not response)
+            self.assert_(exc.fp is response)
+        else:
+            self.assert_(False)
+
+        # case 2. response object is already an HTTPError, so just re-raise it
+        error = mechanize.HTTPError(
+            url, code, msg, "fake headers", response)
+        try:
+            h.http_error_default(
+                request, error, code, msg, error.info())
+        except mechanize.HTTPError, exc:
+            self.assert_(exc is error)
+        else:
+            self.assert_(False)
 
     def test_robots(self):
         # XXX useragent
