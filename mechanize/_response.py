@@ -414,7 +414,7 @@ def upgrade_response(response):
     Accepts responses from both mechanize and urllib2 handlers.
     """
     if (isinstance(response, urllib2.HTTPError) and
-        not isinstance(response, response_seek_wrapper)):
+        not hasattr(response, "seek")):
         class httperror_seek_wrapper(response_seek_wrapper, response.__class__):
             # this only derives from HTTPError in order to be a subclass --
             # the HTTPError behaviour comes from delegation
@@ -440,6 +440,7 @@ def upgrade_response(response):
     if hasattr(response, "closeable_response"):
         if not hasattr(response, "seek"):
             response = wrapper_class(response)
+        assert hasattr(response, "get_data")
         return copy.copy(response)
 
     # a urllib2 handler constructed the response, i.e. the response is an
