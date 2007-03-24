@@ -144,6 +144,9 @@ if __name__ == "__main__":
     run_doctests = "-d" not in sys.argv
     if not run_doctests:
         sys.argv.remove("-d")
+    run_unittests = "-u" not in sys.argv
+    if not run_unittests:
+        sys.argv.remove("-u")
 
     # import local copy of Python 2.5 doctest
     assert os.path.isdir("test")
@@ -164,6 +167,11 @@ if __name__ == "__main__":
         coverage.start()
 
     import mechanize
+
+    class DefaultResult:
+        def wasSuccessful(self):
+            return True
+    result = DefaultResult()
 
     if run_doctests:
         # run .doctest files needing special support
@@ -202,15 +210,16 @@ if __name__ == "__main__":
         doctest.testmod(_pullparser)
         doctest.testmod(_http)
 
-    # run vanilla unittest tests
-    import unittest
-    test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
-    sys.path.insert(0, test_path)
-    test_runner = None
-    if use_cgitb:
-        test_runner = CgitbTextTestRunner()
-    prog = TestProgram(MODULE_NAMES, testRunner=test_runner)
-    result = prog.runTests()
+    if run_unittests:
+        # run vanilla unittest tests
+        import unittest
+        test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
+        sys.path.insert(0, test_path)
+        test_runner = None
+        if use_cgitb:
+            test_runner = CgitbTextTestRunner()
+        prog = TestProgram(MODULE_NAMES, testRunner=test_runner)
+        result = prog.runTests()
 
     if run_coverage:
         # HTML coverage report
