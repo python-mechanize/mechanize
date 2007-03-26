@@ -13,29 +13,14 @@ included with the distribution).
 
 import sys, warnings, urllib2
 
-from _opener import OpenerDirector
-
+import _opener
 import _urllib2
 import _auth
 import _gzip
+import _response
 
 
-class HTTPRefererProcessor(_urllib2.BaseHandler):
-    def http_request(self, request):
-        # See RFC 2616 14.36.  The only times we know the source of the
-        # request URI has a URI associated with it are redirect, and
-        # Browser.click() / Browser.submit() / Browser.follow_link().
-        # Otherwise, it's the user's job to add any Referer header before
-        # .open()ing.
-        if hasattr(request, "redirect_dict"):
-            request = self.parent._add_referer_header(
-                request, origin_request=False)
-        return request
-
-    https_request = http_request
-
-
-class UserAgentBase(OpenerDirector):
+class UserAgentBase(_opener.OpenerDirector):
     """Convenient user-agent class.
 
     Do not use .add_handler() to add a handler for something already dealt with
@@ -80,9 +65,7 @@ class UserAgentBase(OpenerDirector):
         "_redirect": _urllib2.HTTPRedirectHandler,
         "_cookies": _urllib2.HTTPCookieProcessor,
         "_refresh": _urllib2.HTTPRefreshProcessor,
-        "_referer": HTTPRefererProcessor,  # from this module, note
         "_equiv": _urllib2.HTTPEquivProcessor,
-        "_seek": _urllib2.SeekableProcessor,
         "_proxy": _urllib2.ProxyHandler,
         "_proxy_basicauth": _urllib2.ProxyBasicAuthHandler,
         "_proxy_digestauth": _urllib2.ProxyDigestAuthHandler,
@@ -98,18 +81,18 @@ class UserAgentBase(OpenerDirector):
     default_others = ["_unknown", "_http_error", "_http_request_upgrade",
                       "_http_default_error",
                       ]
-    default_features = ["_redirect", "_cookies", "_referer",
+    default_features = ["_redirect", "_cookies",
                         "_refresh", "_equiv",
                         "_basicauth", "_digestauth",
                         "_proxy", "_proxy_basicauth", "_proxy_digestauth",
-                        "_seek", "_robots",
+                        "_robots",
                         ]
     if hasattr(_urllib2, 'HTTPSHandler'):
         handler_classes["https"] = _urllib2.HTTPSHandler
         default_schemes.append("https")
 
     def __init__(self):
-        OpenerDirector.__init__(self)
+        _opener.OpenerDirector.__init__(self)
 
         ua_handlers = self._ua_handlers = {}
         for scheme in (self.default_schemes+
@@ -122,7 +105,7 @@ class UserAgentBase(OpenerDirector):
 
         # Yuck.
         # Ensure correct default constructor args were passed to
-        # HTTPRefererProcessor and HTTPEquivProcessor.
+        # HTTPRefreshProcessor and HTTPEquivProcessor.
         if "_refresh" in ua_handlers:
             self.set_handle_refresh(True)
         if "_equiv" in ua_handlers:
@@ -141,11 +124,8 @@ class UserAgentBase(OpenerDirector):
             cm = _urllib2.HTTPSClientCertMgr()
             self.set_client_cert_manager(cm)
 
-        # special case, requires extra support from mechanize.Browser
-        self._handle_referer = True
-
     def close(self):
-        OpenerDirector.close(self)
+        _opener.OpenerDirector.close(self)
         self._ua_handlers = None
 
     # XXX
@@ -184,10 +164,6 @@ class UserAgentBase(OpenerDirector):
         # add the scheme handlers that are missing
         for scheme in want.keys():
             self._set_handler(scheme, True)
-
-    def _add_referer_header(self, request, origin_request=True):
-        raise NotImplementedError(
-            "this class can't do HTTP Referer: use mechanize.Browser instead")
 
     def set_cookiejar(self, cookiejar):
         """Set a mechanize.CookieJar, or None."""
@@ -261,7 +237,8 @@ class UserAgentBase(OpenerDirector):
     def set_handle_equiv(self, handle, head_parser_class=None):
         """Set whether to treat HTML http-equiv headers like HTTP headers.
 
-        Response objects will be .seek()able if this is set.
+        Response objects may be .seek()able if this is set (currently returned
+        responses are, raised HTTPError exception responses are not).
 
         """
         if head_parser_class is not None:
@@ -269,16 +246,6 @@ class UserAgentBase(OpenerDirector):
         else:
             constructor_kwds={}
         self._set_handler("_equiv", handle, constructor_kwds=constructor_kwds)
-    def set_handle_referer(self, handle):
-        """Set whether to add Referer header to each request.
-
-        This base class does not implement this feature (so don't turn this on
-        if you're using this base class directly), but the subclass
-        mechanize.Browser does.
-
-        """
-        self._set_handler("_referer", handle)
-        self._handle_referer = bool(handle)
     def set_handle_gzip(self, handle):
         """Handle gzip transfer encoding.
 
@@ -317,6 +284,9 @@ class UserAgentBase(OpenerDirector):
         """Log HTTP response bodies.
 
         See docstring for .set_debug_redirects() for details of logging.
+
+        Response objects may be .seek()able if this is set (currently returned
+        responses are, raised HTTPError exception responses are not).
 
         """
         self._set_handler("_debug_response_body", handle)
@@ -359,6 +329,20 @@ class UserAgentBase(OpenerDirector):
 
 class UserAgent(UserAgentBase):
 
+    def __init__(self):
+        UserAgentBase.__init__(self)
+        self._seekable = False
+
     def set_seekable_responses(self, handle):
         """Make response objects .seek()able."""
-        self._set_handler("_seek", handle)
+        self._seekable = bool(handle)
+
+    def open(self, fullurl, data=None):
+        if self._seekable:
+            def bound_open(fullurl, data=None):
+                return UserAgentBase.open(self, fullurl, data)
+            response = _opener.wrapped_open(
+                bound_open, _response.seek_wrapped_response, fullurl, data)
+        else:
+            response = UserAgentBase.open(self, fullurl, data)
+        return response

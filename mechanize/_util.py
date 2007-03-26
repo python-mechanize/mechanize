@@ -8,7 +8,15 @@ COPYING.txt included with the distribution).
 
 """
 
-import re, string, time
+import re, string, time, warnings
+
+def deprecation(message):
+    warnings.warn(message, DeprecationWarning, stacklevel=3)
+def hide_deprecations():
+    warnings.filterwarnings('ignore', category=DeprecationWarning)
+def reset_deprecations():
+    warnings.filterwarnings('default', category=DeprecationWarning)
+
 
 def isstringlike(x):
     try: x+""

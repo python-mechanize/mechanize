@@ -56,6 +56,10 @@ class SimpleTests(TestCase):
             )
 
     def test_reread(self):
+        # closing response shouldn't stop methods working (this happens also to
+        # be true for e.g. mechanize.OpenerDirector when mechanize's own
+        # handlers are in use, but is guaranteed to be true for
+        # mechanize.Browser)
         r = self.browser.open('http://wwwsearch.sourceforge.net/')
         data = r.read()
         r.close()
@@ -113,16 +117,75 @@ class ResponseTests(TestCase):
         r.seek(0)
         self.assertEqual(r.read(), html)
 
-    def test_response_close_and_read(self):
-        opener = mechanize.build_opener(mechanize.SeekableProcessor)
-        r = opener.open("http://wwwsearch.sf.net/bits/cctest2.txt")
-        # closing response shouldn't stop methods working if we're using
-        # SeekableProcessor (ie. _Util.response_seek_wrapper)
+    def test_seekable_response_opener(self):
+        opener = mechanize.OpenerFactory(
+            mechanize.SeekableResponseOpener).build_opener()
+        r = opener.open("http://wwwsearch.sourceforge.net/bits/cctest2.txt")
         r.read()
-        r.close()
         r.seek(0)
         self.assertEqual(r.read(),
+                         r.get_data(),
                          "Hello ClientCookie functional test suite.\n")
+
+    def test_no_seek(self):
+        # should be possible to turn off UserAgent's .seek() functionality
+        def check_no_seek(opener):
+            r = opener.open(
+                "http://wwwsearch.sourceforge.net/bits/cctest2.txt")
+            self.assert_(not hasattr(r, "seek"))
+            try:
+                opener.open("http://wwwsearch.sourceforge.net/nonexistent")
+            except mechanize.HTTPError, exc:
+                self.assert_(not hasattr(exc, "seek"))
+
+        # mechanize.UserAgent
+        opener = mechanize.UserAgent()
+        opener.set_handle_equiv(False)
+        opener.set_seekable_responses(False)
+        opener.set_debug_http(False)
+        check_no_seek(opener)
+
+        # mechanize.OpenerDirector
+        opener = mechanize.build_opener()
+        check_no_seek(opener)
+
+    def test_consistent_seek(self):
+        # if we explicitly request that returned response objects have the
+        # .seek() method, then raised HTTPError exceptions should also have the
+        # .seek() method
+        def check(opener, excs_also):
+            r = opener.open(
+                "http://wwwsearch.sourceforge.net/bits/cctest2.txt")
+            data = r.read()
+            r.seek(0)
+            self.assertEqual(data, r.read(), r.get_data())
+            try:
+                opener.open("http://wwwsearch.sourceforge.net/nonexistent")
+            except mechanize.HTTPError, exc:
+                data = exc.read()
+                if excs_also:
+                    exc.seek(0)
+                    self.assertEqual(data, exc.read(), exc.get_data())
+            else:
+                self.assert_(False)
+
+        opener = mechanize.UserAgent()
+        opener.set_debug_http(False)
+
+        # Here, only the .set_handle_equiv() causes .seek() to be present, so
+        # exceptions don't necessarily support the .seek() method (and do not,
+        # at present).
+        opener.set_handle_equiv(True)
+        opener.set_seekable_responses(False)
+        check(opener, excs_also=False)
+
+        # Here, (only) the explicit .set_seekable_responses() causes .seek() to
+        # be present (different mechanism from .set_handle_equiv()).  Since
+        # there's an explicit request, ALL responses are seekable, even
+        # exception responses (HTTPError instances).
+        opener.set_handle_equiv(False)
+        opener.set_seekable_responses(True)
+        check(opener, excs_also=True)
 
     def test_set_response(self):
         br = mechanize.Browser()
@@ -163,7 +226,7 @@ class ResponseTests(TestCase):
         import pickle
 
         b = mechanize.Browser()
-        r = b.open("http://wwwsearch.sf.net/bits/cctest2.txt")
+        r = b.open("http://wwwsearch.sourceforge.net/bits/cctest2.txt")
         r.read()
 
         r.close()
@@ -181,6 +244,19 @@ class ResponseTests(TestCase):
 
 
 class FunctionalTests(TestCase):
+
+    def test_referer(self):
+        br = mechanize.Browser()
+        referer = "http://wwwsearch.sourceforge.net/bits/referertest.html"
+        info = "http://wwwsearch.sourceforge.net/cgi-bin/cookietest.cgi"
+
+        r = br.open(info)
+        self.assert_(referer not in r.get_data())
+
+        br.open(referer)
+        r = br.follow_link(text="Here")
+        self.assert_(referer in r.get_data())
+
     def test_cookies(self):
         import urllib2
         # this test page depends on cookies, and an http-equiv refresh
@@ -201,7 +277,8 @@ class FunctionalTests(TestCase):
         try:
             install_opener(o)
             try:
-                r = urlopen("http://wwwsearch.sf.net/cgi-bin/cookietest.cgi")
+                r = urlopen(
+                    "http://wwwsearch.sourceforge.net/cgi-bin/cookietest.cgi")
             except urllib2.URLError, e:
                 #print e.read()
                 raise
@@ -265,10 +342,10 @@ class FunctionalTests(TestCase):
         from mechanize import Browser
         browser = Browser()
         r1 = browser.open(
-            "http://wwwsearch.sf.net/bits/mechanize_reload_test.html")
+            "http://wwwsearch.sourceforge.net/bits/mechanize_reload_test.html")
         # if we don't do anything and go straight to another page, most of the
         # last page's response won't be .read()...
-        r2 = browser.open("http://wwwsearch.sf.net/mechanize")
+        r2 = browser.open("http://wwwsearch.sourceforge.net/mechanize")
         self.assert_(len(r1.get_data()) < 4097)  # we only .read() a little bit
         # ...so if we then go back, .follow_link() for a link near the end (a
         # few kb in, past the point that always gets read in HTML files because

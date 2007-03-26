@@ -6,6 +6,7 @@ from urllib2 import \
      GopherError
 # ...and from mechanize
 from _opener import OpenerDirector, \
+     SeekableResponseOpener, \
      build_opener, install_opener, urlopen
 from _auth import \
      HTTPPasswordMgr, \

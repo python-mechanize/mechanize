@@ -137,6 +137,10 @@ br.add_password("http://example.com/protected/", "joe", "password")
 br.set_handle_equiv(False)
 # Ignore robots.txt.  Do not do this without thought and consideration.
 br.set_handle_robots(False)
+# Don't add Referer (sic) header
+br.set_handle_referer(False)
+# Don't handle Refresh redirections
+br.set_handle_refresh(False)
 # Don't handle cookies
 br.set_cookiejar()
 # Supply your own mechanize.CookieJar (NOTE: cookie handling is ON by
@@ -187,17 +191,8 @@ way.
 
 <p><code>mechanize.UserAgent</code> is a trivial subclass of
 <code>mechanize.UserAgentBase</code>, adding just one method,
-<code>.set_seekable_responses()</code>, which allows switching off the
-addition of the <code>.seek()</code> method to response objects:
-
-@{colorize("""
-ua = mechanize.UserAgent()
-ua.set_seekable_responses(False)
-ua.set_handle_equiv(False)  # handling HTTP-EQUIV would add the .seek() method too
-response = ua.open('http://wwwsearch.sourceforge.net/')
-assert not hasattr(response, "seek")
-print response.read()
-""")}
+<code>.set_seekable_responses()</code> (see the <a
+href="./doc.html#seekable">documentation on seekable responses</a>).
 
 <p>The reason for the extra class is that
 <code>mechanize.Browser</code> depends on seekable response objects

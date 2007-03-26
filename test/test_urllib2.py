@@ -17,7 +17,7 @@ This is made up of:
 # parse_keqv_list, parse_http_list
 # GopherHandler (haven't used gopher for a decade or so...)
 
-import unittest, StringIO, os, sys, UserDict, httplib
+import unittest, StringIO, os, sys, UserDict, httplib, warnings
 
 import mechanize
 
@@ -28,6 +28,7 @@ from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
      HTTPCookieProcessor, HTTPRefererProcessor, \
      HTTPErrorProcessor, HTTPHandler
 from mechanize import OpenerDirector, build_opener, urlopen, Request
+from mechanize._util import hide_deprecations, reset_deprecations
 
 ## from logging import getLogger, DEBUG
 ## l = getLogger("mechanize")
@@ -822,7 +823,11 @@ class HandlerTests(unittest.TestCase):
         self.assert_(cj.ec_u == False)
 
     def test_seekable(self):
-        h = SeekableProcessor()
+        hide_deprecations()
+        try:
+            h = SeekableProcessor()
+        finally:
+            reset_deprecations()
         o = h.parent = MockOpener()
 
         req = mechanize.Request("http://example.com/")
@@ -837,25 +842,28 @@ class HandlerTests(unittest.TestCase):
         self.assert_(hasattr(newr, "seek"))
 
     def test_http_equiv(self):
+        from mechanize import _response
         h = HTTPEquivProcessor()
         o = h.parent = MockOpener()
 
-        req = Request("http://example.com/")
-        r = MockResponse(
-            200, "OK",
-            http_message({"Foo": "Bar",
-                          "Content-type": "text/html",
-                          "Refresh": "blah"}),
-            '<html><head>'
-            '<meta http-equiv="Refresh" content="spam&amp;eggs">'
-            '</head></html>',
-            "http://example.com/"
-            )
+        data = ('<html><head>'
+                '<meta http-equiv="Refresh" content="spam&amp;eggs">'
+                '</head></html>'
+                )
+        headers = [("Foo", "Bar"),
+                   ("Content-type", "text/html"),
+                   ("Refresh", "blah"),
+                   ]
+        url = "http://example.com/"
+        req = Request(url)
+        r = _response.make_response(data, headers, url, 200, "OK")
         newr = h.http_response(req, r)
-        headers = newr.info()
-        self.assert_(headers["Foo"] == "Bar")
-        self.assert_(headers["Refresh"] == "spam&eggs")
-        self.assert_(headers.getheaders("Refresh") == ["blah", "spam&eggs"])
+
+        new_headers = newr.info()
+        self.assertEqual(new_headers["Foo"], "Bar")
+        self.assertEqual(new_headers["Refresh"], "spam&eggs")
+        self.assertEqual(new_headers.getheaders("Refresh"),
+                         ["blah", "spam&eggs"])
 
     def test_refresh(self):
         # XXX test processor constructor optional args

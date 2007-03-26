@@ -62,6 +62,7 @@ __all__ = [
     'RobustLinksFactory',
     'RobustTitleFactory',
     'SeekableProcessor',
+    'SeekableResponseOpener',
     'TitleFactory',
     'URLError',
     'USE_BARE_EXCEPT',
@@ -75,7 +76,8 @@ __all__ = [
     'lwp_cookie_str',
     'make_response',
     'request_host',
-    'response_seek_wrapper',
+    'response_seek_wrapper',  # XXX deprecate in public interface?
+    'seek_wrapped_response'   # XXX should probably use this internally in place of response_seek_wrapper()
     'str2time',
     'urlopen',
     'urlretrieve']
@@ -103,7 +105,8 @@ from _urllib2 import *
 # misc
 from _opener import ContentTooShortError, OpenerFactory, urlretrieve
 from _util import http2time as str2time
-from _response import response_seek_wrapper, make_response
+from _response import \
+     response_seek_wrapper, seek_wrapped_response, make_response
 from _http import HeadParser
 try:
     from _http import XHTMLCompatibleHeadParser

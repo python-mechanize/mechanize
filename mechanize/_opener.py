@@ -23,6 +23,7 @@ except NameError:
 import _http
 import _upgrade
 import _rfc3986
+import _response
 from _util import isstringlike
 from _request import Request
 
@@ -294,6 +295,40 @@ class OpenerDirector(urllib2.OpenerDirector):
                 except OSError:
                     pass
             del self._tempfiles[:]
+
+
+def wrapped_open(urlopen, process_response_object, fullurl, data=None):
+    success = True
+    try:
+        response = urlopen(fullurl, data)
+    except urllib2.HTTPError, error:
+        success = False
+        if error.fp is None:  # not a response
+            raise
+        response = error
+
+    if response is not None:
+        response = process_response_object(response)
+
+    if not success:
+        raise response
+    return response
+
+class ResponseProcessingOpener(OpenerDirector):
+
+    def open(self, fullurl, data=None):
+        def bound_open(fullurl, data=None):
+            return OpenerDirector.open(self, fullurl, data)
+        return wrapped_open(
+            bound_open, self.process_response_object, fullurl, data)
+
+    def process_response_object(self, response):
+        return response
+
+
+class SeekableResponseOpener(ResponseProcessingOpener):
+    def process_response_object(self, response):
+        return _response.seek_wrapped_response(response)
 
 
 class OpenerFactory:

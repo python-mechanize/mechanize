@@ -8,8 +8,8 @@ from test_browser import make_mock_handler
 
 
 class UserAgentTests(TestCase):
+
     def test_set_handled_schemes(self):
-        import mechanize
         class MockHandlerClass(make_mock_handler()):
             def __call__(self): return self
         class BlahHandlerClass(MockHandlerClass): pass

@@ -2,6 +2,7 @@ from urllib2 import BaseHandler
 
 from _request import Request
 from _response import upgrade_response
+from _util import deprecation
 
 
 class HTTPRequestUpgradeProcessor(BaseHandler):
@@ -28,6 +29,11 @@ class HTTPRequestUpgradeProcessor(BaseHandler):
 class ResponseUpgradeProcessor(BaseHandler):
     # upgrade responses to be .close()able without becoming unusable
     handler_order = 0  # before anything else
+
+    def __init__(self):
+        deprecation(
+            "See http://wwwsearch.sourceforge.net/mechanize/doc.html#seekable")
+
     def any_response(self, request, response):
         if not hasattr(response, 'closeable_response'):
             response = upgrade_response(response)

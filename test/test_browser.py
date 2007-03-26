@@ -86,7 +86,7 @@ def make_mock_handler(response_class=MockResponse):
     return MockHandler
 
 class TestBrowser(mechanize.Browser):
-    default_features = ["_seek"]
+    default_features = []
     default_others = []
     default_schemes = []
 
@@ -96,7 +96,7 @@ class TestBrowser2(mechanize.Browser):
     # but still knows what to do with unknown schemes, etc., because
     # UserAgent's default_others list is left intact, including classes like
     # UnknownHandler
-    default_features = ["_seek"]
+    default_features = []
     default_schemes = []
 
 

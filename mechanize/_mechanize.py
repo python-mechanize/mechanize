@@ -13,8 +13,7 @@ import urllib2, sys, copy, re
 
 from _useragent import UserAgentBase
 from _html import DefaultFactory
-from _response import response_seek_wrapper, closeable_response
-import _upgrade
+import _response
 import _request
 import _rfc3986
 
@@ -53,6 +52,21 @@ class History:
         del self._history[:]
 
 
+class HTTPRefererProcessor(urllib2.BaseHandler):
+    def http_request(self, request):
+        # See RFC 2616 14.36.  The only times we know the source of the
+        # request URI has a URI associated with it are redirect, and
+        # Browser.click() / Browser.submit() / Browser.follow_link().
+        # Otherwise, it's the user's job to add any Referer header before
+        # .open()ing.
+        if hasattr(request, "redirect_dict"):
+            request = self.parent._add_referer_header(
+                request, origin_request=False)
+        return request
+
+    https_request = http_request
+
+
 class Browser(UserAgentBase):
     """Browser-like class with support for history, forms and links.
 
@@ -68,10 +82,10 @@ class Browser(UserAgentBase):
 
     """
 
-    handler_classes = UserAgentBase.handler_classes.copy()
-    handler_classes["_response_upgrade"] = _upgrade.ResponseUpgradeProcessor
-    default_others = copy.copy(UserAgentBase.default_others)
-    default_others.append("_response_upgrade")
+    handler_classes = copy.copy(UserAgentBase.handler_classes)
+    handler_classes["_referer"] = HTTPRefererProcessor
+    default_features = copy.copy(UserAgentBase.default_features)
+    default_features.append("_referer")
 
     def __init__(self,
                  factory=None,
@@ -97,6 +111,8 @@ class Browser(UserAgentBase):
         constructor, to ensure only one Request class is used.
 
         """
+        self._handle_referer = True
+
         if history is None:
             history = History()
         self._history = history
@@ -136,6 +152,37 @@ class Browser(UserAgentBase):
         self.viewing_html = self.encoding = self.title = None
         self.select_form = self.click = self.submit = self.click_link = None
         self.follow_link = self.find_link = None
+
+    def set_handle_referer(self, handle):
+        """Set whether to add Referer header to each request.
+
+        This base class does not implement this feature (so don't turn this on
+        if you're using this base class directly), but the subclass
+        mechanize.Browser does.
+
+        """
+        self._set_handler("_referer", handle)
+        self._handle_referer = bool(handle)
+
+    def _add_referer_header(self, request, origin_request=True):
+        if self.request is None:
+            return request
+        scheme = request.get_type()
+        original_scheme = self.request.get_type()
+        if scheme not in ["http", "https"]:
+            return request
+        if not origin_request and not self.request.has_header("Referer"):
+            return request
+
+        if (self._handle_referer and
+            original_scheme in ["http", "https"] and
+            not (original_scheme == "https" and scheme != "https")):
+            # strip URL fragment (RFC 2616 14.36)
+            parts = _rfc3986.urlsplit(self.request.get_full_url())
+            parts = parts[:-1]+(None,)
+            referer = _rfc3986.urlunsplit(parts)
+            request.add_unredirected_header("Referer", referer)
+        return request
 
     def open_novisit(self, url, data=None):
         """Open a URL without visiting it.
@@ -201,7 +248,7 @@ class Browser(UserAgentBase):
             self._set_response(response, False)
             response = copy.copy(self._response)
         elif response is not None:
-            response = _upgrade.upgrade_response(response)
+            response = _response.upgrade_response(response)
 
         if not success:
             raise response
@@ -248,7 +295,7 @@ class Browser(UserAgentBase):
 
         self.form = None
         if response is not None:
-            response = _upgrade.upgrade_response(response)
+            response = _response.upgrade_response(response)
         if close_current and self._response is not None:
             self._response.close()
         self._response = response
@@ -461,26 +508,6 @@ class Browser(UserAgentBase):
             if orig_nr is not None: description.append("nr %d" % orig_nr)
             description = ", ".join(description)
             raise FormNotFoundError("no form matching "+description)
-
-    def _add_referer_header(self, request, origin_request=True):
-        if self.request is None:
-            return request
-        scheme = request.get_type()
-        original_scheme = self.request.get_type()
-        if scheme not in ["http", "https"]:
-            return request
-        if not origin_request and not self.request.has_header("Referer"):
-            return request
-
-        if (self._handle_referer and
-            original_scheme in ["http", "https"] and
-            not (original_scheme == "https" and scheme != "https")):
-            # strip URL fragment (RFC 2616 14.36)
-            parts = _rfc3986.urlsplit(self.request.get_full_url())
-            parts = parts[:-1]+(None,)
-            referer = _rfc3986.urlunsplit(parts)
-            request.add_unredirected_header("Referer", referer)
-        return request
 
     def click(self, *args, **kwds):
         """See ClientForm.HTMLForm.click for documentation."""

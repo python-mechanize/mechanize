@@ -205,6 +205,8 @@ False
 True
 >>> isinstance(r2, MyHTTPError)
 True
+>>> r2  # doctest: +ELLIPSIS
+<httperror_seek_wrapper (MyHTTPError instance) at ...
 
 The trickery does not cause double-wrapping
 
@@ -215,3 +217,11 @@ True
 True
 >>> r3.wrapped is r2.wrapped
 True
+
+Test dynamically-created class __repr__ for case where we have the
+module name
+
+>>> r4 = urllib2.addinfourl(StringIO(data), hdrs, url)
+>>> r4 = urllib2.HTTPError(url, code, msg, hdrs, r4)
+>>> upgrade_response(r4)  # doctest: +ELLIPSIS
+<httperror_seek_wrapper (urllib2.HTTPError instance) at ...

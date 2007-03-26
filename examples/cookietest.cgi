@@ -23,6 +23,10 @@ print cgi.escape(os.environ.get("HTTP_COOKIE", ""))
 print "</pre>"
 if cookie.has_key("foo"):
     print "Your browser supports cookies!"
+print "<p>Referer:</p>"
+print "<pre>"
+print cgi.escape(os.environ.get("HTTP_REFERER", ""))
+print "</pre>"
 form = cgi.FieldStorage()
 print "<p>Received parameters:</p>"
 print "<pre>"

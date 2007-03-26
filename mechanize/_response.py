@@ -236,9 +236,8 @@ class seek_wrapper:
     xreadlines = __iter__
 
     def __repr__(self):
-        return ("<%s at %s (%d) whose wrapped object = %r>" %
-                (self.__class__.__name__, hex(id(self)), self.__pos,
-                 self.wrapped))
+        return ("<%s at %s whose wrapped object = %r>" %
+                (self.__class__.__name__, hex(abs(id(self))), self.wrapped))
 
 
 class response_seek_wrapper(seek_wrapper):
@@ -258,8 +257,17 @@ class response_seek_wrapper(seek_wrapper):
         cpy._headers = copy.copy(self.info())
         return cpy
 
+    # Note that .info() and .geturl() (the only two urllib2 response methods
+    # that are not implemented by seek_wrapper) must be here explicitly rather
+    # than by seek_wrapper's __getattr__ delegation) so that the nasty
+    # dynamically-created HTTPError classes in get_seek_wrapper_class() get the
+    # wrapped object's implementation, and not HTTPError's.
+
     def info(self):
         return self._headers
+
+    def geturl(self):
+        return self.wrapped.geturl()
 
     def set_data(self, data):
         self.seek(0)
@@ -336,7 +344,7 @@ class closeable_response:
 
     def __repr__(self):
         return '<%s at %s whose fp = %r>' % (
-            self.__class__.__name__, hex(id(self)), self.fp)
+            self.__class__.__name__, hex(abs(id(self))), self.fp)
 
     def info(self):
         return self._headers
@@ -396,6 +404,7 @@ def make_response(data, headers, url, code, msg):
     r = closeable_response(StringIO(data), mime_headers, url, code, msg)
     return response_seek_wrapper(r)
 
+
 def make_headers(headers):
     """
     headers: sequence of (name, value) pairs
@@ -406,37 +415,73 @@ def make_headers(headers):
     return mimetools.Message(StringIO("\n".join(hdr_text)))
 
 
-# Horrible, but needed, at least until fork urllib2.  Even then, may want
-# to preseve urllib2 compatibility.
-def upgrade_response(response):
-    """Return a copy of response that supports mechanize response interface.
+# Rest of this module is especially horrible, but needed, at least until fork
+# urllib2.  Even then, may want to preseve urllib2 compatibility.
 
-    Accepts responses from both mechanize and urllib2 handlers.
-    """
+def get_seek_wrapper_class(response):
+    # in order to wrap response objects that are also exceptions, we must
+    # dynamically subclass the exception :-(((
     if (isinstance(response, urllib2.HTTPError) and
         not hasattr(response, "seek")):
+        if response.__class__.__module__ == "__builtin__":
+            exc_class_name = response.__class__.__name__
+        else:
+            exc_class_name = "%s.%s" % (
+                response.__class__.__module__, response.__class__.__name__)
+
         class httperror_seek_wrapper(response_seek_wrapper, response.__class__):
             # this only derives from HTTPError in order to be a subclass --
             # the HTTPError behaviour comes from delegation
 
+            _exc_class_name = exc_class_name
+
             def __init__(self, wrapped):
-                assert isinstance(wrapped, closeable_response), wrapped
                 response_seek_wrapper.__init__(self, wrapped)
                 # be compatible with undocumented HTTPError attributes :-(
-                self.hdrs = wrapped._headers
-                self.filename = wrapped._url
+                self.hdrs = wrapped.info()
+                self.filename = wrapped.geturl()
 
-            # we don't want the HTTPError implementation of these
-
-            def geturl(self):
-                return self.wrapped.geturl()
-
-            def close(self):
-                self.wrapped.close()
+            def __repr__(self):
+                return (
+                    "<%s (%s instance) at %s "
+                    "whose wrapped object = %r>" % (
+                    self.__class__.__name__, self._exc_class_name,
+                    hex(abs(id(self))), self.wrapped)
+                    )
         wrapper_class = httperror_seek_wrapper
     else:
         wrapper_class = response_seek_wrapper
+    return wrapper_class
 
+def seek_wrapped_response(response):
+    """Return a copy of response that supports seekable response interface.
+
+    Accepts responses from both mechanize and urllib2 handlers.
+
+    Copes with both oridinary response instances and HTTPError instances (which
+    can't be simply wrapped due to the requirement of preserving the exception
+    base class).
+    """
+    if not hasattr(response, "seek"):
+        wrapper_class = get_seek_wrapper_class(response)
+        response = wrapper_class(response)
+    assert hasattr(response, "get_data")
+    return response
+
+def upgrade_response(response):
+    """Return a copy of response that supports Browser response interface.
+
+    Browser response interface is that of "seekable responses"
+    (response_seek_wrapper), plus the requirement that responses must be
+    useable after .close() (closeable_response).
+
+    Accepts responses from both mechanize and urllib2 handlers.
+
+    Copes with both ordinary response instances and HTTPError instances (which
+    can't be simply wrapped due to the requirement of preserving the exception
+    base class).
+    """
+    wrapper_class = get_seek_wrapper_class(response)
     if hasattr(response, "closeable_response"):
         if not hasattr(response, "seek"):
             response = wrapper_class(response)
