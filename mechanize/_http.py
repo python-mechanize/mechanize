@@ -427,6 +427,7 @@ else:
             if self.rfp.can_fetch(ua, request.get_full_url()):
                 return request
             else:
+                # XXX This should really have raised URLError.  Too late now...
                 msg = "request disallowed by robots.txt"
                 raise RobotExclusionError(
                     request,
