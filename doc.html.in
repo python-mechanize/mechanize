@@ -347,7 +347,9 @@ every time you make a request.  This adds it automatically.
 single chain of HTTP requests (so, for example, if you use a single
 HTTPRefererProcessor to fetch a series of URLs extracted from a single page,
 <strong>this will break</strong>).  <a
-href="../mechanize/">mechanize.Browser</a> does this properly.</p></dd>
+href="../mechanize/">mechanize.Browser</a> does this properly.</p>
+
+</dl>
 
 @{colorize(r"""
 import mechanize
@@ -360,11 +362,10 @@ opener = mechanize.build_opener(mechanize.HTTPRefererProcessor,
 opener.open("http://www.rhubarb.com/")
 """)}
 
-</dl>
 
 
-<a name="seekable">
-<h2>Seekable responses</h2></a>
+<a name="seekable"></a>
+<h2>Seekable responses</h2>
 
 <p>Response objects returned from (or raised as exceptions by)
 <code>mechanize.SeekableResponseOpener</code>, <code>mechanize.UserAgent</code>
@@ -647,7 +648,7 @@ will also not see everything that's going on just by examining the
 original request and final response.  mechanize's responses can be
 made to have <code>.seek()</code> and <code>.get_data()</code>
 methods.  It's often useful to use the <code>.get_data()</code> method
-during debugging (see <a href="./doc.html#seekable">).
+during debugging (see <a href="./doc.html#seekable">above</a>).
 
 <p>Also, note <code>HTTPRedirectDebugProcessor</code> (which prints information
 about redirections) and <code>HTTPResponseDebugProcessor</code> (which prints
@@ -873,11 +874,12 @@ and open holes where required for Netscape protocol-compatibility.  RFC
   <li>How do I download only part of a response body?
   <p>Just call <code>.read()</code> or <code>.readline()</code> methods on your
      response object as many times as you need.  The <code>.seek()</code>
-     method (which is not always present, see <a ref="./doc.html#seekable">)
-     still works, because mechanize caches read data.
+     method (which is not always present, see <a
+     href="./doc.html#seekable">above</a>) still works, because mechanize
+     caches read data.
   <li>What's the difference between the <code>.load()</code> and
       <code>.revert()</code> methods of <code>CookieJar</code>?
-  <p><code>.load()</code> <emph>appends</emph> cookies from a file.
+  <p><code>.load()</code> <em>appends</em> cookies from a file.
      <code>.revert()</code> discards all existing cookies held by the
      <code>CookieJar</code> first (but it won't lose any existing cookies if
      the loading fails).
@@ -895,7 +897,7 @@ and open holes where required for Netscape protocol-compatibility.  RFC
      contains an explanation.  Processors are now a standard part of urllib2
      in Python 2.4.
   <li>How do I use it without urllib2.py?
-  <p>@{colorize(r"""
+  @{colorize(r"""
 from mechanize import CookieJar
 print CookieJar.extract_cookies.__doc__
 print CookieJar.add_cookie_header.__doc__
