@@ -444,6 +444,10 @@ means that you won't see any headers that are added to Request objects by
 handlers unless you use <code>mechanize.Request</code> in the first place.
 Sorry about that.
 
+<p>Note also that handlers may create new <code>Request</code> instances (for
+example when performing redirects) rather than adding headers to existing
+<code>Request objects</code>.
+
 
 <a name="headers"></a>
 <h2>Adding headers</h2>

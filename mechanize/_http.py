@@ -77,15 +77,13 @@ class HTTPRedirectHandler(BaseHandler):
             # from the user (of urllib2, in this case).  In practice,
             # essentially all clients do redirect in this case, so we do
             # the same.
-            try:
-                visit = req.visit
-            except AttributeError:
-                visit = None
+            # XXX really refresh redirections should be visiting; tricky to
+            #  fix, so this will wait until post-stable release
             return Request(newurl,
                            headers=req.headers,
                            origin_req_host=req.get_origin_req_host(),
                            unverifiable=True,
-                           visit=visit,
+                           visit=False,
                            )
         else:
             raise HTTPError(req.get_full_url(), code, msg, headers, fp)
@@ -446,7 +444,7 @@ class HTTPRefererProcessor(BaseHandler):
     HTTPRefererProcessor to fetch a series of URLs extracted from a single
     page, this will break).
 
-    There's a proper implementation of this in module mechanize.
+    There's a proper implementation of this in mechanize.Browser.
 
     """
     def __init__(self):

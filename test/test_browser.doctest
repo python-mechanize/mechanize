@@ -145,7 +145,7 @@ non-visiting.
 >>> req = Request("http://example.com")
 >>> req.visit = False
 >>> br = TestBrowser2()
->>> hh = MockHTTPHandler(301, "Location: http://example.com/\r\n\r\n")
+>>> hh = MockHTTPHandler(302, "Location: http://example.com/\r\n\r\n")
 >>> br.add_handler(hh)
 >>> br.add_handler(HTTPRedirectHandler())
 >>> def raises(exc_class, fn, *args, **kwds):
@@ -164,6 +164,70 @@ True
 >>> r = br.open(req)
 >>> test_state(br)
 True
+
+
+...in fact, any redirection (but not refresh), proxy request, basic or
+digest auth request, or robots.txt request should be non-visiting,
+even if .visit is True:
+
+>>> from test_urllib2 import MockPasswordManager
+>>> def test_one_visit(handlers):
+...     br = TestBrowser2()
+...     for handler in handlers: br.add_handler(handler)
+...     req = Request("http://example.com")
+...     req.visit = True
+...     br.open(req)
+...     return br
+>>> def test_state(br):
+...     # XXX the _history._history check is needed because of the weird
+...     # throwing-away of history entries by .back() where response is
+...     # None, which makes the .back() check insufficient to tell if a
+...     # history entry was .add()ed.  I don't want to change this until
+...     # post-stable.
+...     return (
+...         br.response() and
+...         br.request and
+...         len(br._history._history) == 0 and
+...         raises(BrowserStateError, br.back))
+
+>>> hh = MockHTTPHandler(302, "Location: http://example.com/\r\n\r\n")
+>>> br = test_one_visit([hh, HTTPRedirectHandler()])
+>>> test_state(br)
+True
+
+>>> class MockPasswordManager:
+...     def add_password(self, realm, uri, user, password): pass
+...     def find_user_password(self, realm, authuri): return '', ''
+
+>>> ah = mechanize.HTTPBasicAuthHandler(MockPasswordManager())
+>>> hh = MockHTTPHandler(
+...     401, 'WWW-Authenticate: Basic realm="realm"\r\n\r\n')
+>>> test_state(test_one_visit([hh, ah]))
+True
+
+>>> ph = mechanize.ProxyHandler(dict(http="proxy.example.com:3128"))
+>>> ah = mechanize.ProxyBasicAuthHandler(MockPasswordManager())
+>>> hh = MockHTTPHandler(
+...     407, 'Proxy-Authenticate: Basic realm="realm"\r\n\r\n')
+>>> test_state(test_one_visit([ph, hh, ah]))
+True
+
+XXX Can't really fix this one properly without significant changes --
+the refresh should go onto the history *after* the call, but currently
+all redirects, including refreshes, are done by recursive .open()
+calls, which gets the history wrong in this case.  Will have to wait
+until after stable release:
+
+#>>> hh = MockHTTPHandler(
+#...     "refresh", 'Location: http://example.com/\r\n\r\n')
+#>>> br = test_one_visit([hh, HTTPRedirectHandler()])
+#>>> br.response() is not None
+#True
+#>>> br.request is not None
+#True
+#>>> r = br.back()
+
+XXX digest, robots
 
 
 .global_form() is separate from the other forms (partly for backwards-

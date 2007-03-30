@@ -11,7 +11,7 @@ included with the distribution).
 
 """
 
-import re, base64, urlparse, posixpath, md5, sha, sys
+import re, base64, urlparse, posixpath, md5, sha, sys, copy
 
 from urllib2 import BaseHandler
 from urllib import getproxies, unquote, splittype, splituser, splitpasswd, \
@@ -234,8 +234,10 @@ class AbstractBasicAuthHandler:
             auth = 'Basic %s' % base64.encodestring(raw).strip()
             if req.headers.get(self.auth_header, None) == auth:
                 return None
-            req.add_header(self.auth_header, auth)
-            return self.parent.open(req)
+            newreq = copy.copy(req)
+            newreq.add_header(self.auth_header, auth)
+            newreq.visit = False
+            return self.parent.open(newreq)
         else:
             return None
 
@@ -325,9 +327,10 @@ class AbstractDigestAuthHandler:
             auth_val = 'Digest %s' % auth
             if req.headers.get(self.auth_header, None) == auth_val:
                 return None
-            req.add_unredirected_header(self.auth_header, auth_val)
-            resp = self.parent.open(req)
-            return resp
+            newreq = copy.copy(req)
+            newreq.add_unredirected_header(self.auth_header, auth_val)
+            newreq.visit = False
+            return self.parent.open(newreq)
 
     def get_cnonce(self, nonce):
         # The cnonce-value is an opaque
