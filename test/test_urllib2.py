@@ -806,6 +806,41 @@ class HandlerTests(unittest.TestCase):
         h.http_request(req)
         self.assert_(rfpc.calls == [])
 
+    def test_redirected_robots_txt(self):
+        # redirected robots.txt fetch shouldn't result in another attempted
+        # robots.txt fetch to check the redirection is allowed!
+        import mechanize
+        from mechanize import build_opener, HTTPHandler, \
+             HTTPDefaultErrorHandler, HTTPRedirectHandler, \
+             HTTPRobotRulesProcessor
+
+        class MockHTTPHandler(mechanize.BaseHandler):
+            def __init__(self):
+                self.requests = []
+            def http_open(self, req):
+                import mimetools, httplib, copy
+                from StringIO import StringIO
+                self.requests.append(copy.deepcopy(req))
+                if req.get_full_url() == "http://example.com/robots.txt":
+                    hdr = "Location: http://example.com/en/robots.txt\r\n\r\n"
+                    msg = mimetools.Message(StringIO(hdr))
+                    return self.parent.error(
+                        "http", req, test_response(), 302, "Blah", msg)
+                else:
+                    return test_response("Allow: *", [], req.get_full_url())
+
+        hh = MockHTTPHandler()
+        hdeh = HTTPDefaultErrorHandler()
+        hrh = HTTPRedirectHandler()
+        rh = HTTPRobotRulesProcessor()
+        o = build_test_opener(hh, hdeh, hrh, rh)
+        o.open("http://example.com/")
+        self.assertEqual([req.get_full_url() for req in hh.requests],
+                         ["http://example.com/robots.txt",
+                          "http://example.com/en/robots.txt",
+                          "http://example.com/",
+                          ])
+
     def test_cookies(self):
         cj = MockCookieJar()
         h = HTTPCookieProcessor(cj)
