@@ -27,6 +27,12 @@ import _rfc3986
 
 debug = logging.getLogger("mechanize").debug
 
+# monkeypatch urllib2.HTTPError to show URL
+## def urllib2_str(self):
+##     return 'HTTP Error %s: %s (%s)' % (
+##         self.code, self.msg, self.geturl())
+## urllib2.HTTPError.__str__ = urllib2_str
+
 
 CHUNK = 1024  # size of chunks fed to HTML HEAD parser, in bytes
 DEFAULT_ENCODING = 'latin-1'
