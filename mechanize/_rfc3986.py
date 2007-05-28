@@ -200,7 +200,8 @@ def remove_dot_segments(path):
             continue
         if path == "/..":
             path = "/"
-            r.pop()
+            if r:
+                r.pop()
             continue
         # D
         if path == ".":

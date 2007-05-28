@@ -59,6 +59,10 @@ path-empty:
 '/'
 >>> remove_dot_segments("./")
 ''
+>>> remove_dot_segments("/..")
+'/'
+>>> remove_dot_segments("/../")
+'/'
 
 
 Examples from RFC 3986 section 5.4
@@ -154,3 +158,11 @@ Abnormal Examples
 'http://a/b/c/g#s/../x'
 >>> join("http:g")
 'http://a/b/c/g'
+
+
+Additional urljoin tests, not taken from RFC:
+
+>>> join("/..")
+'http://a/'
+>>> join("/../")
+'http://a/'
