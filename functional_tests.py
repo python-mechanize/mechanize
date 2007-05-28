@@ -2,7 +2,9 @@
 
 # These tests access the network.
 
-import os
+# thanks Moof (aka Giles Antonio Radford) for some of these
+
+import os, sys
 from unittest import TestCase
 
 import mechanize
@@ -11,6 +13,14 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
      HTTPHandler, HTTPRefreshProcessor, \
      HTTPEquivProcessor, HTTPRedirectHandler, \
      HTTPRedirectDebugProcessor, HTTPResponseDebugProcessor
+from mechanize._rfc3986 import urljoin
+
+# XXX
+# document twisted.web2 install (I forgot how I did it -- reinstall!)
+# implement remaining stuff used by functional_tests.py
+# in twisted-localserver.py:
+#   - 302 followed by 404 response
+#   - helper cgi script for cookies &c.
 
 #from cookielib import CookieJar
 #from urllib2 import build_opener, install_opener, urlopen
@@ -20,8 +30,9 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
 
 ## import logging
 ## logger = logging.getLogger("mechanize")
-## logger.addHandler(logging.StreamHandler())
-## logger.setLevel(logging.DEBUG)
+## logger.addHandler(logging.StreamHandler(sys.stdout))
+## #logger.setLevel(logging.DEBUG)
+## logger.setLevel(logging.INFO)
 
 
 def sanepathname2url(path):
@@ -39,7 +50,7 @@ class SimpleTests(TestCase):
         self.browser = mechanize.Browser()
 
     def test_simple(self):
-        self.browser.open('http://wwwsearch.sourceforge.net/')
+        self.browser.open(self.uri)
         self.assertEqual(self.browser.title(), 'Python bits')
         # relative URL
         self.browser.open('/mechanize/')
@@ -52,7 +63,7 @@ class SimpleTests(TestCase):
         import urllib2
         self.assertRaises(
             urllib2.HTTPError,
-            self.browser.open, "http://wwwsearch.sf.net/doesnotexist"
+            self.browser.open, "http://wwwsearch.sf.net/doesnotexist",
             )
 
     def test_reread(self):
@@ -60,7 +71,7 @@ class SimpleTests(TestCase):
         # be true for e.g. mechanize.OpenerDirector when mechanize's own
         # handlers are in use, but is guaranteed to be true for
         # mechanize.Browser)
-        r = self.browser.open('http://wwwsearch.sourceforge.net/')
+        r = self.browser.open(self.uri)
         data = r.read()
         r.close()
         r.seek(0)
@@ -70,12 +81,12 @@ class SimpleTests(TestCase):
     def test_error_recovery(self):
         self.assertRaises(OSError, self.browser.open,
                           'file:///c|thisnoexistyiufheiurgbueirgbue')
-        self.browser.open('http://wwwsearch.sourceforge.net/')
+        self.browser.open(self.uri)
         self.assertEqual(self.browser.title(), 'Python bits')
 
     def test_redirect(self):
         # 301 redirect due to missing final '/'
-        r = self.browser.open('http://wwwsearch.sourceforge.net/bits')
+        r = self.browser.open(urljoin(self.uri, "bits"))
         self.assertEqual(r.code, 200)
         self.assert_("GeneralFAQ.html" in r.read(2048))
 
@@ -92,7 +103,7 @@ class SimpleTests(TestCase):
             self.assertRaises(mechanize.BrowserStateError, br.back)
         test_state(self.browser)
         # note this involves a redirect, which should itself be non-visiting
-        r = self.browser.open_novisit("http://wwwsearch.sourceforge.net/bits")
+        r = self.browser.open_novisit(urljoin(self.uri, "bits"))
         test_state(self.browser)
         self.assert_("GeneralFAQ.html" in r.read(2048))
 
@@ -102,7 +113,7 @@ class SimpleTests(TestCase):
         ua = mechanize.UserAgent()
         ua.set_seekable_responses(False)
         ua.set_handle_equiv(False)
-        response = ua.open('http://wwwsearch.sourceforge.net/')
+        response = ua.open(self.uri)
         self.failIf(hasattr(response, "seek"))
         data = response.read()
         self.assert_("Python bits" in data)
@@ -112,7 +123,7 @@ class ResponseTests(TestCase):
 
     def test_seek(self):
         br = mechanize.Browser()
-        r = br.open("http://wwwsearch.sourceforge.net/")
+        r = br.open(self.uri)
         html = r.read()
         r.seek(0)
         self.assertEqual(r.read(), html)
@@ -120,7 +131,7 @@ class ResponseTests(TestCase):
     def test_seekable_response_opener(self):
         opener = mechanize.OpenerFactory(
             mechanize.SeekableResponseOpener).build_opener()
-        r = opener.open("http://wwwsearch.sourceforge.net/bits/cctest2.txt")
+        r = opener.open(urljoin(self.uri, "bits/cctest2.txt"))
         r.read()
         r.seek(0)
         self.assertEqual(r.read(),
@@ -130,11 +141,10 @@ class ResponseTests(TestCase):
     def test_no_seek(self):
         # should be possible to turn off UserAgent's .seek() functionality
         def check_no_seek(opener):
-            r = opener.open(
-                "http://wwwsearch.sourceforge.net/bits/cctest2.txt")
+            r = opener.open(urljoin(self.uri, "bits/cctest2.txt"))
             self.assert_(not hasattr(r, "seek"))
             try:
-                opener.open("http://wwwsearch.sourceforge.net/nonexistent")
+                opener.open(urljoin(self.uri, "nonexistent"))
             except mechanize.HTTPError, exc:
                 self.assert_(not hasattr(exc, "seek"))
 
@@ -154,13 +164,12 @@ class ResponseTests(TestCase):
         # .seek() method, then raised HTTPError exceptions should also have the
         # .seek() method
         def check(opener, excs_also):
-            r = opener.open(
-                "http://wwwsearch.sourceforge.net/bits/cctest2.txt")
+            r = opener.open(urljoin(self.uri, "bits/cctest2.txt"))
             data = r.read()
             r.seek(0)
             self.assertEqual(data, r.read(), r.get_data())
             try:
-                opener.open("http://wwwsearch.sourceforge.net/nonexistent")
+                opener.open(urljoin(self.uri, "nonexistent"))
             except mechanize.HTTPError, exc:
                 data = exc.read()
                 if excs_also:
@@ -189,7 +198,7 @@ class ResponseTests(TestCase):
 
     def test_set_response(self):
         br = mechanize.Browser()
-        r = br.open("http://wwwsearch.sourceforge.net/")
+        r = br.open(self.uri)
         html = r.read()
         self.assertEqual(br.title(), "Python bits")
 
@@ -226,7 +235,7 @@ class ResponseTests(TestCase):
         import pickle
 
         b = mechanize.Browser()
-        r = b.open("http://wwwsearch.sourceforge.net/bits/cctest2.txt")
+        r = b.open(urljoin(self.uri, "bits/cctest2.txt"))
         r.read()
 
         r.close()
@@ -301,11 +310,11 @@ class FunctionalTests(TestCase):
         plain_opener = mechanize.build_opener(mechanize.HTTPRobotRulesProcessor)
         browser = mechanize.Browser()
         for opener in plain_opener, browser:
-            r = opener.open("http://wwwsearch.sourceforge.net/robots")
+            r = opener.open(urljoin(self.uri, "robots"))
             self.assertEqual(r.code, 200)
             self.assertRaises(
                 mechanize.RobotExclusionError,
-                opener.open, "http://wwwsearch.sourceforge.net/norobots")
+                opener.open, urljoin(self.uri, "norobots"))
 
     def test_urlretrieve(self):
         url = "http://www.python.org/"
@@ -341,11 +350,10 @@ class FunctionalTests(TestCase):
     def test_reload_read_incomplete(self):
         from mechanize import Browser
         browser = Browser()
-        r1 = browser.open(
-            "http://wwwsearch.sourceforge.net/bits/mechanize_reload_test.html")
+        r1 = browser.open(urljoin(self.uri, "bits/mechanize_reload_test.html"))
         # if we don't do anything and go straight to another page, most of the
         # last page's response won't be .read()...
-        r2 = browser.open("http://wwwsearch.sourceforge.net/mechanize")
+        r2 = browser.open(urljoin(self.uri, "mechanize"))
         self.assert_(len(r1.get_data()) < 4097)  # we only .read() a little bit
         # ...so if we then go back, .follow_link() for a link near the end (a
         # few kb in, past the point that always gets read in HTML files because
@@ -378,5 +386,29 @@ class CallbackVerifier:
 
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main()
+    import sys
+    sys.path.insert(0, "test-tools")
+    import testprogram
+    USAGE_EXAMPLES = """
+Examples:
+  %(progName)s
+                 - run all tests
+  %(progName)s functional_tests.SimpleTests
+                 - run all 'test*' test methods in class SimpleTests
+  %(progName)s functional_tests.SimpleTests.test_redirect
+                 - run SimpleTests.test_redirect
+
+  %(progName)s -l
+                 - start a local Twisted HTTP server and run the functional
+                   tests against that, rather than against SourceForge
+                   (quicker!)
+                   Note not all the functional tests use the local server yet
+                   -- some currently always access the internet regardless of
+                   this option and the --uri option.
+"""
+    prog = testprogram.TestProgram(
+        ["functional_tests"],
+        localServerProcess=testprogram.TwistedServerProcess(),
+        usageExamples=USAGE_EXAMPLES,
+        )
+    result = prog.runTests()

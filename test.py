@@ -8,9 +8,6 @@ python test.py --help
 
 """
 
-import cgitb
-#cgitb.enable(format="text")
-
 # Modules containing tests to run -- a test is anything named *Tests, which
 # should be classes deriving from unittest.TestCase.
 MODULE_NAMES = ["test_date", "test_browser", "test_response", "test_cookies",
@@ -18,9 +15,7 @@ MODULE_NAMES = ["test_date", "test_browser", "test_response", "test_cookies",
                 "test_useragent", "test_html", "test_opener",
                 ]
 
-import sys, os, traceback, logging, glob
-from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
-     _TextTestResult
+import sys, os, logging, glob
 
 #level = logging.DEBUG
 #level = logging.INFO
@@ -30,109 +25,12 @@ from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
 #logging.getLogger("mechanize").addHandler(logging.StreamHandler(sys.stdout))
 
 
-class CgitbTextResult(_TextTestResult):
-    def _exc_info_to_string(self, err, test):
-        """Converts a sys.exc_info()-style tuple of values into a string."""
-        exctype, value, tb = err
-        # Skip test runner traceback levels
-        while tb and self._is_relevant_tb_level(tb):
-            tb = tb.tb_next
-        if exctype is test.failureException:
-            # Skip assert*() traceback levels
-            length = self._count_relevant_tb_levels(tb)
-            return cgitb.text((exctype, value, tb))
-        return cgitb.text((exctype, value, tb))
-
-class CgitbTextTestRunner(TextTestRunner):
-    def _makeResult(self):
-        return CgitbTextResult(self.stream, self.descriptions, self.verbosity)
-
-
-class TestProgram:
-    """A command-line program that runs a set of tests; this is primarily
-       for making test modules conveniently executable.
-    """
-    USAGE = """\
-Usage: %(progName)s [options] [test] [...]
-
-Options:
-  -h, --help       Show this message
-  -v, --verbose    Verbose output
-  -q, --quiet      Minimal output
-
-Examples:
-  %(progName)s                               - run default set of tests
-  %(progName)s MyTestSuite                   - run suite 'MyTestSuite'
-  %(progName)s MyTestCase.testSomething      - run MyTestCase.testSomething
-  %(progName)s MyTestCase                    - run all 'test*' test methods
-                                               in MyTestCase
-"""
-    def __init__(self, moduleNames, defaultTest=None,
-                 argv=None, testRunner=None, testLoader=defaultTestLoader):
-        self.modules = []
-        for moduleName in moduleNames:
-            module = __import__(moduleName)
-            for part in moduleName.split('.')[1:]:
-                module = getattr(module, part)
-            self.modules.append(module)
-        if argv is None:
-            argv = sys.argv
-        self.verbosity = 1
-        self.defaultTest = defaultTest
-        self.testRunner = testRunner
-        self.testLoader = testLoader
-        self.progName = os.path.basename(argv[0])
-        self.parseArgs(argv)
-
-    def usageExit(self, msg=None):
-        if msg: print msg
-        print self.USAGE % self.__dict__
-        sys.exit(2)
-
-    def parseArgs(self, argv):
-        import getopt
-        try:
-            options, args = getopt.getopt(argv[1:], 'hHvq',
-                                          ['help','verbose','quiet'])
-            for opt, value in options:
-                if opt in ('-h','-H','--help'):
-                    self.usageExit()
-                if opt in ('-q','--quiet'):
-                    self.verbosity = 0
-                if opt in ('-v','--verbose'):
-                    self.verbosity = 2
-            if len(args) == 0 and self.defaultTest is None:
-                suite = TestSuite()
-                for module in self.modules:
-                    test = self.testLoader.loadTestsFromModule(module)
-                    suite.addTest(test)
-                self.test = suite
-                return
-            if len(args) > 0:
-                self.testNames = args
-            else:
-                self.testNames = (self.defaultTest,)
-            self.createTests()
-        except getopt.error, msg:
-            self.usageExit(msg)
-
-    def createTests(self):
-        self.test = self.testLoader.loadTestsFromNames(self.testNames)
-
-    def runTests(self):
-        if self.testRunner is None:
-            self.testRunner = TextTestRunner(verbosity=self.verbosity)
-        result = self.testRunner.run(self.test)
-        return result
-
-
 if __name__ == "__main__":
-##     sys.path.insert(0, '/home/john/comp/dev/rl/jjlee/lib/python')
-##     import jjl
-##     import __builtin__
-##     __builtin__.jjl = jjl
+    # XXX
+    # temporary stop-gap to run doctests &c.
+    # should switch to nose or something
 
-    # XXX temporary stop-gap to run doctests
+    top_level_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
     # XXXX coverage output seems incorrect ATM
     run_coverage = "-c" in sys.argv
@@ -159,6 +57,7 @@ if __name__ == "__main__":
     # that renamed module.
     sys.path.insert(0, "test-tools")
     import doctest
+    import testprogram
 
     import coverage
     if run_coverage:
@@ -176,7 +75,8 @@ if __name__ == "__main__":
     if run_doctests:
         # run .doctest files needing special support
         common_globs = {"mechanize": mechanize}
-        pm_doctest_filename = os.path.join("test", "test_password_manager.doctest")
+        pm_doctest_filename = os.path.join(
+            "test", "test_password_manager.doctest")
         for globs in [
             {"mgr_class": mechanize.HTTPPasswordMgr},
             {"mgr_class": mechanize.HTTPProxyPasswordMgr},
@@ -217,8 +117,12 @@ if __name__ == "__main__":
         sys.path.insert(0, test_path)
         test_runner = None
         if use_cgitb:
-            test_runner = CgitbTextTestRunner()
-        prog = TestProgram(MODULE_NAMES, testRunner=test_runner)
+            test_runner = testprogram.CgitbTextTestRunner()
+        prog = testprogram.TestProgram(
+            MODULE_NAMES,
+            testRunner=test_runner,
+            localServerProcess=testprogram.TwistedServerProcess(),
+            )
         result = prog.runTests()
 
     if run_coverage:
