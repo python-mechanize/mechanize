@@ -70,7 +70,7 @@ class Page(resource.Resource):
         {"content-type": self.content_type},
         self.text)
 
-def _make_page(root, name, text,
+def _make_page(parent, name, text,
               content_type="text/html",
               leaf=False):
     page = Page()
@@ -78,20 +78,20 @@ def _make_page(root, name, text,
     base_type, specific_type = content_type.split("/")
     page.content_type = http_headers.MimeType(base_type, specific_type)
     page.addSlash = not leaf
-    setattr(root, "child_"+name, page)
+    setattr(parent, "child_"+name, page)
     return page
 
-def make_page(root, name, text,
+def make_page(parent, name, text,
               content_type="text/html"):
-    return _make_page(root, name, text, content_type, leaf=False)
+    return _make_page(parent, name, text, content_type, leaf=False)
 
-def make_leaf_page(root, name, text,
+def make_leaf_page(parent, name, text,
                    content_type="text/html"):
-    return _make_page(root, name, text, content_type, leaf=True)
+    return _make_page(parent, name, text, content_type, leaf=True)
 
-def make_redirect(root, name, location_relative_ref):
+def make_redirect(parent, name, location_relative_ref):
     redirect = resource.RedirectResource(path=location_relative_ref)
-    setattr(root, "child_"+name, redirect)
+    setattr(parent, "child_"+name, redirect)
     return redirect
 
 def make_cgi_bin(parent, name, dir_name):
