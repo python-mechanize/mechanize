@@ -115,7 +115,7 @@ def main():
     make_leaf_page(bits, "referertest.html", REFERER_TEST_HTML)
     make_leaf_page(bits, "mechanize_reload_test.html", RELOAD_TEST_HTML)
     make_redirect(root, "redirected", "/doesnotexist")
-    make_cgi_bin(root, "cgi-bin", "examples")
+    make_cgi_bin(root, "cgi-bin", "test-tools")
 
     site = server.Site(root)
     reactor.listenTCP(int(sys.argv[1]), channel.HTTPFactory(site))

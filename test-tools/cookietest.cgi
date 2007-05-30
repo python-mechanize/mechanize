@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # -*-python-*-
 
-# The copy of this script that lives at wwwsearch.sf.net is used by the
-# mechanize functional tests.
+# This is used by functional_tests.py
 
 print "Content-Type: text/html"
 print "Set-Cookie: foo=bar\n"
