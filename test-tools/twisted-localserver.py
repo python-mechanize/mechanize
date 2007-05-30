@@ -16,7 +16,7 @@ XXX installation instructions
 
 import os, sys, re, time
 from twisted.web2 import server, http, resource, channel, \
-     static, http_headers, responsecode
+     static, http_headers, responsecode, twcgi
 
 from twisted.internet import reactor
 
@@ -47,6 +47,16 @@ the end.
 </body>
 
 </html>""" % (("0123456789ABCDEF"*4+"\n")*61)
+REFERER_TEST_HTML = """\
+<html>
+<head>
+<title>mechanize Referer (sic) test page</title>
+</head>
+<body>
+<p>This page exists to test the Referer functionality of <a href="/mechanize">mechanize</a>.
+<p><a href="/cgi-bin/cookietest.cgi">Here</a> is a link to a page that displays the Referer header.
+</body>
+</html>"""
 
 
 class Page(resource.Resource):
@@ -84,6 +94,11 @@ def make_redirect(root, name, location_relative_ref):
     setattr(root, "child_"+name, redirect)
     return redirect
 
+def make_cgi_bin(parent, name, dir_name):
+    cgi_bin = twcgi.CGIDirectory(dir_name)
+    setattr(parent, "child_"+name, cgi_bin)
+    return cgi_bin
+
 def main():
     root = Page()
     root.text = ROOT_HTML
@@ -97,8 +112,10 @@ def main():
     make_leaf_page(bits, "cctest2.txt",
                    "Hello ClientCookie functional test suite.",
                    "text/plain")
+    make_leaf_page(bits, "referertest.html", REFERER_TEST_HTML)
     make_leaf_page(bits, "mechanize_reload_test.html", RELOAD_TEST_HTML)
     make_redirect(root, "redirected", "/doesnotexist")
+    make_cgi_bin(root, "cgi-bin", "examples")
 
     site = server.Site(root)
     reactor.listenTCP(int(sys.argv[1]), channel.HTTPFactory(site))

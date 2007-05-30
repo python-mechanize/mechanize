@@ -256,8 +256,8 @@ class FunctionalTests(TestCase):
 
     def test_referer(self):
         br = mechanize.Browser()
-        referer = "http://wwwsearch.sourceforge.net/bits/referertest.html"
-        info = "http://wwwsearch.sourceforge.net/cgi-bin/cookietest.cgi"
+        referer = urljoin(self.uri, "bits/referertest.html")
+        info = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
 
         r = br.open(info)
         self.assert_(referer not in r.get_data())
@@ -286,8 +286,7 @@ class FunctionalTests(TestCase):
         try:
             install_opener(o)
             try:
-                r = urlopen(
-                    "http://wwwsearch.sourceforge.net/cgi-bin/cookietest.cgi")
+                r = urlopen(urljoin(self.uri, "/cgi-bin/cookietest.cgi"))
             except urllib2.URLError, e:
                 #print e.read()
                 raise
@@ -317,7 +316,7 @@ class FunctionalTests(TestCase):
                 opener.open, urljoin(self.uri, "norobots"))
 
     def test_urlretrieve(self):
-        url = "http://www.python.org/"
+        url = urljoin(self.uri, "/mechanize/")
         test_filename = "python.html"
         def check_retrieve(opener, filename, headers):
             self.assertEqual(headers.get('Content-Type'), 'text/html')
