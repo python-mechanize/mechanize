@@ -60,29 +60,45 @@ class Page(resource.Resource):
         {"content-type": self.content_type},
         self.text)
 
-def make_page(root, name, text,
-              content_type="text/html"):
+def _make_page(root, name, text,
+              content_type="text/html",
+              leaf=False):
     page = Page()
     page.text = text
     base_type, specific_type = content_type.split("/")
     page.content_type = http_headers.MimeType(base_type, specific_type)
+    page.addSlash = not leaf
     setattr(root, "child_"+name, page)
     return page
+
+def make_page(root, name, text,
+              content_type="text/html"):
+    return _make_page(root, name, text, content_type, leaf=False)
+
+def make_leaf_page(root, name, text,
+                   content_type="text/html"):
+    return _make_page(root, name, text, content_type, leaf=True)
+
+def make_redirect(root, name, location_relative_ref):
+    redirect = resource.RedirectResource(path=location_relative_ref)
+    setattr(root, "child_"+name, redirect)
+    return redirect
 
 def main():
     root = Page()
     root.text = ROOT_HTML
     make_page(root, "mechanize", MECHANIZE_HTML)
-    bits = make_page(root, "robots.txt",
-                     "User-Agent: *\nDisallow: /norobots",
-                     "text/plain")
-    bits = make_page(root, "robots", "Hello, robots.", "text/plain")
-    bits = make_page(root, "norobots", "Hello, non-robots.", "text/plain")
+    make_leaf_page(root, "robots.txt",
+                   "User-Agent: *\nDisallow: /norobots",
+                   "text/plain")
+    make_leaf_page(root, "robots", "Hello, robots.", "text/plain")
+    make_leaf_page(root, "norobots", "Hello, non-robots.", "text/plain")
     bits = make_page(root, "bits", "GeneralFAQ.html")
-    make_page(bits, "cctest2.txt",
-              "Hello ClientCookie functional test suite.",
-              "text/plain")
-    make_page(bits, "mechanize_reload_test.html", RELOAD_TEST_HTML)
+    make_leaf_page(bits, "cctest2.txt",
+                   "Hello ClientCookie functional test suite.",
+                   "text/plain")
+    make_leaf_page(bits, "mechanize_reload_test.html", RELOAD_TEST_HTML)
+    make_redirect(root, "redirected", "/doesnotexist")
 
     site = server.Site(root)
     reactor.listenTCP(int(sys.argv[1]), channel.HTTPFactory(site))

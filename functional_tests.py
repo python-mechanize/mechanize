@@ -57,13 +57,13 @@ class SimpleTests(TestCase):
         self.assertEqual(self.browser.title(), 'mechanize')
 
     def test_302_and_404(self):
-        # the combination of 302 (caused by use of "sf.net") and 404 has caused
-        # problems in the past due to accidental double-wrapping of the error
-        # response
+        # the combination of 302 and 404 (/redirected is configured to redirect
+        # to a non-existent URL /nonexistent) has caused problems in the past
+        # due to accidental double-wrapping of the error response
         import urllib2
         self.assertRaises(
             urllib2.HTTPError,
-            self.browser.open, "http://wwwsearch.sf.net/doesnotexist",
+            self.browser.open, urljoin(self.uri, "/redirected"),
             )
 
     def test_reread(self):
