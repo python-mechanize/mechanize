@@ -14,10 +14,10 @@ You need Twisted XXX version to run it:
 XXX installation instructions
 """
 
-import os, sys, re, time
-from twisted.web2 import server, http, resource, channel, \
-     static, http_headers, responsecode, twcgi
+import sys, re
 
+from twisted.web2 import server, http, resource, channel, \
+     http_headers, responsecode, twcgi
 from twisted.internet import reactor
 
 def html(title=None):
