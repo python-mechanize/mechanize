@@ -50,7 +50,6 @@ class UserAgentBase(_opener.OpenerDirector):
         # CacheFTPHandler is buggy, at least in 2.3, so we don't use it
         "ftp": _urllib2.FTPHandler,
         "file": _urllib2.FileHandler,
-        "gopher": _urllib2.GopherHandler,
 
         # other handlers
         "_unknown": _urllib2.UnknownHandler,
@@ -77,7 +76,7 @@ class UserAgentBase(_opener.OpenerDirector):
         "_debug_response_body": _urllib2.HTTPResponseDebugProcessor,
         }
 
-    default_schemes = ["http", "ftp", "file", "gopher"]
+    default_schemes = ["http", "ftp", "file"]
     default_others = ["_unknown", "_http_error", "_http_request_upgrade",
                       "_http_default_error",
                       ]

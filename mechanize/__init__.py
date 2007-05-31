@@ -17,8 +17,6 @@ __all__ = [
     'FileHandler',
     'FormNotFoundError',
     'FormsFactory',
-    'GopherError',
-    'GopherHandler',
     'HTTPBasicAuthHandler',
     'HTTPCookieProcessor',
     'HTTPDefaultErrorHandler',

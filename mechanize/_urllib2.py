@@ -2,8 +2,7 @@
 # ...from urllib2...
 from urllib2 import \
      URLError, \
-     HTTPError, \
-     GopherError
+     HTTPError
 # ...and from mechanize
 from _opener import OpenerDirector, \
      SeekableResponseOpener, \
@@ -32,8 +31,7 @@ from urllib2 import \
      UnknownHandler, \
      FTPHandler, \
      CacheFTPHandler, \
-     FileHandler, \
-     GopherHandler
+     FileHandler
 # ...and from mechanize
 from _http import \
      HTTPHandler, \
