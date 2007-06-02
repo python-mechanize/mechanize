@@ -24,7 +24,7 @@ class UserAgentTests(TestCase):
                 {"blah": BlahHandler, "_blah": BlahProcessor})
         ua = TestUserAgent()
 
-        self.assertEqual(len(ua.handlers), 5)
+        self.assertEqual(len(ua.handlers), 4)
         ua.set_handled_schemes(["http", "https"])
         self.assertEqual(len(ua.handlers), 2)
         self.assertRaises(ValueError,
