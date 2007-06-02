@@ -96,6 +96,14 @@ class SimpleTests(TestCase):
         r = self.browser.open(url)
         self.assert_("this string appears in this file ;-)" in r.read())
 
+    def test_open_local_file(self):
+        # Since the file: URL scheme is not well standardised, Browser has a
+        # special method to open files by name, for convenience:
+        br = mechanize.Browser()
+        response = br.open_local_file("mechanize/_mechanize.py")
+        self.assert_("def open_local_file(self, filename):" in
+                     response.get_data())
+
     def test_open_novisit(self):
         def test_state(br):
             self.assert_(br.request is None)

@@ -9,7 +9,8 @@ included with the distribution).
 
 """
 
-import urllib2, sys, copy, re
+import urllib2, sys, copy, re, os, urllib
+
 
 from _useragent import UserAgentBase
 from _html import DefaultFactory
@@ -22,6 +23,14 @@ __version__ = (0, 1, 8, "b", None)  # 0.1.8b
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
 class FormNotFoundError(Exception): pass
+
+
+def sanepathname2url(path):
+    urlpath = urllib.pathname2url(path)
+    if os.name == "nt" and urlpath.startswith("///"):
+        urlpath = urlpath[2:]
+    # XXX don't ask me about the mac...
+    return urlpath
 
 
 class History:
@@ -274,6 +283,11 @@ class Browser(UserAgentBase):
 
         """
         return copy.copy(self._response)
+
+    def open_local_file(self, filename):
+        path = sanepathname2url(os.path.abspath(filename))
+        url = 'file://'+path
+        return self.open(url)
 
     def set_response(self, response):
         """Replace current response with (a copy of) response.
