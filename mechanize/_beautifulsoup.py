@@ -37,7 +37,7 @@ You can subclass BeautifulStoneSoup or BeautifulSoup to create a
 parsing strategy specific to an XML schema or a particular bizarre
 HTML document. Typically your subclass would just override
 SELF_CLOSING_TAGS and/or NESTABLE_TAGS.
-"""
+""" #"
 from __future__ import generators
 
 __author__ = "Leonard Richardson (leonardr@segfault.org)"
