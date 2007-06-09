@@ -394,7 +394,7 @@ class BrowserTests(TestCase):
         self.assertRaises(mechanize.FormNotFoundError, b.select_form,
                           name="blah")
         self.assertRaises(mechanize.FormNotFoundError, b.select_form,
-                          predicate=lambda x: True)
+                          predicate=lambda form: form is not b.global_form())
         self.assertRaises(mechanize.LinkNotFoundError, b.find_link,
                           name="blah")
         self.assertRaises(mechanize.LinkNotFoundError, b.find_link,

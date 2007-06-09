@@ -493,7 +493,10 @@ class Browser(UserAgentBase):
         nr, if supplied, is the sequence number of the form (where 0 is the
         first).  Note that control 0 is the first form matching all the other
         arguments (if supplied); it is not necessarily the first control in the
-        form.
+        form.  The "global form" (consisting of all form controls not contained
+        in any FORM element) is considered not to be part of this sequence and
+        to have no name, so will not be matched unless both name and nr are
+        None.
 
         """
         if not self.viewing_html():
@@ -501,6 +504,12 @@ class Browser(UserAgentBase):
         if (name is None) and (predicate is None) and (nr is None):
             raise ValueError(
                 "at least one argument must be supplied to specify form")
+
+        global_form = self._factory.global_form
+        if nr is None and name is None and \
+               predicate is not None and predicate(global_form):
+            self.form = global_form
+            return
 
         orig_nr = nr
         for form in self.forms():

@@ -252,3 +252,28 @@ BrowserStateError: not viewing any document
 1
 >>> iter(br.forms()).next().find_control(nr=0).name
 'b'
+
+
+
+.select_form() works with the global form
+
+>>> import ClientForm
+>>> from mechanize._response import test_html_response
+>>> br = TestBrowser2()
+>>> br.visit_response(test_html_response("""\
+... <html><head><title></title></head><body>
+... <input type="text" name="a" value="b"></input>
+... <form>
+...     <input type="text" name="p" value="q"></input>
+... </form>
+... </body></html>"""))
+>>> def has_a(form):
+...     try:
+...         form.find_control(name="a")
+...     except ClientForm.ControlNotFoundError:
+...         return False
+...     else:
+...         return True
+>>> br.select_form(predicate=has_a)
+>>> br.form.find_control(name="a").value
+'b'
