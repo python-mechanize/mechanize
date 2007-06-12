@@ -59,8 +59,8 @@ if __name__ == "__main__":
     import doctest
     import testprogram
 
-    import coverage
     if run_coverage:
+        import coverage
         print 'running coverage'
         coverage.erase()
         coverage.start()
