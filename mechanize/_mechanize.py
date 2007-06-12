@@ -379,7 +379,7 @@ class Browser(UserAgentBase):
 
         The cookie is added in the same way as if it had arrived with the
         current response, as a result of the current request.  This means that,
-        for example, it is not appropriate to set the cookie based on the
+        for example, if it is not appropriate to set the cookie based on the
         current request, no cookie will be set.
 
         The cookie will be returned automatically with subsequent responses
@@ -452,7 +452,6 @@ class Browser(UserAgentBase):
         return self._factory.is_html
 
     def encoding(self):
-        """"""
         if self._response is None:
             raise BrowserStateError("not viewing any document")
         return self._factory.encoding
