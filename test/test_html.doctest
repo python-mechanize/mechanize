@@ -161,3 +161,55 @@ StopIteration
 Traceback (most recent call last):
 ...
 StopIteration
+
+
+Link text parsing
+
+>>> def get_first_link_text_bs(html):
+...     factory = RobustLinksFactory()
+...     soup = MechanizeBs("utf-8", html)
+...     factory.set_soup(soup, "http://example.com/", "utf-8")
+...     return list(factory.links())[0].text
+
+>>> def get_first_link_text_sgmllib(html):
+...     factory = LinksFactory()
+...     response = test_html_response(html)
+...     factory.set_response(response, "http://example.com/", "utf-8")
+...     return list(factory.links())[0].text
+
+Whitespace gets compressed down to single spaces.  Tags are removed.
+
+>>> html = ("""\
+... <html><head><title>Title</title></head><body>
+... <p><a href="http://example.com/">The  quick\tbrown fox jumps
+...   over the <i><b>lazy</b></i> dog </a>
+... </body></html>
+... """)
+>>> get_first_link_text_bs(html)
+'The quick brown fox jumps over the lazy dog'
+>>> get_first_link_text_sgmllib(html)
+'The quick brown fox jumps over the lazy dog'
+
+Empty <a> links have empty link text
+
+>>> html = ("""\
+... <html><head><title>Title</title></head><body>
+... <p><a href="http://example.com/"></a>
+... </body></html>
+... """)
+>>> get_first_link_text_bs(html)
+''
+>>> get_first_link_text_sgmllib(html)
+''
+
+But for backwards-compatibility, empty non-<a> links have None link text
+
+>>> html = ("""\
+... <html><head><title>Title</title></head><body>
+... <p><frame src="http://example.com/"></frame>
+... </body></html>
+... """)
+>>> print get_first_link_text_bs(html)
+None
+>>> print get_first_link_text_sgmllib(html)
+None
