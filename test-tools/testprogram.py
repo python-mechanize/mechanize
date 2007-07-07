@@ -42,6 +42,7 @@ class ServerProcess:
         import socket
         def connect():
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.settimeout(1.0)
             try:
                 sock.connect(('127.0.0.1', self.port))
@@ -70,6 +71,8 @@ def backoff(func, errors,
             timeout = min(timeout, hard_limit)
         else:
             break
+    else:
+        raise
 
 def kill_windows(handle, report_hook):
     try:
