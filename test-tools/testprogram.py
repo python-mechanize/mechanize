@@ -210,7 +210,7 @@ Examples:
 """
     def __init__(self, moduleNames, localServerProcess, defaultTest=None,
                  argv=None, testRunner=None, testLoader=defaultTestLoader,
-                 defaultUri="http://wwwsearch.sf.net/",
+                 defaultUri="http://wwwsearch.sourceforge.net/",
                  usageExamples=USAGE_EXAMPLES,
                  ):
         self.modules = []

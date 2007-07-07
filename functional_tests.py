@@ -4,7 +4,7 @@
 
 # thanks Moof (aka Giles Antonio Radford) for some of these
 
-import os, sys
+import os, sys, urllib
 from unittest import TestCase
 
 import mechanize
@@ -14,13 +14,6 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
      HTTPEquivProcessor, HTTPRedirectHandler, \
      HTTPRedirectDebugProcessor, HTTPResponseDebugProcessor
 from mechanize._rfc3986 import urljoin
-
-# XXX
-# document twisted.web2 install (I forgot how I did it -- reinstall!)
-# implement remaining stuff used by functional_tests.py
-# in twisted-localserver.py:
-#   - 302 followed by 404 response
-#   - helper cgi script for cookies &c.
 
 #from cookielib import CookieJar
 #from urllib2 import build_opener, install_opener, urlopen
@@ -89,6 +82,26 @@ class SimpleTests(TestCase):
         r = self.browser.open(urljoin(self.uri, "bits"))
         self.assertEqual(r.code, 200)
         self.assert_("GeneralFAQ.html" in r.read(2048))
+
+    def test_refresh(self):
+        def refresh_request(seconds):
+            uri = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
+            val = urllib.quote_plus('%d; url="%s"' % (seconds, self.uri))
+            return uri + ("?refresh=%s" % val)
+        r = self.browser.open(refresh_request(5))
+        self.assertEqual(r.geturl(), self.uri)
+        # Refresh with pause > 30 seconds is ignored by default (these long
+        # refreshes tend to be there only because the website owner wants you
+        # to see the latest news, or whatever -- they're not essential to the
+        # operation of the site, and not really useful or appropriate when
+        # scraping).
+        refresh_uri = refresh_request(60)
+        r = self.browser.open(refresh_uri)
+        self.assertEqual(r.geturl(), refresh_uri)
+        # allow long refreshes (note we don't actually wait 60 seconds by default)
+        self.browser.set_handle_refresh(True, max_time=None)
+        r = self.browser.open(refresh_request(60))
+        self.assertEqual(r.geturl(), self.uri)
 
     def test_file_url(self):
         url = "file://%s" % sanepathname2url(
@@ -409,9 +422,8 @@ Examples:
                  - start a local Twisted HTTP server and run the functional
                    tests against that, rather than against SourceForge
                    (quicker!)
-                   Note not all the functional tests use the local server yet
-                   -- some currently always access the internet regardless of
-                   this option and the --uri option.
+                   If this option doesn't work on Windows/Mac, somebody please
+                   tell me about it, or I'll never find out...
 """
     prog = testprogram.TestProgram(
         ["functional_tests"],

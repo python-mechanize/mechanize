@@ -9,9 +9,9 @@ Runs a local server to point the mechanize functional tests at.  Example:
 python test-tools/twisted-localserver.py 8042
 python functional_tests.py --uri=http://localhost:8042/
 
-You need Twisted XXX version to run it:
+You need twisted.web2 to run it.  On ubuntu feisty, you can install it like so:
 
-XXX installation instructions
+sudo apt-get install python-twisted-web2
 """
 
 import sys, re
