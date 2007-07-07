@@ -229,7 +229,7 @@ class UserAgentBase(_opener.OpenerDirector):
     def set_handle_redirect(self, handle):
         """Set whether to handle HTTP 30x redirections."""
         self._set_handler("_redirect", handle)
-    def set_handle_refresh(self, handle, max_time=None, honor_time=True):
+    def set_handle_refresh(self, handle, max_time=30.0, honor_time=False):
         """Set whether to handle HTTP Refresh headers."""
         self._set_handler("_refresh", handle, constructor_kwds=
                           {"max_time": max_time, "honor_time": honor_time})
