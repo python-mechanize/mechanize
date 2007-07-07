@@ -540,6 +540,7 @@ class HTTPRefreshProcessor(BaseHandler):
     def __init__(self, max_time=0, honor_time=True):
         self.max_time = max_time
         self.honor_time = honor_time
+        self._sleep = time.sleep
 
     def http_response(self, request, response):
         code, msg, hdrs = response.code, response.msg, response.info()
@@ -551,16 +552,19 @@ class HTTPRefreshProcessor(BaseHandler):
             except ValueError:
                 debug("bad Refresh header: %r" % refresh)
                 return response
+
             if newurl is None:
                 newurl = response.geturl()
             if (self.max_time is None) or (pause <= self.max_time):
                 if pause > 1E-3 and self.honor_time:
-                    time.sleep(pause)
+                    self._sleep(pause)
                 hdrs["location"] = newurl
                 # hardcoded http is NOT a bug
                 response = self.parent.error(
                     "http", request, response,
                     "refresh", msg, hdrs)
+            else:
+                debug("Refresh header ignored: %r" % refresh)
 
         return response
 

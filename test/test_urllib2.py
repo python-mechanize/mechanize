@@ -919,6 +919,48 @@ class HandlerTests(unittest.TestCase):
                 self.assertEqual(o.proto, "http")
                 self.assertEqual(o.args, (req, r, "refresh", "OK", headers))
 
+    def test_refresh_honor_time(self):
+        class SleepTester:
+            def __init__(self, test, seconds):
+                self._test = test
+                if seconds is 0:
+                    seconds = None  # don't expect a sleep for 0 seconds
+                self._expected = seconds
+                self._got = None
+            def sleep(self, seconds):
+                self._got = seconds
+            def verify(self):
+                self._test.assertEqual(self._expected, self._got)
+        class Opener:
+            called = False
+            def error(self, *args, **kwds):
+                self.called = True
+        def test(rp, header, refresh_after):
+            expect_refresh = refresh_after is not None
+            opener = Opener()
+            rp.parent = opener
+            st = SleepTester(self, refresh_after)
+            rp._sleep = st.sleep
+            rp.http_response(Request("http://example.com"),
+                             test_response(headers=[("Refresh", header)]),
+                             )
+            self.assertEqual(expect_refresh, opener.called)
+            st.verify()
+
+        # by default, only zero-time refreshes are honoured
+        test(HTTPRefreshProcessor(), "0", 0)
+        test(HTTPRefreshProcessor(), "2", None)
+
+        # if requested, more than zero seconds are allowed
+        test(HTTPRefreshProcessor(max_time=None), "2", 2)
+        test(HTTPRefreshProcessor(max_time=30), "2", 2)
+
+        # no sleep if we don't "honor_time"
+        test(HTTPRefreshProcessor(max_time=30, honor_time=False), "2", 0)
+
+        # request for too-long wait before refreshing --> no refresh occurs
+        test(HTTPRefreshProcessor(max_time=30), "60", None)
+
     def test_redirect(self):
         from_url = "http://example.com/a.html"
         to_url = "http://example.com/b.html"
