@@ -17,6 +17,8 @@ import _rfc3986
 
 DEFAULT_ENCODING = "latin-1"
 
+COMPRESS_RE = re.compile(r"\s+")
+
 
 # the base classe is purely for backwards compatibility
 class ParseError(ClientForm.ParseError): pass
@@ -235,6 +237,30 @@ class TitleFactory:
         self._response = response
         self._encoding = encoding
 
+    def _get_title_text(self, parser):
+        text = []
+        tok = None
+        while 1:
+            try:
+                tok = parser.get_token()
+            except NoMoreTokensError:
+                break
+            if tok.type == "data":
+                text.append(str(tok))
+            elif tok.type == "entityref":
+                t = unescape("&%s;" % tok.data,
+                             parser._entitydefs, parser.encoding)
+                text.append(t)
+            elif tok.type == "charref":
+                t = unescape_charref(tok.data, parser.encoding)
+                text.append(t)
+            elif tok.type in ["starttag", "endtag", "startendtag"]:
+                tag_name = tok.data
+                if tok.type == "endtag" and tag_name == "title":
+                    break
+                text.append(str(tok))
+        return COMPRESS_RE.sub(" ", "".join(text).strip())
+
     def title(self):
         import _pullparser
         p = _pullparser.TolerantPullParser(
@@ -245,7 +271,7 @@ class TitleFactory:
             except _pullparser.NoMoreTokensError:
                 return None
             else:
-                return p.get_text()
+                return self._get_title_text(p)
         except sgmllib.SGMLParseError, exc:
             raise ParseError(exc)
 
@@ -328,7 +354,7 @@ class MechanizeBs(_beautifulsoup.BeautifulSoup):
 
 class RobustLinksFactory:
 
-    compress_re = re.compile(r"\s+")
+    compress_re = COMPRESS_RE
 
     def __init__(self,
                  link_parser_class=None,
@@ -418,7 +444,8 @@ class RobustTitleFactory:
         if title == _beautifulsoup.Null:
             return None
         else:
-            return title.firstText(lambda t: True)
+            inner_html = "".join([str(node) for node in title.contents])
+            return COMPRESS_RE.sub(" ", inner_html.strip())
 
 
 class Factory:

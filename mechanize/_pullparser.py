@@ -35,6 +35,7 @@ under the terms of the BSD or ZPL 2.1 licenses.
 
 import re, htmlentitydefs
 import sgmllib, HTMLParser
+from xml.sax import saxutils
 
 from _html import unescape, unescape_charref
 
@@ -84,6 +85,60 @@ class Token:
     def __repr__(self):
         args = ", ".join(map(repr, [self.type, self.data, self.attrs]))
         return self.__class__.__name__+"(%s)" % args
+
+    def __str__(self):
+        """
+        >>> print Token("starttag", "br")
+        <br>
+        >>> print Token("starttag", "a",
+        ...     [("href", "http://www.python.org/"), ("alt", '"foo"')])
+        <a href="http://www.python.org/" alt='"foo"'>
+        >>> print Token("startendtag", "br")
+        <br />
+        >>> print Token("startendtag", "br", [("spam", "eggs")])
+        <br spam="eggs" />
+        >>> print Token("endtag", "p")
+        </p>
+        >>> print Token("charref", "38")
+        &#38;
+        >>> print Token("entityref", "amp")
+        &amp;
+        >>> print Token("data", "foo\\nbar")
+        foo
+        bar
+        >>> print Token("comment", "Life is a bowl\\nof cherries.")
+        <!--Life is a bowl
+        of cherries.-->
+        >>> print Token("decl", "decl")
+        <!decl>
+        >>> print Token("pi", "pi")
+        <?pi>
+        """
+        if self.attrs is not None:
+            attrs = "".join([" %s=%s" % (k, saxutils.quoteattr(v)) for
+                             k, v in self.attrs])
+        else:
+            attrs = ""
+        if self.type == "starttag":
+            return "<%s%s>" % (self.data, attrs)
+        elif self.type == "startendtag":
+            return "<%s%s />" % (self.data, attrs)
+        elif self.type == "endtag":
+            return "</%s>" % self.data
+        elif self.type == "charref":
+            return "&#%s;" % self.data
+        elif self.type == "entityref":
+            return "&%s;" % self.data
+        elif self.type == "data":
+            return self.data
+        elif self.type == "comment":
+            return "<!--%s-->" % self.data
+        elif self.type == "decl":
+            return "<!%s>" % self.data
+        elif self.type == "pi":
+            return "<?%s>" % self.data
+        assert False
+
 
 def iter_until_exception(fn, exception, *args, **kwds):
     while 1:
