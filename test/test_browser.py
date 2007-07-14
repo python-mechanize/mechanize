@@ -334,10 +334,14 @@ class BrowserTests(TestCase):
                 self.assertEqual(b.viewing_html(), expect)
 
     def test_empty(self):
+        for factory_class in FACTORY_CLASSES:
+            self._test_empty(factory_class())
+
+    def _test_empty(self, factory):
         import mechanize
         url = "http://example.com/"
 
-        b = TestBrowser()
+        b = TestBrowser(factory=factory)
 
         self.assert_(b.response() is None)
 
