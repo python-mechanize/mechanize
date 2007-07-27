@@ -190,8 +190,8 @@ class Browser(UserAgentBase):
     def open_novisit(self, url, data=None):
         """Open a URL without visiting it.
 
-        The browser state (including .request, .response(), history, forms and
-        links) are all left unchanged by calling this function.
+        Browser state (including request, response, history, forms and links)
+        is left unchanged by calling this function.
 
         The interface is the same as for .open().
 
