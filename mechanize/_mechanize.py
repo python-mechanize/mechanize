@@ -163,13 +163,7 @@ class Browser(UserAgentBase):
         self.follow_link = self.find_link = None
 
     def set_handle_referer(self, handle):
-        """Set whether to add Referer header to each request.
-
-        This base class does not implement this feature (so don't turn this on
-        if you're using this base class directly), but the subclass
-        mechanize.Browser does.
-
-        """
+        """Set whether to add Referer header to each request."""
         self._set_handler("_referer", handle)
         self._handle_referer = bool(handle)
 
