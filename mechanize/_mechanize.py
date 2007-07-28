@@ -451,10 +451,10 @@ class Browser(UserAgentBase):
         return self._factory.encoding
 
     def title(self):
-        """Return title, or None if there is no title element in the document.
+        r"""Return title, or None if there is no title element in the document.
 
-        Tags are stripped or textified as described in docs for
-        PullParser.get_text() method of pullparser module.
+        Treatment of any tag children of attempts to follow Firefox and IE
+        (currently, tags are preserved).
 
         """
         if not self.viewing_html():
