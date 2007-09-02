@@ -465,8 +465,8 @@ class CookiePolicy:
 
         Note that domain_return_ok is called for every *cookie* domain, not
         just for the *request* domain.  For example, the function might be
-        called with both ".acme.com" and "www.acme.com" if the request domain is
-        "www.acme.com".  The same goes for path_return_ok.
+        called with both ".acme.com" and "www.acme.com" if the request domain
+        is "www.acme.com".  The same goes for path_return_ok.
 
         For argument documentation, see the docstring for return_ok.
 
@@ -818,7 +818,8 @@ class DefaultCookiePolicy(CookiePolicy):
         # done by domain_return_ok.
         debug(" - checking cookie %s", cookie)
 
-        for n in "version", "verifiability", "secure", "expires", "port", "domain":
+        for n in ("version", "verifiability", "secure", "expires", "port",
+                  "domain"):
             fn_name = "return_ok_"+n
             fn = getattr(self, fn_name)
             if not fn(cookie, request):

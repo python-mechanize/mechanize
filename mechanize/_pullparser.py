@@ -205,7 +205,8 @@ class _AbstractParser:
         return iter_until_exception(self.get_tag, NoMoreTokensError, *names)
 
     def tokens(self, *tokentypes):
-        return iter_until_exception(self.get_token, NoMoreTokensError, *tokentypes)
+        return iter_until_exception(self.get_token, NoMoreTokensError,
+                                    *tokentypes)
 
     def next(self):
         try:

@@ -156,7 +156,8 @@ def _str2time(day, mon, yr, hr, min, sec, tz):
     return t
 
 
-strict_re = re.compile(r"^[SMTWF][a-z][a-z], (\d\d) ([JFMASOND][a-z][a-z]) (\d\d\d\d) (\d\d):(\d\d):(\d\d) GMT$")
+strict_re = re.compile(r"^[SMTWF][a-z][a-z], (\d\d) ([JFMASOND][a-z][a-z]) "
+                       r"(\d\d\d\d) (\d\d):(\d\d):(\d\d) GMT$")
 wkday_re = re.compile(
     r"^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)[a-z]*,?\s*", re.I)
 loose_http_re = re.compile(

@@ -300,7 +300,8 @@ class HTTPEquivProcessor(BaseHandler):
         if is_html(ct_hdrs, url, self._allow_xhtml):
             try:
                 try:
-                    html_headers = parse_head(response, self.head_parser_class())
+                    html_headers = parse_head(response,
+                                              self.head_parser_class())
                 finally:
                     response.seek(0)
             except (HTMLParser.HTMLParseError,

@@ -114,8 +114,9 @@ class MSIEBase:
                     domain = m.group(1)
                     path = m.group(2)
 
-                    cookies.append({"KEY": key, "VALUE": value, "DOMAIN": domain,
-                                    "PATH": path, "FLAGS": flags, "HIXP": hi_expire,
+                    cookies.append({"KEY": key, "VALUE": value,
+                                    "DOMAIN": domain, "PATH": path,
+                                    "FLAGS": flags, "HIXP": hi_expire,
                                     "LOXP": lo_expire, "HICREATE": hi_create,
                                     "LOCREATE": lo_create})
         finally:

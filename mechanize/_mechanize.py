@@ -425,8 +425,8 @@ class Browser(UserAgentBase):
         """Return the global form object, or None if the factory implementation
         did not supply one.
 
-        The "global" form object contains all controls that are not descendants of
-        any FORM element.
+        The "global" form object contains all controls that are not descendants
+        of any FORM element.
 
         The returned form object implements the ClientForm.HTMLForm interface.
 

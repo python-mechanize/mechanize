@@ -306,7 +306,8 @@ class UserAgentBase(_opener.OpenerDirector):
             if obj is not None:
                 newhandler = handler_class(obj)
             else:
-                newhandler = handler_class(*constructor_args, **constructor_kwds)
+                newhandler = handler_class(
+                    *constructor_args, **constructor_kwds)
         else:
             newhandler = None
         self._replace_handler(name, newhandler)
