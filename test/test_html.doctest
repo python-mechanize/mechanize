@@ -251,3 +251,12 @@ elements (haven't tested IE).
 'Ti<script type="text/strange">alert("this is valid HTML -- yuck!")</script> tle &&'
 >>> get_title_sgmllib(html)
 'Ti<script type="text/strange">alert("this is valid HTML -- yuck!")</script> tle &&'
+
+
+No more tags after <title> used to cause an exception
+
+>>> html = ("""\
+... <html><head>
+... <title>""")
+>>> get_title_sgmllib(html)
+''

@@ -9,7 +9,7 @@ included with the distribution).
 
 """
 
-import urllib2, sys, copy, re, os, urllib
+import urllib2, copy, re, os, urllib
 
 
 from _useragent import UserAgentBase

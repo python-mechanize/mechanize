@@ -9,7 +9,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import os, urllib2, bisect, urllib, httplib, types, tempfile
+import os, urllib2, bisect, httplib, types, tempfile
 try:
     import threading as _threading
 except ImportError:

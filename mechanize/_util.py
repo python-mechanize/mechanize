@@ -8,7 +8,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import re, string, time, warnings
+import re, time, warnings
 
 def deprecation(message):
     warnings.warn(message, DeprecationWarning, stacklevel=3)

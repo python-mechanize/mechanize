@@ -79,7 +79,7 @@ class stupid_gzip_wrapper(_response.closeable_response):
     def readline(self, size=-1):
         return self.__data.readline(size)
     def readlines(self, sizehint=-1):
-        return self.__data.readlines(size)
+        return self.__data.readlines(sizehint)
 
     def __getattr__(self, name):
         # delegate unknown methods/attributes

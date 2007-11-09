@@ -12,17 +12,16 @@ COPYING.txt included with the distribution).
 
 """
 
-import copy, time, tempfile, htmlentitydefs, re, logging, socket, \
+import time, htmlentitydefs, logging, socket, \
        urllib2, urllib, httplib, sgmllib
 from urllib2 import URLError, HTTPError, BaseHandler
 from cStringIO import StringIO
 
 from _request import Request
-from _util import isstringlike
 from _response import closeable_response, response_seek_wrapper
 from _html import unescape, unescape_charref
 from _headersutil import is_html
-from _clientcookie import CookieJar, request_host
+from _clientcookie import CookieJar
 import _rfc3986
 
 debug = logging.getLogger("mechanize").debug
@@ -350,11 +349,11 @@ else:
     class MechanizeRobotFileParser(robotparser.RobotFileParser):
 
         def __init__(self, url='', opener=None):
-            import _opener
             robotparser.RobotFileParser.__init__(self, url)
             self._opener = opener
 
         def set_opener(self, opener=None):
+            import _opener
             if opener is None:
                 opener = _opener.OpenerDirector()
             self._opener = opener

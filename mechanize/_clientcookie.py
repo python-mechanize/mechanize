@@ -32,7 +32,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import sys, re, copy, time, struct, urllib, types, logging
+import sys, re, copy, time, urllib, types, logging
 try:
     import threading
     _threading = threading; del threading

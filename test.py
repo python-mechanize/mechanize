@@ -87,10 +87,19 @@ if __name__ == "__main__":
                 #os.path.join("test", "test_scratch.doctest"),
                 globs=globs,
                 )
+        try:
+            import robotparser
+        except ImportError:
+            pass
+        else:
+            doctest.testfile(os.path.join("test",
+                                          "test_robotfileparser.doctest"))
 
         # run .doctest files
         special_doctests = [pm_doctest_filename,
                             os.path.join("test", "test_scratch.doctest"),
+                            os.path.join("test",
+                                         "test_robotfileparser.doctest"),
                             ]
         doctest_files = glob.glob(os.path.join("test", "*.doctest"))
 
@@ -102,13 +111,14 @@ if __name__ == "__main__":
 
         # run doctests in docstrings
         from mechanize import _headersutil, _auth, _clientcookie, _pullparser, \
-             _http, _rfc3986
+             _http, _rfc3986, _useragent
         doctest.testmod(_headersutil)
         doctest.testmod(_rfc3986)
         doctest.testmod(_auth)
         doctest.testmod(_clientcookie)
         doctest.testmod(_pullparser)
         doctest.testmod(_http)
+        doctest.testmod(_useragent)
 
     if run_unittests:
         # run vanilla unittest tests

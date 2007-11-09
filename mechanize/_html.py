@@ -9,7 +9,7 @@ included with the distribution).
 """
 
 import re, copy, htmlentitydefs
-import sgmllib, HTMLParser, ClientForm
+import sgmllib, ClientForm
 
 import _request
 from _headersutil import split_header_words, is_html as _is_html
@@ -238,12 +238,13 @@ class TitleFactory:
         self._encoding = encoding
 
     def _get_title_text(self, parser):
+        import _pullparser
         text = []
         tok = None
         while 1:
             try:
                 tok = parser.get_token()
-            except NoMoreTokensError:
+            except _pullparser.NoMoreTokensError:
                 break
             if tok.type == "data":
                 text.append(str(tok))
@@ -321,7 +322,6 @@ RobustFormParser, NestingRobustFormParser = ClientForm._create_bs_classes(
     _beautifulsoup.BeautifulSoup, _beautifulsoup.ICantBelieveItsBeautifulSoup
     )
 # monkeypatch sgmllib to fix http://www.python.org/sf/803422 :-(
-import sgmllib
 sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
 
 class MechanizeBs(_beautifulsoup.BeautifulSoup):
@@ -361,7 +361,6 @@ class RobustLinksFactory:
                  link_class=Link,
                  urltags=None,
                  ):
-        import _beautifulsoup
         if link_parser_class is None:
             link_parser_class = MechanizeBs
         self.link_parser_class = link_parser_class
@@ -419,7 +418,6 @@ class RobustLinksFactory:
 
 class RobustFormsFactory(FormsFactory):
     def __init__(self, *args, **kwds):
-        import ClientForm
         args = form_parser_args(*args, **kwds)
         if args.form_parser_class is None:
             args.form_parser_class = RobustFormParser
@@ -622,7 +620,6 @@ class RobustFactory(Factory):
         self._soup_class = soup_class
 
     def set_response(self, response):
-        import _beautifulsoup
         Factory.set_response(self, response)
         if response is not None:
             data = response.read()

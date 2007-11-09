@@ -11,7 +11,7 @@ included with the distribution).
 
 """
 
-import sys, warnings, urllib2
+import warnings
 
 import _opener
 import _urllib2

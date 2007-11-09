@@ -12,7 +12,7 @@ included with the distribution).
 
 # XXX Wow, this is ugly.  Overly-direct translation of the RFC ATM.
 
-import sys, re, posixpath, urllib
+import re, urllib
 
 ## def chr_range(a, b):
 ##     return "".join(map(chr, range(ord(a), ord(b)+1)))
@@ -96,6 +96,7 @@ def urljoin(base_uri, uri_reference):
 
 # oops, this doesn't do the same thing as the literal translation
 # from the RFC below
+## import posixpath
 ## def urljoin_parts(base_parts, reference_parts):
 ##     scheme, authority, path, query, fragment = base_parts
 ##     rscheme, rauthority, rpath, rquery, rfragment = reference_parts
