@@ -118,7 +118,7 @@ class CookieTests(TestCase):
 
         # missing = sign in Cookie: header is regarded by Mozilla as a missing
         # NAME.  WE regard it as a missing VALUE.
-        filename = os.path.abspath("cookies2.txt")
+        filename = tempfile.mktemp()
         c = MozillaCookieJar(filename)
         interact_netscape(c, "http://www.acme.com/", 'eggs')
         interact_netscape(c, "http://www.acme.com/", '"spam"; path=/foo/')
@@ -1262,7 +1262,7 @@ class LWPCookieTests(TestCase):
         assert len(c) == 6
 
         # save and restore
-        filename = "lwp-cookies.txt"
+        filename = tempfile.mktemp()
 
         try:
             c.save(filename, ignore_discard=True)
@@ -1306,7 +1306,7 @@ class LWPCookieTests(TestCase):
 
         year_plus_one = localtime(time.time())[0] + 1
 
-        filename = "cookies.txt"
+        filename = tempfile.mktemp()
 
         c = MozillaCookieJar(filename,
                              policy=DefaultCookiePolicy(rfc2965=True))
