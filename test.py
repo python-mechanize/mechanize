@@ -76,36 +76,23 @@ if __name__ == "__main__":
         # run .doctest files needing special support
         common_globs = {"mechanize": mechanize}
         pm_doctest_filename = os.path.join(
-            "test", "test_password_manager.doctest")
+            "test", "test_password_manager.special_doctest")
         for globs in [
             {"mgr_class": mechanize.HTTPPasswordMgr},
             {"mgr_class": mechanize.HTTPProxyPasswordMgr},
             ]:
             globs.update(common_globs)
-            doctest.testfile(
-                pm_doctest_filename,
-                #os.path.join("test", "test_scratch.doctest"),
-                globs=globs,
-                )
+            doctest.testfile(pm_doctest_filename, globs=globs)
         try:
             import robotparser
         except ImportError:
             pass
         else:
-            doctest.testfile(os.path.join("test",
-                                          "test_robotfileparser.doctest"))
+            doctest.testfile(os.path.join(
+                    "test", "test_robotfileparser.special_doctest"))
 
         # run .doctest files
-        special_doctests = [pm_doctest_filename,
-                            os.path.join("test", "test_scratch.doctest"),
-                            os.path.join("test",
-                                         "test_robotfileparser.doctest"),
-                            ]
         doctest_files = glob.glob(os.path.join("test", "*.doctest"))
-
-        for dt in special_doctests:
-            if dt in doctest_files:
-                doctest_files.remove(dt)
         for df in doctest_files:
             doctest.testfile(df)
 
