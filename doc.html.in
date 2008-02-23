@@ -644,15 +644,15 @@ response = opener.open(url)
 
 <p>Alternatively, you can examine your individual request and response
 objects to see what's going on.  Note, though, that mechanize upgrades
-urllib2.Request objects to mechanize.Request, so you won't see any
-headers that are added to requests by handlers unless you use
-mechanize.Request in the first place.  In addition, requests may
-involve "sub-requests" in cases such as redirection, in which case you
-will also not see everything that's going on just by examining the
-original request and final response.  mechanize's responses can be
-made to have <code>.seek()</code> and <code>.get_data()</code>
-methods.  It's often useful to use the <code>.get_data()</code> method
-during debugging (see <a href="./doc.html#seekable">above</a>).
+<code>urllib2.Request</code> objects to <code>mechanize.Request</code>, so you
+won't see any headers that are added to requests by handlers unless you use
+<code>mechanize.Request</code> in the first place.  In addition, requests may
+involve "sub-requests" in cases such as redirection, in which case you will
+also not see everything that's going on just by examining the original request
+and final response.  mechanize's responses can be made to
+have <code>.seek()</code> and <code>.get_data()</code> methods.  It's often
+useful to use the <code>.get_data()</code> method during debugging
+(see <a href="./doc.html#seekable">above</a>).
 
 <p>Also, note <code>HTTPRedirectDebugProcessor</code> (which prints information
 about redirections) and <code>HTTPResponseDebugProcessor</code> (which prints
@@ -854,7 +854,7 @@ and open holes where required for Netscape protocol-compatibility.  RFC
         detail.
     <li>HTTP cookies <a href="http://www.cookiecentral.com/">FAQ</a>.
   </ul>
-  <li>Which protocols does ClientCookie support?
+  <li>Which protocols does mechanize support?
      <p>Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
   <li>What about RFC 2109?
      <p>RFC 2109 cookies are currently parsed as Netscape cookies, and treated
@@ -862,7 +862,7 @@ and open holes where required for Netscape protocol-compatibility.  RFC
      or as Netscape cookies otherwise.  RFC 2109 is officially obsoleted by RFC
      2965.  Browsers do use a few RFC 2109 features in their Netscape cookie
      implementations (<code>port</code> and <code>max-age</code>), and
-     ClientCookie knows about that, too.
+     mechanize knows about that, too.
 </ul>
 
 
