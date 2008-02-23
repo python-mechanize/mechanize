@@ -1,6 +1,6 @@
 """Tests for _ClientCookie."""
 
-import urllib2, re, os, StringIO, mimetools, time
+import urllib2, re, os, StringIO, mimetools, time, tempfile, errno
 from time import localtime
 from unittest import TestCase
 
@@ -1343,6 +1343,46 @@ class LWPCookieTests(TestCase):
         new_c = save_and_restore(c, False)
         assert len(new_c) == 4  # 2 of them discarded on save
         assert repr(new_c).find("name='foo1', value='bar'") != -1
+
+    def test_mozilla_cookiejar_embedded_tab(self):
+        from mechanize import MozillaCookieJar
+        filename = tempfile.mktemp()
+        fh = open(filename, "w")
+        try:
+            fh.write(
+                MozillaCookieJar.header + "\n" +
+                "a.com\tFALSE\t/\tFALSE\t\tname\tval\tstillthevalue\n"
+                "a.com\tFALSE\t/\tFALSE\t\tname2\tvalue\n")
+            fh.close()
+            cj = MozillaCookieJar(filename)
+            cj.revert(ignore_discard=True)
+            cookies = cj._cookies["a.com"]["/"]
+            self.assertEquals(cookies["name"].value, "val\tstillthevalue")
+            self.assertEquals(cookies["name2"].value, "value")
+        finally:
+            try:
+                os.remove(filename)
+            except OSError, exc:
+                if exc.errno != errno.EEXIST:
+                    raise
+
+    def test_mozilla_cookiejar_initial_dot_violation(self):
+        from mechanize import MozillaCookieJar, LoadError
+        filename = tempfile.mktemp()
+        fh = open(filename, "w")
+        try:
+            fh.write(
+                MozillaCookieJar.header + "\n" +
+                ".a.com\tFALSE\t/\tFALSE\t\tname\tvalue\n")
+            fh.close()
+            cj = MozillaCookieJar(filename)
+            self.assertRaises(LoadError, cj.revert, ignore_discard=True)
+        finally:
+            try:
+                os.remove(filename)
+            except OSError, exc:
+                if exc.errno != errno.EEXIST:
+                    raise
 
     def test_netscape_misc(self):
         # Some additional Netscape cookies tests.

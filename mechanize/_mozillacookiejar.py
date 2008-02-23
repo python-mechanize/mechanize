@@ -80,7 +80,7 @@ class MozillaCookieJar(FileCookieJar):
                     continue
 
                 domain, domain_specified, path, secure, expires, name, value = \
-                        line.split("\t")
+                    line.split("\t", 6)
                 secure = (secure == "TRUE")
                 domain_specified = (domain_specified == "TRUE")
                 if name == "":
@@ -88,7 +88,9 @@ class MozillaCookieJar(FileCookieJar):
                     value = None
 
                 initial_dot = domain.startswith(".")
-                assert domain_specified == initial_dot
+                if domain_specified != initial_dot:
+                    raise LoadError("domain and domain specified flag don't "
+                                    "match in %s: %s" % (filename, line))
 
                 discard = False
                 if expires == "":
@@ -113,9 +115,9 @@ class MozillaCookieJar(FileCookieJar):
                 self.set_cookie(c)
 
         except:
-            reraise_unmasked_exceptions((IOError,))
+            reraise_unmasked_exceptions((IOError, LoadError))
             raise LoadError("invalid Netscape format file %s: %s" %
-                          (filename, line))
+                            (filename, line))
 
     def save(self, filename=None, ignore_discard=False, ignore_expires=False):
         if filename is None:
