@@ -1212,6 +1212,10 @@ class CookieJar:
                         continue
                 if k == "max-age":
                     max_age_set = True
+                    if v is None:
+                        debug("   missing value for max-age attribute")
+                        bad_cookie = True
+                        break
                     try:
                         v = int(v)
                     except ValueError:
