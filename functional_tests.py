@@ -4,7 +4,7 @@
 
 # thanks Moof (aka Giles Antonio Radford) for some of these
 
-import os, sys, urllib
+import os, sys, urllib, tempfile, errno
 from unittest import TestCase
 
 import mechanize
@@ -158,6 +158,14 @@ class ResponseTests(TestCase):
         self.assertEqual(r.read(),
                          r.get_data(),
                          "Hello ClientCookie functional test suite.\n")
+
+    def test_seek_wrapper_class_name(self):
+        opener = mechanize.UserAgent()
+        opener.set_seekable_responses(True)
+        try:
+            opener.open(urljoin(self.uri, "nonexistent"))
+        except mechanize.HTTPError, exc:
+            self.assert_("HTTPError instance" in repr(exc))
 
     def test_no_seek(self):
         # should be possible to turn off UserAgent's .seek() functionality
@@ -394,6 +402,65 @@ class FunctionalTests(TestCase):
 ##         data2 = r.read()
 ##         r.close()
 ##         self.assert_(data1 != data2)
+
+
+class CookieJarTests(TestCase):
+
+    def test_mozilla_cookiejar(self):
+        filename = tempfile.mktemp()
+        try:
+            def get_cookiejar():
+                cj = mechanize.MozillaCookieJar(filename=filename)
+                try:
+                    cj.revert()
+                except IOError, exc:
+                    if exc.errno != errno.ENOENT:
+                        raise
+                return cj
+            def commit(cj):
+                cj.save()
+            self._test_cookiejar(get_cookiejar, commit)
+        finally:
+            try:
+                os.remove(filename)
+            except OSError, exc:
+                if exc.errno != errno.ENOENT:
+                    raise
+
+    def test_firefox3_cookiejar(self):
+        filename = tempfile.mktemp()
+        try:
+            def get_cookiejar():
+                cj = mechanize.Firefox3CookieJar(filename=filename)
+                cj.connect()
+                return cj
+            def commit(cj):
+                pass
+            self._test_cookiejar(get_cookiejar, commit)
+        finally:
+            os.remove(filename)
+
+    def _test_cookiejar(self, get_cookiejar, commit):
+        cookiejar = get_cookiejar()
+        br = mechanize.Browser()
+        br.set_cookiejar(cookiejar)
+        br.set_handle_refresh(False)
+        url = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
+        # no cookie was set on the first request
+        html = br.open(url).read()
+        self.assertEquals(html.find("Your browser supports cookies!"), -1)
+        self.assertEquals(len(cookiejar), 1)
+        # ... but now we have the cookie
+        html = br.open(url).read()
+        self.assert_("Your browser supports cookies!" in html)
+        commit(cookiejar)
+
+        # should still have the cookie when we load afresh
+        cookiejar = get_cookiejar()
+        br.set_cookiejar(cookiejar)
+        html = br.open(url).read()
+        self.assert_("Your browser supports cookies!" in html)
+
 
 class CallbackVerifier:
     # for .test_urlretrieve()

@@ -115,6 +115,7 @@ except ImportError:
 from _clientcookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
      CookieJar, FileCookieJar, LoadError, request_host
 from _lwpcookiejar import LWPCookieJar, lwp_cookie_str
+from _firefox3cookiejar import Firefox3CookieJar
 from _mozillacookiejar import MozillaCookieJar
 from _msiecookiejar import MSIECookieJar
 

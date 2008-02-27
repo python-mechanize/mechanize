@@ -35,6 +35,25 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
     return cookie_hdr
 
 
+class TempfileTestMixin():
+
+    def setUp(self):
+        self._tempfiles = []
+
+    def tearDown(self):
+        for fn in self._tempfiles:
+            try:
+                os.remove(fn)
+            except IOError, exc:
+                if exc.errno != errno.ENOENT:
+                    raise
+
+    def mktemp(self):
+        fn = tempfile.mktemp()
+        self._tempfiles.append(fn)
+        return fn
+
+
 class CookieTests(TestCase):
     # XXX
     # Get rid of string comparisons where not actually testing str / repr.
@@ -864,7 +883,196 @@ class CookieTests(TestCase):
         assert cookie.expires is None
 
 
-class LWPCookieTests(TestCase):
+class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
+
+    def _interact(self, cj):
+        year_plus_one = localtime(time.time())[0] + 1
+        interact_2965(cj, "http://www.acme.com/",
+                      "foo1=bar; max-age=100; Version=1")
+        interact_2965(cj, "http://www.acme.com/",
+                      'foo2=bar; port="80"; max-age=100; Discard; Version=1')
+        interact_2965(cj, "http://www.acme.com/", "foo3=bar; secure; Version=1")
+
+        expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
+        interact_netscape(cj, "http://www.foo.com/",
+                          "fooa=bar; %s" % expires)
+        interact_netscape(cj, "http://www.foo.com/",
+                          "foob=bar; Domain=.foo.com; %s" % expires)
+        interact_netscape(cj, "http://www.foo.com/",
+                          "fooc=bar; Domain=www.foo.com; %s" % expires)
+
+    def test_firefox3_cookiejar_restore(self):
+        try:
+            from mechanize import Firefox3CookieJar
+        except ImportError:
+            pass
+        else:
+            from mechanize import DefaultCookiePolicy
+            filename = self.mktemp()
+            def create_cookiejar():
+                cj = Firefox3CookieJar(filename,
+                                       policy=DefaultCookiePolicy(rfc2965=True))
+                cj.connect()
+                return cj
+            cj = create_cookiejar()
+            self._interact(cj)
+            self.assertEquals(len(cj), 6)
+            cj.close()
+            cj = create_cookiejar()
+            self.assert_("name='foo1', value='bar'" in repr(cj))
+            self.assertEquals(len(cj), 4)
+
+    def test_firefox3_cookiejar_iteration(self):
+        try:
+            from mechanize import Firefox3CookieJar
+        except ImportError:
+            pass
+        else:
+            from mechanize import DefaultCookiePolicy, Cookie
+            filename = self.mktemp()
+            cj = Firefox3CookieJar(filename,
+                                   policy=DefaultCookiePolicy(rfc2965=True))
+            cj.connect()
+            self._interact(cj)
+            summary = "\n".join([str(cookie) for cookie in cj])
+            self.assertEquals(summary,
+                              """\
+<Cookie foo2=bar for www.acme.com:80/>
+<Cookie foo3=bar for www.acme.com/>
+<Cookie foo1=bar for www.acme.com/>
+<Cookie fooa=bar for www.foo.com/>
+<Cookie foob=bar for .foo.com/>
+<Cookie fooc=bar for .www.foo.com/>""")
+
+    def test_firefox3_cookiejar_clear(self):
+        try:
+            from mechanize import Firefox3CookieJar
+        except ImportError:
+            pass
+        else:
+            from mechanize import DefaultCookiePolicy, Cookie
+            filename = self.mktemp()
+            cj = Firefox3CookieJar(filename,
+                                   policy=DefaultCookiePolicy(rfc2965=True))
+            cj.connect()
+            self._interact(cj)
+            cj.clear("www.acme.com", "/", "foo2")
+            def summary(): return "\n".join([str(cookie) for cookie in cj])
+            self.assertEquals(summary(),
+                              """\
+<Cookie foo3=bar for www.acme.com/>
+<Cookie foo1=bar for www.acme.com/>
+<Cookie fooa=bar for www.foo.com/>
+<Cookie foob=bar for .foo.com/>
+<Cookie fooc=bar for .www.foo.com/>""")
+            cj.clear("www.acme.com")
+            self.assertEquals(summary(),
+                              """\
+<Cookie fooa=bar for www.foo.com/>
+<Cookie foob=bar for .foo.com/>
+<Cookie fooc=bar for .www.foo.com/>""")
+            # if name is given, so must path and domain
+            self.assertRaises(ValueError, cj.clear, domain=".foo.com",
+                              name="foob")
+            # nonexistent domain
+            self.assertRaises(KeyError, cj.clear, domain=".spam.com")
+
+    def test_firefox3_cookiejar_add_cookie_header(self):
+        try:
+            from mechanize import Firefox3CookieJar
+        except ImportError:
+            pass
+        else:
+            from mechanize import DefaultCookiePolicy, Request
+            filename = self.mktemp()
+            cj = Firefox3CookieJar(filename)
+            cj.connect()
+            # Session cookies (true .discard) and persistent cookies (false
+            # .discard) are stored differently.  Check they both get sent.
+            year_plus_one = localtime(time.time())[0] + 1
+            expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
+            interact_netscape(cj, "http://www.foo.com/", "fooa=bar")
+            interact_netscape(cj, "http://www.foo.com/",
+                              "foob=bar; %s" % expires)
+            ca, cb = cj
+            self.assert_(ca.discard)
+            self.assertFalse(cb.discard)
+            request = Request("http://www.foo.com/")
+            cj.add_cookie_header(request)
+            self.assertEquals(request.get_header("Cookie"),
+                              "fooa=bar; foob=bar")
+
+    def test_mozilla_cookiejar(self):
+        # Save / load Mozilla/Netscape cookie file format.
+        from mechanize import MozillaCookieJar, DefaultCookiePolicy
+        filename = tempfile.mktemp()
+        c = MozillaCookieJar(filename,
+                             policy=DefaultCookiePolicy(rfc2965=True))
+        self._interact(c)
+
+        def save_and_restore(cj, ignore_discard, filename=filename):
+            from mechanize import MozillaCookieJar, DefaultCookiePolicy
+            try:
+                cj.save(ignore_discard=ignore_discard)
+                new_c = MozillaCookieJar(filename,
+                                         DefaultCookiePolicy(rfc2965=True))
+                new_c.load(ignore_discard=ignore_discard)
+            finally:
+                try: os.unlink(filename)
+                except OSError: pass
+            return new_c
+
+        new_c = save_and_restore(c, True)
+        assert len(new_c) == 6  # none discarded
+        assert repr(new_c).find("name='foo1', value='bar'") != -1
+
+        new_c = save_and_restore(c, False)
+        assert len(new_c) == 4  # 2 of them discarded on save
+        assert repr(new_c).find("name='foo1', value='bar'") != -1
+
+    def test_mozilla_cookiejar_embedded_tab(self):
+        from mechanize import MozillaCookieJar
+        filename = tempfile.mktemp()
+        fh = open(filename, "w")
+        try:
+            fh.write(
+                MozillaCookieJar.header + "\n" +
+                "a.com\tFALSE\t/\tFALSE\t\tname\tval\tstillthevalue\n"
+                "a.com\tFALSE\t/\tFALSE\t\tname2\tvalue\n")
+            fh.close()
+            cj = MozillaCookieJar(filename)
+            cj.revert(ignore_discard=True)
+            cookies = cj._cookies["a.com"]["/"]
+            self.assertEquals(cookies["name"].value, "val\tstillthevalue")
+            self.assertEquals(cookies["name2"].value, "value")
+        finally:
+            try:
+                os.remove(filename)
+            except IOError, exc:
+                if exc.errno != errno.ENOENT:
+                    raise
+
+    def test_mozilla_cookiejar_initial_dot_violation(self):
+        from mechanize import MozillaCookieJar, LoadError
+        filename = tempfile.mktemp()
+        fh = open(filename, "w")
+        try:
+            fh.write(
+                MozillaCookieJar.header + "\n" +
+                ".a.com\tFALSE\t/\tFALSE\t\tname\tvalue\n")
+            fh.close()
+            cj = MozillaCookieJar(filename)
+            self.assertRaises(LoadError, cj.revert, ignore_discard=True)
+        finally:
+            try:
+                os.remove(filename)
+            except IOError, exc:
+                if exc.errno != errno.ENOENT:
+                    raise
+
+
+
+class LWPCookieTests(TestCase, TempfileTestMixin):
     # Tests taken from libwww-perl, with a few modifications.
 
     def test_netscape_example_1(self):
@@ -1299,90 +1507,6 @@ class LWPCookieTests(TestCase):
 
         # unicode URL doesn't raise exception, as it used to!
         cookie = interact_2965(c, u"http://www.acme.com/\xfc")
-
-    def test_mozilla(self):
-        # Save / load Mozilla/Netscape cookie file format.
-        from mechanize import MozillaCookieJar, DefaultCookiePolicy
-
-        year_plus_one = localtime(time.time())[0] + 1
-
-        filename = tempfile.mktemp()
-
-        c = MozillaCookieJar(filename,
-                             policy=DefaultCookiePolicy(rfc2965=True))
-        interact_2965(c, "http://www.acme.com/",
-                      "foo1=bar; max-age=100; Version=1")
-        interact_2965(c, "http://www.acme.com/",
-                      'foo2=bar; port="80"; max-age=100; Discard; Version=1')
-        interact_2965(c, "http://www.acme.com/", "foo3=bar; secure; Version=1")
-
-        expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
-        interact_netscape(c, "http://www.foo.com/",
-                          "fooa=bar; %s" % expires)
-        interact_netscape(c, "http://www.foo.com/",
-                          "foob=bar; Domain=.foo.com; %s" % expires)
-        interact_netscape(c, "http://www.foo.com/",
-                          "fooc=bar; Domain=www.foo.com; %s" % expires)
-
-        def save_and_restore(cj, ignore_discard, filename=filename):
-            from mechanize import MozillaCookieJar, DefaultCookiePolicy
-            try:
-                cj.save(ignore_discard=ignore_discard)
-                new_c = MozillaCookieJar(filename,
-                                         DefaultCookiePolicy(rfc2965=True))
-                new_c.load(ignore_discard=ignore_discard)
-            finally:
-                try: os.unlink(filename)
-                except OSError: pass
-            return new_c
-
-        new_c = save_and_restore(c, True)
-        assert len(new_c) == 6  # none discarded
-        assert repr(new_c).find("name='foo1', value='bar'") != -1
-
-        new_c = save_and_restore(c, False)
-        assert len(new_c) == 4  # 2 of them discarded on save
-        assert repr(new_c).find("name='foo1', value='bar'") != -1
-
-    def test_mozilla_cookiejar_embedded_tab(self):
-        from mechanize import MozillaCookieJar
-        filename = tempfile.mktemp()
-        fh = open(filename, "w")
-        try:
-            fh.write(
-                MozillaCookieJar.header + "\n" +
-                "a.com\tFALSE\t/\tFALSE\t\tname\tval\tstillthevalue\n"
-                "a.com\tFALSE\t/\tFALSE\t\tname2\tvalue\n")
-            fh.close()
-            cj = MozillaCookieJar(filename)
-            cj.revert(ignore_discard=True)
-            cookies = cj._cookies["a.com"]["/"]
-            self.assertEquals(cookies["name"].value, "val\tstillthevalue")
-            self.assertEquals(cookies["name2"].value, "value")
-        finally:
-            try:
-                os.remove(filename)
-            except OSError, exc:
-                if exc.errno != errno.EEXIST:
-                    raise
-
-    def test_mozilla_cookiejar_initial_dot_violation(self):
-        from mechanize import MozillaCookieJar, LoadError
-        filename = tempfile.mktemp()
-        fh = open(filename, "w")
-        try:
-            fh.write(
-                MozillaCookieJar.header + "\n" +
-                ".a.com\tFALSE\t/\tFALSE\t\tname\tvalue\n")
-            fh.close()
-            cj = MozillaCookieJar(filename)
-            self.assertRaises(LoadError, cj.revert, ignore_discard=True)
-        finally:
-            try:
-                os.remove(filename)
-            except OSError, exc:
-                if exc.errno != errno.EEXIST:
-                    raise
 
     def test_netscape_misc(self):
         # Some additional Netscape cookies tests.

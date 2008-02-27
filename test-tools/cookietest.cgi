@@ -5,8 +5,12 @@
 
 #import cgitb; cgitb.enable()
 
+import time
+
 print "Content-Type: text/html"
-print "Set-Cookie: foo=bar\n"
+year_plus_one = time.localtime(time.time())[0] + 1
+expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
+print "Set-Cookie: foo=bar; %s\n" % expires
 import sys, os, string, cgi, Cookie, urllib
 from xml.sax import saxutils
 
