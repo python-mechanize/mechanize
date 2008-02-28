@@ -47,6 +47,8 @@ else:
         not already exist.
         """
 
+        # XXX handle DatabaseError exceptions
+
         def __init__(self, filename, autoconnect=True, policy=None):
             CookieJar.__init__(self, policy)
             if filename is not None and not isstringlike(filename):
@@ -189,6 +191,9 @@ CREATE TABLE IF NOT EXISTS moz_cookies (id INTEGER PRIMARY KEY, name TEXT,
                 return
 
             def set_cookie(cur):
+                # XXX
+                # is this RFC 2965-correct?
+                # could this do an UPDATE instead?
                 row = self._row_from_cookie(cookie, cur)
                 name, unused, domain, path = row[1:5]
                 cur.execute("""\
