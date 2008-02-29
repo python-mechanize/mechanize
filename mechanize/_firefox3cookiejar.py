@@ -47,7 +47,9 @@ else:
         not already exist.
         """
 
-        # XXX handle DatabaseError exceptions
+        # XXX
+        # handle DatabaseError exceptions
+        # add a FileCookieJar (explicit .save() / .revert() / .load() methods)
 
         def __init__(self, filename, autoconnect=True, policy=None):
             CookieJar.__init__(self, policy)
