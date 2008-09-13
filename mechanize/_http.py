@@ -37,6 +37,16 @@ CHUNK = 1024  # size of chunks fed to HTML HEAD parser, in bytes
 DEFAULT_ENCODING = 'latin-1'
 
 
+try:
+    socket._fileobject("fake socket", close=True)
+except TypeError:
+    # python <= 2.4
+    create_readline_wrapper = socket._fileobject
+else:
+    def create_readline_wrapper(fh):
+        return socket._fileobject(fh, close=True)
+
+
 # This adds "refresh" to the list of redirectables and provides a redirection
 # algorithm that doesn't go into a loop in the presence of cookies
 # (Python 2.4 has this new algorithm, 2.3 doesn't).
@@ -692,7 +702,7 @@ class AbstractHTTPHandler(BaseHandler):
         # out of socket._fileobject() and into a base class.
 
         r.recv = r.read
-        fp = socket._fileobject(r)
+        fp = create_readline_wrapper(r)
 
         resp = closeable_response(fp, r.msg, req.get_full_url(),
                                   r.status, r.reason)
