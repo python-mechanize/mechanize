@@ -80,6 +80,8 @@ __all__ = [
     'urlopen',
     'urlretrieve']
 
+import sys
+
 from _mechanize import __version__
 
 # high-level stateful browser-style interface
@@ -115,7 +117,9 @@ except ImportError:
 from _clientcookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
      CookieJar, FileCookieJar, LoadError, request_host
 from _lwpcookiejar import LWPCookieJar, lwp_cookie_str
-from _firefox3cookiejar import Firefox3CookieJar
+# 2.4 raises SyntaxError due to generator / try/finally use
+if sys.version_info[:2] > (2,4):
+    from _firefox3cookiejar import Firefox3CookieJar
 from _mozillacookiejar import MozillaCookieJar
 from _msiecookiejar import MSIECookieJar
 

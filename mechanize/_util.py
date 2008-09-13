@@ -10,12 +10,23 @@ COPYING.txt included with the distribution).
 
 import re, time, warnings
 
+
+class ExperimentalWarning(UserWarning):
+    pass
+
+def experimental(message):
+    warnings.warn(message, ExperimentalWarning, stacklevel=3)
+def hide_experimental_warnings():
+    warnings.filterwarnings("ignore", category=ExperimentalWarning)
+def reset_experimental_warnings():
+    warnings.filterwarnings("default", category=ExperimentalWarning)
+
 def deprecation(message):
     warnings.warn(message, DeprecationWarning, stacklevel=3)
 def hide_deprecations():
-    warnings.filterwarnings('ignore', category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 def reset_deprecations():
-    warnings.filterwarnings('default', category=DeprecationWarning)
+    warnings.filterwarnings("default", category=DeprecationWarning)
 
 
 def isstringlike(x):

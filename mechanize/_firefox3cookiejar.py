@@ -12,7 +12,7 @@ import logging
 import time
 
 from _clientcookie import CookieJar, Cookie, MappingIterator
-from _util import isstringlike
+from _util import isstringlike, experimental
 debug = logging.getLogger("mechanize.cookies").debug
 
 
@@ -52,6 +52,7 @@ else:
         # add a FileCookieJar (explicit .save() / .revert() / .load() methods)
 
         def __init__(self, filename, autoconnect=True, policy=None):
+            experimental("Firefox3CookieJar is experimental code")
             CookieJar.__init__(self, policy)
             if filename is not None and not isstringlike(filename):
                 raise ValueError("filename must be string-like")

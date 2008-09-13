@@ -4,6 +4,10 @@ import urllib2, re, os, StringIO, mimetools, time, tempfile, errno
 from time import localtime
 from unittest import TestCase
 
+from mechanize._util import hide_experimental_warnings, \
+    reset_experimental_warnings
+
+
 class FakeResponse:
     def __init__(self, headers=[], url=None):
         """
@@ -35,7 +39,7 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
     return cookie_hdr
 
 
-class TempfileTestMixin():
+class TempfileTestMixin:
 
     def setUp(self):
         self._tempfiles = []
@@ -910,8 +914,12 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
             from mechanize import DefaultCookiePolicy
             filename = self.mktemp()
             def create_cookiejar():
-                cj = Firefox3CookieJar(filename,
-                                       policy=DefaultCookiePolicy(rfc2965=True))
+                hide_experimental_warnings()
+                try:
+                    cj = Firefox3CookieJar(
+                        filename, policy=DefaultCookiePolicy(rfc2965=True))
+                finally:
+                    reset_experimental_warnings()
                 cj.connect()
                 return cj
             cj = create_cookiejar()
@@ -930,8 +938,12 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
         else:
             from mechanize import DefaultCookiePolicy, Cookie
             filename = self.mktemp()
-            cj = Firefox3CookieJar(filename,
-                                   policy=DefaultCookiePolicy(rfc2965=True))
+            hide_experimental_warnings()
+            try:
+                cj = Firefox3CookieJar(
+                    filename, policy=DefaultCookiePolicy(rfc2965=True))
+            finally:
+                reset_experimental_warnings()
             cj.connect()
             self._interact(cj)
             summary = "\n".join([str(cookie) for cookie in cj])
@@ -952,8 +964,12 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
         else:
             from mechanize import DefaultCookiePolicy, Cookie
             filename = self.mktemp()
-            cj = Firefox3CookieJar(filename,
-                                   policy=DefaultCookiePolicy(rfc2965=True))
+            hide_experimental_warnings()
+            try:
+                cj = Firefox3CookieJar(
+                    filename, policy=DefaultCookiePolicy(rfc2965=True))
+            finally:
+                reset_experimental_warnings()
             cj.connect()
             self._interact(cj)
             cj.clear("www.acme.com", "/", "foo2")
@@ -985,7 +1001,11 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
         else:
             from mechanize import DefaultCookiePolicy, Request
             filename = self.mktemp()
-            cj = Firefox3CookieJar(filename)
+            hide_experimental_warnings()
+            try:
+                cj = Firefox3CookieJar(filename)
+            finally:
+                reset_experimental_warnings()
             cj.connect()
             # Session cookies (true .discard) and persistent cookies (false
             # .discard) are stored differently.  Check they both get sent.

@@ -14,6 +14,8 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
      HTTPEquivProcessor, HTTPRedirectHandler, \
      HTTPRedirectDebugProcessor, HTTPResponseDebugProcessor
 from mechanize._rfc3986 import urljoin
+from mechanize._util import hide_experimental_warnings, \
+    reset_experimental_warnings
 
 #from cookielib import CookieJar
 #from urllib2 import build_opener, install_opener, urlopen
@@ -428,10 +430,21 @@ class CookieJarTests(TestCase):
                     raise
 
     def test_firefox3_cookiejar(self):
+        try:
+            mechanize.Firefox3CookieJar
+        except AttributeError:
+            # firefox 3 cookiejar is only supported in Python 2.5 and later
+            self.assert_(sys.version_info[:2] < (2, 5))
+            return
+
         filename = tempfile.mktemp()
         try:
             def get_cookiejar():
-                cj = mechanize.Firefox3CookieJar(filename=filename)
+                hide_experimental_warnings()
+                try:
+                    cj = mechanize.Firefox3CookieJar(filename=filename)
+                finally:
+                    reset_experimental_warnings()
                 cj.connect()
                 return cj
             def commit(cj):
