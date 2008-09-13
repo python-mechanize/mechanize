@@ -52,7 +52,7 @@ import re
 ## VERSION_MATCH = re.search(r'__version__ = \((.*)\)',
 ##                           open("mechanize/_mechanize.py").read())
 ## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
-VERSION = "0.1.8b"
+VERSION = "0.1.8"
 INSTALL_REQUIRES = ["ClientForm>=0.2.6, ==dev"]
 NAME = "mechanize"
 PACKAGE = True
@@ -60,7 +60,7 @@ LICENSE = "BSD"  # or ZPL 2.1
 PLATFORMS = ["any"]
 ZIP_SAFE = True
 CLASSIFIERS = """\
-Development Status :: 4 - Beta
+Development Status :: 5 - Production/Stable
 Intended Audience :: Developers
 Intended Audience :: System Administrators
 License :: OSI Approved :: BSD License
