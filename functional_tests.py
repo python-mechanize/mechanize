@@ -92,16 +92,16 @@ class SimpleTests(TestCase):
             return uri + ("?refresh=%s" % val)
         r = self.browser.open(refresh_request(5))
         self.assertEqual(r.geturl(), self.uri)
-        # Refresh with pause > 30 seconds is ignored by default (these long
-        # refreshes tend to be there only because the website owner wants you
-        # to see the latest news, or whatever -- they're not essential to the
-        # operation of the site, and not really useful or appropriate when
-        # scraping).
+        # Set a maximum refresh time of 30 seconds (these long refreshes tend
+        # to be there only because the website owner wants you to see the
+        # latest news, or whatever -- they're not essential to the operation of
+        # the site, and not really useful or appropriate when scraping).
         refresh_uri = refresh_request(60)
+        self.browser.set_handle_refresh(True, max_time=30., honor_time=True)
         r = self.browser.open(refresh_uri)
         self.assertEqual(r.geturl(), refresh_uri)
-        # allow long refreshes (note we don't actually wait 60 seconds by default)
-        self.browser.set_handle_refresh(True, max_time=None)
+        # allow long refreshes (but don't actually wait 60 seconds)
+        self.browser.set_handle_refresh(True, max_time=None, honor_time=False)
         r = self.browser.open(refresh_request(60))
         self.assertEqual(r.geturl(), self.uri)
 
