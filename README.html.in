@@ -430,7 +430,7 @@ accepts, use the <code>easy_install</code> distutils command instead of
 <h2>Download</h2>
 <p>All documentation (including this web page) is included in the distribution.
 
-<p>This is a beta release: there will be bugs.
+<p>This is a stable release.
 
 <p><em>Development release.</em>
 
