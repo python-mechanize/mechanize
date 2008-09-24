@@ -52,7 +52,7 @@ import re
 ## VERSION_MATCH = re.search(r'__version__ = \((.*)\)',
 ##                           open("mechanize/_mechanize.py").read())
 ## VERSION = unparse_version(str_to_tuple(VERSION_MATCH.group(1)))
-VERSION = "0.1.8"
+VERSION = "0.1.9"
 INSTALL_REQUIRES = ["ClientForm>=0.2.6, ==dev"]
 NAME = "mechanize"
 PACKAGE = True
