@@ -18,7 +18,7 @@ import _response
 import _request
 import _rfc3986
 
-__version__ = (0, 1, 9, None, None)  # 0.1.9
+__version__ = (0, 1, 10, None, None)  # 0.1.10
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
