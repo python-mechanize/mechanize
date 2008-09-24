@@ -119,7 +119,12 @@ from _clientcookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
 from _lwpcookiejar import LWPCookieJar, lwp_cookie_str
 # 2.4 raises SyntaxError due to generator / try/finally use
 if sys.version_info[:2] > (2,4):
-    from _firefox3cookiejar import Firefox3CookieJar
+    try:
+        import sqlite3
+    except ImportError:
+        pass
+    else:
+        from _firefox3cookiejar import Firefox3CookieJar
 from _mozillacookiejar import MozillaCookieJar
 from _msiecookiejar import MSIECookieJar
 

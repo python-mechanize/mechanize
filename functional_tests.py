@@ -90,6 +90,7 @@ class SimpleTests(TestCase):
             uri = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
             val = urllib.quote_plus('%d; url="%s"' % (seconds, self.uri))
             return uri + ("?refresh=%s" % val)
+        self.browser.set_handle_refresh(True, honor_time=False)
         r = self.browser.open(refresh_request(5))
         self.assertEqual(r.geturl(), self.uri)
         # Set a maximum refresh time of 30 seconds (these long refreshes tend
@@ -287,9 +288,9 @@ class FunctionalTests(TestCase):
 
     def test_referer(self):
         br = mechanize.Browser()
+        br.set_handle_refresh(True, honor_time=False)
         referer = urljoin(self.uri, "bits/referertest.html")
         info = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
-
         r = br.open(info)
         self.assert_(referer not in r.get_data())
 
@@ -433,8 +434,8 @@ class CookieJarTests(TestCase):
         try:
             mechanize.Firefox3CookieJar
         except AttributeError:
-            # firefox 3 cookiejar is only supported in Python 2.5 and later
-            self.assert_(sys.version_info[:2] < (2, 5))
+            # firefox 3 cookiejar is only supported in Python 2.5 and later;
+            # also, sqlite3 must be available
             return
 
         filename = tempfile.mktemp()
