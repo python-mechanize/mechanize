@@ -8,7 +8,7 @@ include README.txt
 include doc.html.in
 include doc.html
 include ChangeLog.txt
-include 0.1.0-changes.txt
+include 0.1-changes.txt
 include *.py
 prune docs-in-progress
 recursive-include examples *.py
