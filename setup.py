@@ -68,6 +68,10 @@ License :: OSI Approved :: Zope Public License
 Natural Language :: English
 Operating System :: OS Independent
 Programming Language :: Python
+Programming Language :: Python :: 2
+Programming Language :: Python :: 2.3
+Programming Language :: Python :: 2.4
+Programming Language :: Python :: 2.5
 Topic :: Internet
 Topic :: Internet :: File Transfer Protocol (FTP)
 Topic :: Internet :: WWW/HTTP
@@ -126,22 +130,27 @@ else:
     ez_setup.use_setuptools()
     from setuptools import setup
 
-setup(
-    name = NAME,
-    version = VERSION,
-    license = LICENSE,
-    platforms = PLATFORMS,
-    classifiers = [c for c in CLASSIFIERS.split("\n") if c],
-    install_requires = INSTALL_REQUIRES,
-    zip_safe = ZIP_SAFE,
-    test_suite = "test",
-    author = "John J. Lee",
-    author_email = "jjl@pobox.com",
-    description = doclines[0],
-    long_description = "\n".join(doclines[2:]),
-    url = "http://wwwsearch.sourceforge.net/%s/" % NAME,
-    download_url = ("http://wwwsearch.sourceforge.net/%s/src/"
-                    "%s-%s.tar.gz" % (NAME, NAME, VERSION)),
-    py_modules = py_modules,
-    packages = packages,
-    )
+def main():
+    setup(
+        name = NAME,
+        version = VERSION,
+        license = LICENSE,
+        platforms = PLATFORMS,
+        classifiers = [c for c in CLASSIFIERS.split("\n") if c],
+        install_requires = INSTALL_REQUIRES,
+        zip_safe = ZIP_SAFE,
+        test_suite = "test",
+        author = "John J. Lee",
+        author_email = "jjl@pobox.com",
+        description = doclines[0],
+        long_description = "\n".join(doclines[2:]),
+        url = "http://wwwsearch.sourceforge.net/%s/" % NAME,
+        download_url = ("http://wwwsearch.sourceforge.net/%s/src/"
+                        "%s-%s.tar.gz" % (NAME, NAME, VERSION)),
+        py_modules = py_modules,
+        packages = packages,
+        )
+
+
+if __name__ == "__main__":
+    main()
