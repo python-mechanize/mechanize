@@ -80,6 +80,7 @@ __all__ = [
     'urlopen',
     'urlretrieve']
 
+import logging
 import sys
 
 from _mechanize import __version__
@@ -131,3 +132,8 @@ from _msiecookiejar import MSIECookieJar
 # If you hate the idea of turning bugs into warnings, do:
 # import mechanize; mechanize.USE_BARE_EXCEPT = False
 USE_BARE_EXCEPT = True
+
+logger = logging.getLogger("mechanize")
+if logger.level is logging.NOTSET:
+    logger.setLevel(logging.CRITICAL)
+del logger

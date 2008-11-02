@@ -14,8 +14,6 @@ from _clientcookie import request_host
 import _rfc3986
 
 warn = logging.getLogger("mechanize").warning
-# don't complain about missing logging handler
-logging.getLogger("mechanize").setLevel(logging.ERROR)
 
 
 class Request(urllib2.Request):
