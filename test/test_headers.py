@@ -24,7 +24,7 @@ class IsHtmlTests(TestCase):
                 self.assertEqual(expect, is_html(cths, url, allow_xhtml))
 
 class HeaderTests(TestCase):
-    def test_parse_ns_headers(self):
+    def test_parse_ns_headers_expires(self):
         from mechanize._headersutil import parse_ns_headers
 
         # quotes should be stripped
@@ -32,6 +32,17 @@ class HeaderTests(TestCase):
                [[('foo', 'bar'), ('expires', 2209069412L), ('version', '0')]]
         assert parse_ns_headers(['foo=bar; expires="01 Jan 2040 22:23:32 GMT"']) == \
                [[('foo', 'bar'), ('expires', 2209069412L), ('version', '0')]]
+
+    def test_parse_ns_headers_version(self):
+        from mechanize._headersutil import parse_ns_headers
+
+        # quotes should be stripped
+        expected = [[('foo', 'bar'), ('version', '1')]]
+        for hdr in [
+            'foo=bar; version="1"',
+            'foo=bar; Version="1"',
+            ]:
+            self.assertEquals(parse_ns_headers([hdr]), expected)
 
     def test_parse_ns_headers_special_names(self):
         # names such as 'expires' are not special in first name=value pair

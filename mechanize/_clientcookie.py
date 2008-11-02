@@ -1294,7 +1294,11 @@ class CookieJar:
 
         # set the easy defaults
         version = standard.get("version", None)
-        if version is not None: version = int(version)
+        if version is not None:
+            try:
+                version = int(version)
+            except ValueError:
+                return None  # invalid version, ignore cookie
         secure = standard.get("secure", False)
         # (discard is also set if expires is Absent)
         discard = standard.get("discard", False)

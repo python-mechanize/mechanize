@@ -1001,6 +1001,8 @@ class CookieTests(TestCase):
             ["Set-Cookie2: a=foo; path=/; Version=1; domain"],
             # bad max-age
             ["Set-Cookie: b=foo; max-age=oops"],
+            # bad version
+            ["Set-Cookie: b=foo; version=spam"],
             ]:
             c = cookiejar_from_cookie_headers(headers)
             # these bad cookies shouldn't be set

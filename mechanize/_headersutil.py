@@ -163,6 +163,13 @@ def join_header_words(lists):
         if attr: headers.append("; ".join(attr))
     return ", ".join(headers)
 
+def strip_quotes(text):
+    if text.startswith('"'):
+        text = text[1:]
+    if text.endswith('"'):
+        text = text[:-1]
+    return text
+
 def parse_ns_headers(ns_headers):
     """Ad-hoc parser for Netscape protocol cookie-attributes.
 
@@ -180,7 +187,7 @@ def parse_ns_headers(ns_headers):
     """
     known_attrs = ("expires", "domain", "path", "secure",
                    # RFC 2109 attrs (may turn up in Netscape cookies, too)
-                   "port", "max-age")
+                   "version", "port", "max-age")
 
     result = []
     for ns_header in ns_headers:
@@ -202,12 +209,11 @@ def parse_ns_headers(ns_headers):
                     k = lc
                 if k == "version":
                     # This is an RFC 2109 cookie.
+                    v = strip_quotes(v)
                     version_set = True
                 if k == "expires":
                     # convert expires date to seconds since epoch
-                    if v.startswith('"'): v = v[1:]
-                    if v.endswith('"'): v = v[:-1]
-                    v = http2time(v)  # None if invalid
+                    v = http2time(strip_quotes(v))  # None if invalid
             pairs.append((k, v))
 
         if pairs:
