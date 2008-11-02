@@ -1,6 +1,6 @@
 """Tests for _ClientCookie."""
 
-import urllib2, re, os, StringIO, mimetools, time, tempfile, errno
+import sys, urllib2, re, os, StringIO, mimetools, time, tempfile, errno, inspect
 from time import localtime
 from unittest import TestCase
 
@@ -56,6 +56,132 @@ class TempfileTestMixin:
         fn = tempfile.mktemp()
         self._tempfiles.append(fn)
         return fn
+
+
+def caller():
+    return sys._getframe().f_back.f_back.f_code.co_name
+
+def attribute_names(obj):
+    return set([spec[0] for spec in inspect.getmembers(obj)
+                if not spec[0].startswith("__")])
+
+class CookieJarInterfaceTests(TestCase):
+
+    def test_add_cookie_header(self):
+        from mechanize import CookieJar
+        # verify only these methods are used
+        class MockRequest(object):
+            def __init__(self):
+                self.added_headers = []
+                self.called = set()
+            def log_called(self):
+                self.called.add(caller())
+            def get_full_url(self):
+                self.log_called()
+                return "https://example.com:443"
+            def get_host(self):
+                self.log_called()
+                return "example.com:443"
+            def get_type(self):
+                self.log_called()
+                return "https"
+            def has_header(self, header_name):
+                self.log_called()
+                return False
+            def get_header(self, header_name, default=None):
+                self.log_called()
+                pass  # currently not called
+            def header_items(self):
+                self.log_called()
+                pass  # currently not called
+            def add_unredirected_header(self, key, val):
+                self.log_called()
+                self.added_headers.append((key, val))
+            def is_unverifiable(self):
+                self.log_called()
+                return False
+            @property
+            def port(self):
+                import traceback; traceback.print_stack()
+                self.log_called()
+                pass # currently not used, since urllib2 always sets .port None
+        jar = CookieJar()
+        interact_netscape(jar, "https://example.com:443",
+                          "foo=bar; port=443; secure")
+        request = MockRequest()
+        jar.add_cookie_header(request)
+        expect_called = attribute_names(MockRequest) - set(
+            ["port", "get_header", "header_items", "log_called"])
+        self.assertEquals(request.called, expect_called)
+        self.assertEquals(request.added_headers, [("Cookie", "foo=bar")])
+
+    def test_extract_cookies(self):
+        from mechanize import CookieJar
+
+        # verify only these methods are used
+
+        class StubMessage(object):
+            def getheaders(self, name):
+                return ["foo=bar; port=443"]
+
+        class StubResponse(object):
+            def info(self):
+                return StubMessage()
+
+        class StubRequest(object):
+            def __init__(self):
+                self.added_headers = []
+                self.called = set()
+            def log_called(self):
+                self.called.add(caller())
+            def get_full_url(self):
+                self.log_called()
+                return "https://example.com:443"
+            def get_host(self):
+                self.log_called()
+                return "example.com:443"
+            def is_unverifiable(self):
+                self.log_called()
+                return False
+            @property
+            def port(self):
+                import traceback; traceback.print_stack()
+                self.log_called()
+                pass # currently not used, since urllib2 always sets .port None
+        jar = CookieJar()
+        response = StubResponse()
+        request = StubRequest()
+        jar.extract_cookies(response, request)
+        expect_called = attribute_names(StubRequest) - set(
+            ["port", "log_called"])
+        self.assertEquals(request.called, expect_called)
+        self.assertEquals([(cookie.name, cookie.value) for cookie in jar],
+                          [("foo", "bar")])
+
+    def test_unverifiable(self):
+        from mechanize._clientcookie import request_is_unverifiable
+        # .unverifiable was added in mechanize, .is_unverifiable() later got
+        # added in cookielib.  XXX deprecate .unverifiable
+        class StubRequest(object):
+            def __init__(self, attrs):
+                self._attrs = attrs
+                self.accessed = set()
+            def __getattr__(self, name):
+                self.accessed.add(name)
+                try:
+                    return self._attrs[name]
+                except KeyError:
+                    raise AttributeError(name)
+
+        request = StubRequest(dict(is_unverifiable=lambda: False))
+        self.assertEquals(request_is_unverifiable(request), False)
+
+        request = StubRequest(dict(is_unverifiable=lambda: False,
+                                   unverifiable=True))
+        self.assertEquals(request_is_unverifiable(request), False)
+
+        request = StubRequest(dict(unverifiable=False))
+        self.assertEquals(request_is_unverifiable(request), False)
 
 
 class CookieTests(TestCase):
@@ -646,7 +772,7 @@ class CookieTests(TestCase):
         cookies = c.make_cookies(res, req)
         c.set_cookie(cookies[0])
         assert len(c) == 2
-        # ... and check is doesn't get returned
+        # ... and check it doesn't get returned
         c.add_cookie_header(req)
         assert not req.has_header("Cookie")
 
@@ -885,6 +1011,20 @@ class CookieTests(TestCase):
         c = cookiejar_from_cookie_headers(headers)
         cookie = c._cookies["www.example.com"]["/"]["c"]
         assert cookie.expires is None
+
+    def test_cookies_for_request(self):
+        from mechanize import CookieJar, Request
+
+        cj = CookieJar()
+        interact_netscape(cj, "http://example.com/", "short=path")
+        interact_netscape(cj, "http://example.com/longer/path", "longer=path")
+        for_short_path = cj.cookies_for_request(Request("http://example.com/"))
+        self.assertEquals([cookie.name for cookie in for_short_path],
+                          ["short"])
+        for_long_path = cj.cookies_for_request(Request(
+                "http://example.com/longer/path"))
+        self.assertEquals([cookie.name for cookie in for_long_path],
+                          ["longer", "short"])
 
 
 class CookieJarPersistenceTests(TempfileTestMixin, TestCase):

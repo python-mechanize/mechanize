@@ -39,11 +39,10 @@ try:
 except ImportError:
     import dummy_threading
     _threading = dummy_threading; del dummy_threading
-import httplib  # only for the default HTTP port
 
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
-DEFAULT_HTTP_PORT = str(httplib.HTTP_PORT)
+DEFAULT_HTTP_PORT = "80"
 
 from _headersutil import split_header_words, parse_ns_headers
 from _util import isstringlike
@@ -199,6 +198,15 @@ def request_port(request):
     else:
         port = DEFAULT_HTTP_PORT
     return port
+
+def request_is_unverifiable(request):
+    try:
+        return request.is_unverifiable()
+    except AttributeError:
+        if hasattr(request, "unverifiable"):
+            return request.unverifiable
+        else:
+            raise
 
 # Characters in addition to A-Z, a-z, 0-9, '_', '.', and '-' that don't
 # need to be escaped to form a valid HTTP URL (RFCs 2396 and 1738).
@@ -682,7 +690,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def set_ok_verifiability(self, cookie, request):
-        if request.unverifiable and is_third_party(request):
+        if request_is_unverifiable(request) and is_third_party(request):
             if cookie.version > 0 and self.strict_rfc2965_unverifiable:
                 debug("   third-party RFC 2965 cookie during "
                              "unverifiable transaction")
@@ -836,7 +844,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def return_ok_verifiability(self, cookie, request):
-        if request.unverifiable and is_third_party(request):
+        if request_is_unverifiable(request) and is_third_party(request):
             if cookie.version > 0 and self.strict_rfc2965_unverifiable:
                 debug("   third-party RFC 2965 cookie during unverifiable "
                       "transaction")
@@ -986,6 +994,8 @@ class CookieJar:
 
     add_cookie_header(request)
     extract_cookies(response, request)
+    set_policy(policy)
+    cookies_for_request(request)
     make_cookies(response, request)
     set_cookie_if_ok(cookie, request)
     set_cookie(cookie)
@@ -1040,8 +1050,30 @@ class CookieJar:
                 cookies.append(cookie)
         return cookies
 
+    def cookies_for_request(self, request):
+        """Return a list of cookies to be returned to server.
+
+        The returned list of cookie instances is sorted in the order they
+        should appear in the Cookie: header for return to the server.
+
+        See add_cookie_header.__doc__ for the interface required of the
+        request argument.
+
+        New in version 0.1.10
+
+        """
+        cookies = self._cookies_for_request(request)
+        # add cookies in order of most specific (i.e. longest) path first
+        def decreasing_size(a, b): return cmp(len(b.path), len(a.path))
+        cookies.sort(decreasing_size)
+        return cookies
+
     def _cookies_for_request(self, request):
         """Return a list of cookies to be returned to server."""
+        # this method still exists (alongside cookies_for_request) because it
+        # is part of an implied protected interface for subclasses of cookiejar
+        # XXX document that implied interface, or provide another way of
+        # implementing cookiejars than subclassing
         cookies = []
         for domain in self._cookies.keys():
             cookies.extend(self._cookies_for_domain(domain, request))
@@ -1050,16 +1082,24 @@ class CookieJar:
     def _cookie_attrs(self, cookies):
         """Return a list of cookie-attributes to be returned to server.
 
-        like ['foo="bar"; $Path="/"', ...]
-
         The $Version attribute is also added when appropriate (currently only
         once per request).
 
-        """
-        # add cookies in order of most specific (ie. longest) path first
-        def decreasing_size(a, b): return cmp(len(b.path), len(a.path))
-        cookies.sort(decreasing_size)
+        >>> jar = CookieJar()
+        >>> ns_cookie = Cookie(0, "foo", '"bar"', None, False,
+        ...                   "example.com", False, False,
+        ...                   "/", False, False, None, True,
+        ...                   None, None, {})
+        >>> jar._cookie_attrs([ns_cookie])
+        ['foo="bar"']
+        >>> rfc2965_cookie = Cookie(1, "foo", "bar", None, False,
+        ...                         ".example.com", True, False,
+        ...                         "/", False, False, None, True,
+        ...                         None, None, {})
+        >>> jar._cookie_attrs([rfc2965_cookie])
+        ['$Version=1', 'foo=bar', '$Domain="example.com"']
 
+        """
         version_set = False
 
         attrs = []
@@ -1113,11 +1153,11 @@ class CookieJar:
         The Cookie2 header is also added unless policy.hide_cookie2 is true.
 
         The request object (usually a urllib2.Request instance) must support
-        the methods get_full_url, get_host, get_type, has_header, get_header,
-        header_items and add_unredirected_header, as documented by urllib2, and
-        the port attribute (the port number).  Actually,
-        RequestUpgradeProcessor will automatically upgrade your Request object
-        to one with has_header, get_header, header_items and
+        the methods get_full_url, get_host, is_unverifiable, get_type,
+        has_header, get_header, header_items and add_unredirected_header, as
+        documented by urllib2, and the port attribute (the port number).
+        Actually, RequestUpgradeProcessor will automatically upgrade your
+        Request object to one with has_header, get_header, header_items and
         add_unredirected_header, if it lacks those methods, for compatibility
         with pre-2.4 versions of urllib2.
 
@@ -1125,11 +1165,7 @@ class CookieJar:
         debug("add_cookie_header")
         self._policy._now = self._now = int(time.time())
 
-        req_host, erhn = eff_request_host(request)
-        strict_non_domain = (
-            self._policy.strict_ns_domain & self._policy.DomainStrictNonDomain)
-
-        cookies = self._cookies_for_request(request)
+        cookies = self.cookies_for_request(request)
 
         attrs = self._cookie_attrs(cookies)
         if attrs:
@@ -1359,7 +1395,7 @@ class CookieJar:
     def make_cookies(self, response, request):
         """Return sequence of Cookie objects extracted from response object.
 
-        See extract_cookies.__doc__ for the interfaces required of the
+        See extract_cookies.__doc__ for the interface required of the
         response and request arguments.
 
         """
@@ -1450,14 +1486,13 @@ class CookieJar:
         The response object (usually be the result of a call to
         mechanize.urlopen, or similar) should support an info method, which
         returns a mimetools.Message object (in fact, the 'mimetools.Message
-        object' may be any object that provides a getallmatchingheaders
-        method).
+        object' may be any object that provides a getheaders method).
 
         The request object (usually a urllib2.Request instance) must support
-        the methods get_full_url and get_host, as documented by urllib2, and
-        the port attribute (the port number).  The request is used to set
-        default values for cookie-attributes as well as for checking that the
-        cookie is OK to be set.
+        the methods get_full_url, get_type, get_host, and is_unverifiable, as
+        documented by urllib2, and the port attribute (the port number).  The
+        request is used to set default values for cookie-attributes as well as
+        for checking that the cookie is OK to be set.
 
         """
         debug("extract_cookies: %s", response.info())
