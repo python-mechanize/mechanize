@@ -17,13 +17,6 @@ MODULE_NAMES = ["test_date", "test_browser", "test_response", "test_cookies",
 
 import sys, os, logging, glob
 
-#level = logging.DEBUG
-#level = logging.INFO
-#level = logging.WARNING
-#level = logging.NOTSET
-#logging.getLogger("mechanize").setLevel(level)
-#logging.getLogger("mechanize").addHandler(logging.StreamHandler(sys.stdout))
-
 
 if __name__ == "__main__":
     # XXX
@@ -45,6 +38,18 @@ if __name__ == "__main__":
     run_unittests = "-u" not in sys.argv
     if not run_unittests:
         sys.argv.remove("-u")
+    log = "-l" in sys.argv
+    if log:
+        sys.argv.remove("-l")
+        level = logging.DEBUG
+#         level = logging.INFO
+#         level = logging.WARNING
+#         level = logging.NOTSET
+        logger = logging.getLogger("mechanize")
+        logger.setLevel(level)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(level)
+        logger.addHandler(handler)
 
     # import local copy of Python 2.5 doctest
     assert os.path.isdir("test")
