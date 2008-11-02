@@ -12,7 +12,7 @@ class HTTPRequestUpgradeProcessor(BaseHandler):
 
     def http_request(self, request):
         if not hasattr(request, "add_unredirected_header"):
-            newrequest = Request(request._Request__original, request.data,
+            newrequest = Request(request.get_full_url(), request.data,
                                  request.headers)
             try: newrequest.origin_req_host = request.origin_req_host
             except AttributeError: pass
