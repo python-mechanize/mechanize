@@ -994,6 +994,7 @@ class CookieJar:
 
     add_cookie_header(request)
     extract_cookies(response, request)
+    get_policy()
     set_policy(policy)
     cookies_for_request(request)
     make_cookies(response, request)
@@ -1028,6 +1029,9 @@ class CookieJar:
 
         # for __getitem__ iteration in pre-2.2 Pythons
         self._prev_getitem_index = 0
+
+    def get_policy(self):
+        return self._policy
 
     def set_policy(self, policy):
         self._policy = policy

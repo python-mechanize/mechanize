@@ -231,6 +231,13 @@ class CookieTests(TestCase):
 ##   just the 7 special TLD's listed in their spec. And folks rely on
 ##   that...
 
+    def test_policy(self):
+        import mechanize
+        policy = mechanize.DefaultCookiePolicy()
+        jar = mechanize.CookieJar()
+        jar.set_policy(policy)
+        self.assertEquals(jar.get_policy(), policy)
+
     def test_domain_return_ok(self):
         # test optimization: .domain_return_ok() should filter out most
         # domains in the CookieJar before we try to access them (because that
