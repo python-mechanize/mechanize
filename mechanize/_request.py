@@ -10,7 +10,7 @@ COPYING.txt included with the distribution).
 
 import urllib2, urllib, logging
 
-from _clientcookie import request_host
+from _clientcookie import request_host_lc
 import _rfc3986
 
 warn = logging.getLogger("mechanize").warning
@@ -43,7 +43,7 @@ class Request(urllib2.Request):
         # resulting transactions might need to be conducted with cookies
         # turned off.
         if origin_req_host is None:
-            origin_req_host = request_host(self)
+            origin_req_host = request_host_lc(self)
         self.origin_req_host = origin_req_host
 
     def get_selector(self):

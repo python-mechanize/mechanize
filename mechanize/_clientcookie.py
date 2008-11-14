@@ -159,21 +159,26 @@ def request_host(request):
     host = _rfc3986.urlsplit(url)[1]
     if host is None:
         host = request.get_header("Host", "")
-
     # remove port, if present
-    host = cut_port_re.sub("", host, 1)
-    return host.lower()
+    return cut_port_re.sub("", host, 1)
+
+def request_host_lc(request):
+    return request_host(request).lower()
 
 def eff_request_host(request):
-    """Return a tuple (request-host, effective request-host name).
-
-    As defined by RFC 2965, except both are lowercased.
-
-    """
+    """Return a tuple (request-host, effective request-host name)."""
     erhn = req_host = request_host(request)
     if req_host.find(".") == -1 and not IPV4_RE.search(req_host):
         erhn = req_host + ".local"
     return req_host, erhn
+
+def eff_request_host_lc(request):
+    req_host, erhn = eff_request_host(request)
+    return req_host.lower(), erhn.lower()
+
+def effective_request_host(request):
+    """Return the effective request-host, as defined by RFC 2965."""
+    return eff_request_host(request)[1]
 
 def request_path(request):
     """request-URI, as defined by RFC 2965."""
@@ -275,7 +280,7 @@ def is_third_party(request):
         origin transaction.
 
     """
-    req_host = request_host(request)
+    req_host = request_host_lc(request)
     # the origin request's request-host was stuffed into request by
     # _urllib2_support.AbstractHTTPHandler
     return not domain_match(req_host, reach(request.origin_req_host))
@@ -759,7 +764,7 @@ class DefaultCookiePolicy(CookiePolicy):
             debug("   country-code second level domain %s", cookie.domain)
             return False
         if cookie.domain_specified:
-            req_host, erhn = eff_request_host(request)
+            req_host, erhn = eff_request_host_lc(request)
             domain = cookie.domain
             if domain.startswith("."):
                 undotted_domain = domain[1:]
@@ -882,7 +887,7 @@ class DefaultCookiePolicy(CookiePolicy):
         return True
 
     def return_ok_domain(self, cookie, request):
-        req_host, erhn = eff_request_host(request)
+        req_host, erhn = eff_request_host_lc(request)
         domain = cookie.domain
 
         # strict check of non-domain cookies: Mozilla does this, MSIE5 doesn't
@@ -909,7 +914,7 @@ class DefaultCookiePolicy(CookiePolicy):
 
         # Munge req_host and erhn to always start with a dot, so as to err on
         # the side of letting cookies through.
-        dotted_req_host, dotted_erhn = eff_request_host(request)
+        dotted_req_host, dotted_erhn = eff_request_host_lc(request)
         if not dotted_req_host.startswith("."):
             dotted_req_host = "."+dotted_req_host
         if not dotted_erhn.startswith("."):
@@ -1332,7 +1337,7 @@ class CookieJar:
         if domain_specified:
             domain_initial_dot = bool(domain.startswith("."))
         if domain is Absent:
-            req_host, erhn = eff_request_host(request)
+            req_host, erhn = eff_request_host_lc(request)
             domain = erhn
         elif not domain.startswith("."):
             domain = "."+domain

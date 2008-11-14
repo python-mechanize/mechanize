@@ -503,28 +503,40 @@ class CookieTests(TestCase):
                       headers={"Host": "www.acme.com:4321"})
         assert request_port(req) == DEFAULT_HTTP_PORT
 
-    def test_request_host(self):
+    def test_request_host_lc(self):
         from mechanize import Request
-        from mechanize._clientcookie import request_host
+        from mechanize._clientcookie import request_host_lc
         # this request is illegal (RFC2616, 14.2.3)
         req = Request("http://1.1.1.1/",
                       headers={"Host": "www.acme.com:80"})
         # libwww-perl wants this response, but that seems wrong (RFC 2616,
         # section 5.2, point 1., and RFC 2965 section 1, paragraph 3)
-        #assert request_host(req) == "www.acme.com"
-        assert request_host(req) == "1.1.1.1"
+        #assert request_host_lc(req) == "www.acme.com"
+        assert request_host_lc(req) == "1.1.1.1"
         req = Request("http://www.acme.com/",
                       headers={"Host": "irrelevant.com"})
-        assert request_host(req) == "www.acme.com"
+        assert request_host_lc(req) == "www.acme.com"
         # not actually sure this one is valid Request object, so maybe should
-        # remove test for no host in url in request_host function?
+        # remove test for no host in url in request_host_lc function?
         req = Request("/resource.html",
                       headers={"Host": "www.acme.com"})
-        assert request_host(req) == "www.acme.com"
+        assert request_host_lc(req) == "www.acme.com"
         # port shouldn't be in request-host
         req = Request("http://www.acme.com:2345/resource.html",
                       headers={"Host": "www.acme.com:5432"})
-        assert request_host(req) == "www.acme.com"
+        assert request_host_lc(req) == "www.acme.com"
+        # the _lc function lower-cases the result
+        req = Request("http://EXAMPLE.com")
+        assert request_host_lc(req) == "example.com"
+
+    def test_effective_request_host(self):
+        from mechanize import Request, effective_request_host
+        self.assertEquals(
+            effective_request_host(Request("http://www.EXAMPLE.com/spam")),
+            "www.EXAMPLE.com")
+        self.assertEquals(
+            effective_request_host(Request("http://bob/spam")),
+            "bob.local")
 
     def test_is_HDN(self):
         from mechanize._clientcookie import is_HDN
