@@ -238,6 +238,30 @@ class CookieTests(TestCase):
         jar.set_policy(policy)
         self.assertEquals(jar.get_policy(), policy)
 
+    def test_make_cookies_doesnt_change_jar_state(self):
+        from mechanize import CookieJar, Request, Cookie
+        from mechanize._util import time2netscape
+        from mechanize._response import test_response
+        cookie = Cookie(0, "spam", "eggs",
+                        "80", False,
+                        "example.com", False, False,
+                        "/", False,
+                        False,
+                        None,
+                        False,
+                        "",
+                        "",
+                        {})
+        jar = CookieJar()
+        jar._policy._now = jar._now = int(time.time())
+        jar.set_cookie(cookie)
+        self.assertEquals(len(jar), 1)
+        set_cookie = "spam=eggs; expires=%s" % time2netscape(time.time()- 1000)
+        url = "http://example.com/"
+        response = test_response(url=url, headers=[("Set-Cookie", set_cookie)])
+        jar.make_cookies(response, Request(url))
+        self.assertEquals(len(jar), 1)
+
     def test_domain_return_ok(self):
         # test optimization: .domain_return_ok() should filter out most
         # domains in the CookieJar before we try to access them (because that

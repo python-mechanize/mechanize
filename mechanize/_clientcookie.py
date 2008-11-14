@@ -1059,6 +1059,7 @@ class CookieJar:
                 cookies.append(cookie)
         return cookies
 
+
     def cookies_for_request(self, request):
         """Return a list of cookies to be returned to server.
 
@@ -1071,6 +1072,7 @@ class CookieJar:
         New in version 0.1.10
 
         """
+        self._policy._now = self._now = int(time.time())
         cookies = self._cookies_for_request(request)
         # add cookies in order of most specific (i.e. longest) path first
         def decreasing_size(a, b): return cmp(len(b.path), len(a.path))
@@ -1172,8 +1174,6 @@ class CookieJar:
 
         """
         debug("add_cookie_header")
-        self._policy._now = self._now = int(time.time())
-
         cookies = self.cookies_for_request(request)
 
         attrs = self._cookie_attrs(cookies)
@@ -1360,16 +1360,6 @@ class CookieJar:
         if expires is Absent:
             expires = None
             discard = True
-        elif expires <= self._now:
-            # Expiry date in past is request to delete cookie.  This can't be
-            # in DefaultCookiePolicy, because can't delete cookies there.
-            try:
-                self.clear(domain, path, name)
-            except KeyError:
-                pass
-            debug("Expiring cookie, domain='%s', path='%s', name='%s'",
-                  domain, path, name)
-            return None
 
         return Cookie(version,
                       name, value,
@@ -1405,13 +1395,7 @@ class CookieJar:
                     # as RFC2965 cookies
                     cookie.version = 0
 
-    def make_cookies(self, response, request):
-        """Return sequence of Cookie objects extracted from response object.
-
-        See extract_cookies.__doc__ for the interface required of the
-        response and request arguments.
-
-        """
+    def _make_cookies(self, response, request):
         # get cookie-attributes for RFC 2965 and Netscape protocols
         headers = response.info()
         rfc2965_hdrs = headers.getheaders("Set-Cookie2")
@@ -1464,6 +1448,17 @@ class CookieJar:
 
         return cookies
 
+    def make_cookies(self, response, request):
+        """Return sequence of Cookie objects extracted from response object.
+
+        See extract_cookies.__doc__ for the interface required of the
+        response and request arguments.
+
+        """
+        self._policy._now = self._now = int(time.time())
+        return [cookie for cookie in self._make_cookies(response, request)
+                if cookie.expires is None or not cookie.expires <= self._now]
+
     def set_cookie_if_ok(self, cookie, request):
         """Set a cookie if policy says it's OK to do so.
 
@@ -1511,8 +1506,17 @@ class CookieJar:
         debug("extract_cookies: %s", response.info())
         self._policy._now = self._now = int(time.time())
 
-        for cookie in self.make_cookies(response, request):
-            if self._policy.set_ok(cookie, request):
+        for cookie in self._make_cookies(response, request):
+            if cookie.expires is not None and cookie.expires <= self._now:
+                # Expiry date in past is request to delete cookie.  This can't be
+                # in DefaultCookiePolicy, because can't delete cookies there.
+                try:
+                    self.clear(cookie.domain, cookie.path, cookie.name)
+                except KeyError:
+                    pass
+                debug("Expiring cookie, domain='%s', path='%s', name='%s'",
+                      cookie.domain, cookie.path, cookie.name)
+            elif self._policy.set_ok(cookie, request):
                 debug(" setting cookie: %s", cookie)
                 self.set_cookie(cookie)
 
