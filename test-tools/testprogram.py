@@ -3,9 +3,20 @@
 import cgitb
 #cgitb.enable(format="text")
 
-import sys, os, traceback, logging, glob, time
+import glob
+import logging
+import os
+import subprocess
+import sys
+import time
+import traceback
 from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
      _TextTestResult
+
+
+class ServerStartupError(Exception):
+
+    pass
 
 
 class ServerProcess:
@@ -19,6 +30,8 @@ class ServerProcess:
         self.port = None
         self.report_hook = lambda msg: None
         self._filename = filename
+        self._args = None
+        self._process = None
 
     def _get_args(self):
         """Return list of command line arguments.
@@ -28,12 +41,9 @@ class ServerProcess:
         return []
 
     def start(self):
-        self.report_hook("starting (%s)" % (
-            [sys.executable, self._filename]+self._get_args()))
-        self._pid = os.spawnv(
-            os.P_NOWAIT,
-            sys.executable,
-            [sys.executable, self._filename]+self._get_args())
+        self._args = [sys.executable, self._filename]+self._get_args()
+        self.report_hook("starting (%s)" % (self._args,))
+        self._process = subprocess.Popen(self._args)
         self.report_hook("waiting for startup")
         self._wait_for_startup()
         self.report_hook("running")
@@ -41,6 +51,11 @@ class ServerProcess:
     def _wait_for_startup(self):
         import socket
         def connect():
+            self._process.poll()
+            if self._process.returncode is not None:
+                message = ("server exited on startup with status %d: %r" %
+                           (self._process.returncode, self._args))
+                raise ServerStartupError(message)
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.settimeout(1.0)
@@ -52,10 +67,11 @@ class ServerProcess:
 
     def stop(self):
         """Kill process (forcefully if necessary)."""
+        pid = self._process.pid
         if os.name == 'nt':
-            kill_windows(self._pid, self.report_hook)
+            kill_windows(pid, self.report_hook)
         else:
-            kill_posix(self._pid, self.report_hook)
+            kill_posix(pid, self.report_hook)
 
 def backoff(func, errors,
             initial_timeout=1., hard_timeout=60., factor=1.2):
