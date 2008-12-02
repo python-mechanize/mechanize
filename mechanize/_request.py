@@ -12,13 +12,15 @@ import urllib2, urllib, logging
 
 from _clientcookie import request_host_lc
 import _rfc3986
+import _sockettimeout
 
 warn = logging.getLogger("mechanize").warning
 
 
 class Request(urllib2.Request):
     def __init__(self, url, data=None, headers={},
-                 origin_req_host=None, unverifiable=False, visit=None):
+                 origin_req_host=None, unverifiable=False, visit=None,
+                 timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         # In mechanize 0.2, the interpretation of a unicode url argument will
         # change: A unicode url argument will be interpreted as an IRI, and a
         # bytestring as a URI. For now, we accept unicode or bytestring.  We
@@ -33,6 +35,7 @@ class Request(urllib2.Request):
         self.selector = None
         self.unredirected_hdrs = {}
         self.visit = visit
+        self.timeout = timeout
 
         # All the terminology below comes from RFC 2965.
         self.unverifiable = unverifiable

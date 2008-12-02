@@ -2,11 +2,12 @@
 # ...from urllib2...
 from urllib2 import \
      URLError, \
-     HTTPError
+     HTTPError, \
+     BaseHandler, \
+     UnknownHandler, \
+     FTPHandler, \
+     CacheFTPHandler
 # ...and from mechanize
-from _opener import OpenerDirector, \
-     SeekableResponseOpener, \
-     build_opener, install_opener, urlopen
 from _auth import \
      HTTPPasswordMgr, \
      HTTPPasswordMgrWithDefaultRealm, \
@@ -19,20 +20,14 @@ from _auth import \
      HTTPBasicAuthHandler, \
      HTTPDigestAuthHandler, \
      HTTPSClientCertMgr
-from _request import \
-     Request
-from _http import \
-     RobotExclusionError
-
-# handlers...
-# ...from urllib2...
-from urllib2 import \
-     BaseHandler, \
-     UnknownHandler, \
-     FTPHandler, \
-     CacheFTPHandler, \
+from _debug import \
+     HTTPResponseDebugProcessor, \
+     HTTPRedirectDebugProcessor
+from _file import \
      FileHandler
-# ...and from mechanize
+# crap ATM
+## from _gzip import \
+##      HTTPGzipProcessor
 from _http import \
      HTTPHandler, \
      HTTPDefaultErrorHandler, \
@@ -42,19 +37,19 @@ from _http import \
      HTTPRefererProcessor, \
      HTTPRefreshProcessor, \
      HTTPErrorProcessor, \
-     HTTPRobotRulesProcessor
-from _upgrade import \
-     HTTPRequestUpgradeProcessor, \
-     ResponseUpgradeProcessor
-from _debug import \
-     HTTPResponseDebugProcessor, \
-     HTTPRedirectDebugProcessor
-from _seek import \
-     SeekableProcessor
-# crap ATM
-## from _gzip import \
-##      HTTPGzipProcessor
+     HTTPRobotRulesProcessor, \
+     RobotExclusionError
 import httplib
 if hasattr(httplib, 'HTTPS'):
     from _http import HTTPSHandler
 del httplib
+from _opener import OpenerDirector, \
+     SeekableResponseOpener, \
+     build_opener, install_opener, urlopen
+from _request import \
+     Request
+from _seek import \
+     SeekableProcessor
+from _upgrade import \
+     HTTPRequestUpgradeProcessor, \
+     ResponseUpgradeProcessor

@@ -17,14 +17,16 @@ import time, htmlentitydefs, logging, socket, \
 from urllib2 import URLError, HTTPError, BaseHandler
 from cStringIO import StringIO
 
+from _clientcookie import CookieJar
+from _headersutil import is_html
+from _html import unescape, unescape_charref
 from _request import Request
 from _response import closeable_response, response_seek_wrapper
-from _html import unescape, unescape_charref
-from _headersutil import is_html
-from _clientcookie import CookieJar
 import _rfc3986
+import _sockettimeout
 
 debug = logging.getLogger("mechanize").debug
+debug_robots = logging.getLogger("mechanize.robots").debug
 
 # monkeypatch urllib2.HTTPError to show URL
 ## def urllib2_str(self):
@@ -361,6 +363,7 @@ else:
         def __init__(self, url='', opener=None):
             robotparser.RobotFileParser.__init__(self, url)
             self._opener = opener
+            self._timeout = _sockettimeout._GLOBAL_DEFAULT_TIMEOUT
 
         def set_opener(self, opener=None):
             import _opener
@@ -368,17 +371,21 @@ else:
                 opener = _opener.OpenerDirector()
             self._opener = opener
 
+        def set_timeout(self, timeout):
+            self._timeout = timeout
+
         def read(self):
             """Reads the robots.txt URL and feeds it to the parser."""
             if self._opener is None:
                 self.set_opener()
-            req = Request(self.url, unverifiable=True, visit=False)
+            req = Request(self.url, unverifiable=True, visit=False,
+                          timeout=self._timeout)
             try:
                 f = self._opener.open(req)
             except HTTPError, f:
                 pass
             except (IOError, socket.error, OSError), exc:
-                robotparser._debug("ignoring error opening %r: %s" %
+                debug_robots("ignoring error opening %r: %s" %
                                    (self.url, exc))
                 return
             lines = []
@@ -389,12 +396,12 @@ else:
             status = f.code
             if status == 401 or status == 403:
                 self.disallow_all = True
-                robotparser._debug("disallow all")
+                debug_robots("disallow all")
             elif status >= 400:
                 self.allow_all = True
-                robotparser._debug("allow all")
+                debug_robots("allow all")
             elif status == 200 and lines:
-                robotparser._debug("parse lines")
+                debug_robots("parse lines")
                 self.parse(lines)
 
     class RobotExclusionError(urllib2.HTTPError):
@@ -447,6 +454,7 @@ else:
                     debug("%r instance does not support set_opener" %
                           self.rfp.__class__)
                 self.rfp.set_url(scheme+"://"+host+"/robots.txt")
+                self.rfp.set_timeout(request.timeout)
                 self.rfp.read()
                 self._host = host
 
@@ -644,6 +652,9 @@ class AbstractHTTPHandler(BaseHandler):
                 request.add_unredirected_header(
                     'Content-type',
                     'application/x-www-form-urlencoded')
+            if not request.has_header('Content-length'):
+                request.add_unredirected_header(
+                    'Content-length', '%d' % len(data))
 
         scheme, sel = urllib.splittype(request.get_selector())
         sel_host, sel_path = urllib.splithost(sel)
@@ -666,11 +677,15 @@ class AbstractHTTPHandler(BaseHandler):
             - geturl(): return the original request URL
             - code: HTTP status code
         """
-        host = req.get_host()
-        if not host:
+        host_port = req.get_host()
+        if not host_port:
             raise URLError('no host given')
 
-        h = http_class(host) # will parse host:port
+        try:
+            h = http_class(host_port, timeout=req.timeout)
+        except TypeError:
+            # Python < 2.6, no per-connection timeout support
+            h = http_class(host_port)
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.headers)

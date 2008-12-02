@@ -253,10 +253,10 @@ class MSIEBase:
 ##             print
 
             if sig != "URL ":
-                assert (sig in ("HASH", "LEAK",
-                                self.padding, "\x00\x00\x00\x00"),
-                        "unrecognized MSIE index.dat record: %s" %
-                        binary_to_str(sig))
+                assert sig in ("HASH", "LEAK", \
+                               self.padding, "\x00\x00\x00\x00"), \
+                               "unrecognized MSIE index.dat record: %s" % \
+                               binary_to_str(sig)
                 if sig == "\x00\x00\x00\x00":
                     # assume we've got all the cookies, and stop
                     break

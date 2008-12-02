@@ -142,12 +142,12 @@ non-visiting.
 >>> from mechanize import BrowserStateError, Request, HTTPRedirectHandler
 >>> from test_urllib2 import MockHTTPHandler
 
->>> req = Request("http://example.com")
->>> req.visit = False
->>> br = TestBrowser2()
->>> hh = MockHTTPHandler(302, "Location: http://example.com/\r\n\r\n")
->>> br.add_handler(hh)
->>> br.add_handler(HTTPRedirectHandler())
+>>> def make_browser_with_redirect():
+...     br = TestBrowser2()
+...     hh = MockHTTPHandler(302, "Location: http://example.com/\r\n\r\n")
+...     br.add_handler(hh)
+...     br.add_handler(HTTPRedirectHandler())
+...     return br
 >>> def raises(exc_class, fn, *args, **kwds):
 ...     try:
 ...         fn(*args, **kwds)
@@ -159,11 +159,28 @@ non-visiting.
 ...             br.response() is None and
 ...             raises(BrowserStateError, br.back)
 ...             )
+>>> br = make_browser_with_redirect()
 >>> test_state(br)
 True
+>>> req = Request("http://example.com")
+>>> req.visit = False
 >>> r = br.open(req)
 >>> test_state(br)
 True
+
+.open_novisit() mutates the request object
+
+>>> br = make_browser_with_redirect()
+>>> test_state(br)
+True
+>>> req = Request("http://example.com")
+>>> print req.visit
+None
+>>> r = br.open_novisit(req)
+>>> test_state(br)
+True
+>>> req.visit
+False
 
 
 ...in fact, any redirection (but not refresh), proxy request, basic or

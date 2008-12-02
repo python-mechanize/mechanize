@@ -4,6 +4,7 @@ import os, math, stat
 from unittest import TestCase
 
 import mechanize
+import mechanize._sockettimeout as _sockettimeout
 
 
 def killfile(filename):
@@ -34,9 +35,10 @@ class OpenerTests(TestCase):
                 self.data = int((self.block_size/8)*self.nr_blocks)*"01234567"
                 self.total_size = len(self.data)
                 self._content_length = content_length
-            def open(self, fullurl, data=None):
+            def open(self, fullurl, data=None,
+                     timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
                 from mechanize import _response
-                self.calls.append((fullurl, data))
+                self.calls.append((fullurl, data, timeout))
                 headers = [("Foo", "Bar")]
                 if self._content_length is not None:
                     if self._content_length is True:
@@ -66,9 +68,9 @@ class OpenerTests(TestCase):
         op = Opener()
         verif = CallbackVerifier(self, -1, op.block_size)
         url = "http://example.com/"
+        filename, headers = op.retrieve(
+            url, tfn, reporthook=verif.callback)
         try:
-            filename, headers = op.retrieve(
-                url, tfn, reporthook=verif.callback)
             self.assertEqual(filename, tfn)
             self.assertEqual(headers["foo"], 'Bar')
             self.assertEqual(open(filename, "rb").read(), op.data)

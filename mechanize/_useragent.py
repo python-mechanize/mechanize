@@ -13,11 +13,12 @@ included with the distribution).
 
 import warnings
 
-import _opener
-import _urllib2
 import _auth
 import _gzip
+import _opener
 import _response
+import _sockettimeout
+import _urllib2
 
 
 class UserAgentBase(_opener.OpenerDirector):
@@ -337,12 +338,15 @@ class UserAgent(UserAgentBase):
         """Make response objects .seek()able."""
         self._seekable = bool(handle)
 
-    def open(self, fullurl, data=None):
+    def open(self, fullurl, data=None,
+             timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         if self._seekable:
-            def bound_open(fullurl, data=None):
-                return UserAgentBase.open(self, fullurl, data)
+            def bound_open(fullurl, data=None,
+                           timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
+                return UserAgentBase.open(self, fullurl, data, timeout)
             response = _opener.wrapped_open(
-                bound_open, _response.seek_wrapped_response, fullurl, data)
+                bound_open, _response.seek_wrapped_response, fullurl, data,
+                timeout)
         else:
             response = UserAgentBase.open(self, fullurl, data)
         return response

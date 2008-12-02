@@ -3,7 +3,7 @@
 
 Normal case.  Response goes through hook function and is returned.
 
->>> def urlopen(fullurl, data=None):
+>>> def urlopen(fullurl, data=None, timeout=None):
 ...     print "fullurl %r" % fullurl
 ...     print "data %r" % data
 ...     return "response"
@@ -22,7 +22,7 @@ response 'response'
 Raised HTTPError exceptions still go through the response hook but
 the result is raised rather than returned.
 
->>> def urlopen(fullurl, data=None):
+>>> def urlopen(fullurl, data=None, timeout=None):
 ...     print "fullurl %r" % fullurl
 ...     print "data %r" % data
 ...     raise urllib2.HTTPError(
@@ -43,7 +43,7 @@ processed response
 
 Other exceptions get ignored, since they're not response objects.
 
->>> def urlopen(fullurl, data=None):
+>>> def urlopen(fullurl, data=None, timeout=None):
 ...     print "fullurl %r" % fullurl
 ...     print "data %r" % data
 ...     raise Exception("not caught")

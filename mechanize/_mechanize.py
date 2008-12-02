@@ -12,11 +12,12 @@ included with the distribution).
 import urllib2, copy, re, os, urllib
 
 
-from _useragent import UserAgentBase
 from _html import DefaultFactory
 import _response
 import _request
 import _rfc3986
+import _sockettimeout
+from _useragent import UserAgentBase
 
 __version__ = (0, 1, 10, None, None)  # 0.1.10
 
@@ -187,7 +188,8 @@ class Browser(UserAgentBase):
             request.add_unredirected_header("Referer", referer)
         return request
 
-    def open_novisit(self, url, data=None):
+    def open_novisit(self, url, data=None,
+                     timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         """Open a URL without visiting it.
 
         Browser state (including request, response, history, forms and links)
@@ -200,12 +202,14 @@ class Browser(UserAgentBase):
         See also .retrieve().
 
         """
-        return self._mech_open(url, data, visit=False)
+        return self._mech_open(url, data, visit=False, timeout=timeout)
 
-    def open(self, url, data=None):
-        return self._mech_open(url, data)
+    def open(self, url, data=None,
+             timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
+        return self._mech_open(url, data, timeout=timeout)
 
-    def _mech_open(self, url, data=None, update_history=True, visit=None):
+    def _mech_open(self, url, data=None, update_history=True, visit=None,
+                   timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         try:
             url.get_full_url
         except AttributeError:
@@ -219,7 +223,7 @@ class Browser(UserAgentBase):
                         "not viewing any document")
                 url = _rfc3986.urljoin(self._response.geturl(), url)
 
-        request = self._request(url, data, visit)
+        request = self._request(url, data, visit, timeout)
         visit = request.visit
         if visit is None:
             visit = True

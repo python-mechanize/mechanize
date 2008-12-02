@@ -4,8 +4,12 @@
 
 # thanks Moof (aka Giles Antonio Radford) for some of these
 
-import os, sys, urllib, tempfile, errno
-from unittest import TestCase
+import errno
+import os
+import socket
+import sys
+import tempfile
+import urllib
 
 import mechanize
 from mechanize import build_opener, install_opener, urlopen, urlretrieve
@@ -16,6 +20,8 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
 from mechanize._rfc3986 import urljoin
 from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings
+import mechanize._sockettimeout
+from mechanize._testcase import TestCase
 
 #from cookielib import CookieJar
 #from urllib2 import build_opener, install_opener, urlopen
@@ -38,10 +44,76 @@ def sanepathname2url(path):
     # XXX don't ask me about the mac...
     return urlpath
 
-class SimpleTests(TestCase):
+
+def read_file(filename):
+    fh = open(filename)
+    try:
+        return fh.read()
+    finally:
+        fh.close()
+
+
+class SocketTimeoutTest(TestCase):
+
+    # the timeout tests in this module aren't full functional tests: in order
+    # to speed things up, don't actually call .settimeout on the socket.  XXX
+    # allow running the tests against a slow server with a real timeout
+
+    def _monkey_patch_socket(self):
+        class Delegator(object):
+            def __init__(self, delegate):
+                self._delegate = delegate
+            def __getattr__(self, name):
+                return getattr(self._delegate, name)
+
+        assertEquals = self.assertEquals
+
+        class TimeoutLog(object):
+            AnyValue = object()
+            def __init__(self):
+                self._nr_sockets = 0
+                self._timeouts = []
+                self.start()
+            def start(self):
+                self._monitoring = True
+            def stop(self):
+                self._monitoring = False
+            def socket_created(self):
+                if self._monitoring:
+                    self._nr_sockets += 1
+            def settimeout_called(self, timeout):
+                if self._monitoring:
+                    self._timeouts.append(timeout)
+            def verify(self, value=AnyValue):
+                if sys.version_info[:2] < (2, 6):
+                    # per-connection timeout not supported in Python 2.5
+                    self.verify_default()
+                else:
+                    assertEquals(len(self._timeouts), self._nr_sockets)
+                    if value is not self.AnyValue:
+                        for timeout in self._timeouts:
+                            assertEquals(timeout, value)
+            def verify_default(self):
+                assertEquals(len(self._timeouts), 0)
+
+        log = TimeoutLog()
+        def settimeout(timeout):
+            log.settimeout_called(timeout)
+        orig_socket = socket.socket
+        def make_socket(*args, **kwds):
+            sock = Delegator(orig_socket(*args, **kwds))
+            log.socket_created()
+            sock.settimeout = settimeout
+            return sock
+        self.monkey_patch(socket, "socket", make_socket)
+        return log
+
+
+class SimpleTests(SocketTimeoutTest):
     # thanks Moof (aka Giles Antonio Radford)
 
     def setUp(self):
+        super(SimpleTests, self).setUp()
         self.browser = mechanize.Browser()
 
     def test_simple(self):
@@ -50,6 +122,46 @@ class SimpleTests(TestCase):
         # relative URL
         self.browser.open('/mechanize/')
         self.assertEqual(self.browser.title(), 'mechanize')
+
+    def test_basic_auth(self):
+        uri = urljoin(self.uri, "basic_auth")
+        self.assertRaises(mechanize.URLError, self.browser.open, uri)
+        self.browser.add_password(uri, "john", "john")
+        self.browser.open(uri)
+        self.assertEqual(self.browser.title(), 'Basic Auth Protected Area')
+
+    def test_digest_auth(self):
+        uri = urljoin(self.uri, "digest_auth")
+        self.assertRaises(mechanize.URLError, self.browser.open, uri)
+        self.browser.add_password(uri, "digestuser", "digestuser")
+        self.browser.open(uri)
+        self.assertEqual(self.browser.title(), 'Digest Auth Protected Area')
+
+    def test_open_with_default_timeout(self):
+        timeout_log = self._monkey_patch_socket()
+        self.browser.open(self.uri)
+        self.assertEqual(self.browser.title(), 'Python bits')
+        timeout_log.verify_default()
+
+    def test_open_with_timeout(self):
+        timeout_log = self._monkey_patch_socket()
+        timeout = 10.
+        self.browser.open(self.uri, timeout=timeout)
+        self.assertEqual(self.browser.title(), 'Python bits')
+        timeout_log.verify(timeout)
+
+    def test_urlopen_with_default_timeout(self):
+        timeout_log = self._monkey_patch_socket()
+        response = mechanize.urlopen(self.uri)
+        self.assert_contains(response.read(), "Python bits")
+        timeout_log.verify_default()
+
+    def test_urlopen_with_timeout(self):
+        timeout_log = self._monkey_patch_socket()
+        timeout = 10.
+        response = mechanize.urlopen(self.uri, timeout=timeout)
+        self.assert_contains(response.read(), "Python bits")
+        timeout_log.verify(timeout)
 
     def test_302_and_404(self):
         # the combination of 302 and 404 (/redirected is configured to redirect
@@ -74,7 +186,7 @@ class SimpleTests(TestCase):
         self.assertEqual(self.browser.response().read(), data)
 
     def test_error_recovery(self):
-        self.assertRaises(OSError, self.browser.open,
+        self.assertRaises(mechanize.URLError, self.browser.open,
                           'file:///c|thisnoexistyiufheiurgbueirgbue')
         self.browser.open(self.uri)
         self.assertEqual(self.browser.title(), 'Python bits')
@@ -126,8 +238,14 @@ class SimpleTests(TestCase):
             self.assert_(br.response() is None)
             self.assertRaises(mechanize.BrowserStateError, br.back)
         test_state(self.browser)
+        uri = urljoin(self.uri, "bits")
         # note this involves a redirect, which should itself be non-visiting
-        r = self.browser.open_novisit(urljoin(self.uri, "bits"))
+        r = self.browser.open_novisit(uri)
+        test_state(self.browser)
+        self.assert_("GeneralFAQ.html" in r.read(2048))
+
+        # Request argument instead of URL
+        r = self.browser.open_novisit(mechanize.Request(uri))
         test_state(self.browser)
         self.assert_("GeneralFAQ.html" in r.read(2048))
 
@@ -284,7 +402,7 @@ class ResponseTests(TestCase):
                          "Hello ClientCookie functional test suite.\n")
 
 
-class FunctionalTests(TestCase):
+class FunctionalTests(SocketTimeoutTest):
 
     def test_referer(self):
         br = mechanize.Browser()
@@ -347,36 +465,46 @@ class FunctionalTests(TestCase):
                 mechanize.RobotExclusionError,
                 opener.open, urljoin(self.uri, "norobots"))
 
-    def test_urlretrieve(self):
-        url = urljoin(self.uri, "/mechanize/")
-        test_filename = "python.html"
-        def check_retrieve(opener, filename, headers):
-            self.assertEqual(headers.get('Content-Type'), 'text/html')
-            f = open(filename)
-            data = f.read()
-            f.close()
-            opener.close()
-            from urllib import urlopen
-            r = urlopen(url)
-            self.assertEqual(data, r.read())
-            r.close()
+    def _check_retrieve(self, url, filename, headers):
+        from urllib import urlopen
+        self.assertEqual(headers.get('Content-Type'), 'text/html')
+        self.assertEqual(read_file(filename), urlopen(url).read())
 
+    def test_retrieve_to_named_file(self):
+        url = urljoin(self.uri, "/mechanize/")
+        test_filename = os.path.join(self.make_temp_dir(), "python.html")
         opener = mechanize.build_opener()
         verif = CallbackVerifier(self)
         filename, headers = opener.retrieve(url, test_filename, verif.callback)
-        try:
-            self.assertEqual(filename, test_filename)
-            check_retrieve(opener, filename, headers)
-            self.assert_(os.path.isfile(filename))
-        finally:
-            os.remove(filename)
+        self.assertEqual(filename, test_filename)
+        self._check_retrieve(url, filename, headers)
+        self.assert_(os.path.isfile(filename))
 
+    def test_retrieve(self):
+        # not passing an explicit filename downloads to a temporary file
+        # using a Request object instead of a URL works
+        url = urljoin(self.uri, "/mechanize/")
         opener = mechanize.build_opener()
         verif = CallbackVerifier(self)
-        filename, headers = opener.retrieve(url, reporthook=verif.callback)
-        check_retrieve(opener, filename, headers)
+        request = mechanize.Request(url)
+        filename, headers = opener.retrieve(request, reporthook=verif.callback)
+        self.assertEquals(request.visit, False)
+        self._check_retrieve(url, filename, headers)
+        opener.close()
         # closing the opener removed the temporary file
         self.failIf(os.path.isfile(filename))
+
+    def test_urlretrieve(self):
+        timeout_log = self._monkey_patch_socket()
+        timeout = 10.
+        url = urljoin(self.uri, "/mechanize/")
+        verif = CallbackVerifier(self)
+        filename, headers = mechanize.urlretrieve(url,
+                                                  reporthook=verif.callback,
+                                                  timeout=timeout)
+        timeout_log.stop()
+        self._check_retrieve(url, filename, headers)
+        timeout_log.verify(timeout)
 
     def test_reload_read_incomplete(self):
         from mechanize import Browser
@@ -489,6 +617,8 @@ class CallbackVerifier:
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, "test-tools")
+    test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
+    sys.path.insert(0, test_path)
     import testprogram
     USAGE_EXAMPLES = """
 Examples:

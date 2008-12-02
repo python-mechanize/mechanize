@@ -15,7 +15,6 @@ This is made up of:
 # Request (I'm too lazy)
 # CacheFTPHandler (hard to write)
 # parse_keqv_list, parse_http_list
-# GopherHandler (haven't used gopher for a decade or so...)
 
 import unittest, StringIO, os, sys, UserDict, httplib, warnings
 
@@ -29,6 +28,7 @@ from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
      HTTPErrorProcessor, HTTPHandler
 from mechanize import OpenerDirector, build_opener, urlopen, Request
 from mechanize._util import hide_deprecations, reset_deprecations
+import mechanize._sockettimeout as _sockettimeout
 
 ## from logging import getLogger, DEBUG
 ## l = getLogger("mechanize")
@@ -396,10 +396,11 @@ class MockFTPWrapper:
 
 class NullFTPHandler(mechanize.FTPHandler):
     def __init__(self, data): self.data = data
-    def connect_ftp(self, user, passwd, host, port, dirs):
+    def connect_ftp(self, user, passwd, host, port, dirs, timeout=None):
         self.user, self.passwd = user, passwd
         self.host, self.port = host, port
         self.dirs = dirs
+        self.timeout = timeout
         self.ftpwrapper = MockFTPWrapper(self.data)
         return self.ftpwrapper
 
@@ -422,6 +423,8 @@ class MockRobotFileParserClass:
         return self
     def set_url(self, url):
         self.calls.append(("set_url", url))
+    def set_timeout(self, timeout):
+        self.calls.append(("set_timeout", timeout))
     def set_opener(self, opener):
         self.calls.append(("set_opener", opener))
     def read(self):
@@ -443,40 +446,44 @@ class MockPasswordManager:
 
 class HandlerTests(unittest.TestCase):
 
-    if hasattr(sys, "version_info") and sys.version_info > (2, 1, 3, "final", 0):
+    def test_ftp(self):
+        import ftplib, socket
+        data = "rheum rhaponicum"
+        h = NullFTPHandler(data)
+        o = h.parent = MockOpener()
 
-        def test_ftp(self):
-            import ftplib, socket
-            data = "rheum rhaponicum"
-            h = NullFTPHandler(data)
-            o = h.parent = MockOpener()
-
-            for url, host, port, type_, dirs, filename, mimetype in [
-                ("ftp://localhost/foo/bar/baz.html",
-                 "localhost", ftplib.FTP_PORT, "I",
-                 ["foo", "bar"], "baz.html", "text/html"),
-                # XXXX Bug: FTPHandler tries to gethostbyname "localhost:80",
-                #  with the port still there.
-                #("ftp://localhost:80/foo/bar/",
-                # "localhost", 80, "D",
-                # ["foo", "bar"], "", None),
-                # XXXX bug: second use of splitattr() in FTPHandler should be
-                #  splitvalue()
-                #("ftp://localhost/baz.gif;type=a",
-                # "localhost", ftplib.FTP_PORT, "A",
-                # [], "baz.gif", "image/gif"),
-                ]:
-                r = h.ftp_open(Request(url))
-                # ftp authentication not yet implemented by FTPHandler
-                self.assert_(h.user == h.passwd == "")
-                self.assert_(h.host == socket.gethostbyname(host))
-                self.assert_(h.port == port)
-                self.assert_(h.dirs == dirs)
-                self.assert_(h.ftpwrapper.filename == filename)
-                self.assert_(h.ftpwrapper.filetype == type_)
-                headers = r.info()
-                self.assert_(headers["Content-type"] == mimetype)
-                self.assert_(int(headers["Content-length"]) == len(data))
+        for url, host, port, type_, dirs, timeout, filename, mimetype in [
+            ("ftp://localhost/foo/bar/baz.html",
+             "localhost", ftplib.FTP_PORT, "I",
+             ["foo", "bar"], _sockettimeout._GLOBAL_DEFAULT_TIMEOUT,
+             "baz.html", "text/html"),
+            # XXXX Bug: FTPHandler tries to gethostbyname "localhost:80",
+            #  with the port still there.
+            #("ftp://localhost:80/foo/bar/",
+            # "localhost", 80, "D",
+            # ["foo", "bar"], _sockettimeout._GLOBAL_DEFAULT_TIMEOUT,
+            # "", None),
+            # XXXX bug: second use of splitattr() in FTPHandler should be
+            #  splitvalue()
+            #("ftp://localhost/baz.gif;type=a",
+            # "localhost", ftplib.FTP_PORT, "A",
+            # [], _sockettimeout._GLOBAL_DEFAULT_TIMEOUT,
+            # "baz.gif", "image/gif"),
+            ]:
+            request = Request(url)
+            r = h.ftp_open(request)
+            # ftp authentication not yet implemented by FTPHandler
+            self.assert_(h.user == h.passwd == "")
+            self.assert_(h.host == socket.gethostbyname(host))
+            self.assert_(h.port == port)
+            self.assert_(h.dirs == dirs)
+            if sys.version_info >= (2, 6):
+                self.assertEquals(h.timeout, timeout)
+            self.assert_(h.ftpwrapper.filename == filename)
+            self.assert_(h.ftpwrapper.filetype == type_)
+            headers = r.info()
+            self.assert_(headers["Content-type"] == mimetype)
+            self.assert_(int(headers["Content-length"]) == len(data))
 
         def test_file(self):
             import time, rfc822, socket
@@ -605,12 +612,10 @@ class HandlerTests(unittest.TestCase):
             r = MockResponse(200, "OK", {}, "")
             newreq = h.do_request_(req)
             if data is None:  # GET
-                self.assert_(not req.unredirected_hdrs.has_key("Content-length"))
-                self.assert_(not req.unredirected_hdrs.has_key("Content-type"))
+                self.assert_("Content-length" not in req.unredirected_hdrs)
+                self.assert_("Content-type" not in req.unredirected_hdrs)
             else:  # POST
-                # No longer true, due to workarouhd for buggy httplib
-                # in Python versions < 2.4:
-                #self.assert_(req.unredirected_hdrs["Content-length"] == "0")
+                self.assert_(req.unredirected_hdrs["Content-length"] == "0")
                 self.assert_(req.unredirected_hdrs["Content-type"] ==
                              "application/x-www-form-urlencoded")
             # XXX the details of Host could be better tested
@@ -740,10 +745,11 @@ class HandlerTests(unittest.TestCase):
         # first time: initialise and set up robots.txt parser before checking
         #  whether OK to fetch URL
         h.http_request(req)
-        self.assert_(rfpc.calls == [
+        self.assertEquals(rfpc.calls, [
             "__call__",
             ("set_opener", opener),
             ("set_url", "http://example.com:80/robots.txt"),
+            ("set_timeout", _sockettimeout._GLOBAL_DEFAULT_TIMEOUT),
             "read",
             ("can_fetch", "", url),
             ])
@@ -780,10 +786,11 @@ class HandlerTests(unittest.TestCase):
         url = "http://example.com/rhubarb.html"
         req = Request(url)
         h.http_request(req)
-        self.assert_(rfpc.calls == [
+        self.assertEquals(rfpc.calls, [
             "__call__",
             ("set_opener", opener),
             ("set_url", "http://example.com/robots.txt"),
+            ("set_timeout", _sockettimeout._GLOBAL_DEFAULT_TIMEOUT),
             "read",
             ("can_fetch", "", url),
             ])
@@ -792,10 +799,11 @@ class HandlerTests(unittest.TestCase):
         url = "https://example.org/rhubarb.html"
         req = Request(url)
         h.http_request(req)
-        self.assert_(rfpc.calls == [
+        self.assertEquals(rfpc.calls, [
             "__call__",
             ("set_opener", opener),
             ("set_url", "https://example.org/robots.txt"),
+            ("set_timeout", _sockettimeout._GLOBAL_DEFAULT_TIMEOUT),
             "read",
             ("can_fetch", "", url),
             ])

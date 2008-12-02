@@ -69,9 +69,9 @@ Natural Language :: English
 Operating System :: OS Independent
 Programming Language :: Python
 Programming Language :: Python :: 2
-Programming Language :: Python :: 2.3
 Programming Language :: Python :: 2.4
 Programming Language :: Python :: 2.5
+Programming Language :: Python :: 2.6
 Topic :: Internet
 Topic :: Internet :: File Transfer Protocol (FTP)
 Topic :: Internet :: WWW/HTTP

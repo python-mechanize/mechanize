@@ -209,7 +209,7 @@ ignore this section.
 
 <ol>
 
-  <li>mechanize works with Python 2.3, Python 2.4 and Python 2.5.
+  <li>mechanize works with Python 2.4, Python 2.5, and Python 2.6.
 
   <li>ClientCookie is no longer maintained as a separate package.  The code is
       now part of mechanize, and its interface is now exported through module
@@ -528,7 +528,7 @@ href="../bits/GeneralFAQ.html">General FAQ</a> page, too.
 <h2>FAQs - pre install</h2>
 <ul>
   <li>Which version of Python do I need?
-  <p>2.3 or above.
+  <p>Python 2.4, 2.5 or 2.6.
   <li>What else do I need?
   <p>mechanize depends on <a href="../ClientForm/">ClientForm</a>.
   <li>Does mechanize depend on BeautifulSoup?

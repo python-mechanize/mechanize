@@ -496,14 +496,9 @@ r = mechanize.urlopen("http://acme.com/")
 <p>Also, a few standard headers (<code>Content-Length</code>,
 <code>Content-Type</code> and <code>Host</code>) are added when the
 <code>Request</code> is passed to <code>urlopen()</code> (or
-<code>OpenerDirector.open()</code>).  mechanize explictly adds these (and
-<code>User-Agent</code>) to the <code>Request</code> object, unlike versions of
-<code>urllib2</code> before Python 2.4 (but <strong>note</strong> that
-Content-Length is an exception to this rule: it is sent, but not explicitly
-added to the <code>Request</code>'s headers; this is due to a bug in
-<code>httplib</code> in Python 2.3 and earlier).  You shouldn't need to change
-these headers, but since this is done by <code>AbstractHTTPHandler</code>, you
-can change the way it works by passing a subclass of that handler to
+<code>OpenerDirector.open()</code>).  You shouldn't need to change these
+headers, but since this is done by <code>AbstractHTTPHandler</code>, you can
+change the way it works by passing a subclass of that handler to
 <code>build_opener()</code> (or, as always, by constructing an opener yourself
 and calling .add_handler()).
 
@@ -535,27 +530,9 @@ request-host or verifiability yourself).</strong>
 should if, for example, you're downloading the images from a page, and 'the
 user' hasn't explicitly OKed those URLs):
 
-<ol>
-
-  <li>If you're using a <code>urllib2.Request</code> from Python 2.3 or
-  earlier, set the <code>unverifiable</code> and <code>origin_req_host</code>
-  attributes on your <code>Request</code> instance:
-
-@{colorize(r"""
-request.unverifiable = True
-request.origin_req_host = "www.example.com"
-""")}
-
-  <li>If you're using a <code>urllib2.Request</code> from Python 2.4 or later,
-  or you're using a <code>mechanize.Request</code>, use the
-  <code>unverifiable</code> and <code>origin_req_host</code> arguments to the
-  constructor:
-
 @{colorize(r"""
 request = Request(origin_req_host="www.example.com", unverifiable=True)
 """)}
-
-</ol>
 
 
 <a name="rfc2965"></a>

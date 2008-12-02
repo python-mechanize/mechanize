@@ -11,7 +11,29 @@ included with the distribution).
 
 """
 
-import re, base64, urlparse, posixpath, md5, os, random, sha, time, copy
+import base64
+import copy
+import os
+import posixpath
+import random
+import re
+import time
+import urlparse
+
+try:
+    import hashlib
+except ImportError:
+    import md5
+    import sha
+    def sha1_digest(bytes):
+        return sha.new(bytes).hexdigest()
+    def md5_digest(bytes):
+        return md5.new(bytes).hexdigest()
+else:
+    def sha1_digest(bytes):
+        return hashlib.sha1(bytes).hexdigest()
+    def md5_digest(bytes):
+        return hashlib.md5(bytes).hexdigest()
 
 from urllib2 import BaseHandler, HTTPError, parse_keqv_list, parse_http_list
 from urllib import getproxies, unquote, splittype, splituser, splitpasswd, \
@@ -338,8 +360,8 @@ class AbstractDigestAuthHandler:
         # and server to avoid chosen plaintext attacks, to provide mutual
         # authentication, and to provide some message integrity protection.
         # This isn't a fabulous effort, but it's probably Good Enough.
-        dig = sha.new("%s:%s:%s:%s" % (self.nonce_count, nonce, time.ctime(),
-                                       randombytes(8))).hexdigest()
+        dig = sha1_digest("%s:%s:%s:%s" % (self.nonce_count, nonce,
+                                           time.ctime(), randombytes(8)))
         return dig[:16]
 
     def get_authorization(self, req, chal):
@@ -401,9 +423,9 @@ class AbstractDigestAuthHandler:
     def get_algorithm_impls(self, algorithm):
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
-            H = lambda x: md5.new(x).hexdigest()
+            H = md5_digest
         elif algorithm == 'SHA':
-            H = lambda x: sha.new(x).hexdigest()
+            H = sha1_digest
         # XXX MD5-sess
         KD = lambda s, d: H("%s:%s" % (s, d))
         return H, KD
