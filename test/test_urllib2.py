@@ -981,8 +981,6 @@ class HandlerTests(unittest.TestCase):
                 method = getattr(h, "http_error_%s" % code)
                 req = Request(from_url, data)
                 req.add_header("Nonsense", "viking=withhold")
-                if data is not None:
-                    req.add_header("Content-length", str(len(data)))
                 req.add_unredirected_header("Spam", "spam")
                 req.origin_req_host = "example.com"  # XXX
                 try:
@@ -996,12 +994,6 @@ class HandlerTests(unittest.TestCase):
                     self.assert_(o.req.get_method() == "GET")
                 except AttributeError:
                     self.assert_(not o.req.has_data())
-
-                # now it's a GET, there should not be headers regarding content
-                # (possibly dragged from before being a POST)
-                self.assertFalse(o.req.has_header("Content-length"))
-                self.assertFalse(o.req.has_header("Content-type"))
-
                 self.assert_(o.req.headers["Nonsense"] == "viking=withhold")
                 self.assert_(not o.req.headers.has_key("Spam"))
                 self.assert_(not o.req.unredirected_hdrs.has_key("Spam"))

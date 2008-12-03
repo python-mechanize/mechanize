@@ -1059,7 +1059,6 @@ class CookieJar:
                 cookies.append(cookie)
         return cookies
 
-
     def cookies_for_request(self, request):
         """Return a list of cookies to be returned to server.
 

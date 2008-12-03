@@ -89,9 +89,6 @@ class HTTPRedirectHandler(BaseHandler):
         """
         if code in (301, 302, 303, "refresh") or \
                (code == 307 and not req.has_data()):
-            new_headers = dict((k, v) for k, v in req.headers.items()
-                               if k.lower() not in
-                               ["content-length", "content-type"])
             # Strictly (according to RFC 2616), 301 or 302 in response to
             # a POST MUST NOT cause a redirection without confirmation
             # from the user (of urllib2, in this case).  In practice,
@@ -100,7 +97,7 @@ class HTTPRedirectHandler(BaseHandler):
             # XXX really refresh redirections should be visiting; tricky to
             #  fix, so this will wait until post-stable release
             new = Request(newurl,
-                          headers=new_headers,
+                          headers=req.headers,
                           origin_req_host=req.get_origin_req_host(),
                           unverifiable=True,
                           visit=False,
