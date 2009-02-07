@@ -21,6 +21,18 @@ import copy, mimetools
 from cStringIO import StringIO
 import urllib2
 
+
+def len_of_seekable(file_):
+    # this function exists because evaluation of len(file_.getvalue()) on every
+    # .read() from seek_wrapper would be O(N**2) in number of .read()s
+    pos = file_.tell()
+    file_.seek(0, 2)  # to end
+    try:
+        return file_.tell()
+    finally:
+        file_.seek(pos)
+
+
 # XXX Andrew Dalke kindly sent me a similar class in response to my request on
 # comp.lang.python, which I then proceeded to lose.  I wrote this class
 # instead, but I think he's released his code publicly since, could pinch the
@@ -70,7 +82,8 @@ class seek_wrapper:
 
     def invariant(self):
         # The end of the cache is always at the same place as the end of the
-        # wrapped file.
+        # wrapped file (though the .tell() method is not required to be present
+        # on wrapped file).
         return self.wrapped.tell() == len(self.__cache.getvalue())
 
     def close(self):
@@ -116,7 +129,7 @@ class seek_wrapper:
                 if pos < offset:
                     raise ValueError("seek to before start of file")
                 dest = pos + offset
-            end = len(self.__cache.getvalue())
+            end = len_of_seekable(self.__cache)
             to_read = dest - end
             if to_read < 0:
                 to_read = 0
@@ -164,7 +177,7 @@ class seek_wrapper:
 
     def read(self, size=-1):
         pos = self.__pos
-        end = len(self.__cache.getvalue())
+        end = len_of_seekable(self.__cache)
         available = end - pos
 
         # enough data already cached?

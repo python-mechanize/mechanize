@@ -13,6 +13,7 @@ python test.py --help
 MODULE_NAMES = ["test_date", "test_browser", "test_response", "test_cookies",
                 "test_headers", "test_urllib2", "test_pullparser",
                 "test_useragent", "test_html", "test_opener",
+#                "test_performance",  # too slow, run from release script
                 ]
 
 import sys, os, logging, glob
