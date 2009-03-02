@@ -19,7 +19,7 @@ import _rfc3986
 import _sockettimeout
 from _useragent import UserAgentBase
 
-__version__ = (0, 1, 11, None, None)  # 0.1.11
+__version__ = (0, 1, 12, None, None)  # 0.1.12
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass
