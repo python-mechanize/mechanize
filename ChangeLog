@@ -1,0 +1,467 @@
+This isn't really in proper GNU ChangeLog format, it just happens to
+look that way.
+
+2009-02-07 John J Lee <jjl@pobox.com>
+	* 0.1.11 release.
+	* Fix quadratic performance in number of .read() calls (and add an
+	  automated performance test).
+
+2008-12-03 John J Lee <jjl@pobox.com>
+	* 0.1.10 release.
+	* Add support for Python 2.6: Raise URLError on file: URL errors,
+	  not IOError (port of upstream urllib2 fix).  Add support for
+	  Python 2.6's per-connection timeouts: Add timeout arguments to
+	  urlopen(), Request constructor, .open(), and .open_novisit().
+	* Drop support for Python 2.3
+	* Add Content-length header to Request object (httplib bug that
+	  prevented doing that was fixed in Python 2.4).  There's no
+	  change is what is actually sent over the wire here, just in what
+	  headers get added to the Request object.
+	* Fix AttributeError on .retrieve() with a Request (as opposed to
+	  URL string) argument
+	* Don't change CookieJar state in .make_cookies().
+	* Fix AttributeError in case where .make_cookies() or
+	  .cookies_for_request() is called before other methods like
+	  .extract_cookies() or .make_cookie_header()
+	* Fixes affecting version cookie-attribute
+	  (http://bugs.python.org/issue3924).
+	* Silence module logging's "no handlers could be found for logger
+	  mechanize" warning in a way that doesn't clobber attempts to set
+	  log level sometimes
+	* Don't use private attribute of request in request upgrade
+	  handler (what was I thinking??)
+	* Don't call setup() on import of setup.py
+	* Add new public function effective_request_host
+	* Add .get_policy() method to CookieJar
+	* Add method CookieJar.cookies_for_request()
+	* Fix documented interface required of requests and responses (and
+	  add some tests for this!)
+	* Allow either .is_unverifiable() or .unverifiable on request
+	  objects (preferring the former)
+	* Note that there's a new functional test for digest auth, which
+	  fails when run against the sourceforge site (which is the 
+	  default).  It looks like this reflects the fact that digest auth
+	  has been fairly broken since it was introduced in urllib2.  I
+	  don't plan to fix this myself.
+
+2008-09-24 John J Lee <jjl@pobox.com>
+	* 0.1.9 release.
+	* Fix ImportError if sqlite3 not available
+	* Fix a couple of functional tests not to wait 5 seconds each
+
+2008-09-13 John J Lee <jjl@pobox.com>
+	* 0.1.8 release.
+	* Close sockets.  This only affects Python 2.5 (and later) -
+	  earlier versions of Python were unaffected.  See
+	  http://bugs.python.org/issue1627441
+	* Make title parsing follow Firefox behaviour wrt child
+	  elements (previously the behaviour differed between Factory and
+	  RobustFactory).
+	* Fix BeautifulSoup RobustLinksFactory (hence RobustFactory) link
+	  text parsing for case of link text containing tags (Titus Brown)
+	* Fix issue where more tags after <title> caused default parser to
+	  raise an exception
+	* Handle missing cookie max-age value.  Previously, a warning was
+	  emitted in this case.
+	* Fix thoroughly broken digest auth (still need functional
+	  test!) (trebor74hr@...)
+	* Handle cookies containing embedded tabs in mozilla format files
+	* Remove an assertion about mozilla format cookies file
+	  contents (raise LoadError instead)
+	* Fix MechanizeRobotFileParser.set_opener()
+	* Fix selection of global form using .select_form() (Titus Brown)
+	* Log skipped Refreshes
+	* Stop tests from clobbering files that happen to be lying around
+	  in cwd (!)
+	* Use SO_REUSEADDR for local test server.
+	* Raise exception if local test server fails to start.
+	* Tests no longer (accidentally) depend on third-party coverage
+	  module
+	* The usual docs and test fixes.
+	* Add convenience method Browser.open_local_file(filename)
+	* Add experimental support for Firefox 3 cookie jars
+	  ("cookies.sqlite").  Requires Python 2.5
+	* Fix a _gzip.py NameError (gzip support is experimental)
+
+2007-05-31 John J Lee <jjl@pobox.com>
+	* 0.1.7b release.
+	* Sub-requests should not usually be visiting, so make it so.  In
+	  fact the visible behaviour wasn't really broken here, since
+	  .back() skips over None responses (which is odd in itself, but
+	  won't be changed until after stable release is branched).
+	  However, this patch does change visible behaviour in that it
+	  creates new Request objects for sub-requests (e.g. basic auth
+	  retries) where previously we just mutated the existing Request
+	  object.
+	* Changes to sort out abuse of by SeekableProcessor and
+	  ResponseUpgradeProcessor (latter shouldn't have been public in
+	  the first place) and resulting confusing / unclear / broken
+	  behaviour.  Deprecate SeekableProcessor and
+	  ResponseUpgradeProcessor.  Add SeekableResponseOpener.  Remove
+	  SeekableProcessor and ResponseUpgradeProcessor from Browser.
+	  Move UserAgentBase.add_referer_header() to Browser (it was on by
+	  default, breaking UserAgent, and should never really have been
+	  there).
+	* Fix HTTP proxy support: r29110 meant that Request.get_selector()
+	  didn't take into account the change to .__r_host
+	  (Thanks tgates@...).
+	* Redirected robots.txt fetch no longer results in another
+	  attempted robots.txt fetch to check the redirection is allowed!
+	* Fix exception raised by RFC 3986 implementation with
+	  urljoin(base, '/..')
+	* Fix two multiple-response-wrapping bugs.
+	* Add missing import in tests (caused failure on Windows).
+	* Set svn:eol-style to native for all text files in SVN.
+	* Add some tests for upgrade_response().
+	* Add a functional test for 302 + 404 case.
+	* Add an -l option to run the functional tests against a local
+	  twisted.web2-based server (you need Twisted installed for this
+	  to work).  This is much faster than running against
+	  wwwsearch.sourceforge.net
+	* Add -u switch to skip unittests (and only run the doctests).
+
+2007-01-07 John J Lee <jjl@pobox.com>
+
+	* 0.1.6b release
+	* Add mechanize.ParseError class, document it as part of the
+	  mechanize.Factory interface, and raise it from all Factory
+	  implementations.  This is backwards-compatible, since the new
+	  exception derives from the old exceptions.
+	* Bug fix: Truncation when there is no full .read() before
+	  navigating to the next page, and an old response is read after
+	  navigation.  This happened e.g. with r = br.open();
+	  r.readline(); br.open(url); r.read(); br.back() .
+	* Bug fix: when .back() caused a reload, it was returning the old
+	  response, not the .reload()ed one.
+	* Bug fix: .back() was not returning a copy of the response, which
+	  presumably would cause seek position problems.
+	* Bug fix: base tag without href attribute would override document
+	  URL with a None value, causing a crash (thanks Nathan Eror).
+	* Fix .set_response() to close current response first.
+	* Fix non-idempotent behaviour of Factory.forms() / .links() .
+	  Previously, if for example you got a ParseError during execution
+	  of .forms(), you could call it again and have it not raise an
+	  exception, because it started out where it left off!
+	* Add a missing copy.copy() to RobustFactory .
+	* Fix redirection to 'URIs' that contain characters that are not
+	  allowed in URIs (thanks Riko Wichmann).  Also, Request
+	  constructor now logs a module logging warning about any such bad
+	  URIs.
+	* Add .global_form() method to Browser to support form controls
+	  whose HTML elements are not descendants of any FORM element.
+	* Add a new method .visit_response() .  This creates a new history
+	  entry from a response object, rather than just changing the
+	  current visited response.  This is useful e.g. when you want to
+	  use Browser features in a handler.
+	* Misc minor bug fixes.
+
+2006-10-25 John J Lee <jjl@pobox.com>
+
+	* 0.1.5b release: Update setuptools dependencies to depend on
+	  ClientForm>=0.2.5 (for an important bug fix affecting fragments
+	  in URLs).  There are no other changes in this release -- this
+	  release was done purely so that people upgrading to the latest
+	  version of mechanize will get the latest ClientForm too.
+
+2006-10-14 John J Lee <jjl@pobox.com>
+	* 0.1.4b release: (skipped a version deliberately for obscure
+	  reasons)
+	* Improved auth & proxies support.
+	* Follow RFC 3986.
+	* Add a .set_cookie() method to Browser .
+	* Add Browser.open_novisit() and Request.visit to allow fetching
+	  files without affecting Browser state.
+	* UserAgent and Browser are now subclasses of UserAgentBase.
+	  UserAgent's only role in life above what UserAgentBase does is
+	  to provide the .set_seekable_responses() method (it lives there
+	  because Browser depends on seekable responses, because that's
+	  how browser history is implemented).
+	* Bundle BeautifulSoup 2.1.1.  No more dependency pain!  Note that
+	  BeautifulSoup is, and always was, optional, and that mechanize
+	  will eventually switch to BeautifulSoup version 3, at which
+	  point it may well stop bundling BeautifulSoup.  Note also that
+	  the module is only used internally, and is not available as a
+	  public attribute of the package.  If you dare, you can import it
+	  ("from mechanize import _beautifulsoup"), but beware that it
+	  will go away later, and that the API of BeautifulSoup will
+	  change when the upgrade to 3 happens.  Also, BeautifulSoup
+	  support (mainly RobustFactory) is still a little experimental
+	  and buggy.
+	* Fix HTTP-EQUIV with no content attribute case (thanks Pratik
+	  Dam).
+	* Fix bug with quoted META Refresh URL (thanks Nilton Volpato).
+	* Fix crash with </base> tag (yajdbgr02@...).
+	* Somebody found a server that (incorrectly) depends on HTTP
+	  header case, so follow the Title-Case convention.  Note that the
+	  Request headers interface(s), which were (somewhat oddly -- this
+	  is an inheritance from urllib2 that should really be fixed in a
+	  better way than it is currently) always case-sensitive still
+	  are; the only thing that changed is what actually eventually
+	  gets sent over the wire.
+	* Use mechanize (not urllib) to open robots.txt.  Don't consult
+	  RobotFileParser instance about non-HTTP URLs.
+	* Fix OpenerDirector.retrieve(), which was very broken (thanks
+	  Duncan Booth).
+	* Crash in a much more obvious way if trying to use OpenerDirector
+	  after .close() .
+	* .reload() on .back() if necessary (necessary iff response was
+	  not fully .read() on first .open()ing ) * Strip fragments before
+	  retrieving URLs (fixed Request.get_selector() to strip fragment)
+	* Fix catching HTTPError subclasses while still preserving all
+	  their response behaviour
+	* Correct over-enthusiastic documented guarantees of
+	  closeable_response .
+	* Fix assumption that httplib.HTTPMessage treats dict-style
+	  __setitem__ as append rather than set (where on earth did I get
+	  that from?).
+	* Expose History in mechanize/__init__.py (though interface is
+	  still experimental).
+	* Lots of other "internals" bugs fixed (thanks to reports /
+	  patches from Benji York especially, also Titus Brown, Duncan
+	  Booth, and me ;-), where I'm not 100% sure exactly when they
+	  were introduced, so not listing them here in detail.
+	* Numerous other minor fixes.
+	* Some code cleanup.
+
+2006-05-21 John J Lee <jjl@pobox.com>
+	* 0.1.2b release:
+	* mechanize now exports the whole urllib2 interface.
+	* Pull in bugfixed auth/proxy support code from Python 2.5.
+	* Bugfix: strip leading and trailing whitespace from link URLs
+	* Fix .any_response() / .any_request() methods to have ordering.
+	  consistent with rest of handlers rather than coming before all
+	  of them.
+	* Tell cookie-handling code about new TLDs.
+	* Remove Browser.set_seekable_responses() (they always are
+	  anyway).
+	* Show in web page examples how to munge responses and how to do
+	  proxy/auth.
+	* Rename 0.1.* changes document 0.1.0-changes.txt -->
+	  0.1-changes.txt.
+	* In 0.1 changes document, note change of logger name from
+	  "ClientCookie" to "mechanize"
+	* Add something about response objects to changes document
+	* Improve Browser.__str__
+	* Accept regexp strings as well as regexp objects when finding
+	  links.
+	* Add crappy gzip transfer encoding support.  This is off by
+	  default and warns if you turn it on (hopefully will get better
+	  later :-).
+	* A bit of internal cleanup following merge with pullparser /
+	  ClientCookie.
+
+2006-05-06 John J Lee <jjl@pobox.com>
+	* 0.1.1a release:
+	* Merge ClientCookie and pullparser with mechanize.
+	* Response object fixes.
+	* Remove accidental dependency on BeautifulSoup introduced in
+	  0.1.0a (the BeautifulSoup support is still here, but
+	  BeautifulSoup is not required to use mechanize).
+
+2006-05-03 John J Lee <jjl@pobox.com>
+	* 0.1.0a release:
+	* Stop trying to record precise dates in changelog, since that's
+	  silly ;-)
+	* A fair number of interface changes: see 0.1.0-changes.txt.
+	* Depend on recent ClientCookie with copy.copy()able response
+	  objects.
+	* Don't do broken XHTML handling by default (need to review code
+	  before switching this back on, e.g. should use a real XML parser
+	  for first-try at parsing).  To get the old behaviour, pass
+	  i_want_broken_xhtml_support=True to mechanize.DefaultFactory /
+	  .RobustFactory constructor.
+	* Numerous small bug fixes.
+	* Documentation & setup.py fixes.
+	* Don't use cookielib, to avoid having to work around Python 2.4
+	  RFC 2109 bug, and to avoid my braindead thread synchronisation
+	  code in cookielib :-((((( (I haven't encountered specific
+	  breakage due to latter, but since it's braindead I may as well
+	  avoid it).
+
+2005-11-30 John J Lee <jjl@pobox.com>
+	* Fixed setuptools support.
+	* Release 0.0.11a.
+
+2005-11-19 John J Lee <jjl@pobox.com>
+	* Release 0.0.10a.
+
+2005-11-17 John J Lee <jjl@pobox.com>
+	* Fix set_handle_referer.
+
+2005-11-12 John J Lee <jjl@pobox.com>
+	* Fix history (Gary Poster).
+	* Close responses on reload (Gary Poster).
+	* Don't depend on SSL support (Gary Poster).
+
+2005-10-31 John J Lee <jjl@pobox.com>
+	* Add setuptools support.
+
+2005-10-30 John J Lee <jjl@pobox.com>
+	* Don't mask AttributeError exception messages from ClientForm.
+	* Document intent of .links() vs. .get_links_iter(); Rename
+	  LinksFactory method.
+	* Remove pullparser import dependency.
+	* Remove Browser.urltags (now an argument to LinksFactory).
+	* Document Browser constructor as taking keyword args only (and
+	  change positional arg spec).
+	* Cleanup of lazy parsing (may fix bugs, not sure...).
+
+2005-10-28 John J Lee <jjl@pobox.com>
+	* Support ClientForm backwards_compat switch.
+
+2005-08-28 John J Lee <jjl@pobox.com>
+	* Apply optimisation patch (Stephan Richter).
+
+2005-08-15 John J Lee <jjl@pobox.com>
+	* Close responses (ie. close the file handles but leave response
+	  still .read()able &c., thanks to the response objects we're
+	  using) (aurel@nexedi.com).
+
+2005-08-14 John J Lee <jjl@pobox.com>
+	* Add missing argument to UserAgent's _add_referer_header stub.
+	* Doc and comment improvements.
+
+2005-06-28 John J Lee <jjl@pobox.com>
+	* Allow specifying parser class for equiv handling.
+	* Ensure correct default constructor args are passed to
+	  HTTPRefererProcessor.
+	* Allow configuring details of Refresh handling.
+	* Switch to tolerant parser.
+
+2005-06-11 John J Lee <jjl@pobox.com>
+	* Do .seek(0) after link parsing in a finally block.
+	* Regard text/xhtml as HTML.
+	* Fix 2.4-compatibility bugs.
+	* Fix spelling of '_equiv' feature string.
+
+2005-05-30 John J Lee <jjl@pobox.com>
+	* Turn on Referer, Refresh and HTTP-Equiv handling by default.
+
+2005-05-08 John J Lee <jjl@pobox.com>
+	* Fix .reload() to not update history (thanks to Titus Brown).
+	* Use cookielib where available
+
+2005-03-01 John J Lee <jjl@pobox.com>
+	* Fix referer bugs: Don't send URL fragments; Don't add in Referer
+	  header in redirected request unless original request had a
+	  Referer header.
+
+2005-02-19 John J Lee <jjl@pobox.com>
+        * Allow supplying own mechanize.FormsFactory, so eg. can use
+          ClientForm.XHTMLFormParser.  Also allow supplying own Request
+          class, and use sensible defaults for this.  Now depends on
+          ClientForm 0.1.17.  Side effect is that, since we use the
+          correct Request class by default, there's (I hope) no need for
+          using RequestUpgradeProcessor in Browser._add_referer_header()
+          :-)
+
+2005-01-30 John J Lee <jjl@pobox.com>
+	* Released 0.0.9a.
+
+2005-01-05 John J Lee <jjl@pobox.com>
+	* Fix examples (scraped sites have changed).
+	* Fix .set_*() method boolean arguments.
+	* The .response attribute is now a method, .response()
+	* Don't depend on BaseProcessor (no longer exists).
+
+2004-05-18 John J Lee <jjl@pobox.com>
+	* Released 0.0.8a:
+	* Added robots.txt observance, controlled by
+	* BASE element has attribute 'href', not 'uri'! (patch from Jochen
+	  Knuth)
+	* Fixed several bugs in handling of Referer header.
+	* Link.__eq__ now returns False instead of raising AttributeError
+	  on comparison with non-Link (patch from Jim Jewett)
+	* Removed dependencies on HTTPS support in Python and on
+	  ClientCookie.HTTPRobotRulesProcessor
+
+2004-01-18 John J Lee <jjl@pobox.com>
+	* Added robots.txt observance, controlled by
+	  UserAgent.set_handle_robots().  This is now on by default.
+	* Removed set_persistent_headers() method -- just use .addheaders,
+	  as in base class.
+
+2004-01-09 John J Lee <jjl@pobox.com>
+	* Removed unnecessary dependence on SSL support in Python.  Thanks
+	  to Krzysztof Kowalczyk for bug report.
+	* Released 0.0.7a.
+
+2004-01-06 John J Lee <jjl@pobox.com>
+	* Link instances may now be passed to .click_link() and
+	  .follow_link().
+	* Added a new example program, pypi.py.
+
+2004-01-05 John J Lee <jjl@pobox.com>
+	* Released 0.0.5a.
+	* If <title> tag was missing, links and forms would not be parsed.
+	  Also, base element (giving base URI) was ignored.  Now parse
+	  title lazily, and get base URI while parsing links.  Also, fixed
+	  ClientForm to take note of base element.  Thanks to Phillip J.
+	  Eby for bug report.
+	* Released 0.0.6a.
+
+2004-01-04 John J Lee <jjl@pobox.com>
+	* Fixed _useragent._replace_handler() to update self.handlers
+	  correctly.
+	* Updated required pullparser version check.
+	* Visiting a URL now deselects form (sets self.form to None).
+	* Only first Content-Type header is now checked by
+	  ._viewing_html(), if there are more than one.
+	* Stopped using getheaders from ClientCookie -- don't need it,
+	  since depend on Python 2.2, which has .getheaders() method on
+	  responses.  Improved comments.
+	* .open() now resets .response to None.  Also rearranged .open() a
+	  bit so instance remains in consistent state on failure.
+	* .geturl() now checks for non-None .response, and raises Browser.
+	* .back() now checks for non-None .response, and doesn't attempt
+	  to parse if it's None.
+	* .reload() no longer adds new history item.
+	* Documented tag argument to .find_link().
+	* Fixed a few places where non-keyword arguments for .find_link()
+	  were silently ignored.  Now raises ValueError.
+
+2004-01-02 John J Lee <jjl@pobox.com>
+	* Use response_seek_wrapper instead of seek_wrapper, which broke
+	  use of reponses after they're closed.
+	* (Fixed response_seek_wrapper in ClientCookie.)
+	* Fixed adding of Referer header.  Thanks to Per Cederqvist for
+	  bug report.
+	* Released 0.0.4a.
+	* Updated required ClientCookie version check.
+
+2003-12-30 John J Lee <jjl@pobox.com>
+	* Added support for character encodings (for matching link text).
+	* Released 0.0.3a.
+
+2003-12-28 John J Lee <jjl@pobox.com>
+	* Attribute lookups are no longer forwarded to .response --
+	  you have to do it explicitly.
+	* Added .geturl() method, which just delegates to .response.
+	* Big rehash of UserAgent, which was broken.  Added a test.
+	* Discovered that zip() doesn't raise an exception when its
+	  arguments are of different length, so several tests could pass
+	  when they should have failed.  Fixed.
+	* Fixed <A/> case in ._parse_html().
+	* Released 0.0.2a.
+
+2003-12-27 John J Lee <jjl@pobox.com>
+	* Added and improved docstrings.
+	* Browser.form is now a public attribute.  Also documented
+	  Browser's public attributes.
+	* Added base_url and absolute_url attributes to Link.
+	* Tidied up .open().  Relative URL Request objects are no longer
+	  converted to absolute URLs -- they should probably be absolute
+	  in the first place anyway.
+	* Added proper Referer handling (the handler in ClientCookie is a
+	  hack that only covers a restricted case).
+	* Added click_link method, for symmetry with .click() / .submit()
+	  methods (which latter apply to forms).  Of these methods,
+	  .click/.click_link() returns a request, and .submit/
+	  .follow_link() actually .open()s the request.
+	* Updated broken example code.
+
+2003-12-24 John J Lee <jjl@pobox.com>
+	* Modified setup.py so can easily register with PyPI.
+
+2003-12-22 John J Lee <jjl@pobox.com>
+	* Released 0.0.1a.
