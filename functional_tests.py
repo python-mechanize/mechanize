@@ -12,7 +12,7 @@ import tempfile
 import urllib
 
 import mechanize
-from mechanize import build_opener, install_opener, urlopen, urlretrieve
+from mechanize import build_opener, install_opener, urlopen
 from mechanize import CookieJar, HTTPCookieProcessor, \
      HTTPHandler, HTTPRefreshProcessor, \
      HTTPEquivProcessor, HTTPRedirectHandler, \
@@ -37,7 +37,6 @@ from mechanize._testcase import TestCase
 
 
 def sanepathname2url(path):
-    import urllib
     urlpath = urllib.pathname2url(path)
     if os.name == "nt" and urlpath.startswith("///"):
         urlpath = urlpath[2:]
@@ -367,14 +366,14 @@ class ResponseTests(TestCase):
 
     def test_new_response(self):
         br = mechanize.Browser()
-        data = "<html><head><title>Test</title></head><body><p>Hello.</p></body></html>"
+        data = ("<html><head><title>Test</title></head>"
+                "<body><p>Hello.</p></body></html>")
         response = mechanize.make_response(
             data,
             [("Content-type", "text/html")],
             "http://example.com/",
             200,
-            "OK"
-            )
+            "OK")
         br.set_response(response)
         self.assertEqual(br.response().get_data(), data)
 
@@ -456,11 +455,11 @@ class FunctionalTests(SocketTimeoutTest):
             install_opener(None)
 
     def test_robots(self):
-        plain_opener = mechanize.build_opener(mechanize.HTTPRobotRulesProcessor)
+        plain_opener = mechanize.build_opener(
+            mechanize.HTTPRobotRulesProcessor)
         browser = mechanize.Browser()
         for opener in plain_opener, browser:
             r = opener.open(urljoin(self.uri, "robots"))
-            self.assertEqual(r.code, 200)
             self.assertRaises(
                 mechanize.RobotExclusionError,
                 opener.open, urljoin(self.uri, "norobots"))
@@ -615,7 +614,6 @@ class CallbackVerifier:
 
 
 if __name__ == "__main__":
-    import sys
     sys.path.insert(0, "test-tools")
     test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
     sys.path.insert(0, test_path)
@@ -642,3 +640,5 @@ Examples:
         usageExamples=USAGE_EXAMPLES,
         )
     result = prog.runTests()
+    rc = int(not result.wasSuccessful())
+    sys.exit(rc)
