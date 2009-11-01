@@ -3,13 +3,11 @@
 import cgitb
 #cgitb.enable(format="text")
 
-import glob
-import logging
+import errno
 import os
 import subprocess
 import sys
 import time
-import traceback
 from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
      _TextTestResult
 
