@@ -18,6 +18,7 @@ import sys, re
 
 from twisted.cred import portal, checkers
 from twisted.internet import reactor
+from twisted.python.hashlib import md5
 from twisted.web2 import server, http, resource, channel, \
      http_headers, responsecode, twcgi
 from twisted.web2.auth import basic, digest, wrapper
@@ -174,13 +175,23 @@ def require_basic_auth(resource):
                                     p,
                                     interfaces=(IHTTPUser,))
 
+
+class DigestCredFactory(digest.DigestCredentialFactory):
+
+    def generateOpaque(self, nonce, clientip):
+        # http://twistedmatrix.com/trac/ticket/3693
+        key = "%s,%s,%s" % (nonce, clientip, str(int(self._getTime())))
+        digest = md5(key + self.privateKey).hexdigest()
+        ekey = key.encode('base64')
+        return "%s-%s" % (digest, ekey.replace('\n', ''))
+
+
 def require_digest_auth(resource):
     p = portal.Portal(TestAuthRealm())
     c = checkers.InMemoryUsernamePasswordDatabaseDontUse()
     c.addUser("digestuser", "digestuser")
     p.registerChecker(c)
-    cred_factory = digest.DigestCredentialFactory("MD5",
-                                                  "Digest Auth protected area")
+    cred_factory = DigestCredFactory("MD5", "Digest Auth protected area")
     return wrapper.HTTPAuthResource(resource,
                                     [cred_factory],
                                     p,
