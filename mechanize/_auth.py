@@ -421,7 +421,8 @@ class AbstractDigestAuthHandler:
         return base
 
     def get_algorithm_impls(self, algorithm):
-        # lambdas assume digest modules are imported at the top level
+        # algorithm should be case-insensitive according to RFC2617
+        algorithm = algorithm.upper()
         if algorithm == 'MD5':
             H = md5_digest
         elif algorithm == 'SHA':
