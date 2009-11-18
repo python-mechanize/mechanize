@@ -1,0 +1,43 @@
+The documentation to-do list has moved to the new "docs-in-progress"
+directory in git.
+
+Contributions welcome!
+
+ * Finish firefox 3 / chrome cookies support
+ * Remove either "docs-in-progress" or existing docs
+
+This is an old list and may not reflect my priorities or intentions any more:
+
+ * Test .any_response() two handlers case: ordering.
+ * Test referer bugs (frags and don't add in redirect unless orig req had Referer)
+ * Remove use of urlparse from _auth.py.
+ * Proper XHTML support!
+ * Fix BeautifulSoup support to use a single BeautifulSoup instance per page.
+ * Test BeautifulSoup support better / fix encoding issue.
+ * Support BeautifulSoup 3.
+ * Add another History implementation or two and finalise interface.
+ * History cache expiration.
+ * Investigate possible leak further (see Balazs Ree's list posting).
+ * Make EncodingFinder public, I guess (but probably improve it first).  (For example: support Mark Pilgrim's universal encoding detector?)
+ * Add two-way links between BeautifulSoup & ClientForm object models.
+ * In 0.2: switch to Python unicode strings everywhere appropriate (HTTP level should still use byte strings, of course).
+ * clean_url(): test browser behaviour.  I *think* this is correct...
+ * Use a nicer RFC 3986 join / split / unsplit implementation.
+ * Figure out the Right Thing (if such a thing exists) for %-encoding.
+ * How do IRIs fit into the world?
+ * IDNA -- must read about security stuff first.
+ * Unicode support in general.
+ * Provide per-connection access to timeouts.
+ * Keep-alive / connection caching.
+ * Pipelining??
+ * Content negotiation.
+ * gzip transfer encoding (there's already a handler for this in mechanize, but it's poorly implemented ATM).
+ * proxy.pac parsing (I don't think this needs JS interpretation)
+ * Topological sort for handlers, instead of .handler_order
+   attribute.  Ordering and other dependencies (where unavoidable)
+   should be defined separate from handlers themselves.  Add new
+   build_opener and deprecate the old one?  Actually, _useragent is
+   probably not far off what I'd have in mind (would just need a
+   method or two and a base class adding I think), and it's not a high
+   priority since I guess most people will just use the UserAgent and
+   Browser classes.

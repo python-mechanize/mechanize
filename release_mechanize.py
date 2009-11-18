@@ -17,7 +17,7 @@ of RELEASE_AREA.
 
 import email.mime.text
 import optparse
-import os.path
+import os
 import re
 import smtplib
 import subprocess
@@ -85,13 +85,17 @@ def send_email(from_address, to_address, subject, body):
 class Releaser(object):
 
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
-                 run_in_repository=False):
+                 run_in_repository=False, tag_name=None):
         self._env = release.GitPagerWrapper(env)
         self._source_repo_path = git_repository_path
         self._in_source_repo = release.CwdEnv(self._env,
                                               self._source_repo_path)
-        self._previous_version, self._release_version = \
-            self._get_next_release_version()
+        if tag_name is None:
+            self._previous_version, self._release_version = \
+                self._get_next_release_version()
+        else:
+            self._previous_version, self._release_version = \
+                "dummy version", tag_name
         self._source_distributions = self._get_source_distributions(
             self._release_version)
         self._clone_path = os.path.join(release_dir, "clone")
@@ -102,10 +106,10 @@ class Releaser(object):
         else:
             self._in_repo = self._in_clone
             self._repo_path = self._clone_path
-        self._dist_dir = os.path.join(self._repo_path, "dist")
         self._release_dir = release_dir
         self._in_release_dir = release.CwdEnv(self._env, self._release_dir)
         self._mirror_path = mirror_path
+        self._in_mirror = release.CwdEnv(self._env, self._mirror_path)
         self._easy_install_test_dir = "easy_install_test"
         self._easy_install_env = cmd_env.set_environ_vars_env(
             [("PYTHONPATH", self._easy_install_test_dir)],
@@ -207,14 +211,15 @@ class Releaser(object):
                            str(self._release_version)])
 
     def _make_readme(self):
+        defines = ["version=%r" % self._release_version]
         # html
-        release.empy(self._in_repo, "README.html.in")
+        release.empy(self._in_repo, "README.html.in", defines=defines)
         # plain text
         lynx_dump_env = release.PipeEnv(
             release.OutputToFileEnv(self._in_repo, "README.txt"),
             ["lynx", "-force_html", "-dump", "/dev/stdin"])
-        lynx_dump_env.cmd(
-            release.empy_cmd("README.html.in", defines=["base=True"]))
+        lynx_dump_env.cmd(release.empy_cmd("README.html.in",
+                                           defines=defines + ["base=True"]))
 
     def make_docs(self, log):
         release.empy(self._in_repo, "doc.html.in")
@@ -230,7 +235,7 @@ class Releaser(object):
     def build_release(self, log):
         self._in_repo.cmd(["python", "setup.py", "sdist",
                            "--formats=gztar,zip"])
-        archives = set(os.listdir(self._dist_dir))
+        archives = set(os.listdir(os.path.join(self._repo_path, "dist")))
         assert archives == self._source_distributions, \
             (archives, self._source_distributions)
 
@@ -242,23 +247,38 @@ class Releaser(object):
             self.build_release,
             ]
 
+    def _stage(self, path, dest_dir, dest_basename=None):
+        full_path = os.path.join(self._repo_path, path)
+        try:
+            self._env.cmd(["readlink", "-e", full_path],
+                          stdout=open(os.devnull, "w"))
+        except cmd_env.CommandFailedError:
+            print "not staging (does not exist):", full_path
+            return
+        if dest_basename is None:
+            dest_basename = os.path.basename(path)
+        dest = os.path.join(self._mirror_path, dest_dir, dest_basename)
+        try:
+            self._env.cmd(["cmp", full_path, dest])
+        except cmd_env.CommandFailedError:
+            print "staging:", full_path
+            self._env.cmd(["cp", full_path, dest])
+        else:
+            print "not staging (unchanged):", full_path
+
     def collate(self, log):
-        def copy_to_mirror(path, dest_dir, dest_basename=None):
-            if dest_basename is None:
-                dest_basename = os.path.basename(path)
-            dest = os.path.join(self._mirror_path, dest_dir, dest_basename)
-            self._env.cmd(["cp", path, dest])
-            self._env.cmd(["git", "add", dest])
+        stage = self._stage
         src = "htdocs/mechanize/src"
-        copy_to_mirror("README.html", src,
-                       "README-%s.html" % self._release_version)
-        copy_to_mirror("doc.html", src)
+        stage("README.html", src, "README-%s.html" % self._release_version)
+        stage("README.html", "htdocs/mechanize", "index.html")
+        stage("doc.html", src)
         for archive in self._source_distributions:
-            copy_to_mirror(os.path.join(self._dist_dir, archive), src)
-        copy_to_mirror("GeneralFAQ.html", "htdocs/bits")
+            stage(os.path.join("dist", archive), src)
+        stage("GeneralFAQ.html", "htdocs/bits")
 
     def commit_staging_website(self, log):
-        self._env.cmd(
+        self._in_mirror.cmd(["git", "add", "--all"])
+        self._in_mirror.cmd(
             ["git", "commit",
              "-m", "Automated update for release %s" % self._release_version])
 
@@ -267,8 +287,11 @@ class Releaser(object):
                        "--formats=gztar,zip", "upload"])
 
     def sync_to_sf(self, log):
+        assert "htdocs" in os.listdir(self._mirror_path)
+        assert "mechanize" in os.listdir(
+            os.path.join(self._mirror_path, "htdocs"))
         mirror_slash = self._mirror_path.rstrip("/") + "/"
-        self._env.cmd(["rsync", "-rlptvuz", "--exclude", "'*~'", "--delete",
+        self._env.cmd(["rsync", "-rlptvuz", "--exclude", "*~", "--delete",
                        mirror_slash, "jjlee,wwwsearch@web.sourceforge.net:"])
 
     @action_tree.action_node
@@ -470,11 +493,7 @@ John
 
 def parse_options(args):
     parser = optparse.OptionParser(usage=__doc__.strip())
-    parser.add_option("-v", "--verbose", action="store_true")
-    parser.add_option("-n", "--pretend", action="store_true",
-                      help=("run commands in a do-nothing environment.  "
-                            "Note that not all actions do their work by "
-                            "running a command."))
+    release.add_basic_env_options(parser)
     parser.add_option("--git-repository", metavar="DIRECTORY",
                       help="path to git repository (default is cwd)")
     parser.add_option("--mirror-path", metavar="DIRECTORY",
@@ -486,6 +505,7 @@ def parse_options(args):
                       help=("run all commands in original repository "
                             "(specified by --git-repository), rather than in "
                             "the clone of it in the release area"))
+    parser.add_option("--tag-name", metavar="TAG_NAME")
     options, remaining_args = parser.parse_args(args)
     nr_args = len(remaining_args)
     try:
@@ -495,23 +515,15 @@ def parse_options(args):
     return options, remaining_args
 
 
-def get_env(options):
-    env = cmd_env.BasicEnv()
-    if options.pretend:
-        env = release.NullWrapper(env)
-    if options.verbose:
-        env = cmd_env.VerboseWrapper(env)
-    return env
-
-
 def main(argv):
     options, action_tree_args = parse_options(argv[1:])
-    env = get_env(options)
+    env = release.get_env_from_options(options)
     git_repository_path = options.git_repository
     if git_repository_path is None:
         git_repository_path = os.getcwd()
     releaser = Releaser(env, git_repository_path, options.release_area,
-                        options.mirror_path, options.in_repository)
+                        options.mirror_path, options.in_repository,
+                        options.tag_name)
     action_tree.action_main(releaser.all, action_tree_args)
 
 
