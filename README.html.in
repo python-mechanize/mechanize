@@ -78,8 +78,9 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 <p class="docwarning">This documentation is in need of reorganisation and
 extension!</p>
 
-<p>The two below are just to give the gist.  There are also some <a
-href="./#tests">actual working examples</a>.
+<p>The examples below are written for a website that does not exist
+(<code>example.com</code>), so cannot be run.  There are also
+some <a href="./#tests">working examples</a> that you can run.
 
 @{colorize(r"""
 import re
