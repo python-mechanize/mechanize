@@ -25,6 +25,9 @@ except NameError:
   <meta name="keywords" content="cookie,HTTP,Python,web,client,client-side,HTML,META,HTTP-EQUIV,Refresh">
   <title>mechanize</title>
   <style type="text/css" media="screen">@@import "../styles/style.css";</style>
+  <!--[if IE 6]>
+  <style type="text/css" media="screen">@@import "../styles/style-ie6.css";</style>
+  <![endif]-->
   @[if base]<base href="http://wwwsearch.sourceforge.net/mechanize/">@[end if]
 </head>
 <body>
