@@ -18,8 +18,11 @@ except NameError:
   <meta name="author" content="John J. Lee &lt;jjl@@pobox.com&gt;">
   <meta name="date" content="@(time.strftime("%Y-%m-%d", last_modified))">
   <title>mechanize documentation</title>
-  <style type="text/css" media="screen">@@import "../styles/style.css";</style>
-  @[if base]<base href="http://wwwsearch.sourceforge.net/mechanize/">@[end if]
+  <style type="text/css" media="screen">@@import "../../styles/style.css";</style>
+  <!--[if IE 6]>
+  <style type="text/css" media="screen">@@import "../../styles/style-ie6.css";</style>
+  <![endif]-->
+  @[if base]<base href="http://wwwsearch.sourceforge.net/mechanize/doc.html">@[end if]
 </head>
 <body>
 
@@ -27,7 +30,7 @@ except NameError:
 <img src="http://sourceforge.net/sflogo.php?group_id=48205&amp;type=2"
  width="125" height="37" alt="SourceForge.net Logo"></a></div>
 
-<h1>mechanize handlers</h1>
+<h1>mechanize documentation: handlers</h1>
 
 <div id="Content">
 

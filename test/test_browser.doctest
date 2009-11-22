@@ -274,7 +274,6 @@ BrowserStateError: not viewing any document
 
 .select_form() works with the global form
 
->>> import ClientForm
 >>> from mechanize._response import test_html_response
 >>> br = TestBrowser2()
 >>> br.visit_response(test_html_response("""\
@@ -287,7 +286,7 @@ BrowserStateError: not viewing any document
 >>> def has_a(form):
 ...     try:
 ...         form.find_control(name="a")
-...     except ClientForm.ControlNotFoundError:
+...     except mechanize.ControlNotFoundError:
 ...         return False
 ...     else:
 ...         return True

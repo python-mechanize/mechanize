@@ -62,8 +62,7 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
       calling <code>build_opener()</code>.
 
     </ul>
-  <li>Easy HTML form filling, using <a href="../ClientForm/">ClientForm</a>
-    interface.
+  <li>Easy HTML form filling.
   <li>Convenient link parsing and following.
   <li>Browser history (<code>.back()</code> and <code>.reload()</code>
     methods).
@@ -102,7 +101,7 @@ response1.close()  # (shown for clarity; in fact Browser does this for you)
 
 br.select_form(name="order")
 # Browser passes through unknown attributes (including methods)
-# to the selected HTMLForm (from ClientForm).
+# to the selected HTMLForm.
 br["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
 response2 = br.submit()  # submit current form
 
@@ -302,9 +301,8 @@ of silly, but working, scripts to demonstrate basic use of the module.  Note
 that it's in the nature of web scraping for such scripts to break, so don't be
 too surprised if that happens &#8211; do let me know, though!
 
-<p>It's worth knowing also that the examples on the <a
-href="../ClientForm/">ClientForm web page</a> are useful for mechanize users,
-and are now real run-able scripts rather than just documentation.
+<p>See also the <a href="./forms/">forms examples</a> (these examples use the
+forms code independently of Browser).
 
 <h3>Functional tests</h3>
 
@@ -323,9 +321,6 @@ on <code>twisted.web2</code>):
 command:
 
 <pre>python test.py</pre>
-
-<p>Note that <a href="../ClientForm/">ClientForm</a> (a dependency of
-mechanize) has its own unit tests, which must be run separately.
 
 
 <h2>See also</h2>
@@ -350,13 +345,7 @@ to related software.
 <h2>FAQs - pre install</h2>
 <ul>
   <li>Which version of Python do I need?
-  <p>Python 2.4, 2.5 or 2.6.
-  <li>What else do I need?
-  <p>mechanize depends on <a href="../ClientForm/">ClientForm</a>.  If you use
-     <a href="http://peak.telecommunity.com/DevCenter/EasyInstall">EasyInstall</a> to
-     install mechanize, EasyInstall will install that for you.  If you prefer, you can
-     fetch and install it manually, instead &#8211; see the <code>INSTALL.txt</code>
-     file (included with the distribution).
+  <p>Python 2.4, 2.5 or 2.6.  Python 3 is not yet supported.
   <li>Does mechanize depend on BeautifulSoup?
   <p>No.  mechanize offers a few (still rather experimental) classes that make
      use of BeautifulSoup, but these classes are not required to use mechanize.
@@ -364,6 +353,8 @@ to related software.
      required.  A future version of mechanize will support BeautifulSoup
      version 3, at which point mechanize will likely no longer bundle the
      module.
+  <li>Does mechanize depend on ClientForm?
+  <p>No, ClientForm is now part of mechanize.
   <li>Which license?
   <p>mechanize is dual-licensed: you may pick either the
      <a href="http://www.opensource.org/licenses/bsd-license.php">BSD license</a>,

@@ -12,12 +12,9 @@ exception classes that mechanize used to raise, prior to version
 
 >>> import sgmllib
 >>> import HTMLParser
->>> import ClientForm
 >>> issubclass(mechanize.ParseError, sgmllib.SGMLParseError)
 True
 >>> issubclass(mechanize.ParseError, HTMLParser.HTMLParseError)
-True
->>> issubclass(mechanize.ParseError, ClientForm.ParseError)
 True
 
 >>> def create_response(error=True):

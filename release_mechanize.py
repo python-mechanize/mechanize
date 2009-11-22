@@ -223,9 +223,9 @@ class Releaser(object):
 
     def make_docs(self, log):
         release.empy(self._in_repo, "doc.html.in")
+        release.empy(self._in_repo, "forms.html.in")
         release.empy(self._in_repo, "GeneralFAQ.html.in")
         self._make_readme()
-        release.empy(self._in_repo, "doc.html.in")
 
     def write_setup_cfg(self, log):
         # write empty setup.cfg so source distribution is built using a version
@@ -272,6 +272,7 @@ class Releaser(object):
         stage("README.html", src, "README-%s.html" % self._release_version)
         stage("README.html", "htdocs/mechanize", "index.html")
         stage("doc.html", src)
+        stage("forms.html", src)
         for archive in self._source_distributions:
             stage(os.path.join("dist", archive), src)
         stage("GeneralFAQ.html", "htdocs/bits")

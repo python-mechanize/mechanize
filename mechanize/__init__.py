@@ -78,7 +78,43 @@ __all__ = [
     'seek_wrapped_response',   # XXX should probably use this internally in place of response_seek_wrapper()
     'str2time',
     'urlopen',
-    'urlretrieve']
+    'urlretrieve',
+
+    # ClientForm API
+    'AmbiguityError',
+    'ControlNotFoundError',
+    'FormParser',
+    'ItemCountError',
+    'ItemNotFoundError',
+    'LocateError',
+    'Missing',
+    'ParseFile',
+    'ParseFileEx',
+    'ParseResponse',
+    'ParseResponseEx',
+    'ParseString',
+    'XHTMLCompatibleFormParser',
+    # deprecated
+    'CheckboxControl',
+    'Control',
+    'FileControl',
+    'HTMLForm',
+    'HiddenControl',
+    'IgnoreControl',
+    'ImageControl',
+    'IsindexControl',
+    'Item',
+    'Label',
+    'ListControl',
+    'PasswordControl',
+    'RadioControl',
+    'ScalarControl',
+    'SelectControl',
+    'SubmitButtonControl',
+    'SubmitControl',
+    'TextControl',
+    'TextareaControl',
+    ]
 
 import logging
 import sys
@@ -93,7 +129,6 @@ from _mechanize import \
 # configurable URL-opener interface
 from _useragent import UserAgentBase, UserAgent
 from _html import \
-     ParseError, \
      Link, \
      Factory, DefaultFactory, RobustFactory, \
      FormsFactory, LinksFactory, TitleFactory, \
@@ -129,6 +164,44 @@ if sys.version_info[:2] > (2,4):
         from _firefox3cookiejar import Firefox3CookieJar
 from _mozillacookiejar import MozillaCookieJar
 from _msiecookiejar import MSIECookieJar
+
+# forms
+from _form import (
+    AmbiguityError,
+    ControlNotFoundError,
+    FormParser,
+    ItemCountError,
+    ItemNotFoundError,
+    LocateError,
+    Missing,
+    ParseError,
+    ParseFile,
+    ParseFileEx,
+    ParseResponse,
+    ParseResponseEx,
+    ParseString,
+    XHTMLCompatibleFormParser,
+    # deprecated
+    CheckboxControl,
+    Control,
+    FileControl,
+    HTMLForm,
+    HiddenControl,
+    IgnoreControl,
+    ImageControl,
+    IsindexControl,
+    Item,
+    Label,
+    ListControl,
+    PasswordControl,
+    RadioControl,
+    ScalarControl,
+    SelectControl,
+    SubmitButtonControl,
+    SubmitControl,
+    TextControl,
+    TextareaControl,
+    )
 
 # If you hate the idea of turning bugs into warnings, do:
 # import mechanize; mechanize.USE_BARE_EXCEPT = False

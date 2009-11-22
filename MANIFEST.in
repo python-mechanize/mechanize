@@ -11,5 +11,7 @@ include ChangeLog.txt
 include 0.1-changes.txt
 include *.py
 recursive-include examples *.py
+recursive-include examples/forms *.dat *.txt *.html *.cgi *.py
 recursive-include attic *.py
 recursive-include test-tools *.py
+recursive-include tests/testdata *.html

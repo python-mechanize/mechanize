@@ -71,7 +71,7 @@ def main():
         license = "BSD",  # or ZPL 2.1
         platforms = ["any"],
         classifiers = [c for c in CLASSIFIERS.split("\n") if c],
-        install_requires = ["ClientForm>=0.2.6, ==dev"],
+        install_requires = [],
         zip_safe = True,
         test_suite = "test",
         author = "John J. Lee",

@@ -35,7 +35,7 @@ except NameError:
 <ul>
   <li>Is there any example code?
      <p>Look in the examples directory of <a href="../mechanize">mechanize</a>.
-     Note that the examples on the <a href="../ClientForm">ClientForm page</a>
+     Note that the examples on the <a href="../forms">forms page</a>
      are executable as-is.  Contributions of example code would be very
      welcome!
   <li>HTTPS on Windows?
@@ -75,7 +75,7 @@ except NameError:
        <code>CookieJar</code> instance, calling methods on
        <code>HTMLForm</code>s, calling <code>urlopen</code>, etc.
 
-       <li>Dump mechanize and ClientForm and automate a browser instead.
+       <li>Dump mechanize automate a browser instead.
        For example use MS Internet Explorer via its COM automation interfaces, using
        the <a href="http://starship.python.net/crew/mhammond/">Python for
        Windows extensions</a>, aka pywin32, aka win32all (eg.

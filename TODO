@@ -16,7 +16,7 @@ This is an old list and may not reflect my priorities or intentions any more:
  * History cache expiration.
  * Investigate possible leak further (see Balazs Ree's list posting).
  * Make EncodingFinder public, I guess (but probably improve it first).  (For example: support Mark Pilgrim's universal encoding detector?)
- * Add two-way links between BeautifulSoup & ClientForm object models.
+ * Add two-way links between BeautifulSoup & mechanize form object models.
  * In 0.2: switch to Python unicode strings everywhere appropriate (HTTP level should still use byte strings, of course).
  * clean_url(): test browser behaviour.  I *think* this is correct...
  * Use a nicer RFC 3986 join / split / unsplit implementation.

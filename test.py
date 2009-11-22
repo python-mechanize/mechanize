@@ -5,17 +5,27 @@
 For further help, enter this at a command prompt:
 
 python test.py --help
-
 """
 
 # Modules containing tests to run -- a test is anything named *Tests, which
 # should be classes deriving from unittest.TestCase.
-MODULE_NAMES = ["test_date", "test_browser", "test_response", "test_cookies",
-                "test_headers", "test_urllib2", "test_pullparser",
-                "test_useragent", "test_html", "test_opener",
-                "test_import",
-#                "test_performance",  # too slow, run from release script
-                ]
+MODULE_NAMES = [
+    "test_api",
+    "test_browser",
+    "test_cookies",
+    "test_date",
+    "test_form",
+    "test_form_mutation",
+    "test_headers",
+    "test_html",
+    "test_import",
+    "test_opener",
+    # "test_performance",  # too slow, run from release script
+    "test_pullparser",
+    "test_response",
+    "test_urllib2",
+    "test_useragent",
+    ]
 
 import sys, os, logging, glob
 
