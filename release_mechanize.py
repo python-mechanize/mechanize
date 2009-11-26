@@ -235,7 +235,7 @@ class Releaser(object):
         # number without ".dev" and today's date appended
         self._in_repo.cmd(cmd_env.write_file_cmd("setup.cfg", ""))
 
-    def build_release(self, log):
+    def setup_py_sdist(self, log):
         self._in_repo.cmd(["python", "setup.py", "sdist",
                            "--formats=gztar,zip"])
         archives = set(os.listdir(os.path.join(self._repo_path, "dist")))
@@ -243,11 +243,11 @@ class Releaser(object):
             (archives, self._source_distributions)
 
     @action_tree.action_node
-    def build(self):
+    def build_sdist(self):
         return [
             self.make_docs,
             self.write_setup_cfg,
-            self.build_release,
+            self.setup_py_sdist,
             ]
 
     def _stage(self, path, dest_dir, dest_basename=None):
@@ -308,23 +308,6 @@ class Releaser(object):
 
     def clean(self, log):
         self._env.cmd(release.rm_rf_cmd(self._release_dir))
-
-    @action_tree.action_node
-    def release(self):
-        r = [
-            self.print_next_tag,
-            self.clone,
-            self.checks,
-            self.install_deps,
-            self.make_docs,  # functional tests depend on this!
-            self.test,
-            self.tag,
-            self.build,
-            ]
-        if self._mirror_path is not None:
-            r.append(self.collate)
-            r.append(self.commit_staging_website)
-        return r
 
     def write_email(self, log):
         log = release.get_cmd_stdout(self._in_repo,
@@ -483,15 +466,45 @@ John
                    body=body)
 
     @action_tree.action_node
-    def all(self):
+    def build(self):
         return [
+            self.install_deps,
             self.clean,
-            self.release,
+            self.print_next_tag,
+            self.clone,
+            self.checks,
+            self.make_docs,  # functional tests depend on this!
+            self.test,
+            self.tag,
+            self.build_sdist,
             self.write_email,
+            ]
+
+    @action_tree.action_node
+    def update_staging_website(self):
+        if self._mirror_path is not None:
+            return [
+                self.collate,
+                self.commit_staging_website,
+                ]
+        else:
+            return []
+
+    @action_tree.action_node
+    def tell_the_world(self):
+        return [
             self.push_tag,
             self.upload,
             self.easy_install_test,
             self.send_email,
+            ]
+
+    @action_tree.action_node
+    def all(self):
+        return [
+            self.build,
+            self.update_staging_website,
+            self.tell_the_world,
             ]
 
 
