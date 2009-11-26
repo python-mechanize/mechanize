@@ -291,9 +291,8 @@ class Releaser(object):
                            "--formats=gztar,zip", "upload"])
 
     def sync_to_sf(self, log):
-        assert "htdocs" in os.listdir(self._mirror_path)
-        assert "mechanize" in os.listdir(
-            os.path.join(self._mirror_path, "htdocs"))
+        assert os.path.isdir(
+            os.path.join(self._mirror_path, "htdocs/mechanize"))
         mirror_slash = self._mirror_path.rstrip("/") + "/"
         self._env.cmd(["rsync", "-rlptvuz", "--exclude", "*~", "--delete",
                        mirror_slash, "jjlee,wwwsearch@web.sourceforge.net:"])
