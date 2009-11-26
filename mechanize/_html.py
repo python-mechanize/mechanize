@@ -9,7 +9,7 @@ included with the distribution).
 """
 
 import re, copy, htmlentitydefs
-import sgmllib
+import _sgmllib as sgmllib
 
 import _form
 from _headersutil import split_header_words, is_html as _is_html
@@ -312,10 +312,6 @@ import _beautifulsoup
 RobustFormParser, NestingRobustFormParser = _form._create_bs_classes(
     _beautifulsoup.BeautifulSoup, _beautifulsoup.ICantBelieveItsBeautifulSoup
     )
-
-# TODO: stop doing this!
-# monkeypatch sgmllib to fix http://www.python.org/sf/803422 :-(
-sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
 
 class MechanizeBs(_beautifulsoup.BeautifulSoup):
     _entitydefs = htmlentitydefs.name2codepoint

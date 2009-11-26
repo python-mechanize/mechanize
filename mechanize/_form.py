@@ -100,9 +100,10 @@ import sys, urllib, urllib2, types, mimetools, copy, urlparse, \
        htmlentitydefs, re, random
 from cStringIO import StringIO
 
+# from Python itself, for backwards compatibility of raised exceptions
 import sgmllib
-# monkeypatch to fix http://www.python.org/sf/803422 :-(
-sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
+# bundled copy of sgmllib
+import _sgmllib
 
 # HTMLParser.HTMLParser is recent, so live without it if it's not available
 # (also, sgmllib.SGMLParser is much more tolerant of bad HTML)
@@ -441,14 +442,14 @@ class ItemCountError(ValueError): pass
 # raised by versions of ClientForm <= 0.2.5
 # TODO: move to _html
 if HAVE_MODULE_HTMLPARSER:
-    SGMLLIB_PARSEERROR = sgmllib.SGMLParseError
+    SGMLLIB_PARSEERROR = _sgmllib.SGMLParseError
     class ParseError(sgmllib.SGMLParseError,
                      HTMLParser.HTMLParseError,
                      ):
         pass
 else:
     if hasattr(sgmllib, "SGMLParseError"):
-        SGMLLIB_PARSEERROR = sgmllib.SGMLParseError
+        SGMLLIB_PARSEERROR = _sgmllib.SGMLParseError
         class ParseError(sgmllib.SGMLParseError):
             pass
     else:
@@ -852,20 +853,20 @@ class _AbstractSgmllibParser(_AbstractFormParser):
             return self.unescape_attrs(attrs)
 
 
-class FormParser(_AbstractSgmllibParser, sgmllib.SGMLParser):
+class FormParser(_AbstractSgmllibParser, _sgmllib.SGMLParser):
     """Good for tolerance of incorrect HTML, bad for XHTML."""
     def __init__(self, entitydefs=None, encoding=DEFAULT_ENCODING):
-        sgmllib.SGMLParser.__init__(self)
+        _sgmllib.SGMLParser.__init__(self)
         _AbstractFormParser.__init__(self, entitydefs, encoding)
 
     def feed(self, data):
         try:
-            sgmllib.SGMLParser.feed(self, data)
+            _sgmllib.SGMLParser.feed(self, data)
         except SGMLLIB_PARSEERROR, exc:
             raise ParseError(exc)
 
     def close(self):
-        sgmllib.SGMLParser.close(self)
+        _sgmllib.SGMLParser.close(self)
         self.end_body()
 
 
@@ -1052,10 +1053,10 @@ def ParseResponse(response, *args, **kwds):
 
     There is a choice of parsers.  ClientForm.XHTMLCompatibleFormParser (uses
     HTMLParser.HTMLParser) works best for XHTML, ClientForm.FormParser (uses
-    sgmllib.SGMLParser) (the default) works better for ordinary grubby HTML.
-    Note that HTMLParser is only available in Python 2.2 and later.  You can
-    pass your own class in here as a hack to work around bad HTML, but at your
-    own risk: there is no well-defined interface.
+    bundled copy of sgmllib.SGMLParser) (the default) works better for ordinary
+    grubby HTML.  Note that HTMLParser is only available in Python 2.2 and
+    later.  You can pass your own class in here as a hack to work around bad
+    HTML, but at your own risk: there is no well-defined interface.
 
     """
     return _ParseFileEx(response, response.geturl(), *args, **kwds)[1:]

@@ -13,7 +13,8 @@ COPYING.txt included with the distribution).
 """
 
 import time, htmlentitydefs, logging, socket, \
-       urllib2, urllib, httplib, sgmllib
+       urllib2, urllib, httplib
+import _sgmllib as sgmllib
 from urllib2 import URLError, HTTPError, BaseHandler
 from cStringIO import StringIO
 

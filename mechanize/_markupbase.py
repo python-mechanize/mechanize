@@ -1,3 +1,4 @@
+# Taken from Python 2.6.4 for use by _sgmllib.py
 """Shared support for scanning document type declarations in HTML and XHTML.
 
 This module is used as a foundation for the HTMLParser and sgmllib

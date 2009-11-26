@@ -46,13 +46,10 @@ __date__ = "$Date: 2004/10/18 00:14:20 $"
 __copyright__ = "Copyright (c) 2004-2005 Leonard Richardson"
 __license__ = "PSF"
 
-from sgmllib import SGMLParser, SGMLParseError
+from _sgmllib import SGMLParser, SGMLParseError
 import types
 import re
-import sgmllib
-
-#This code makes Beautiful Soup able to parse XML with namespaces
-sgmllib.tagfind = re.compile('[a-zA-Z][-_.:a-zA-Z0-9]*')
+import _sgmllib as sgmllib
 
 class NullType(object):
 
