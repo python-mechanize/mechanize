@@ -25,35 +25,28 @@ COPYING.txt included with the distribution).
 
 """
 
-# XXX
+# TODO:
+# Clean up post the merge into mechanize
+#  * Remove code that was duplicated in ClientForm and mechanize
+#  * Remove weird import stuff
+#  * Remove pre-Python 2.4 compatibility cruft
+#  * Clean up tests
+#  * Later release: Remove the ClientForm 0.1 backwards-compatibility switch
 # Remove parser testing hack
-# safeUrl()-ize action
-# Switch to unicode throughout (would be 0.3.x)
+# Clean action URI
+# Switch to unicode throughout
 #  See Wichert Akkerman's 2004-01-22 message to c.l.py.
+# Apply recommendations from google code project CURLIES
+# Apply recommendations from HTML 5 spec
 # Add charset parameter to Content-type headers?  How to find value??
-# Add some more functional tests
-#  Especially single and multiple file upload on the internet.
-#  Does file upload work when name is missing?  Sourceforge tracker form
-#   doesn't like it.  Check standards, and test with Apache.  Test
-#   binary upload with Apache.
-# mailto submission & enctype text/plain
-# I'm not going to fix this unless somebody tells me what real servers
-#  that want this encoding actually expect: If enctype is
-#  application/x-www-form-urlencoded and there's a FILE control present.
-#  Strictly, it should be 'name=data' (see HTML 4.01 spec., section
-#  17.13.2), but I send "name=" ATM.  What about multiple file upload??
+# Functional tests to add:
+#  Single and multiple file upload
+#  File upload with missing name (check standards)
+# mailto: submission & enctype text/plain??
+# Replace by_label etc. with moniker / selector concept.  Allows, eg., a choice
+#  between selection by value / id / label / element contents.  Or choice
+#  between matching labels exactly or by substring.  Etc.
 
-# Would be nice, but I'm not going to do it myself:
-# -------------------------------------------------
-# Maybe a 0.4.x?
-#   Replace by_label etc. with moniker / selector concept. Allows, eg.,
-#    a choice between selection by value / id / label / element
-#    contents.  Or choice between matching labels exactly or by
-#    substring.  Etc.
-#   Remove deprecated methods.
-#   ...what else?
-# Work on DOMForm.
-# XForms?  Don't know if there's a need here.
 
 __all__ = ['AmbiguityError', 'CheckboxControl', 'Control',
            'ControlNotFoundError', 'FileControl', 'FormParser', 'HTMLForm',
@@ -1440,6 +1433,10 @@ class FileControl(ScalarControl):
             return []
         return [(self._index, self.name, "")]
 
+    # If enctype is application/x-www-form-urlencoded and there's a FILE
+    # control present, what should be sent?  Strictly, it should be 'name=data'
+    # (see HTML 4.01 spec., section 17.13.2), but code sends "name=" ATM.  What
+    # about multiple file upload?
     def _write_mime_data(self, mw, _name, _value):
         # called by HTMLForm
         # assert _name == self.name and _value == ''
