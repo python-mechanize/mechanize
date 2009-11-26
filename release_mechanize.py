@@ -9,6 +9,9 @@ Note that some ("clean*") actions do rm -rf on RELEASE_AREA or subdirectories
 of RELEASE_AREA.
 """
 
+# This script depends on the code from this git repository:
+# git@github.com:jjlee/mechanize-build-tools.git 
+
 # TODO
 
 #  * Keep version in one place!
