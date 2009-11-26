@@ -287,8 +287,8 @@ class Releaser(object):
              "-m", "Automated update for release %s" % self._release_version])
 
     def upload_to_pypi(self, log):
-        self._env.cmd(["python", "setup.py", "sdist",
-                       "--formats=gztar,zip", "upload"])
+        self._in_repo.cmd(["python", "setup.py", "sdist",
+                           "--formats=gztar,zip", "upload"])
 
     def sync_to_sf(self, log):
         assert "htdocs" in os.listdir(self._mirror_path)
