@@ -58,6 +58,9 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         self._setup_stack.tear_down()
 
+    def add_teardown(self, *args, **kwds):
+        self._setup_stack.add_teardown(*args, **kwds)
+
     def make_temp_dir(self, *args, **kwds):
         return TempDirMaker(self._setup_stack).make_temp_dir(*args, **kwds)
 

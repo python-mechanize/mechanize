@@ -10,6 +10,9 @@ import sys
 import time
 from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
      _TextTestResult
+import urllib2
+
+import mechanize
 
 
 class ServerStartupError(Exception):
@@ -153,13 +156,14 @@ class CgitbTextTestRunner(TextTestRunner):
     def _makeResult(self):
         return CgitbTextResult(self.stream, self.descriptions, self.verbosity)
 
-def add_uri_attribute_to_test_cases(suite, uri):
+def add_attributes_to_test_cases(suite, attributes):
     for test in suite._tests:
         if isinstance(test, TestCase):
-            test.uri = uri
+            for name, value in attributes.iteritems():
+                setattr(test, name, value)
         else:
             try:
-                add_uri_attribute_to_test_cases(test, uri)
+                add_attributes_to_test_cases(test, attributes)
             except AttributeError:
                 pass
 
@@ -190,6 +194,7 @@ Options:
                    it to run module functional_tests;
                    functional_tests.py does access the network)
                    e.g. --uri=http://127.0.0.1:8000/
+  --no-proxies     Don't use any HTTP proxy.  Implied by --run-local-server
   -h, --help       Show this message
   -v, --verbose    Verbose output
   -q, --quiet      Minimal output
@@ -274,40 +279,51 @@ Examples:
             options, args = getopt.getopt(
                 argv[1:],
                 'hHvql',
-                ['help','verbose','quiet', 'uri=', 'run-local-server'],
+                ['help',
+                 'verbose',
+                 'quiet',
+                 'uri=',
+                 'run-local-server',
+                 'no-proxies',
+                 ],
                 )
             uri = None
+            no_proxies = False
             for opt, value in options:
                 if opt in ('-h','-H','--help'):
                     self.usageExit()
                 if opt in ('--uri',):
                     uri = value
+                if opt in ('--no-proxies',):
+                    no_proxies = True
                 if opt in ('-q','--quiet'):
                     self.verbosity = 0
                 if opt in ('-v','--verbose'):
                     self.verbosity = 2
                 if opt in ('-l', '--run-local-server'):
                     self.runLocalServer = True
+                    no_proxies = True
             if uri is None:
                 if self.runLocalServer:
                     uri = "http://127.0.0.1:8000"
                 else:
                     uri = self._defaultUri
             self.uri = uri
+            test_attributes = dict(uri=self.uri, no_proxies=no_proxies)
             if len(args) == 0 and self.defaultTest is None:
                 suite = TestSuite()
                 for module in self.modules:
                     test = self.testLoader.loadTestsFromModule(module)
                     suite.addTest(test)
                 self.test = suite
-                add_uri_attribute_to_test_cases(self.test, self.uri)
+                add_attributes_to_test_cases(self.test, test_attributes)
                 return
             if len(args) > 0:
                 self.testNames = args
             else:
                 self.testNames = (self.defaultTest,)
             self.createTests()
-            add_uri_attribute_to_test_cases(self.test, self.uri)
+            add_attributes_to_test_cases(self.test, test_attributes)
         except getopt.error, msg:
             self.usageExit(msg)
 

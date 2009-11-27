@@ -10,6 +10,7 @@ import socket
 import sys
 import tempfile
 import urllib
+import urllib2
 
 import mechanize
 from mechanize import build_opener, install_opener, urlopen
@@ -21,7 +22,8 @@ from mechanize._rfc3986 import urljoin
 from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings
 import mechanize._sockettimeout
-from mechanize._testcase import TestCase
+import mechanize._testcase
+import mechanize._opener
 
 #from cookielib import CookieJar
 #from urllib2 import build_opener, install_opener, urlopen
@@ -34,6 +36,46 @@ from mechanize._testcase import TestCase
 ## logger.addHandler(logging.StreamHandler(sys.stdout))
 ## #logger.setLevel(logging.DEBUG)
 ## logger.setLevel(logging.INFO)
+
+
+class TestCase(mechanize._testcase.TestCase):
+
+    # testprogram sets self.no_proxies on each TestCase to request explicitly
+    # setting proxies so that http*_proxy environment variables are ignored
+
+    def _configure_user_agent(self, ua):
+        if self.no_proxies:
+            ua.set_proxies({})
+
+    def make_browser(self):
+        browser = mechanize.Browser()
+        self._configure_user_agent(browser)
+        return browser
+
+    def make_user_agent(self):
+        ua = mechanize.UserAgent()
+        self._configure_user_agent(ua)
+        return ua
+
+    def build_opener(self, handlers=(), build_opener=None):
+        handlers += (mechanize.ProxyHandler(proxies={}),)
+        if build_opener is None:
+            build_opener = mechanize.build_opener
+        return build_opener(*handlers)
+
+    def setUp(self):
+        mechanize._testcase.TestCase.setUp(self)
+        if self.no_proxies:
+            old_opener_m = mechanize._opener._opener
+            old_opener_u = urllib2._opener
+            mechanize.install_opener(mechanize.build_opener(
+                    mechanize.ProxyHandler(proxies={})))
+            urllib2.install_opener(urllib2.build_opener(
+                    urllib2.ProxyHandler(proxies={})))
+            def revert_install():
+                mechanize.install_opener(old_opener_m)
+                urllib2.install_opener(old_opener_u)
+            self.add_teardown(revert_install)
 
 
 def sanepathname2url(path):
@@ -113,7 +155,7 @@ class SimpleTests(SocketTimeoutTest):
 
     def setUp(self):
         super(SimpleTests, self).setUp()
-        self.browser = mechanize.Browser()
+        self.browser = self.make_browser()
 
     def test_simple(self):
         self.browser.open(self.uri)
@@ -226,8 +268,7 @@ class SimpleTests(SocketTimeoutTest):
     def test_open_local_file(self):
         # Since the file: URL scheme is not well standardised, Browser has a
         # special method to open files by name, for convenience:
-        br = mechanize.Browser()
-        response = br.open_local_file("mechanize/_mechanize.py")
+        response = self.browser.open_local_file("mechanize/_mechanize.py")
         self.assert_("def open_local_file(self, filename):" in
                      response.get_data())
 
@@ -251,7 +292,7 @@ class SimpleTests(SocketTimeoutTest):
     def test_non_seekable(self):
         # check everything still works without response_seek_wrapper and
         # the .seek() method on response objects
-        ua = mechanize.UserAgent()
+        ua = self.make_user_agent()
         ua.set_seekable_responses(False)
         ua.set_handle_equiv(False)
         response = ua.open(self.uri)
@@ -263,15 +304,16 @@ class SimpleTests(SocketTimeoutTest):
 class ResponseTests(TestCase):
 
     def test_seek(self):
-        br = mechanize.Browser()
+        br = self.make_browser()
         r = br.open(self.uri)
         html = r.read()
         r.seek(0)
         self.assertEqual(r.read(), html)
 
     def test_seekable_response_opener(self):
-        opener = mechanize.OpenerFactory(
-            mechanize.SeekableResponseOpener).build_opener()
+        build_opener = mechanize.OpenerFactory(
+            mechanize.SeekableResponseOpener).build_opener
+        opener = self.build_opener(build_opener=build_opener)
         r = opener.open(urljoin(self.uri, "bits/cctest2.txt"))
         r.read()
         r.seek(0)
@@ -280,7 +322,7 @@ class ResponseTests(TestCase):
                          "Hello ClientCookie functional test suite.\n")
 
     def test_seek_wrapper_class_name(self):
-        opener = mechanize.UserAgent()
+        opener = self.make_user_agent()
         opener.set_seekable_responses(True)
         try:
             opener.open(urljoin(self.uri, "nonexistent"))
@@ -298,14 +340,14 @@ class ResponseTests(TestCase):
                 self.assert_(not hasattr(exc, "seek"))
 
         # mechanize.UserAgent
-        opener = mechanize.UserAgent()
+        opener = self.make_user_agent()
         opener.set_handle_equiv(False)
         opener.set_seekable_responses(False)
         opener.set_debug_http(False)
         check_no_seek(opener)
 
         # mechanize.OpenerDirector
-        opener = mechanize.build_opener()
+        opener = self.build_opener()
         check_no_seek(opener)
 
     def test_consistent_seek(self):
@@ -327,7 +369,7 @@ class ResponseTests(TestCase):
             else:
                 self.assert_(False)
 
-        opener = mechanize.UserAgent()
+        opener = self.make_user_agent()
         opener.set_debug_http(False)
 
         # Here, only the .set_handle_equiv() causes .seek() to be present, so
@@ -346,7 +388,7 @@ class ResponseTests(TestCase):
         check(opener, excs_also=True)
 
     def test_set_response(self):
-        br = mechanize.Browser()
+        br = self.make_browser()
         r = br.open(self.uri)
         html = r.read()
         self.assertEqual(br.title(), "Python bits")
@@ -365,7 +407,7 @@ class ResponseTests(TestCase):
         self.assertEqual(list(br.links())[0].url, "spam")
 
     def test_new_response(self):
-        br = mechanize.Browser()
+        br = self.make_browser()
         data = ("<html><head><title>Test</title></head>"
                 "<body><p>Hello.</p></body></html>")
         response = mechanize.make_response(
@@ -383,7 +425,7 @@ class ResponseTests(TestCase):
                "applied")
         import pickle
 
-        b = mechanize.Browser()
+        b = self.make_browser()
         r = b.open(urljoin(self.uri, "bits/cctest2.txt"))
         r.read()
 
@@ -404,7 +446,7 @@ class ResponseTests(TestCase):
 class FunctionalTests(SocketTimeoutTest):
 
     def test_referer(self):
-        br = mechanize.Browser()
+        br = self.make_browser()
         br.set_handle_refresh(True, honor_time=False)
         referer = urljoin(self.uri, "bits/referertest.html")
         info = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
@@ -416,7 +458,6 @@ class FunctionalTests(SocketTimeoutTest):
         self.assert_(referer in r.get_data())
 
     def test_cookies(self):
-        import urllib2
         # this test page depends on cookies, and an http-equiv refresh
         #cj = CreateBSDDBCookieJar("/home/john/db.db")
         cj = CookieJar()
@@ -431,33 +472,22 @@ class FunctionalTests(SocketTimeoutTest):
 #            HTTPResponseDebugProcessor(),
             ]
 
-        o = apply(build_opener, handlers)
-        try:
-            install_opener(o)
-            try:
-                r = urlopen(urljoin(self.uri, "/cgi-bin/cookietest.cgi"))
-            except urllib2.URLError, e:
-                #print e.read()
-                raise
-            data = r.read()
-            #print data
-            self.assert_(
-                data.find("Your browser supports cookies!") >= 0)
-            self.assert_(len(cj) == 1)
+        opener = self.build_opener(handlers)
+        r = opener.open(urljoin(self.uri, "/cgi-bin/cookietest.cgi"))
+        data = r.read()
+        self.assert_(data.find("Your browser supports cookies!") >= 0)
+        self.assertEquals(len(cj), 1)
 
-            # test response.seek() (added by HTTPEquivProcessor)
-            r.seek(0)
-            samedata = r.read()
-            r.close()
-            self.assert_(samedata == data)
-        finally:
-            o.close()
-            install_opener(None)
+        # test response.seek() (added by HTTPEquivProcessor)
+        r.seek(0)
+        samedata = r.read()
+        r.close()
+        self.assertEquals(samedata, data)
 
     def test_robots(self):
-        plain_opener = mechanize.build_opener(
-            mechanize.HTTPRobotRulesProcessor)
-        browser = mechanize.Browser()
+        plain_opener = self.build_opener(
+            [mechanize.HTTPRobotRulesProcessor])
+        browser = self.make_browser()
         for opener in plain_opener, browser:
             r = opener.open(urljoin(self.uri, "robots"))
             self.assertRaises(
@@ -467,12 +497,17 @@ class FunctionalTests(SocketTimeoutTest):
     def _check_retrieve(self, url, filename, headers):
         from urllib import urlopen
         self.assertEqual(headers.get('Content-Type'), 'text/html')
-        self.assertEqual(read_file(filename), urlopen(url).read())
+        if self.no_proxies:
+            proxies = {}
+        else:
+            proxies = None
+        self.assertEqual(read_file(filename),
+                         urlopen(url, proxies=proxies).read())
 
     def test_retrieve_to_named_file(self):
         url = urljoin(self.uri, "/mechanize/")
         test_filename = os.path.join(self.make_temp_dir(), "python.html")
-        opener = mechanize.build_opener()
+        opener = self.build_opener()
         verif = CallbackVerifier(self)
         filename, headers = opener.retrieve(url, test_filename, verif.callback)
         self.assertEqual(filename, test_filename)
@@ -483,7 +518,7 @@ class FunctionalTests(SocketTimeoutTest):
         # not passing an explicit filename downloads to a temporary file
         # using a Request object instead of a URL works
         url = urljoin(self.uri, "/mechanize/")
-        opener = mechanize.build_opener()
+        opener = self.build_opener()
         verif = CallbackVerifier(self)
         request = mechanize.Request(url)
         filename, headers = opener.retrieve(request, reporthook=verif.callback)
@@ -506,8 +541,7 @@ class FunctionalTests(SocketTimeoutTest):
         timeout_log.verify(timeout)
 
     def test_reload_read_incomplete(self):
-        from mechanize import Browser
-        browser = Browser()
+        browser = self.make_browser()
         r1 = browser.open(urljoin(self.uri, "bits/mechanize_reload_test.html"))
         # if we don't do anything and go straight to another page, most of the
         # last page's response won't be .read()...
@@ -583,7 +617,7 @@ class CookieJarTests(TestCase):
 
     def _test_cookiejar(self, get_cookiejar, commit):
         cookiejar = get_cookiejar()
-        br = mechanize.Browser()
+        br = self.make_browser()
         br.set_cookiejar(cookiejar)
         br.set_handle_refresh(False)
         url = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
