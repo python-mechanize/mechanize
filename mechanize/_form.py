@@ -834,23 +834,17 @@ class _AbstractSgmllibParser(_AbstractFormParser):
     def do_option(self, attrs):
         _AbstractFormParser._start_option(self, attrs)
 
-    if sys.version_info[:2] >= (2,5):
-        # we override this attr to decode hex charrefs
-        entity_or_charref = re.compile(
-            '&(?:([a-zA-Z][-.a-zA-Z0-9]*)|#(x?[0-9a-fA-F]+))(;?)')
-        def convert_entityref(self, name):
-            return unescape("&%s;" % name, self._entitydefs, self._encoding)
-        def convert_charref(self, name):
-            return unescape_charref("%s" % name, self._encoding)
-        def unescape_attr_if_required(self, name):
-            return name  # sgmllib already did it
-        def unescape_attrs_if_required(self, attrs):
-            return attrs  # ditto
-    else:
-        def unescape_attr_if_required(self, name):
-            return self.unescape_attr(name)
-        def unescape_attrs_if_required(self, attrs):
-            return self.unescape_attrs(attrs)
+    # we override this attr to decode hex charrefs
+    entity_or_charref = re.compile(
+        '&(?:([a-zA-Z][-.a-zA-Z0-9]*)|#(x?[0-9a-fA-F]+))(;?)')
+    def convert_entityref(self, name):
+        return unescape("&%s;" % name, self._entitydefs, self._encoding)
+    def convert_charref(self, name):
+        return unescape_charref("%s" % name, self._encoding)
+    def unescape_attr_if_required(self, name):
+        return name  # sgmllib already did it
+    def unescape_attrs_if_required(self, attrs):
+        return attrs  # ditto
 
 
 class FormParser(_AbstractSgmllibParser, _sgmllib.SGMLParser):
