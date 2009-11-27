@@ -214,7 +214,7 @@ class Releaser(object):
                            str(self._release_version)])
 
     def _make_readme(self):
-        defines = ["version=%r" % self._release_version]
+        defines = ["version=%r" % (tuple(self._release_version.tuple),)]
         # html
         release.empy(self._in_repo, "README.html.in", defines=defines)
         # plain text
