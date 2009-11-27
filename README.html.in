@@ -97,20 +97,21 @@ print br.title()
 print response1.geturl()
 print response1.info()  # headers
 print response1.read()  # body
-response1.close()  # (shown for clarity; in fact Browser does this for you)
 
 br.select_form(name="order")
 # Browser passes through unknown attributes (including methods)
 # to the selected HTMLForm.
 br["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
-response2 = br.submit()  # submit current form
+# Submit current form.  Browser calls .close() on the current response on
+# navigation, so this closes response1
+response2 = br.submit()
 
 # print currently selected form (don't call .submit() on this, use br.submit())
 print br.form
 
 response3 = br.back()  # back to cheese shop (same data as response1)
 # the history mechanism returns cached response objects
-# we can still use the response, even though we closed it:
+# we can still use the response, even though it was .close()d
 response3.get_data()  # like .seek(0) followed by .read()
 response4 = br.reload()  # fetches from server
 
@@ -384,11 +385,12 @@ print browser.forms
   <li>Is JavaScript supported?
   <p>No, sorry.  Try <a href="http://htmlunit.sourceforge.net/">htmlunit</a>.
   <li>My HTTP response data is truncated.
-  <p><code>mechanize.Browser's</code> response objects support the .seek() method, and can
-     still be used after .close() has been called.  HTTP response data is not
-     fetched until it is needed, so navigation away from a URL before fetching
-     the whole.  Call <code>response.get_data()</code> before navigation if you
-     don't want that to happen.
+  <p><code>mechanize.Browser's</code> response objects support the .seek()
+     method, and can still be used after .close() has been called.  Response
+     data is not fetched until it is needed, so navigation away from a URL
+     before fetching all of the response will truncate it.
+     Call <code>response.get_data()</code> before navigation if you don't want
+     that to happen.
   <li>I'm <strong><em>sure</em></strong> this page is HTML, why does
      <code>mechanize.Browser</code> think otherwise?
 @{colorize("""
