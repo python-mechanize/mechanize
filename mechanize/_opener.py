@@ -20,6 +20,7 @@ except NameError:
     import sets
     set = sets.Set
 
+import _auth
 import _file
 import _http
 from _request import Request
@@ -350,11 +351,11 @@ class OpenerFactory:
 
     default_classes = [
         # handlers
-        urllib2.ProxyHandler,
+        _auth.ProxyHandler,
         urllib2.UnknownHandler,
-        _http.HTTPHandler,  # derived from new AbstractHTTPHandler
+        _http.HTTPHandler,
         _http.HTTPDefaultErrorHandler,
-        _http.HTTPRedirectHandler,  # bugfixed
+        _http.HTTPRedirectHandler,
         urllib2.FTPHandler,
         _file.FileHandler,
         # processors
