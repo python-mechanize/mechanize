@@ -12,10 +12,6 @@ of RELEASE_AREA.
 # This script depends on the code from this git repository:
 # git@github.com:jjlee/mechanize-build-tools.git 
 
-# The HTML validation step depends on a debian package from my PPA.  To add the
-# PPA (the install_deps action of this script will install the package): sudo
-# add-apt-repository ppa:jjl/w3cvalidator && sudo apt-get update
-
 # TODO
 
 #  * Keep version in one place!
@@ -185,9 +181,8 @@ class Releaser(object):
         # for validating HTML
         # tidy doesn't error about some invalid documents
         # ensure_installed("tidy")
-        # This is in my PPA.  To add it:
-        # sudo add-apt-repository ppa:jjl/w3cvalidator && sudo apt-get update
-        ensure_installed("w3c-markup-validator-commandline")
+        ensure_installed("w3c-markup-validator-commandline",
+                         ppa="jjl/w3cvalidator")
 
     def _make_test_step(self, env, python_version,
                         skip_unit_tests=False,
