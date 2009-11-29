@@ -313,7 +313,6 @@ class Releaser(object):
         for archive in self._source_distributions:
             stage(os.path.join("dist", archive), src)
         stage("GeneralFAQ.html", "htdocs/bits")
-        stage("frontpage.html", "htdocs/bits")
         if self._build_tools_path is not None:
             def stage_from_website(*args):
                 self._stage(source_base_path=self._website_source_path, *args)
@@ -333,18 +332,16 @@ class Releaser(object):
                                   "-mime", "text/html",
                                   "-encoding", "ISO-8859-1", page_path])
         except cmd_env.CommandFailedError:
-            raise InvalidHTMLError(page_path)
+            raise InvalidHTMLError()
         else:
             if output != "Result: This document is valid HTML 4.01 Strict\n":
-                print output
-                raise InvalidHTMLError(page_path)
+                raise InvalidHTMLError(output)
 
     def validate_website(self, log):
-        exclusions = set("""\
+        exclusions = set(f for f in """\
 ./cookietest.html
 htdocs/basic_auth/index.html
 htdocs/bib/protest.html
-htdocs/bits/GeneralFAQ.html
 htdocs/bits/mechanize_reload_test.html
 htdocs/bits/referertest.html
 htdocs/ClientCookie/doc.html
@@ -371,14 +368,12 @@ htdocs/mechanize/src/README-0_0_7a.html
 htdocs/mechanize/src/README-0_0_8a.html
 htdocs/mechanize/src/README-0_0_9a.html
 htdocs/mechanize/src/README-0.1.0a.html
-htdocs/mechanize/src/README-0_1_11.html
 htdocs/mechanize/src/README-0.1.11.html
-htdocs/mechanize/src/README-0.1.12.html
 htdocs/mechanize/src/README-0.1.1a.html
 htdocs/mechanize/src/README-0.1.2b.html
 htdocs/seltest/Test1.html
 htdocs/seltest/TestSuite.html
-""".splitlines())
+""".splitlines() if not f.startswith("#"))
         for dirpath, dirnames, filenames in os.walk(self._mirror_path):
             for filename in filenames:
                 if filename.endswith(".html"):
