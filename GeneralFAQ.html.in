@@ -157,7 +157,7 @@ mailing list</a> rather than direct to me.
 
 @(release.navbar('GeneralFAQ'))
 
-<br>
+</div> <!--id="Menu"-->
 
 </body>
 </html>

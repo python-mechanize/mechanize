@@ -12,6 +12,10 @@ of RELEASE_AREA.
 # This script depends on the code from this git repository:
 # git@github.com:jjlee/mechanize-build-tools.git 
 
+# The HTML validation step depends on a debian package from my PPA.  To add the
+# PPA (the install_deps action of this script will install the package): sudo
+# add-apt-repository ppa:jjl/w3cvalidator && sudo apt-get update
+
 # TODO
 
 #  * Keep version in one place!
@@ -19,6 +23,7 @@ of RELEASE_AREA.
 #  * test in a Windows VM
 
 import email.mime.text
+import glob
 import optparse
 import os
 import re
@@ -51,6 +56,11 @@ class MissingVersionError(Exception):
     def __str__(self):
         return ("Release version string not found in %s: should be %s" %
                 (self.path, self.release_version))
+
+
+class InvalidHTMLError(Exception):
+
+    pass
 
 
 def run_performance_tests(path):
@@ -88,7 +98,8 @@ def send_email(from_address, to_address, subject, body):
 class Releaser(object):
 
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
-                 run_in_repository=False, tag_name=None):
+                 build_tools_repo_path, run_in_repository=False,
+                 tag_name=None):
         self._env = release.GitPagerWrapper(env)
         self._source_repo_path = git_repository_path
         self._in_source_repo = release.CwdEnv(self._env,
@@ -111,6 +122,9 @@ class Releaser(object):
             self._repo_path = self._clone_path
         self._release_dir = release_dir
         self._in_release_dir = release.CwdEnv(self._env, self._release_dir)
+        self._build_tools_path = build_tools_repo_path
+        self._website_source_path = os.path.join(self._build_tools_path,
+                                                 "website")
         self._mirror_path = mirror_path
         self._in_mirror = release.CwdEnv(self._env, self._mirror_path)
         self._easy_install_test_dir = "easy_install_test"
@@ -168,6 +182,12 @@ class Releaser(object):
         ensure_installed("python-empy")
         # for generating .txt docs
         ensure_installed("lynx-cur-wrapper")
+        # for validating HTML
+        # tidy doesn't error about some invalid documents
+        # ensure_installed("tidy")
+        # This is in my PPA.  To add it:
+        # sudo add-apt-repository ppa:jjl/w3cvalidator && sudo apt-get update
+        ensure_installed("w3c-markup-validator-commandline")
 
     def _make_test_step(self, env, python_version,
                         skip_unit_tests=False,
@@ -230,6 +250,16 @@ class Releaser(object):
         release.empy(self._in_repo, "GeneralFAQ.html.in")
         self._make_readme()
 
+    # def validate_docs(self, log):
+    #     for page_path in glob.glob(os.path.join(self._repo_path, "*.html")):
+    #         try:
+    #             release.get_cmd_stdout(
+    #                 self._in_repo, ["tidy", "-output", os.devnull, page_path],
+    #                 stderr=subprocess.PIPE)
+    #         except cmd_env.CommandFailedError, exc:
+    #             if exc.rc != 1:  # 1 means just warnings
+    #                 raise
+
     def write_setup_cfg(self, log):
         # write empty setup.cfg so source distribution is built using a version
         # number without ".dev" and today's date appended
@@ -250,8 +280,11 @@ class Releaser(object):
             self.setup_py_sdist,
             ]
 
-    def _stage(self, path, dest_dir, dest_basename=None):
-        full_path = os.path.join(self._repo_path, path)
+    def _stage(self, path, dest_dir, dest_basename=None,
+               source_base_path=None):
+        if source_base_path is None:
+            source_base_path = self._repo_path
+        full_path = os.path.join(source_base_path, path)
         try:
             self._env.cmd(["readlink", "-e", full_path],
                           stdout=open(os.devnull, "w"))
@@ -264,10 +297,16 @@ class Releaser(object):
         try:
             self._env.cmd(["cmp", full_path, dest])
         except cmd_env.CommandFailedError:
-            print "staging:", full_path
+            print "staging: %s -> %s" % (full_path, dest)
             self._env.cmd(["cp", full_path, dest])
         else:
-            print "not staging (unchanged):", full_path
+            print "not staging (unchanged): %s -> %s" % (full_path, dest)
+
+    def make_website(self, log):
+        in_website_dir = release.CwdEnv(self._env, self._website_source_path)
+        # raise if working tree differs from HEAD
+        #in_website_dir.cmd(["git", "diff", "--exit-code", "HEAD"])
+        release.empy(in_website_dir, "frontpage.html.in")
 
     def collate(self, log):
         stage = self._stage
@@ -279,12 +318,79 @@ class Releaser(object):
         for archive in self._source_distributions:
             stage(os.path.join("dist", archive), src)
         stage("GeneralFAQ.html", "htdocs/bits")
+        stage("frontpage.html", "htdocs/bits")
+        if self._build_tools_path is not None:
+            def stage_from_website(*args):
+                self._stage(source_base_path=self._website_source_path, *args)
+            stage_from_website("frontpage.html", "htdocs/bits")
 
     def commit_staging_website(self, log):
         self._in_mirror.cmd(["git", "add", "--all"])
         self._in_mirror.cmd(
             ["git", "commit",
              "-m", "Automated update for release %s" % self._release_version])
+
+    def _validate(self, page_path):
+        # TODO: use UTF-8
+        try:
+            output = release.get_cmd_stdout(
+                self._in_mirror, ["w3c-validate",
+                                  "-mime", "text/html",
+                                  "-encoding", "ISO-8859-1", page_path])
+        except cmd_env.CommandFailedError:
+            raise InvalidHTMLError(page_path)
+        else:
+            if output != "Result: This document is valid HTML 4.01 Strict\n":
+                print output
+                raise InvalidHTMLError(page_path)
+
+    def validate_website(self, log):
+        exclusions = set("""\
+./cookietest.html
+htdocs/basic_auth/index.html
+htdocs/bib/protest.html
+htdocs/bits/GeneralFAQ.html
+htdocs/bits/mechanize_reload_test.html
+htdocs/bits/referertest.html
+htdocs/ClientCookie/doc.html
+htdocs/ClientCookie/src/doc-0_4.html
+htdocs/ClientCookie/src/doc.html
+htdocs/ClientForm/example.html
+htdocs/ClientForm/src/README-0_1_10.html
+htdocs/ClientForm/src/README-0_1_11.html
+htdocs/ClientForm/src/README-0_1_12.html
+htdocs/ClientForm/src/README-0_1_13.html
+htdocs/ClientForm/src/README-0_1_14.html
+htdocs/ClientForm/src/README-0_1_15.html
+htdocs/ClientForm/src/README-0_1_9.html
+htdocs/digest_auth/index.html
+htdocs/DOMForm/index.html
+htdocs/DOMForm/src/README-0_0_1a.html
+htdocs/mechanize/src/README-0_0_1a.html
+htdocs/mechanize/src/README-0_0_2a.html
+htdocs/mechanize/src/README-0_0_3a.html
+htdocs/mechanize/src/README-0_0_4a.html
+htdocs/mechanize/src/README-0_0_5a.html
+htdocs/mechanize/src/README-0_0_6a.html
+htdocs/mechanize/src/README-0_0_7a.html
+htdocs/mechanize/src/README-0_0_8a.html
+htdocs/mechanize/src/README-0_0_9a.html
+htdocs/mechanize/src/README-0.1.0a.html
+htdocs/mechanize/src/README-0_1_11.html
+htdocs/mechanize/src/README-0.1.11.html
+htdocs/mechanize/src/README-0.1.12.html
+htdocs/mechanize/src/README-0.1.1a.html
+htdocs/mechanize/src/README-0.1.2b.html
+htdocs/seltest/Test1.html
+htdocs/seltest/TestSuite.html
+""".splitlines())
+        for dirpath, dirnames, filenames in os.walk(self._mirror_path):
+            for filename in filenames:
+                if filename.endswith(".html"):
+                    page_path = os.path.join(
+                        os.path.relpath(dirpath, self._mirror_path), filename)
+                    if page_path not in exclusions:
+                        self._validate(page_path)
 
     def upload_to_pypi(self, log):
         self._in_repo.cmd(["python", "setup.py", "sdist",
@@ -412,7 +518,7 @@ John
     def check_easy_installed_version(self, log):
         self._check_easy_installed_version_equals(self._release_version)
 
-    def copy_functional_test_dependencies_to_easy_install_dir(self, log):
+    def copy_in_functional_test_dependencies(self, log):
         dst = os.path.join(self._release_dir, self._easy_install_test_dir)
         def copy_in(src):
             self._env.cmd(["cp", "-r", src, dst])
@@ -439,7 +545,7 @@ John
             self.check_not_installed,
             self.easy_install,
             self.check_easy_installed_version,
-            self.copy_functional_test_dependencies_to_easy_install_dir,
+            self.copy_in_functional_test_dependencies,
             # Run in test dir, because the test step expects that.  The
             # PYTHONPATH from self._easy_install_env is wrong here because
             # we're running in the test dir rather than its parent.  That's OK
@@ -464,6 +570,7 @@ John
                    subject=subject,
                    body=body)
 
+
     @action_tree.action_node
     def build(self):
         return [
@@ -481,13 +588,16 @@ John
 
     @action_tree.action_node
     def update_staging_website(self):
+        r = []
+        if self._build_tools_path is not None:
+            r.append(self.make_website)
         if self._mirror_path is not None:
-            return [
-                self.collate,
-                self.commit_staging_website,
-                ]
-        else:
-            return []
+            r.extend([
+                    self.collate,
+                    self.validate_website,
+                    self.commit_staging_website,
+                    ])
+        return r
 
     @action_tree.action_node
     def tell_the_world(self):
@@ -511,7 +621,11 @@ def parse_options(args):
     parser = optparse.OptionParser(usage=__doc__.strip())
     release.add_basic_env_options(parser)
     parser.add_option("--git-repository", metavar="DIRECTORY",
-                      help="path to git repository (default is cwd)")
+                      help="path to mechanize git repository (default is cwd)")
+    parser.add_option("--build-tools-repository", metavar="DIRECTORY",
+                      help=("path of mechanize-build-tools git repository, "
+                            "from which to get other website source files "
+                            "(default is not to build those files)"))
     parser.add_option("--mirror-path", metavar="DIRECTORY",
                       help=("path of local website mirror git repository "
                             "into which built files will be copied "
@@ -538,8 +652,8 @@ def main(argv):
     if git_repository_path is None:
         git_repository_path = os.getcwd()
     releaser = Releaser(env, git_repository_path, options.release_area,
-                        options.mirror_path, options.in_repository,
-                        options.tag_name)
+                        options.mirror_path, options.build_tools_repository,
+                        options.in_repository, options.tag_name)
     action_tree.action_main(releaser.all, action_tree_args)
 
 

@@ -230,8 +230,6 @@ ignore this section.
 
 <p>Use of mechanize classes with <code>urllib2</code> (and vice-versa) is no longer supported.
 
-</ol>
-
 
 <a name="docs"></a>
 <h2>Documentation</h2>
