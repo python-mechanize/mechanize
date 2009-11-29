@@ -5,8 +5,11 @@ RELEASE_AREA.
 
 If no actions are given, print the tree of actions and do nothing.
 
+This is only intended to work on Unix (unlike mechanize itself).  Some of it
+only works on Ubuntu karmic.
+
 Note that some ("clean*") actions do rm -rf on RELEASE_AREA or subdirectories
-of RELEASE_AREA.
+of RELEASE_AREA.  Other actions install software and add PPAs.
 """
 
 # This script depends on the code from this git repository:
@@ -154,7 +157,7 @@ class Releaser(object):
             raise MissingVersionError(path, self._release_version)
 
     def _verify_versions(self):
-        for path in ["README.html.in", "ChangeLog", "setup.py"]:
+        for path in ["ChangeLog", "setup.py"]:
             self._verify_version(path)
 
     def clone(self, log):
@@ -165,10 +168,10 @@ class Releaser(object):
         self._verify_versions()
 
     def install_deps(self, log):
-        def ensure_installed(package_name):
+        def ensure_installed(package_name, ppa=None):
             release.ensure_installed(self._env,
                                      cmd_env.PrefixCmdEnv(["sudo"], self._env),
-                                     package_name)
+                                     package_name, ppa)
         ensure_installed("python2.4")
         ensure_installed("python2.5")
         ensure_installed("python2.6")
@@ -200,6 +203,10 @@ class Releaser(object):
                 cmd = [python, "functional_tests.py"]
                 if local_server:
                     cmd.append("-l")
+                else:
+                    # running against wwwsearch.sourceforge.net is slow, want
+                    # to see where it failed
+                    cmd.append("-v")
                 return env.cmd(cmd)
             actions.append(("functional_tests", functional))
         return action_tree.make_node(actions, name)
@@ -216,9 +223,14 @@ class Releaser(object):
         r.append(self._make_test_step(self._in_repo, python_version=(2, 5)))
         # the functional tests rely on a local web server implemented using
         # twisted.web2, which depends on zope.interface, but ubuntu karmic
-        # doesn't have a Python 2.4 package for zope.interface
+        # doesn't have a Python 2.4 package for zope.interface...
         r.append(self._make_test_step(self._in_repo, python_version=(2, 4),
                                       skip_functional_tests=True))
+        # ...so run them against wwwsearch.sourceforge.net
+        against_sf = self._make_test_step(self._in_repo, python_version=(2, 4),
+                                          skip_unit_tests=True,
+                                          local_server=False)
+        r.append(("python24_internet", against_sf))
         r.append(self.performance_test)
         return r
 
@@ -300,8 +312,11 @@ class Releaser(object):
     def make_website(self, log):
         in_website_dir = release.CwdEnv(self._env, self._website_source_path)
         # raise if working tree differs from HEAD
-        #in_website_dir.cmd(["git", "diff", "--exit-code", "HEAD"])
+        in_website_dir.cmd(["git", "diff", "--exit-code", "HEAD"])
         release.empy(in_website_dir, "frontpage.html.in")
+
+    def ensure_staging_website_unmodified(self, log):
+        self._in_mirror.cmd(["git", "diff", "--exit-code", "HEAD"])
 
     def collate(self, log):
         stage = self._stage
@@ -540,12 +555,13 @@ John
             # PYTHONPATH from self._easy_install_env is wrong here because
             # we're running in the test dir rather than its parent.  That's OK
             # because the test dir is still on sys.path, for the same reason.
-            self._make_test_step(release.CwdEnv(self._easy_install_env,
-                                                self._easy_install_test_dir),
-                                 python_version=(2, 6),
-                                 skip_unit_tests=True,
-                                 # run against wwwsearch.sourceforge.net
-                                 local_server=False),
+            ("python26_internet",
+             self._make_test_step(release.CwdEnv(self._easy_install_env,
+                                                 self._easy_install_test_dir),
+                                  python_version=(2, 6),
+                                  skip_unit_tests=True,
+                                  # run against wwwsearch.sourceforge.net
+                                  local_server=False)),
             ]
 
     def send_email(self, log):
@@ -583,6 +599,8 @@ John
             r.append(self.make_website)
         if self._mirror_path is not None:
             r.extend([
+                    ("ensure_unmodified",
+                     self.ensure_staging_website_unmodified),
                     self.collate,
                     self.validate_website,
                     self.commit_staging_website,
