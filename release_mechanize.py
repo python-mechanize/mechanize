@@ -13,7 +13,7 @@ of RELEASE_AREA.  Other actions install software and add PPAs.
 """
 
 # This script depends on the code from this git repository:
-# git@github.com:jjlee/mechanize-build-tools.git 
+# git://github.com/jjlee/mechanize-build-tools.git
 
 # TODO
 
