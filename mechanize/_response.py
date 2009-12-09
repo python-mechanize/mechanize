@@ -471,7 +471,7 @@ def seek_wrapped_response(response):
 
     Accepts responses from both mechanize and urllib2 handlers.
 
-    Copes with both oridinary response instances and HTTPError instances (which
+    Copes with both ordinary response instances and HTTPError instances (which
     can't be simply wrapped due to the requirement of preserving the exception
     base class).
     """
