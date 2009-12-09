@@ -208,7 +208,10 @@ class Releaser(object):
                     # to see where it failed
                     cmd.append("-v")
                 return env.cmd(cmd)
-            actions.append(("functional_tests", functional))
+            func_tests_name = "functional_tests"
+            if not local_server:
+                func_tests_name += "_internet"
+            actions.append((func_tests_name, functional))
         return action_tree.make_node(actions, name)
 
     def performance_test(self, log):
@@ -223,14 +226,10 @@ class Releaser(object):
         r.append(self._make_test_step(self._in_repo, python_version=(2, 5)))
         # the functional tests rely on a local web server implemented using
         # twisted.web2, which depends on zope.interface, but ubuntu karmic
-        # doesn't have a Python 2.4 package for zope.interface...
+        # doesn't have a Python 2.4 package for zope.interface, so run them
+        # against wwwsearch.sourceforge.net
         r.append(self._make_test_step(self._in_repo, python_version=(2, 4),
-                                      skip_functional_tests=True))
-        # ...so run them against wwwsearch.sourceforge.net
-        against_sf = self._make_test_step(self._in_repo, python_version=(2, 4),
-                                          skip_unit_tests=True,
-                                          local_server=False)
-        r.append(("python24_internet", against_sf))
+                                      local_server=False))
         r.append(self.performance_test)
         return r
 
@@ -555,13 +554,12 @@ John
             # PYTHONPATH from self._easy_install_env is wrong here because
             # we're running in the test dir rather than its parent.  That's OK
             # because the test dir is still on sys.path, for the same reason.
-            ("python26_internet",
-             self._make_test_step(release.CwdEnv(self._easy_install_env,
-                                                 self._easy_install_test_dir),
-                                  python_version=(2, 6),
-                                  skip_unit_tests=True,
-                                  # run against wwwsearch.sourceforge.net
-                                  local_server=False)),
+            self._make_test_step(release.CwdEnv(self._easy_install_env,
+                                                self._easy_install_test_dir),
+                                 python_version=(2, 6),
+                                 skip_unit_tests=True,
+                                 # run against wwwsearch.sourceforge.net
+                                 local_server=False),
             ]
 
     def send_email(self, log):
