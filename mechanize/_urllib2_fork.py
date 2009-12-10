@@ -1,77 +1,13 @@
-"""An extensible library for opening URLs using a variety of protocols
+"""Fork of urllib2.
 
-The simplest way to use this module is to call the urlopen function,
-which accepts a string containing a URL or a Request object (described
-below).  It opens the URL and returns the results as file-like
-object; the returned object has some extra methods described below.
+Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Python
+Software Foundation; All Rights Reserved
 
-The OpenerDirector manages a collection of Handler objects that do
-all the actual work.  Each Handler implements a particular protocol or
-option.  The OpenerDirector is a composite object that invokes the
-Handlers needed to open the requested URL.  For example, the
-HTTPHandler performs HTTP GET and POST requests and deals with
-non-error returns.  The HTTPRedirectHandler automatically deals with
-HTTP 301, 302, 303 and 307 redirect errors, and the HTTPDigestAuthHandler
-deals with digest authentication.
+Copyright 2002-2009 John J Lee <jjl@pobox.com>
 
-urlopen(url, data=None) -- Basic usage is the same as original
-urllib.  pass the url and optionally data to post to an HTTP URL, and
-get a file-like object back.  One difference is that you can also pass
-a Request instance instead of URL.  Raises a URLError (subclass of
-IOError); for HTTP errors, raises an HTTPError, which can also be
-treated as a valid response.
-
-build_opener -- Function that creates a new OpenerDirector instance.
-Will install the default handlers.  Accepts one or more Handlers as
-arguments, either instances or Handler classes that it will
-instantiate.  If one of the argument is a subclass of the default
-handler, the argument will be installed instead of the default.
-
-install_opener -- Installs a new opener as the default opener.
-
-objects of interest:
-
-OpenerDirector -- Sets up the User Agent as the Python-urllib client and manages
-the Handler classes, while dealing with requests and responses.
-
-Request -- An object that encapsulates the state of a request.  The
-state can be as simple as the URL.  It can also include extra HTTP
-headers, e.g. a User-Agent.
-
-BaseHandler --
-
-exceptions:
-URLError -- A subclass of IOError, individual protocols have their own
-specific subclass.
-
-HTTPError -- Also a valid HTTP response, so you can treat an HTTP error
-as an exceptional event or valid response.
-
-internals:
-BaseHandler and parent
-_call_chain conventions
-
-Example usage:
-
-import urllib2
-
-# set up authentication info
-authinfo = urllib2.HTTPBasicAuthHandler()
-authinfo.add_password(realm='PDQ Application',
-                      uri='https://mahler:8092/site-updates.py',
-                      user='klem',
-                      passwd='geheim$parole')
-
-proxy_support = urllib2.ProxyHandler({"http" : "http://ahad-haam:3128"})
-
-# build a new opener that adds authentication and caching FTP handlers
-opener = urllib2.build_opener(proxy_support, authinfo, urllib2.CacheFTPHandler)
-
-# install it
-urllib2.install_opener(opener)
-
-f = urllib2.urlopen('http://www.python.org/')
-
+This code is free software; you can redistribute it and/or modify it
+under the terms of the BSD or ZPL 2.1 licenses (see the file
+COPYING.txt included with the distribution).
 
 """
 
@@ -115,6 +51,16 @@ from urllib import (unwrap, unquote, splittype, splithost, quote,
 # support for FileHandler, proxies via environment variables
 from urllib import localhost, url2pathname, getproxies, proxy_bypass
 
+
+from urllib2 import HTTPError, URLError
+
+import _request
+import _rfc3986
+
+from _clientcookie import CookieJar
+from _response import closeable_response
+
+
 # used in User-Agent header sent
 __version__ = sys.version[:3]
 
@@ -128,43 +74,6 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
 def install_opener(opener):
     global _opener
     _opener = opener
-
-# do these error classes make sense?
-# make sure all of the IOError stuff is overridden.  we just want to be
-# subtypes.
-
-class URLError(IOError):
-    # URLError is a sub-type of IOError, but it doesn't share any of
-    # the implementation.  need to override __init__ and __str__.
-    # It sets self.args for compatibility with other EnvironmentError
-    # subclasses, but args doesn't have the typical format with errno in
-    # slot 0 and strerror in slot 1.  This may be better than nothing.
-    def __init__(self, reason):
-        self.args = reason,
-        self.reason = reason
-
-    def __str__(self):
-        return '<urlopen error %s>' % self.reason
-
-class HTTPError(URLError, addinfourl):
-    """Raised when HTTP error occurs, but also acts like non-error return"""
-    __super_init = addinfourl.__init__
-
-    def __init__(self, url, code, msg, hdrs, fp):
-        self.code = code
-        self.msg = msg
-        self.hdrs = hdrs
-        self.fp = fp
-        self.filename = url
-        # The addinfourl classes depend on fp being a valid file
-        # object.  In some cases, the HTTPError may not have a valid
-        # file object.  If this happens, the simplest workaround is to
-        # not initialize the base classes.
-        if fp is not None:
-            self.__super_init(fp, hdrs, url, code)
-
-    def __str__(self):
-        return 'HTTP Error %s: %s' % (self.code, self.msg)
 
 # copied from cookielib.py
 _cut_port_re = re.compile(r":\d+$")
@@ -497,17 +406,27 @@ class BaseHandler:
 
 
 class HTTPErrorProcessor(BaseHandler):
-    """Process HTTP error responses."""
-    handler_order = 1000  # after all other processing
+    """Process HTTP error responses.
+
+    The purpose of this handler is to to allow other response processors a
+    look-in by removing the call to parent.error() from
+    AbstractHTTPHandler.
+
+    For non-200 error codes, this just passes the job on to the
+    Handler.<proto>_error_<code> methods, via the OpenerDirector.error method.
+    Eventually, HTTPDefaultErrorHandler will raise an HTTPError if no other
+    handler handles the error.
+
+    """
+    handler_order = 1000  # after all other processors
 
     def http_response(self, request, response):
         code, msg, hdrs = response.code, response.msg, response.info()
 
-        # According to RFC 2616, "2xx" code indicates that the client's
-        # request was successfully received, understood, and accepted.
-        if not (200 <= code < 300):
+        if code != 200:
+            # hardcoded http is NOT a bug
             response = self.parent.error(
-                'http', request, response, code, msg, hdrs)
+                "http", request, response, code, msg, hdrs)
 
         return response
 
@@ -515,8 +434,23 @@ class HTTPErrorProcessor(BaseHandler):
 
 class HTTPDefaultErrorHandler(BaseHandler):
     def http_error_default(self, req, fp, code, msg, hdrs):
-        raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
+        # why these error methods took the code, msg, headers args in the first
+        # place rather than a response object, I don't know, but to avoid
+        # multiple wrapping, we're discarding them
 
+        if isinstance(fp, HTTPError):
+            response = fp
+        else:
+            response = HTTPError(
+                req.get_full_url(), code, msg, hdrs, fp)
+        assert code == response.code
+        assert msg == response.msg
+        assert hdrs == response.hdrs
+        raise response
+
+# This adds "refresh" to the list of redirectables and provides a redirection
+# algorithm that doesn't go into a loop in the presence of cookies
+# (Python 2.4 has this new algorithm, 2.3 doesn't).
 class HTTPRedirectHandler(BaseHandler):
     # maximum number of redirections to any single URL
     # this is needed because of the state that cookies introduce
@@ -525,7 +459,24 @@ class HTTPRedirectHandler(BaseHandler):
     # assuming we're in a loop
     max_redirections = 10
 
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
+    # Implementation notes:
+
+    # To avoid the server sending us into an infinite loop, the request
+    # object needs to track what URLs we have already seen.  Do this by
+    # adding a handler-specific attribute to the Request object.  The value
+    # of the dict is used to count the number of times the same URL has
+    # been visited.  This is needed because visiting the same URL twice
+    # does not necessarily imply a loop, thanks to state introduced by
+    # cookies.
+
+    # Always unhandled redirection codes:
+    # 300 Multiple Choices: should not handle this here.
+    # 304 Not Modified: no need to handle here: only of interest to caches
+    #     that do conditional GETs
+    # 305 Use Proxy: probably not worth dealing with here
+    # 306 Unused: what was this for in the previous versions of protocol??
+
+    def redirect_request(self, newurl, req, fp, code, msg, headers):
         """Return a Request or None in response to a redirect.
 
         This is called by the http_error_30x methods when a
@@ -536,29 +487,25 @@ class HTTPRedirectHandler(BaseHandler):
         but another Handler might.
         """
         m = req.get_method()
-        if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
-            or code in (301, 302, 303) and m == "POST"):
+        if (code in (301, 302, 303, 307, "refresh") and m in ("GET", "HEAD")
+            or code in (301, 302, 303, "refresh") and m == "POST"):
             # Strictly (according to RFC 2616), 301 or 302 in response
             # to a POST MUST NOT cause a redirection without confirmation
             # from the user (of urllib2, in this case).  In practice,
-            # essentially all clients do redirect in this case, so we
-            # do the same.
-            # be conciliant with URIs containing a space
-            newurl = newurl.replace(' ', '%20')
-            newheaders = dict((k,v) for k,v in req.headers.items()
-                              if k.lower() not in ("content-length", "content-type")
-                             )
-            return Request(newurl,
-                           headers=newheaders,
-                           origin_req_host=req.get_origin_req_host(),
-                           unverifiable=True)
+            # essentially all clients do redirect in this case, so we do
+            # the same.
+            # TODO: really refresh redirections should be visiting; tricky to fix
+            new = _request.Request(
+                newurl,
+                headers=req.headers,
+                origin_req_host=req.get_origin_req_host(),
+                unverifiable=True,
+                visit=False)
+            new._origin_req = getattr(req, "_origin_req", req)
+            return new
         else:
             raise HTTPError(req.get_full_url(), code, msg, headers, fp)
 
-    # Implementation note: To avoid the server sending us into an
-    # infinite loop, the request object needs to track what URLs we
-    # have already seen.  Do this by adding a handler-specific
-    # attribute to the Request object.
     def http_error_302(self, req, fp, code, msg, headers):
         # Some servers (incorrectly) return multiple Location headers
         # (so probably same goes for URI).  Use first header.
@@ -568,20 +515,13 @@ class HTTPRedirectHandler(BaseHandler):
             newurl = headers.getheaders('uri')[0]
         else:
             return
-
-        # fix a possible malformed URL
-        urlparts = urlparse.urlparse(newurl)
-        if not urlparts.path:
-            urlparts = list(urlparts)
-            urlparts[2] = "/"
-        newurl = urlparse.urlunparse(urlparts)
-
-        newurl = urlparse.urljoin(req.get_full_url(), newurl)
+        newurl = _rfc3986.clean_url(newurl, "latin-1")
+        newurl = _rfc3986.urljoin(req.get_full_url(), newurl)
 
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
-        new = self.redirect_request(req, fp, code, msg, headers, newurl)
+        new = self.redirect_request(newurl, req, fp, code, msg, headers)
         if new is None:
             return
 
@@ -602,9 +542,10 @@ class HTTPRedirectHandler(BaseHandler):
         fp.read()
         fp.close()
 
-        return self.parent.open(new, timeout=req.timeout)
+        return self.parent.open(new)
 
     http_error_301 = http_error_303 = http_error_307 = http_error_302
+    http_error_refresh = http_error_302
 
     inf_msg = "The HTTP server returned a redirect error that would " \
               "lead to an infinite loop.\n" \
@@ -1076,13 +1017,10 @@ class AbstractHTTPHandler(BaseHandler):
                 request.add_unredirected_header(
                     'Content-length', '%d' % len(data))
 
-        sel_host = host
-        if request.has_proxy():
-            scheme, sel = splittype(request.get_selector())
-            sel_host, sel_path = splithost(sel)
-
+        scheme, sel = splittype(request.get_selector())
+        sel_host, sel_path = splithost(sel)
         if not request.has_header('Host'):
-            request.add_unredirected_header('Host', sel_host)
+            request.add_unredirected_header('Host', sel_host or host)
         for name, value in self.parent.addheaders:
             name = name.capitalize()
             if not request.has_header(name):
@@ -1100,11 +1038,15 @@ class AbstractHTTPHandler(BaseHandler):
             - geturl(): return the original request URL
             - code: HTTP status code
         """
-        host = req.get_host()
-        if not host:
+        host_port = req.get_host()
+        if not host_port:
             raise URLError('no host given')
 
-        h = http_class(host, timeout=req.timeout) # will parse host:port
+        try:
+            h = http_class(host_port, timeout=req.timeout)
+        except TypeError:
+            # Python < 2.6, no per-connection timeout support
+            h = http_class(host_port)
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.headers)
@@ -1118,16 +1060,9 @@ class AbstractHTTPHandler(BaseHandler):
         headers["Connection"] = "close"
         headers = dict(
             (name.title(), val) for name, val in headers.items())
-
-        if req._tunnel_host:
-            h.set_tunnel(req._tunnel_host)
-
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
-            try:
-                r = h.getresponse(buffering=True)
-            except TypeError: #buffering kw not supported
-                r = h.getresponse()
+            r = h.getresponse()
         except socket.error, err: # XXX what error?
             raise URLError(err)
 
@@ -1144,10 +1079,8 @@ class AbstractHTTPHandler(BaseHandler):
 
         r.recv = r.read
         fp = socket._fileobject(r, close=True)
-
-        resp = addinfourl(fp, r.msg, req.get_full_url())
-        resp.code = r.status
-        resp.msg = r.reason
+        resp = closeable_response(fp, r.msg, req.get_full_url(),
+                                  r.status, r.reason)
         return resp
 
 
@@ -1159,18 +1092,44 @@ class HTTPHandler(AbstractHTTPHandler):
     http_request = AbstractHTTPHandler.do_request_
 
 if hasattr(httplib, 'HTTPS'):
+
+    class HTTPSConnectionFactory:
+        def __init__(self, key_file, cert_file):
+            self._key_file = key_file
+            self._cert_file = cert_file
+        def __call__(self, hostport):
+            return httplib.HTTPSConnection(
+                hostport,
+                key_file=self._key_file, cert_file=self._cert_file)
+
     class HTTPSHandler(AbstractHTTPHandler):
 
+        def __init__(self, client_cert_manager=None):
+            AbstractHTTPHandler.__init__(self)
+            self.client_cert_manager = client_cert_manager
+
         def https_open(self, req):
-            return self.do_open(httplib.HTTPSConnection, req)
+            if self.client_cert_manager is not None:
+                key_file, cert_file = self.client_cert_manager.find_key_cert(
+                    req.get_full_url())
+                conn_factory = HTTPSConnectionFactory(key_file, cert_file)
+            else:
+                conn_factory = httplib.HTTPSConnection
+            return self.do_open(conn_factory, req)
 
         https_request = AbstractHTTPHandler.do_request_
 
 class HTTPCookieProcessor(BaseHandler):
+    """Handle HTTP cookies.
+
+    Public attributes:
+
+    cookiejar: CookieJar instance
+
+    """
     def __init__(self, cookiejar=None):
-        import cookielib
         if cookiejar is None:
-            cookiejar = cookielib.CookieJar()
+            cookiejar = CookieJar()
         self.cookiejar = cookiejar
 
     def http_request(self, request):
@@ -1393,3 +1352,11 @@ class CacheFTPHandler(FTPHandler):
                     del self.timeout[k]
                     break
             self.soonest = min(self.timeout.values())
+
+
+
+
+
+
+
+

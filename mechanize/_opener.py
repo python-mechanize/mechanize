@@ -22,12 +22,12 @@ except NameError:
 
 import _auth
 import _file
-import _http
 from _request import Request
 import _response
 import _rfc3986
 import _sockettimeout
 import _upgrade
+import _urllib2_fork
 from _util import isstringlike
 
 
@@ -353,18 +353,18 @@ class OpenerFactory:
         # handlers
         _auth.ProxyHandler,
         urllib2.UnknownHandler,
-        _http.HTTPHandler,
-        _http.HTTPDefaultErrorHandler,
-        _http.HTTPRedirectHandler,
+        _urllib2_fork.HTTPHandler,
+        _urllib2_fork.HTTPDefaultErrorHandler,
+        _urllib2_fork.HTTPRedirectHandler,
         urllib2.FTPHandler,
         _file.FileHandler,
         # processors
         _upgrade.HTTPRequestUpgradeProcessor,
-        _http.HTTPCookieProcessor,
-        _http.HTTPErrorProcessor,
+        _urllib2_fork.HTTPCookieProcessor,
+        _urllib2_fork.HTTPErrorProcessor,
         ]
     if hasattr(httplib, 'HTTPS'):
-        default_classes.append(_http.HTTPSHandler)
+        default_classes.append(_urllib2_fork.HTTPSHandler)
     handlers = []
     replacement_handlers = []
 

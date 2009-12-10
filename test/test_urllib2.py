@@ -19,13 +19,14 @@ import unittest
 
 import mechanize
 
-from mechanize._http import AbstractHTTPHandler, parse_head
+from mechanize._http import parse_head
 from mechanize._response import test_response
 from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
      HTTPEquivProcessor, HTTPRefreshProcessor, SeekableProcessor, \
      HTTPCookieProcessor, HTTPRefererProcessor, \
      HTTPErrorProcessor, HTTPHandler
 from mechanize import OpenerDirector, build_opener, Request
+from mechanize._urllib2_fork import AbstractHTTPHandler
 from mechanize._util import hide_deprecations, reset_deprecations
 import mechanize._sockettimeout as _sockettimeout
 import mechanize._testcase

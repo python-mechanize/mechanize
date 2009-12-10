@@ -2,11 +2,7 @@
 # ...from urllib2...
 from urllib2 import \
      URLError, \
-     HTTPError, \
-     BaseHandler, \
-     UnknownHandler, \
-     FTPHandler, \
-     CacheFTPHandler
+     HTTPError
 # ...and from mechanize
 from _auth import \
      HTTPPasswordMgr, \
@@ -28,20 +24,25 @@ from _file import \
 # crap ATM
 ## from _gzip import \
 ##      HTTPGzipProcessor
-from _http import \
+from _urllib2_fork import \
      HTTPHandler, \
      HTTPDefaultErrorHandler, \
      HTTPRedirectHandler, \
-     HTTPEquivProcessor, \
      HTTPCookieProcessor, \
+     HTTPErrorProcessor, \
+     BaseHandler, \
+     UnknownHandler, \
+     FTPHandler, \
+     CacheFTPHandler
+from _http import \
+     HTTPEquivProcessor, \
      HTTPRefererProcessor, \
      HTTPRefreshProcessor, \
-     HTTPErrorProcessor, \
      HTTPRobotRulesProcessor, \
      RobotExclusionError
 import httplib
 if hasattr(httplib, 'HTTPS'):
-    from _http import HTTPSHandler
+    from _urllib2_fork import HTTPSHandler
 del httplib
 from _opener import OpenerDirector, \
      SeekableResponseOpener, \
