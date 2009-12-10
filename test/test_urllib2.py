@@ -1317,7 +1317,7 @@ class HandlerTests(unittest.TestCase):
                 except mechanize.HTTPError:
                     # 307 in response to POST requires user OK
                     self.assertEqual(code, 307)
-					self.assertTrue(data is not None)
+                    self.assertTrue(data is not None)
                 self.assertEqual(o.req.get_full_url(), to_url)
                 try:
                     self.assertEqual(o.req.get_method(), "GET")
@@ -1628,11 +1628,11 @@ class D(C, B):
 class FunctionTests(unittest.TestCase):
 
     def test_build_opener(self):
-		class MyHTTPHandler(HTTPHandler): pass
-		class FooHandler(mechanize.BaseHandler):
-    		def foo_open(self): pass
-		class BarHandler(mechanize.BaseHandler):
-		    def bar_open(self): pass
+        class MyHTTPHandler(HTTPHandler): pass
+        class FooHandler(mechanize.BaseHandler):
+            def foo_open(self): pass
+        class BarHandler(mechanize.BaseHandler):
+            def bar_open(self): pass
 
         o = build_opener(FooHandler, BarHandler)
         self.opener_has_handler(o, FooHandler)
