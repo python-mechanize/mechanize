@@ -28,6 +28,7 @@ from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
 from mechanize import OpenerDirector, build_opener, Request
 from mechanize._util import hide_deprecations, reset_deprecations
 import mechanize._sockettimeout as _sockettimeout
+import mechanize._testcase
 
 
 ## from logging import getLogger, DEBUG
@@ -40,32 +41,31 @@ class AlwaysEqual:
         return 0
 
 
-class TrivialTests(unittest.TestCase):
+class TrivialTests(mechanize._testcase.TestCase):
 
-    # TODO: fix to use a tempfile
-    # def test_trivial(self):
-    #     # A couple trivial tests
+    def test_trivial(self):
+        # A couple trivial tests
 
-    #     self.assertRaises(ValueError, mechanize.urlopen, 'bogus url')
+        self.assertRaises(ValueError, mechanize.urlopen, 'bogus url')
 
-    #     # XXX Name hacking to get this to work on Windows.
-    #     fname = os.path.abspath(mechanize.__file__).replace('\\', '/')
-    #     if fname[1:2] == ":":
-    #         fname = fname[2:]
-    #     # And more hacking to get it to work on MacOS. This assumes
-    #     # urllib.pathname2url works, unfortunately...
-    #     if os.name == 'mac':
-    #         fname = '/' + fname.replace(':', '/')
-    #     elif os.name == 'riscos':
-    #         import string
-    #         fname = os.expand(fname)
-    #         fname = fname.translate(string.maketrans("/.", "./"))
+        fname = os.path.join(self.make_temp_dir(), "test.txt")
+        write_file(fname, "data")
+        if fname[1:2] == ":":
+            fname = fname[2:]
+        # And more hacking to get it to work on MacOS. This assumes
+        # urllib.pathname2url works, unfortunately...
+        if os.name == 'mac':
+            fname = '/' + fname.replace(':', '/')
+        elif os.name == 'riscos':
+            import string
+            fname = os.expand(fname)
+            fname = fname.translate(string.maketrans("/.", "./"))
 
-    #     file_url = "file://%s" % fname
-    #     f = mechanize.urlopen(file_url)
+        file_url = "file://%s" % fname
+        f = mechanize.urlopen(file_url)
 
-    #     buf = f.read()
-    #     f.close()
+        buf = f.read()
+        f.close()
 
     def test_parse_http_list(self):
         tests = [('a,b,c', ['a', 'b', 'c']),
@@ -659,6 +659,13 @@ class OpenerDirectorTests(unittest.TestCase):
                                  isinstance(args[1], MockResponse))
 
 
+def write_file(filename, data):
+    f = open(filename, "wb")
+    try:
+        f.write(data)
+    finally:
+        f.close()
+
 
 def sanepathname2url(path):
     import urllib
@@ -667,6 +674,7 @@ def sanepathname2url(path):
         urlpath = urlpath[2:]
     # XXX don't ask me about the mac...
     return urlpath
+
 
 class MockRobotFileParserClass:
     def __init__(self):
@@ -700,7 +708,7 @@ class MockPasswordManager:
         self.target_url = authuri
         return self.user, self.password
 
-class HandlerTests(unittest.TestCase):
+class HandlerTests(mechanize._testcase.TestCase):
 
     def test_ftp(self):
         class MockFTPWrapper:
@@ -754,93 +762,74 @@ class HandlerTests(unittest.TestCase):
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
 
-# TODO: use a tempfile
-#     def test_file(self):
-#         import rfc822, socket
-#         h = mechanize.FileHandler()
-#         o = h.parent = MockOpener()
+    def test_file(self):
+        import rfc822, socket
+        h = mechanize.FileHandler()
+        o = h.parent = MockOpener()
 
-#         #TESTFN = test_support.TESTFN
-#         TESTFN = "test.txt"
-#         urlpath = sanepathname2url(os.path.abspath(TESTFN))
-#         towrite = "hello, world\n"
-#         try:
-#             fqdn = socket.gethostbyname(socket.gethostname())
-#         except socket.gaierror:
-#             fqdn = "localhost"
-#         for url in [
-#             "file://localhost%s" % urlpath,
-#             "file://%s" % urlpath,
-#             "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
-#             "file://%s%s" % (fqdn, urlpath)
-#             ]:
-#             f = open(TESTFN, "wb")
-#             try:
-#                 try:
-#                     f.write(towrite)
-#                 finally:
-#                     f.close()
+        temp_file = os.path.join(self.make_temp_dir(), "test.txt")
+        urlpath = sanepathname2url(os.path.abspath(temp_file))
+        towrite = "hello, world\n"
+        try:
+            fqdn = socket.gethostbyname(socket.gethostname())
+        except socket.gaierror:
+            fqdn = "localhost"
+        for url in [
+            "file://localhost%s" % urlpath,
+            "file://%s" % urlpath,
+            "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
+            "file://%s%s" % (fqdn, urlpath)
+            ]:
+            write_file(temp_file, towrite)
+            r = h.file_open(Request(url))
+            try:
+                data = r.read()
+                headers = r.info()
+                newurl = r.geturl()
+            finally:
+                r.close()
+            stats = os.stat(temp_file)
+            modified = rfc822.formatdate(stats.st_mtime)
+            self.assertEqual(data, towrite)
+            self.assertEqual(headers["Content-type"], "text/plain")
+            self.assertEqual(headers["Content-length"], "13")
+            self.assertEqual(headers["Last-modified"], modified)
 
-#                 r = h.file_open(Request(url))
-#                 try:
-#                     data = r.read()
-#                     headers = r.info()
-#                     newurl = r.geturl()
-#                 finally:
-#                     r.close()
-#                 stats = os.stat(TESTFN)
-#                 modified = rfc822.formatdate(stats.st_mtime)
-#             finally:
-#                 os.remove(TESTFN)
-#             self.assertEqual(data, towrite)
-#             self.assertEqual(headers["Content-type"], "text/plain")
-#             self.assertEqual(headers["Content-length"], "13")
-#             self.assertEqual(headers["Last-modified"], modified)
+        for url in [
+            "file://localhost:80%s" % urlpath,
+# XXXX bug: these fail with socket.gaierror, should be URLError
+##             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
+##                                    os.getcwd(), temp_file),
+##             "file://somerandomhost.ontheinternet.com%s/%s" %
+##             (os.getcwd(), temp_file),
+            ]:
+            write_file(temp_file, towrite)
+            self.assertRaises(mechanize.URLError, h.file_open, Request(url))
 
-#         for url in [
-#             "file://localhost:80%s" % urlpath,
-# # XXXX bug: these fail with socket.gaierror, should be URLError
-# ##             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
-# ##                                    os.getcwd(), TESTFN),
-# ##             "file://somerandomhost.ontheinternet.com%s/%s" %
-# ##             (os.getcwd(), TESTFN),
-#             ]:
-#             try:
-#                 f = open(TESTFN, "wb")
-#                 try:
-#                     f.write(towrite)
-#                 finally:
-#                     f.close()
-
-#                 self.assertRaises(mechanize.URLError,
-#                                   h.file_open, Request(url))
-#             finally:
-#                 os.remove(TESTFN)
-
-#         h = mechanize.FileHandler()
-#         o = h.parent = MockOpener()
-#         # XXXX why does // mean ftp (and /// mean not ftp!), and where
-#         #  is file: scheme specified?  I think this is really a bug, and
-#         #  what was intended was to distinguish between URLs like:
-#         # file:/blah.txt (a file)
-#         # file://localhost/blah.txt (a file)
-#         # file:///blah.txt (a file)
-#         # file://ftp.example.com/blah.txt (an ftp URL)
-#         for url, ftp in [
-#             ("file://ftp.example.com//foo.txt", True),
-#             ("file://ftp.example.com///foo.txt", False),
-# # XXXX bug: fails with OSError, should be URLError
-#             ("file://ftp.example.com/foo.txt", False),
-#             ]:
-#             req = Request(url)
-#             try:
-#                 h.file_open(req)
-#             # XXXX remove OSError when bug fixed
-#             except (mechanize.URLError, OSError):
-#                 self.assertFalse(ftp)
-#             else:
-#                 self.assertTrue(o.req is req)
-#                 self.assertEqual(req.type, "ftp")
+        h = mechanize.FileHandler()
+        o = h.parent = MockOpener()
+        # XXXX why does // mean ftp (and /// mean not ftp!), and where
+        #  is file: scheme specified?  I think this is really a bug, and
+        #  what was intended was to distinguish between URLs like:
+        # file:/blah.txt (a file)
+        # file://localhost/blah.txt (a file)
+        # file:///blah.txt (a file)
+        # file://ftp.example.com/blah.txt (an ftp URL)
+        for url, ftp in [
+            ("file://ftp.example.com//foo.txt", True),
+            ("file://ftp.example.com///foo.txt", False),
+# XXXX bug: fails with OSError, should be URLError
+            ("file://ftp.example.com/foo.txt", False),
+            ]:
+            req = Request(url)
+            try:
+                h.file_open(req)
+            # XXXX remove OSError when bug fixed
+            except (mechanize.URLError, OSError):
+                self.assertFalse(ftp)
+            else:
+                self.assertTrue(o.req is req)
+                self.assertEqual(req.type, "ftp")
 
     def test_http(self):
         class MockHTTPResponse:
@@ -938,7 +927,7 @@ class HandlerTests(unittest.TestCase):
         # Checks that the presence of an unnecessary double slash in a url
         # doesn't break anything Previously, a double slash directly after the
         # host could cause incorrect parsing of the url
-        h = urllib2.AbstractHTTPHandler()
+        h = AbstractHTTPHandler()
         o = h.parent = MockOpener()
 
         data = ""
@@ -1437,7 +1426,7 @@ class HandlerTests(unittest.TestCase):
     def test_proxy_no_proxy(self):
         os.environ['no_proxy'] = 'python.org'
         o = OpenerDirector()
-        ph = urllib2.ProxyHandler(dict(http="proxy.example.com"))
+        ph = mechanize.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
         req = Request("http://www.perl.org/")
         self.assertEqual(req.get_host(), "www.perl.org")
@@ -1449,10 +1438,9 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.get_host(), "www.python.org")
         del os.environ['no_proxy']
 
-
     def test_proxy_https(self):
         o = OpenerDirector()
-        ph = urllib2.ProxyHandler(dict(https='proxy.example.com:3128'))
+        ph = mechanize.ProxyHandler(dict(https='proxy.example.com:3128'))
         o.add_handler(ph)
         meth_spec = [
             [("https_open","return response")]
@@ -1552,7 +1540,7 @@ class HandlerTests(unittest.TestCase):
     def _test_basic_auth(self, opener, auth_handler, auth_header,
                          realm, http_handler, password_manager,
                          request_url, protected_url):
-        import base64, httplib
+        import base64
         user, password = "wile", "coyote"
 
         # .add_password() fed through to password manager
@@ -1672,8 +1660,8 @@ class FunctionTests(unittest.TestCase):
 class RequestTests(unittest.TestCase):
 
     def setUp(self):
-        self.get = urllib2.Request("http://www.python.org/~jeremy/")
-        self.post = urllib2.Request("http://www.python.org/~jeremy/",
+        self.get = Request("http://www.python.org/~jeremy/")
+        self.post = Request("http://www.python.org/~jeremy/",
                                     "data",
                                     headers={"X-Test": "test"})
 
@@ -1694,7 +1682,7 @@ class RequestTests(unittest.TestCase):
 
     def test_selector(self):
         self.assertEqual("/~jeremy/", self.get.get_selector())
-        req = urllib2.Request("http://www.python.org/")
+        req = Request("http://www.python.org/")
         self.assertEqual("/", req.get_selector())
 
     def test_get_type(self):
@@ -1704,7 +1692,7 @@ class RequestTests(unittest.TestCase):
         self.assertEqual("www.python.org", self.get.get_host())
 
     def test_get_host_unquote(self):
-        req = urllib2.Request("http://www.%70ython.org/")
+        req = Request("http://www.%70ython.org/")
         self.assertEqual("www.python.org", req.get_host())
 
     def test_proxy(self):
