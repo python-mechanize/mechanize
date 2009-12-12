@@ -22,7 +22,6 @@ of RELEASE_AREA.  Other actions install software and add PPAs.
 #  * test in a Windows VM
 
 import email.mime.text
-import glob
 import optparse
 import os
 import re
@@ -34,7 +33,7 @@ import unittest
 import action_tree
 import cmd_env
 
-import release
+import buildtools.release as release
 
 # based on Mark Seaborn's plash build-tools (action_tree) and Cmed's in-chroot
 # (cmd_env) -- which is also Mark's idea
@@ -255,16 +254,6 @@ class Releaser(object):
         release.empy(self._in_repo, "forms.html.in")
         release.empy(self._in_repo, "GeneralFAQ.html.in")
         self._make_readme()
-
-    # def validate_docs(self, log):
-    #     for page_path in glob.glob(os.path.join(self._repo_path, "*.html")):
-    #         try:
-    #             release.get_cmd_stdout(
-    #                 self._in_repo, ["tidy", "-output", os.devnull, page_path],
-    #                 stderr=subprocess.PIPE)
-    #         except cmd_env.CommandFailedError, exc:
-    #             if exc.rc != 1:  # 1 means just warnings
-    #                 raise
 
     def write_setup_cfg(self, log):
         # write empty setup.cfg so source distribution is built using a version
@@ -573,7 +562,6 @@ John
                    to_address="wwwsearch-general@lists.sourceforge.net",
                    subject=subject,
                    body=body)
-
 
     @action_tree.action_node
     def build(self):

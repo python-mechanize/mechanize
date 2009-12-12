@@ -141,7 +141,7 @@ if __name__ == "__main__":
 
     if run_coverage:
         # HTML coverage report
-        import colorize
+        import buildtools.colorize
         try:
             os.mkdir("coverage")
         except OSError:
@@ -154,7 +154,7 @@ if __name__ == "__main__":
             module = sys.modules[module_name]
             f, s, m, mf = coverage.analysis(module)
             fo = open(os.path.join('coverage', os.path.basename(f)+'.html'), 'wb')
-            colorize.colorize_file(f, outstream=fo, not_covered=mf)
+            buildtools.colorize.colorize_file(f, outstream=fo, not_covered=mf)
             fo.close()
             coverage.report(module)
             #print coverage.analysis(module)

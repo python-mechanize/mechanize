@@ -2,7 +2,7 @@
         "http://www.w3.org/TR/html4/strict.dtd">
 @# This file is processed by EmPy
 @{
-from colorize import colorize
+from buildtools.colorize import colorize
 import time
 import release
 last_modified = release.last_modified(empy.identify()[0])
