@@ -9,7 +9,7 @@ This is only intended to work on Unix (unlike mechanize itself).  Some of it
 only works on Ubuntu karmic.
 
 Note that some ("clean*") actions do rm -rf on RELEASE_AREA or subdirectories
-of RELEASE_AREA.  Other actions install software and add PPAs.
+of RELEASE_AREA.  Other actions install software.
 """
 
 # This script depends on the code from this git repository:
@@ -56,11 +56,6 @@ class MissingVersionError(Exception):
                 (self.path, self.release_version))
 
 
-class InvalidHTMLError(Exception):
-
-    pass
-
-
 def run_performance_tests(path):
     # TODO: use a better/standard test runner
     sys.path.insert(0, os.path.join(path, "test"))
@@ -96,7 +91,7 @@ def send_email(from_address, to_address, subject, body):
 class Releaser(object):
 
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
-                 build_tools_repo_path, run_in_repository=False,
+                 build_tools_repo_path=None, run_in_repository=False,
                  tag_name=None):
         self._env = release.GitPagerWrapper(env)
         self._source_repo_path = git_repository_path
@@ -121,8 +116,9 @@ class Releaser(object):
         self._release_dir = release_dir
         self._in_release_dir = release.CwdEnv(self._env, self._release_dir)
         self._build_tools_path = build_tools_repo_path
-        self._website_source_path = os.path.join(self._build_tools_path,
-                                                 "website")
+        if self._build_tools_path is not None:
+            self._website_source_path = os.path.join(self._build_tools_path,
+                                                     "website")
         self._mirror_path = mirror_path
         self._in_mirror = release.CwdEnv(self._env, self._mirror_path)
         self._easy_install_test_dir = "easy_install_test"
@@ -167,10 +163,10 @@ class Releaser(object):
         self._verify_versions()
 
     def install_deps(self, log):
-        def ensure_installed(package_name, ppa=None):
+        def ensure_installed(package_name):
             release.ensure_installed(self._env,
                                      cmd_env.PrefixCmdEnv(["sudo"], self._env),
-                                     package_name, ppa)
+                                     package_name)
         ensure_installed("python2.4")
         ensure_installed("python2.5")
         ensure_installed("python2.6")
@@ -178,13 +174,10 @@ class Releaser(object):
         ensure_installed("python-twisted-web2")
         # for generating docs from .in templates
         ensure_installed("python-empy")
-        # for generating .txt docs
+        # for generating .txt docs from .html
         ensure_installed("lynx-cur-wrapper")
-        # for validating HTML
-        # tidy doesn't error about some invalid documents
-        # ensure_installed("tidy")
-        ensure_installed("w3c-markup-validator-commandline",
-                         ppa="jjl/w3cvalidator")
+        # for the validate command
+        ensure_installed("wdg-html-validator")
 
     def _make_test_step(self, env, python_version,
                         skip_unit_tests=False,
@@ -327,19 +320,6 @@ class Releaser(object):
             ["git", "commit",
              "-m", "Automated update for release %s" % self._release_version])
 
-    def _validate(self, page_path):
-        # TODO: use UTF-8
-        try:
-            output = release.get_cmd_stdout(
-                self._in_mirror, ["w3c-validate",
-                                  "-mime", "text/html",
-                                  "-encoding", "ISO-8859-1", page_path])
-        except cmd_env.CommandFailedError:
-            raise InvalidHTMLError()
-        else:
-            if output != "Result: This document is valid HTML 4.01 Strict\n":
-                raise InvalidHTMLError(output)
-
     def validate_website(self, log):
         exclusions = set(f for f in """\
 ./cookietest.html
@@ -383,7 +363,7 @@ htdocs/seltest/TestSuite.html
                     page_path = os.path.join(
                         os.path.relpath(dirpath, self._mirror_path), filename)
                     if page_path not in exclusions:
-                        self._validate(page_path)
+                        self._in_mirror.cmd(["validate", page_path])
 
     def upload_to_pypi(self, log):
         self._in_repo.cmd(["python", "setup.py", "sdist",
