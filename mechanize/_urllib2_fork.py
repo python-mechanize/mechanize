@@ -1238,7 +1238,11 @@ class FileHandler(BaseHandler):
 
     # not entirely sure what the rules are here
     def open_local_file(self, req):
-        import email.utils
+        try:
+            import email.utils as emailutils
+        except ImportError:
+            # python 2.4
+            import email.Utils as emailutils
         import mimetypes
         host = req.get_host()
         file = req.get_selector()
@@ -1246,7 +1250,7 @@ class FileHandler(BaseHandler):
         try:
             stats = os.stat(localfile)
             size = stats.st_size
-            modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
+            modified = emailutils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(file)[0]
             headers = mimetools.Message(StringIO(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %

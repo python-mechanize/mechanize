@@ -10,8 +10,6 @@ from _auth import \
 from _debug import \
      HTTPResponseDebugProcessor, \
      HTTPRedirectDebugProcessor
-from _file import \
-     FileHandler
 # crap ATM
 ## from _gzip import \
 ##      HTTPGzipProcessor
@@ -20,6 +18,7 @@ from _urllib2_fork import \
      AbstractDigestAuthHandler, \
      BaseHandler, \
      CacheFTPHandler, \
+     FileHandler, \
      FTPHandler, \
      HTTPBasicAuthHandler, \
      HTTPCookieProcessor, \

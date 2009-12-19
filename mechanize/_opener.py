@@ -20,7 +20,6 @@ except NameError:
     import sets
     set = sets.Set
 
-import _file
 from _request import Request
 import _response
 import _rfc3986
@@ -356,7 +355,7 @@ class OpenerFactory:
         _urllib2_fork.HTTPDefaultErrorHandler,
         _urllib2_fork.HTTPRedirectHandler,
         urllib2.FTPHandler,
-        _file.FileHandler,
+        _urllib2_fork.FileHandler,
         # processors
         _upgrade.HTTPRequestUpgradeProcessor,
         _urllib2_fork.HTTPCookieProcessor,
