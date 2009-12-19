@@ -1,7 +1,6 @@
-from urllib2 import BaseHandler
-
 from _request import Request
 from _response import upgrade_response
+from _urllib2_fork import BaseHandler
 from _util import deprecation
 
 

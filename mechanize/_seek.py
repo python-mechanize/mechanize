@@ -1,6 +1,6 @@
-from urllib2 import BaseHandler
-from _util import deprecation
 from _response import response_seek_wrapper
+from _urllib2_fork import BaseHandler
+from _util import deprecation
 
 
 class SeekableProcessor(BaseHandler):

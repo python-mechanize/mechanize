@@ -3,7 +3,7 @@
 
 import sys, os, random
 from unittest import TestCase
-import StringIO, re, urllib2
+import StringIO, re
 
 import mechanize
 from mechanize._response import test_html_response
@@ -57,7 +57,7 @@ def make_mock_handler(response_class=MockResponse):
         def handle(self, fn_name, response, *args, **kwds):
             self.parent.calls.append((self, fn_name, args, kwds))
             if response:
-                if isinstance(response, urllib2.HTTPError):
+                if isinstance(response, mechanize.HTTPError):
                     raise response
                 r = response
                 r.seek(0)
@@ -226,14 +226,16 @@ class BrowserTests(TestCase):
         # still get updated
         class Handler2(mechanize.BaseHandler):
             def https_open(self, request):
-                r = urllib2.HTTPError(
+                r = mechanize.HTTPError(
                     "https://example.com/bad", 503, "Oops",
                     MockHeaders(), StringIO.StringIO())
                 return r
         b.add_handler(Handler2())
-        self.assertRaises(urllib2.HTTPError, b.open, "https://example.com/badreq")
+        self.assertRaises(mechanize.HTTPError, b.open,
+                          "https://example.com/badreq")
         self.assertEqual(b.response().geturl(), "https://example.com/bad")
-        self.assertEqual(b.request.get_full_url(), "https://example.com/badreq")
+        self.assertEqual(b.request.get_full_url(),
+                         "https://example.com/badreq")
         self.assert_(same_response(b.back(), r8))
 
         # .close() should make use of Browser methods and attributes complain

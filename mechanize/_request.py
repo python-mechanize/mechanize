@@ -8,16 +8,17 @@ COPYING.txt included with the distribution).
 
 """
 
-import urllib2, urllib, logging
+import urllib, logging
 
 from _clientcookie import request_host_lc
 import _rfc3986
 import _sockettimeout
+import _urllib2_fork
 
 warn = logging.getLogger("mechanize").warning
 
 
-class Request(urllib2.Request):
+class Request(_urllib2_fork.Request):
     def __init__(self, url, data=None, headers={},
                  origin_req_host=None, unverifiable=False, visit=None,
                  timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
@@ -31,7 +32,7 @@ class Request(urllib2.Request):
         if not _rfc3986.is_clean_uri(url):
             warn("url argument is not a URI "
                  "(contains illegal characters) %r" % url)
-        urllib2.Request.__init__(self, url, data, headers)
+        _urllib2_fork.Request.__init__(self, url, data, headers)
         self.selector = None
         self.unredirected_hdrs = {}
         self.visit = visit

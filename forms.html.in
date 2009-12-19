@@ -117,8 +117,7 @@ backwards-compatible mode.  To run with backwards compatible mode turned
 <em><strong>OFF</strong></em> (<strong>strongly recommended</strong>):
 
 @{colorize(r"""
-from urllib2 import urlopen
-from mechanize import ParseResponse
+from mechanize import ParseResponse, urlopen
 forms = ParseResponse(urlopen("http://example.com/"), backwards_compat=False)
 # ...
 """)}

@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 import mechanize
-import urllib2
-request = urllib2.Request(
+request = mechanize.Request(
     "http://wwwsearch.sourceforge.net/ClientForm/example.html")
-response = urllib2.urlopen(request)
+response = mechanize.urlopen(request)
 forms = mechanize.ParseResponse(response, backwards_compat=False)
 response.close()
 ## f = open("example.html")
@@ -172,10 +171,10 @@ control.get("emmenthal").disabled = True
 #  enable all items in control
 control.set_all_items_disabled(False)
 
-request2 = form.click()  # urllib2.Request object
+request2 = form.click()  # mechanize.Request object
 try:
-    response2 = urllib2.urlopen(request2)
-except urllib2.HTTPError, response2:
+    response2 = mechanize.urlopen(request2)
+except mechanize.HTTPError, response2:
     pass
 
 print response2.geturl()

@@ -489,7 +489,7 @@ class Factory:
         self.set_response(None)
 
     def set_request_class(self, request_class):
-        """Set urllib2.Request class.
+        """Set request class (mechanize.Request by default).
 
         HTMLForm instances returned by .forms() will return instances of this
         class when .click()ed.
@@ -501,7 +501,7 @@ class Factory:
         """Set response.
 
         The response must either be None or implement the same interface as
-        objects returned by urllib2.urlopen().
+        objects returned by mechanize.urlopen().
 
         """
         self._response = response

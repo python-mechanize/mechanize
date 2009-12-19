@@ -48,10 +48,8 @@ href="http://search.cpan.org/dist/WWW-Mechanize/"><code>WWW::Mechanize</code>
 
 <ul>
 
-  <li><code>mechanize.Browser</code> is a subclass of
-    <code>mechanize.UserAgentBase</code>, which is, in turn, a subclass of
-    <code>urllib2.OpenerDirector</code> (in fact, of
-    <code>mechanize.OpenerDirector</code>), so:
+  <li><code>mechanize.Browser</code> and <code>mechanize.UserAgentBase</code>
+    implement the interface of <code>urllib2.OpenerDirector</code>, so:
     <ul>
       <li>any URL can be opened, not just <code>http:</code>
 

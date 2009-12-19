@@ -10,9 +10,6 @@ import sys
 import time
 from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
      _TextTestResult
-import urllib2
-
-import mechanize
 
 
 class ServerStartupError(Exception):

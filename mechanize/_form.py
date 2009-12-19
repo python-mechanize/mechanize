@@ -96,9 +96,11 @@ else:
         handler.setLevel(logging.DEBUG)
         _logger.addHandler(handler)
 
-import sys, urllib, urllib2, types, mimetools, copy, urlparse, \
+import sys, urllib, types, mimetools, copy, urlparse, \
        htmlentitydefs, re, random
 from cStringIO import StringIO
+
+import _request
 
 # from Python itself, for backwards compatibility of raised exceptions
 import sgmllib
@@ -924,7 +926,7 @@ else:
 def ParseResponseEx(response,
                     select_default=False,
                     form_parser_class=FormParser,
-                    request_class=urllib2.Request,
+                    request_class=_request.Request,
                     entitydefs=None,
                     encoding=DEFAULT_ENCODING,
 
@@ -958,7 +960,7 @@ def ParseResponseEx(response,
 def ParseFileEx(file, base_uri,
                 select_default=False,
                 form_parser_class=FormParser,
-                request_class=urllib2.Request,
+                request_class=_request.Request,
                 entitydefs=None,
                 encoding=DEFAULT_ENCODING,
 
@@ -996,7 +998,7 @@ def ParseString(text, base_uri, *args, **kwds):
 def ParseResponse(response, *args, **kwds):
     """Parse HTTP response and return a list of HTMLForm instances.
 
-    The return value of urllib2.urlopen can be conveniently passed to this
+    The return value of mechanize.urlopen can be conveniently passed to this
     function as the response parameter.
 
     ClientForm.ParseError is raised on parse errors.
@@ -1007,7 +1009,7 @@ def ParseResponse(response, *args, **kwds):
      pick the first item as the default if none are selected in the HTML
     form_parser_class: class to instantiate and use to pass
     request_class: class to return from .click() method (default is
-     urllib2.Request)
+     mechanize.Request)
     entitydefs: mapping like {"&amp;": "&", ...} containing HTML entity
      definitions (a sensible default is used)
     encoding: character encoding used for encoding numeric character references
@@ -1075,7 +1077,7 @@ def _ParseFileEx(file, base_uri,
                  select_default=False,
                  ignore_errors=False,
                  form_parser_class=FormParser,
-                 request_class=urllib2.Request,
+                 request_class=_request.Request,
                  entitydefs=None,
                  backwards_compat=True,
                  encoding=DEFAULT_ENCODING,
@@ -1510,13 +1512,13 @@ class IsindexControl(ScalarControl):
     control, in which case the ISINDEX gets submitted instead of the form:
 
     form.set_value("my isindex value", type="isindex")
-    urllib2.urlopen(form.click(type="isindex"))
+    mechanize.urlopen(form.click(type="isindex"))
 
     ISINDEX elements outside of FORMs are ignored.  If you want to submit one
     by hand, do it like so:
 
     url = urlparse.urljoin(page_uri, "?"+urllib.quote_plus("my isindex value"))
-    result = urllib2.urlopen(url)
+    result = mechanize.urlopen(url)
 
     """
     def __init__(self, type, name, attrs, index=None):
@@ -1529,7 +1531,7 @@ class IsindexControl(ScalarControl):
     def _totally_ordered_pairs(self):
         return []
 
-    def _click(self, form, coord, return_type, request_class=urllib2.Request):
+    def _click(self, form, coord, return_type, request_class=_request.Request):
         # Relative URL for ISINDEX submission: instead of "foo=bar+baz",
         # want "bar+baz".
         # This doesn't seem to be specified in HTML 4.01 spec. (ISINDEX is
@@ -2456,7 +2458,7 @@ class SubmitControl(ScalarControl):
 
     def is_of_kind(self, kind): return kind == "clickable"
 
-    def _click(self, form, coord, return_type, request_class=urllib2.Request):
+    def _click(self, form, coord, return_type, request_class=_request.Request):
         self._clicked = coord
         r = form._switch_click(return_type, request_class)
         self._clicked = False
@@ -2521,8 +2523,8 @@ class HTMLForm:
 
     Forms can be filled in with data to be returned to the server, and then
     submitted, using the click method to generate a request object suitable for
-    passing to urllib2.urlopen (or the click_request_data or click_pairs
-    methods if you're not using urllib2).
+    passing to mechanize.urlopen (or the click_request_data or click_pairs
+    methods if you're not using mechanize).
 
     import ClientForm
     forms = ClientForm.ParseFile(html, base_uri)
@@ -2531,7 +2533,7 @@ class HTMLForm:
     form["query"] = "Python"
     form.find_control("nr_results").get("lots").selected = True
 
-    response = urllib2.urlopen(form.click())
+    response = mechanize.urlopen(form.click())
 
     Usually, HTMLForm instances are not created directly.  Instead, the
     ParseFile or ParseResponse factory functions are used.  If you do construct
@@ -2752,7 +2754,7 @@ class HTMLForm:
     def __init__(self, action, method="GET",
                  enctype="application/x-www-form-urlencoded",
                  name=None, attrs=None,
-                 request_class=urllib2.Request,
+                 request_class=_request.Request,
                  forms=None, labels=None, id_to_labels=None,
                  backwards_compat=True):
         """
@@ -3083,12 +3085,12 @@ class HTMLForm:
 # Form submission methods, applying only to clickable controls.
 
     def click(self, name=None, type=None, id=None, nr=0, coord=(1,1),
-              request_class=urllib2.Request,
+              request_class=_request.Request,
               label=None):
         """Return request that would result from clicking on a control.
 
-        The request object is a urllib2.Request instance, which you can pass to
-        urllib2.urlopen (or ClientCookie.urlopen).
+        The request object is a mechanize.Request instance, which you can pass
+        to mechanize.urlopen (or ClientCookie.urlopen).
 
         Only some control types (INPUT/SUBMIT & BUTTON/SUBMIT buttons and
         IMAGEs) can be clicked.
@@ -3112,22 +3114,22 @@ class HTMLForm:
     def click_request_data(self,
                            name=None, type=None, id=None,
                            nr=0, coord=(1,1),
-                           request_class=urllib2.Request,
+                           request_class=_request.Request,
                            label=None):
         """As for click method, but return a tuple (url, data, headers).
 
         You can use this data to send a request to the server.  This is useful
-        if you're using httplib or urllib rather than urllib2.  Otherwise, use
-        the click method.
+        if you're using httplib or urllib rather than mechanize.  Otherwise,
+        use the click method.
 
-        # Untested.  Have to subclass to add headers, I think -- so use urllib2
-        # instead!
+        # Untested.  Have to subclass to add headers, I think -- so use
+        # mechanize instead!
         import urllib
         url, data, hdrs = form.click_request_data()
         r = urllib.urlopen(url, data)
 
         # Untested.  I don't know of any reason to use httplib -- you can get
-        # just as much control with urllib2.
+        # just as much control with mechanize.
         import httplib, urlparse
         url, data, hdrs = form.click_request_data()
         tup = urlparse(url)
@@ -3150,14 +3152,14 @@ class HTMLForm:
 
         You can use this list as an argument to ClientForm.urlencode.  This is
         usually only useful if you're using httplib or urllib rather than
-        urllib2 or ClientCookie.  It may also be useful if you want to manually
-        tweak the keys and/or values, but this should not be necessary.
-        Otherwise, use the click method.
+        mechanize.  It may also be useful if you want to manually tweak the
+        keys and/or values, but this should not be necessary.  Otherwise, use
+        the click method.
 
         Note that this method is only useful for forms of MIME type
         x-www-form-urlencoded.  In particular, it does not return the
         information required for file upload.  If you need file upload and are
-        not using urllib2, use click_request_data.
+        not using mechanize, use click_request_data.
 
         Also note that Python 2.0's urllib.urlencode is slightly broken: it
         only accepts a mapping, not a sequence of pairs, as an argument.  This
@@ -3303,7 +3305,7 @@ class HTMLForm:
         assert False
 
     def _click(self, name, type, id, label, nr, coord, return_type,
-               request_class=urllib2.Request):
+               request_class=_request.Request):
         try:
             control = self._find_control(
                 name, type, "clickable", id, label, None, nr)
@@ -3375,7 +3377,7 @@ class HTMLForm:
         else:
             raise ValueError("Unknown method '%s'" % method)
 
-    def _switch_click(self, return_type, request_class=urllib2.Request):
+    def _switch_click(self, return_type, request_class=_request.Request):
         # This is called by HTMLForm and clickable Controls to hide switching
         # on return_type.
         if return_type == "pairs":

@@ -11,7 +11,6 @@ import os
 import unittest, string
 from unittest import TestCase
 from cStringIO import StringIO
-import urllib2
 
 import mechanize
 import mechanize._form as _form
@@ -389,7 +388,7 @@ class ParseTests(TestCase):
         self.assertEqual(inner.controls[0].name, "inner")
 
     def test_ParseString(self):
-        class DerivedRequest(urllib2.Request):
+        class DerivedRequest(mechanize.Request):
             pass
         forms = mechanize.ParseString('<input name="a" />',
                                   "http://example.com/",

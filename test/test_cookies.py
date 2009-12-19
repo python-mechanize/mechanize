@@ -1,11 +1,12 @@
 """Tests for _ClientCookie."""
 
-import sys, urllib2, re, os, StringIO, mimetools, time, tempfile, errno, inspect
+import sys, re, os, StringIO, mimetools, time, tempfile, errno, inspect
 from time import localtime
 from unittest import TestCase
 
 from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings
+from mechanize import Request
 
 
 class FakeResponse:
@@ -27,7 +28,6 @@ def interact_netscape(cookiejar, url, *set_cookie_hdrs):
 
 def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
     """Perform a single request / response cycle, returning Cookie: header."""
-    from mechanize import Request
     req = Request(url)
     cookiejar.add_cookie_header(req)
     cookie_hdr = req.get_header("Cookie", "")
@@ -501,7 +501,6 @@ class CookieTests(TestCase):
             self.assert_(escape_path(arg) == result)
 
     def test_request_path(self):
-        from urllib2 import Request
         from mechanize._clientcookie import request_path
         # with parameters
         req = Request("http://www.example.com/rheum/rhaponicum;"
@@ -518,7 +517,6 @@ class CookieTests(TestCase):
         self.assert_(request_path(req) == "/")
 
     def test_request_port(self):
-        from urllib2 import Request
         from mechanize._clientcookie import request_port, DEFAULT_HTTP_PORT
         req = Request("http://www.acme.com:1234/",
                       headers={"Host": "www.acme.com:4321"})
@@ -528,7 +526,6 @@ class CookieTests(TestCase):
         assert request_port(req) == DEFAULT_HTTP_PORT
 
     def test_request_host_lc(self):
-        from mechanize import Request
         from mechanize._clientcookie import request_host_lc
         # this request is illegal (RFC2616, 14.2.3)
         req = Request("http://1.1.1.1/",
@@ -554,7 +551,7 @@ class CookieTests(TestCase):
         assert request_host_lc(req) == "example.com"
 
     def test_effective_request_host(self):
-        from mechanize import Request, effective_request_host
+        from mechanize import effective_request_host
         self.assertEquals(
             effective_request_host(Request("http://www.EXAMPLE.com/spam")),
             "www.EXAMPLE.com")
@@ -742,7 +739,6 @@ class CookieTests(TestCase):
 
     def test_domain_allow(self):
         from mechanize import CookieJar, DefaultCookiePolicy
-        from mechanize import Request
 
         c = CookieJar(policy=DefaultCookiePolicy(
             blocked_domains=["acme.com"],
@@ -776,7 +772,6 @@ class CookieTests(TestCase):
 
     def test_domain_block(self):
         from mechanize import CookieJar, DefaultCookiePolicy
-        from mechanize import Request
 
         #import logging; logging.getLogger("mechanize").setLevel(logging.DEBUG)
 
@@ -1821,7 +1816,7 @@ class LWPCookieTests(TestCase, TempfileTestMixin):
 ##         # X-Meta-Description: Trip.com privacy policy
 ##         # X-Meta-Keywords: privacy policy
 
-##         req = urllib2.Request(
+##         req = mechanize.Request(
 ##             'http://www.trip.com/trs/trip/flighttracker/flight_tracker_home.xsl')
 ##         headers = []
 ##         headers.append("Set-Cookie: trip.appServer=1111-0000-x-024;Domain=.trip.com;Path=/")

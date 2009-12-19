@@ -134,8 +134,7 @@ from _html import \
      FormsFactory, LinksFactory, TitleFactory, \
      RobustFormsFactory, RobustLinksFactory, RobustTitleFactory
 
-# urllib2 work-alike interface (part from mechanize, part from urllib2)
-# This is a superset of the urllib2 interface.
+# urllib2 work-alike interface.  This is a superset of the urllib2 interface.
 from _urllib2 import *
 
 # misc

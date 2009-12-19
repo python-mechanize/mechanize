@@ -458,18 +458,17 @@ example when performing redirects) rather than adding headers to existing
 <p>Adding headers is done like so:
 
 @{colorize(r"""
-import mechanize, urllib2
-req = urllib2.Request("http://foobar.com/")
+import mechanize
+req = mechanize.Request("http://foobar.com/")
 req.add_header("Referer", "http://wwwsearch.sourceforge.net/mechanize/")
 r = mechanize.urlopen(req)
 """)}
 
-<p>You can also use the headers argument to the <code>urllib2.Request</code>
+<p>You can also use the headers argument to the <code>mechanize.Request</code>
 constructor.
 
-<p><code>urllib2</code> (in fact, mechanize takes over this task from
-<code>urllib2</code>) adds some headers to <code>Request</code> objects
-automatically - see the next section for details.
+<p>mechanize adds some headers to <code>Request</code> objects automatically -
+see the next section for details.
 
 
 <h2>Changing the automatically-added headers (User-Agent)</h2>

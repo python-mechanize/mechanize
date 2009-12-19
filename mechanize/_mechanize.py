@@ -9,7 +9,7 @@ included with the distribution).
 
 """
 
-import urllib2, copy, re, os, urllib
+import copy, re, os, urllib, urllib2
 
 
 from _html import DefaultFactory
@@ -17,6 +17,7 @@ import _response
 import _request
 import _rfc3986
 import _sockettimeout
+import _urllib2_fork
 from _useragent import UserAgentBase
 
 __version__ = (0, 1, 12, None, None)  # 0.1.12
@@ -62,7 +63,7 @@ class History:
         del self._history[:]
 
 
-class HTTPRefererProcessor(urllib2.BaseHandler):
+class HTTPRefererProcessor(_urllib2_fork.BaseHandler):
     def http_request(self, request):
         # See RFC 2616 14.36.  The only times we know the source of the
         # request URI has a URI associated with it are redirect, and
@@ -87,7 +88,7 @@ class Browser(UserAgentBase):
 
     Public attributes:
 
-    request: current request (mechanize.Request or urllib2.Request)
+    request: current request (mechanize.Request)
     form: currently selected form (see .select_form())
 
     """
@@ -110,7 +111,6 @@ class Browser(UserAgentBase):
         history: object implementing the mechanize.History interface.  Note
          this interface is still experimental and may change in future.
         request_class: Request class to use.  Defaults to mechanize.Request
-         by default for Pythons older than 2.4, urllib2.Request otherwise.
 
         The Factory and History objects passed in are 'owned' by the Browser,
         so they should not be shared across Browsers.  In particular,
@@ -128,10 +128,7 @@ class Browser(UserAgentBase):
         self._history = history
 
         if request_class is None:
-            if not hasattr(urllib2.Request, "add_unredirected_header"):
-                request_class = _request.Request
-            else:
-                request_class = urllib2.Request  # Python >= 2.4
+            request_class = _request.Request
 
         if factory is None:
             factory = DefaultFactory()
@@ -277,7 +274,7 @@ class Browser(UserAgentBase):
         """Return a copy of the current response.
 
         The returned object has the same interface as the object returned by
-        .open() (or urllib2.urlopen()).
+        .open() (or mechanize.urlopen()).
 
         """
         return copy.copy(self._response)

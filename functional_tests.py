@@ -208,9 +208,8 @@ class SimpleTests(SocketTimeoutTest):
         # the combination of 302 and 404 (/redirected is configured to redirect
         # to a non-existent URL /nonexistent) has caused problems in the past
         # due to accidental double-wrapping of the error response
-        import urllib2
         self.assertRaises(
-            urllib2.HTTPError,
+            mechanize.HTTPError,
             self.browser.open, urljoin(self.uri, "/redirected"),
             )
 
@@ -557,7 +556,7 @@ class FunctionalTests(SocketTimeoutTest):
         self.assertEqual(len(r3._seek_wrapper__cache.getvalue()), 4202)
 
 ##     def test_cacheftp(self):
-##         from urllib2 import CacheFTPHandler, build_opener
+##         from mechanize import CacheFTPHandler, build_opener
 ##         o = build_opener(CacheFTPHandler())
 ##         r = o.open("ftp://ftp.python.org/pub/www.python.org/robots.txt")
 ##         data1 = r.read()
