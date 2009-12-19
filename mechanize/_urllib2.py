@@ -5,16 +5,7 @@ from urllib2 import \
      HTTPError
 # ...and from mechanize
 from _auth import \
-     HTTPPasswordMgr, \
-     HTTPPasswordMgrWithDefaultRealm, \
-     AbstractBasicAuthHandler, \
-     AbstractDigestAuthHandler, \
      HTTPProxyPasswordMgr, \
-     ProxyHandler, \
-     ProxyBasicAuthHandler, \
-     ProxyDigestAuthHandler, \
-     HTTPBasicAuthHandler, \
-     HTTPDigestAuthHandler, \
      HTTPSClientCertMgr
 from _debug import \
      HTTPResponseDebugProcessor, \
@@ -25,15 +16,24 @@ from _file import \
 ## from _gzip import \
 ##      HTTPGzipProcessor
 from _urllib2_fork import \
-     HTTPHandler, \
-     HTTPDefaultErrorHandler, \
-     HTTPRedirectHandler, \
-     HTTPCookieProcessor, \
-     HTTPErrorProcessor, \
+     AbstractBasicAuthHandler, \
+     AbstractDigestAuthHandler, \
      BaseHandler, \
-     UnknownHandler, \
+     CacheFTPHandler, \
      FTPHandler, \
-     CacheFTPHandler
+     HTTPBasicAuthHandler, \
+     HTTPCookieProcessor, \
+     HTTPDefaultErrorHandler, \
+     HTTPDigestAuthHandler, \
+     HTTPErrorProcessor, \
+     HTTPHandler, \
+     HTTPPasswordMgr, \
+     HTTPPasswordMgrWithDefaultRealm, \
+     HTTPRedirectHandler, \
+     ProxyBasicAuthHandler, \
+     ProxyDigestAuthHandler, \
+     ProxyHandler, \
+     UnknownHandler
 from _http import \
      HTTPEquivProcessor, \
      HTTPRefererProcessor, \

@@ -25,8 +25,8 @@ COPYING.txt included with the distribution).
 # complex proxies  XXX not sure what exactly was meant by this
 # abstract factory for opener
 
+import copy
 import base64
-import hashlib
 import httplib
 import mimetools
 import os
@@ -43,6 +43,22 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+
+try:
+    import hashlib
+except ImportError:
+    # python 2.4
+    import md5
+    import sha
+    def sha1_digest(bytes):
+        return sha.new(bytes).hexdigest()
+    def md5_digest(bytes):
+        return md5.new(bytes).hexdigest()
+else:
+    def sha1_digest(bytes):
+        return hashlib.sha1(bytes).hexdigest()
+    def md5_digest(bytes):
+        return hashlib.md5(bytes).hexdigest()
 
 from urllib import (unwrap, unquote, splittype, splithost, quote,
      addinfourl, splitport,
@@ -644,18 +660,13 @@ class ProxyHandler(BaseHandler):
 
         if proxy_type is None:
             proxy_type = orig_type
-
-        if req.host and proxy_bypass(req.host):
-            return None
-
         if user and password:
             user_pass = '%s:%s' % (unquote(user), unquote(password))
             creds = base64.b64encode(user_pass).strip()
             req.add_header('Proxy-authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
-
-        if orig_type == proxy_type or orig_type == 'https':
+        if orig_type == proxy_type:
             # let other handlers take care of it
             return None
         else:
@@ -665,7 +676,8 @@ class ProxyHandler(BaseHandler):
             # {'http': 'ftp://proxy.example.com'}, we may end up turning
             # a request for http://acme.example.com/a into one for
             # ftp://proxy.example.com/a
-            return self.parent.open(req, timeout=req.timeout)
+            return self.parent.open(req)
+
 
 class HTTPPasswordMgr:
 
@@ -780,8 +792,10 @@ class AbstractBasicAuthHandler:
             auth = 'Basic %s' % base64.b64encode(raw).strip()
             if req.headers.get(self.auth_header, None) == auth:
                 return None
-            req.add_header(self.auth_header, auth)
-            return self.parent.open(req, timeout=req.timeout)
+            newreq = copy.copy(req)
+            newreq.add_header(self.auth_header, auth)
+            newreq.visit = False
+            return self.parent.open(newreq)
         else:
             return None
 
@@ -872,9 +886,10 @@ class AbstractDigestAuthHandler:
             auth_val = 'Digest %s' % auth
             if req.headers.get(self.auth_header, None) == auth_val:
                 return None
-            req.add_unredirected_header(self.auth_header, auth_val)
-            resp = self.parent.open(req, timeout=req.timeout)
-            return resp
+            newreq = copy.copy(req)
+            newreq.add_unredirected_header(self.auth_header, auth_val)
+            newreq.visit = False
+            return self.parent.open(newreq)
 
     def get_cnonce(self, nonce):
         # The cnonce-value is an opaque
@@ -882,8 +897,8 @@ class AbstractDigestAuthHandler:
         # and server to avoid chosen plaintext attacks, to provide mutual
         # authentication, and to provide some message integrity protection.
         # This isn't a fabulous effort, but it's probably Good Enough.
-        dig = hashlib.sha1("%s:%s:%s:%s" % (self.nonce_count, nonce, time.ctime(),
-                                            randombytes(8))).hexdigest()
+        dig = sha1_digest("%s:%s:%s:%s" % (self.nonce_count, nonce,
+                                           time.ctime(), randombytes(8)))
         return dig[:16]
 
     def get_authorization(self, req, chal):
@@ -931,7 +946,7 @@ class AbstractDigestAuthHandler:
             respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
         else:
             # XXX handle auth-int.
-            raise URLError("qop '%s' is not supported." % qop)
+            pass
 
         # XXX should the partial digests be encoded too?
 
@@ -950,11 +965,10 @@ class AbstractDigestAuthHandler:
     def get_algorithm_impls(self, algorithm):
         # algorithm should be case-insensitive according to RFC2617
         algorithm = algorithm.upper()
-        # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
-            H = lambda x: hashlib.md5(x).hexdigest()
+            H = md5_digest
         elif algorithm == 'SHA':
-            H = lambda x: hashlib.sha1(x).hexdigest()
+            H = sha1_digest
         # XXX MD5-sess
         KD = lambda s, d: H("%s:%s" % (s, d))
         return H, KD
