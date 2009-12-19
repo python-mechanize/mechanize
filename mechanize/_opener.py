@@ -354,7 +354,7 @@ class OpenerFactory:
         _urllib2_fork.HTTPHandler,
         _urllib2_fork.HTTPDefaultErrorHandler,
         _urllib2_fork.HTTPRedirectHandler,
-        urllib2.FTPHandler,
+        _urllib2_fork.FTPHandler,
         _urllib2_fork.FileHandler,
         # processors
         _upgrade.HTTPRequestUpgradeProcessor,
