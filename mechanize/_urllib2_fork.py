@@ -76,6 +76,7 @@ from urllib2 import HTTPError, URLError
 
 import _request
 import _rfc3986
+import _sockettimeout
 
 from _clientcookie import CookieJar
 from _response import closeable_response
@@ -85,7 +86,7 @@ from _response import closeable_response
 __version__ = sys.version[:3]
 
 _opener = None
-def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+def urlopen(url, data=None, timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
     global _opener
     if _opener is None:
         _opener = build_opener()

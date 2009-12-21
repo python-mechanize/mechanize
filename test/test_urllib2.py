@@ -256,7 +256,8 @@ def test_password_manager_default_port(self):
 
 class MockOpener:
     addheaders = []
-    def open(self, req, data=None,timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+    def open(self, req, data=None,
+             timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         self.req, self.data, self.timeout  = req, data, timeout
     def error(self, proto, *args):
         self.proto, self.args = proto, args
@@ -847,7 +848,8 @@ class HandlerTests(mechanize._testcase.TestCase):
                 self.req_headers = []
                 self.data = None
                 self.raise_on_endheaders = False
-            def __call__(self, host, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+            def __call__(self, host,
+                         timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
                 self.host = host
                 self.timeout = timeout
                 return self
@@ -1437,7 +1439,9 @@ class HandlerTests(mechanize._testcase.TestCase):
         req = Request("http://www.python.org")
         self.assertEqual(req.get_host(), "www.python.org")
         r = o.open(req)
-        self.assertEqual(req.get_host(), "www.python.org")
+        if sys.version_info >= (2, 6):
+            # no_proxy environment variable not supported in python 2.5
+            self.assertEqual(req.get_host(), "www.python.org")
 
     def test_proxy_custom_proxy_bypass(self):
         self.monkey_patch_environ("no_proxy",
