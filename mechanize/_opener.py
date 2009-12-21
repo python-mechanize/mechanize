@@ -347,6 +347,10 @@ class SeekableResponseOpener(ResponseProcessingOpener):
         return _response.seek_wrapped_response(response)
 
 
+def isclass(obj):
+    return isinstance(obj, (types.ClassType, type))
+
+
 class OpenerFactory:
     """This class's interface is quite likely to change."""
 
@@ -384,22 +388,21 @@ class OpenerFactory:
         """
         opener = self.klass()
         default_classes = list(self.default_classes)
-        skip = []
+        skip = set()
         for klass in default_classes:
             for check in handlers:
-                if type(check) == types.ClassType:
+                if isclass(check):
                     if issubclass(check, klass):
-                        skip.append(klass)
-                elif type(check) == types.InstanceType:
-                    if isinstance(check, klass):
-                        skip.append(klass)
+                        skip.add(klass)
+                elif isinstance(check, klass):
+                    skip.add(klass)
         for klass in skip:
             default_classes.remove(klass)
 
         for klass in default_classes:
             opener.add_handler(klass())
         for h in handlers:
-            if type(h) == types.ClassType:
+            if isclass(h):
                 h = h()
             opener.add_handler(h)
 
