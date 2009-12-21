@@ -398,12 +398,12 @@ class MockHTTPHandler(mechanize.BaseHandler):
         self._count = 0
         self.requests = []
     def http_open(self, req):
-        import mimetools, httplib, copy
+        import mimetools, copy
         from StringIO import StringIO
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
-            name = httplib.responses[self.code]
+            name = "Not important"
             msg = mimetools.Message(StringIO(self.headers))
             return self.parent.error(
                 "http", req, test_response(), self.code, name, msg)

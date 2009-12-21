@@ -6,7 +6,9 @@ import urlparse
 import mechanize
 import BaseHTTPServer
 import unittest
-import hashlib
+
+from mechanize._urllib2_fork import sha1_digest, md5_digest
+
 
 # Loopback http server infrastructure
 
@@ -87,7 +89,7 @@ class DigestAuthHandler:
 
     def _generate_nonce(self):
         self._request_num += 1
-        nonce = hashlib.md5(str(self._request_num)).hexdigest()
+        nonce = md5_digest(str(self._request_num))
         self._nonces.append(nonce)
         return nonce
 
@@ -115,14 +117,14 @@ class DigestAuthHandler:
         final_dict["method"] = method
         final_dict["uri"] = uri
         HA1_str = "%(username)s:%(realm)s:%(password)s" % final_dict
-        HA1 = hashlib.md5(HA1_str).hexdigest()
+        HA1 = md5_digest(HA1_str)
         HA2_str = "%(method)s:%(uri)s" % final_dict
-        HA2 = hashlib.md5(HA2_str).hexdigest()
+        HA2 = md5_digest(HA2_str)
         final_dict["HA1"] = HA1
         final_dict["HA2"] = HA2
         response_str = "%(HA1)s:%(nonce)s:%(nc)s:" \
                        "%(cnonce)s:%(qop)s:%(HA2)s" % final_dict
-        response = hashlib.md5(response_str).hexdigest()
+        response = md5_digest(response_str)
 
         return response == auth_dict["response"]
 

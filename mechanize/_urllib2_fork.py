@@ -65,6 +65,17 @@ else:
     def md5_digest(bytes):
         return hashlib.md5(bytes).hexdigest()
 
+
+try:
+    socket._fileobject("fake socket", close=True)
+except TypeError:
+    # python <= 2.4
+    create_readline_wrapper = socket._fileobject
+else:
+    def create_readline_wrapper(fh):
+        return socket._fileobject(fh, close=True)
+
+
 from urllib import (unwrap, unquote, splittype, splithost, quote,
      addinfourl, splitport,
      splitattr, ftpwrapper, splituser, splitpasswd, splitvalue)
@@ -1081,7 +1092,8 @@ class AbstractHTTPHandler(BaseHandler):
         # out of socket._fileobject() and into a base class.
 
         r.recv = r.read
-        fp = socket._fileobject(r, close=True)
+        fp = create_readline_wrapper(r)
+
         resp = closeable_response(fp, r.msg, req.get_full_url(),
                                   r.status, r.reason)
         return resp
