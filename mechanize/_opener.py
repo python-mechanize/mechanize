@@ -56,6 +56,10 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
         self._tempfiles = []
 
     def add_handler(self, handler):
+        if not hasattr(handler, "add_parent"):
+            raise TypeError("expected BaseHandler instance, got %r" %
+                            type(handler))
+
         if handler in self.handlers:
             return
         # XXX why does self.handlers need to be sorted?
