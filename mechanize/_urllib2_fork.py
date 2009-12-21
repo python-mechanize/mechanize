@@ -1023,8 +1023,9 @@ class AbstractHTTPHandler(BaseHandler):
         if request.has_proxy():
             scheme, sel = splittype(request.get_selector())
             sel_host, sel_path = splithost(sel)
+
         if not request.has_header('Host'):
-            request.add_unredirected_header('Host', sel_host or host)
+            request.add_unredirected_header('Host', sel_host)
         for name, value in self.parent.addheaders:
             name = name.capitalize()
             if not request.has_header(name):
