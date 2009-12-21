@@ -1,5 +1,8 @@
 """Fork of urllib2.
 
+When reading this, don't assume that all code in here is reachable.  Code in
+the rest of mechanize may be used instead.
+
 Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Python
 Software Foundation; All Rights Reserved
 
