@@ -214,6 +214,17 @@ ignore this section.
 
   <li>mechanize works with Python 2.4, Python 2.5, and Python 2.6.
 
+  <li>When using mechanize, anything you would normally import
+      from <code>urllib2</code> should be imported from <code>mechanize</code>
+      instead.
+
+  <li>Use of mechanize classes with <code>urllib2</code> (and vice-versa) is no
+      longer supported.  However, existing classes implementing the urllib2
+      Handler interface are likely to work unchanged with mechanize.
+
+  <li>mechanize now only imports urllib2.URLError and urllib2.HTTPError.  The
+      rest is forked.  I intend to merge fixes from Python trunk frequently.
+
   <li>ClientCookie is no longer maintained as a separate package.  The code is
       now part of mechanize, and its interface is now exported through module
       mechanize (since mechanize 0.1.0).  Old code can simply be changed to
@@ -222,11 +233,12 @@ ignore this section.
 
   <li>The cookie handling parts of mechanize are in Python 2.4 standard library
       as module <code>cookielib</code> and extensions to module
-      <code>urllib2</code>.
+      <code>urllib2</code>.  mechanize does not currently use cookielib, due to
+      the presence of thread synchronisation code in cookielib that is not
+      present in the mechanize fork of cookielib.
 
 </ol>
 
-<p>Use of mechanize classes with <code>urllib2</code> (and vice-versa) is no longer supported.
 
 
 <a name="docs"></a>
@@ -397,6 +409,9 @@ b = mechanize.Browser(
     factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
     )
 """)}
+  <li>Why don't timeouts work for me?
+  <p>Timeouts are ignored with with versions of Python earlier than 2.6.
+    Timeouts do not apply to DNS lookups.
 </ul>
 
 <a name="bug_tracker"></a>
