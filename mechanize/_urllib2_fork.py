@@ -440,9 +440,6 @@ class HTTPDefaultErrorHandler(BaseHandler):
         assert hdrs == response.hdrs
         raise response
 
-# This adds "refresh" to the list of redirectables and provides a redirection
-# algorithm that doesn't go into a loop in the presence of cookies
-# (Python 2.4 has this new algorithm, 2.3 doesn't).
 class HTTPRedirectHandler(BaseHandler):
     # maximum number of redirections to any single URL
     # this is needed because of the state that cookies introduce
