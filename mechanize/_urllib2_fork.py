@@ -36,6 +36,7 @@ import re
 import socket
 import sys
 import time
+import urllib
 import urlparse
 import bisect
 
@@ -65,7 +66,7 @@ from urllib import (unwrap, unquote, splittype, splithost, quote,
      splitattr, ftpwrapper, splituser, splitpasswd, splitvalue)
 
 # support for FileHandler, proxies via environment variables
-from urllib import localhost, url2pathname, getproxies, proxy_bypass
+from urllib import localhost, url2pathname, getproxies
 
 
 from urllib2 import HTTPError, URLError
@@ -617,15 +618,19 @@ class ProxyHandler(BaseHandler):
     # Proxies must be in front
     handler_order = 100
 
-    def __init__(self, proxies=None):
+    def __init__(self, proxies=None, proxy_bypass=None):
         if proxies is None:
             proxies = getproxies()
+
         assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
         self.proxies = proxies
         for type, url in proxies.items():
             setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open: \
                     meth(r, proxy, type))
+        if proxy_bypass is None:
+            proxy_bypass = urllib.proxy_bypass
+        self._proxy_bypass = proxy_bypass
 
     def proxy_open(self, req, proxy, type):
         orig_type = req.get_type()
@@ -633,6 +638,10 @@ class ProxyHandler(BaseHandler):
 
         if proxy_type is None:
             proxy_type = orig_type
+
+        if req.get_host() and self._proxy_bypass(req.get_host()):
+            return None
+
         if user and password:
             user_pass = '%s:%s' % (unquote(user), unquote(password))
             creds = base64.b64encode(user_pass).strip()

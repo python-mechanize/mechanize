@@ -1426,7 +1426,7 @@ class HandlerTests(mechanize._testcase.TestCase):
                          [tup[0:2] for tup in o.calls])
 
     def test_proxy_no_proxy(self):
-        os.environ['no_proxy'] = 'python.org'
+        self.monkey_patch_environ("no_proxy", "python.org")
         o = OpenerDirector()
         ph = mechanize.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1438,7 +1438,22 @@ class HandlerTests(mechanize._testcase.TestCase):
         self.assertEqual(req.get_host(), "www.python.org")
         r = o.open(req)
         self.assertEqual(req.get_host(), "www.python.org")
-        del os.environ['no_proxy']
+
+    def test_proxy_custom_proxy_bypass(self):
+        self.monkey_patch_environ("no_proxy",
+                                  mechanize._testcase.MonkeyPatcher.Unset)
+        def proxy_bypass(hostname):
+            return hostname == "noproxy.com"
+        o = OpenerDirector()
+        ph = mechanize.ProxyHandler(dict(http="proxy.example.com"),
+                                    proxy_bypass=proxy_bypass)
+        def is_proxied(url):
+            o.add_handler(ph)
+            req = Request(url)
+            o.open(req)
+            return req.has_proxy()
+        self.assertTrue(is_proxied("http://example.com"))
+        self.assertFalse(is_proxied("http://noproxy.com"))
 
     def test_proxy_https(self):
         o = OpenerDirector()
