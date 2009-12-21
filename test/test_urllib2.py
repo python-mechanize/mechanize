@@ -30,6 +30,7 @@ from mechanize._urllib2_fork import AbstractHTTPHandler
 from mechanize._util import hide_deprecations, reset_deprecations
 import mechanize._sockettimeout as _sockettimeout
 import mechanize._testcase
+import mechanize._urllib2_fork
 
 
 ## from logging import getLogger, DEBUG
@@ -74,7 +75,8 @@ class TrivialTests(mechanize._testcase.TestCase):
                  ('a, b, "c", "d", "e,f", g, h', ['a', 'b', '"c"', '"d"', '"e,f"', 'g', 'h']),
                  ('a="b\\"c", d="e\\,f", g="h\\\\i"', ['a="b"c"', 'd="e,f"', 'g="h\\i"'])]
         for string, list in tests:
-            self.assertEquals(mechanize.parse_http_list(string), list)
+            self.assertEquals(mechanize._urllib2_fork.parse_http_list(string),
+                              list)
 
 
 def test_request_headers_dict():
