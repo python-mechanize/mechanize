@@ -749,8 +749,7 @@ class HandlerTests(mechanize._testcase.TestCase):
              [], _sockettimeout._GLOBAL_DEFAULT_TIMEOUT,
              "baz.gif", None),  # TODO: really this should guess image/gif
             ]:
-            req = Request(url)
-            req.timeout = None
+            req = Request(url, timeout=timeout)
             r = h.ftp_open(req)
             # ftp authentication not yet implemented by FTPHandler
             self.assertTrue(h.user == h.passwd == "")

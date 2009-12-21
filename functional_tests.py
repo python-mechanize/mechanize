@@ -204,6 +204,15 @@ class SimpleTests(SocketTimeoutTest):
         self.assert_contains(response.read(), "Python bits")
         timeout_log.verify(timeout)
 
+    def test_redirect_with_timeout(self):
+        timeout_log = self._monkey_patch_socket()
+        timeout = 10.
+        # 301 redirect due to missing final '/'
+        req = mechanize.Request(urljoin(self.uri, "bits"), timeout=timeout)
+        r = self.browser.open(req)
+        self.assert_("GeneralFAQ.html" in r.read(2048))
+        timeout_log.verify(timeout)
+
     def test_302_and_404(self):
         # the combination of 302 and 404 (/redirected is configured to redirect
         # to a non-existent URL /nonexistent) has caused problems in the past
@@ -233,8 +242,15 @@ class SimpleTests(SocketTimeoutTest):
 
     def test_redirect(self):
         # 301 redirect due to missing final '/'
+        codes = []
+        class ObservingHandler(mechanize.BaseHandler):
+            def http_response(self, request, response):
+                codes.append(response.code)
+                return response
+        self.browser.add_handler(ObservingHandler())
         r = self.browser.open(urljoin(self.uri, "bits"))
         self.assertEqual(r.code, 200)
+        self.assertTrue(301 in codes)
         self.assert_("GeneralFAQ.html" in r.read(2048))
 
     def test_refresh(self):

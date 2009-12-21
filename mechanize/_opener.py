@@ -188,8 +188,7 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
 
         # In Python >= 2.4, .open() supports processors already, so we must
         # call ._open() instead.
-        urlopen = getattr(_urllib2_fork.OpenerDirector, "_open",
-                          _urllib2_fork.OpenerDirector.open)
+        urlopen = _urllib2_fork.OpenerDirector._open
         response = urlopen(self, req, data)
 
         # post-process response

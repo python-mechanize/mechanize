@@ -295,34 +295,6 @@ class OpenerDirector:
             if result is not None:
                 return result
 
-    def open(self, fullurl, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-        # accept a URL or a Request object
-        if isinstance(fullurl, basestring):
-            req = Request(fullurl, data)
-        else:
-            req = fullurl
-            if data is not None:
-                req.add_data(data)
-
-        req.timeout = timeout
-        protocol = req.get_type()
-
-        # pre-process request
-        meth_name = protocol+"_request"
-        for processor in self.process_request.get(protocol, []):
-            meth = getattr(processor, meth_name)
-            req = meth(req)
-
-        response = self._open(req, data)
-
-        # post-process response
-        meth_name = protocol+"_response"
-        for processor in self.process_response.get(protocol, []):
-            meth = getattr(processor, meth_name)
-            response = meth(req, response)
-
-        return response
-
     def _open(self, req, data=None):
         result = self._call_chain(self.handle_open, 'default',
                                   'default_open', req)
@@ -516,7 +488,8 @@ class HTTPRedirectHandler(BaseHandler):
                 headers=req.headers,
                 origin_req_host=req.get_origin_req_host(),
                 unverifiable=True,
-                visit=False)
+                visit=False,
+                timeout=req.timeout)
             new._origin_req = getattr(req, "_origin_req", req)
             return new
         else:
