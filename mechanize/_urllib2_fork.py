@@ -32,6 +32,7 @@ import copy
 import base64
 import httplib
 import mimetools
+import logging
 import os
 import posixpath
 import random
@@ -70,7 +71,6 @@ from urllib import (unwrap, unquote, splittype, splithost, quote,
 
 # support for FileHandler, proxies via environment variables
 from urllib import localhost, url2pathname, getproxies
-
 
 from urllib2 import HTTPError, URLError
 
@@ -931,7 +931,10 @@ class AbstractDigestAuthHandler:
             respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
         else:
             # XXX handle auth-int.
-            pass
+            logger = logging.getLogger("mechanize.auth")
+            logger.info("digest auth auth-int qop is not supported, not "
+                        "handling digest authentication")
+            return None
 
         # XXX should the partial digests be encoded too?
 

@@ -684,7 +684,8 @@ Examples:
                    tell me about it, or I'll never find out...
 """
     prog = testprogram.TestProgram(
-        ["functional_tests"],
+        ["functional_tests",
+         "test_urllib2_localnet"],
         localServerProcess=testprogram.TwistedServerProcess(),
         usageExamples=USAGE_EXAMPLES,
         )

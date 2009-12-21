@@ -3,11 +3,10 @@
 import mimetools
 import threading
 import urlparse
-import urllib2
+import mechanize
 import BaseHTTPServer
 import unittest
 import hashlib
-from test import test_support
 
 # Loopback http server infrastructure
 
@@ -171,9 +170,8 @@ class DigestAuthHandler:
 
             auth_validated = False
 
-            # MSIE uses short_path in its validation, but Python's
-            # urllib2 uses the full path, so we're going to see if
-            # either of them works here.
+            # MSIE uses short_path in its validation, but mechanize uses the
+            # full path, so we're going to see if either of them works here.
 
             for path in [request_handler.path, request_handler.short_path]:
                 if self._validate_auth(auth_dict,
@@ -220,15 +218,8 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
 # Test cases
 
-class BaseTestCase(unittest.TestCase):
-    def setUp(self):
-        self._threads = test_support.threading_setup()
 
-    def tearDown(self):
-        test_support.threading_cleanup(*self._threads)
-
-
-class ProxyAuthTests(BaseTestCase):
+class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
 
     USER = "tester"
@@ -246,9 +237,9 @@ class ProxyAuthTests(BaseTestCase):
         self.server.start()
         self.server.ready.wait()
         proxy_url = "http://127.0.0.1:%d" % self.server.port
-        handler = urllib2.ProxyHandler({"http" : proxy_url})
-        self.proxy_digest_handler = urllib2.ProxyDigestAuthHandler()
-        self.opener = urllib2.build_opener(handler, self.proxy_digest_handler)
+        handler = mechanize.ProxyHandler({"http" : proxy_url})
+        self.proxy_digest_handler = mechanize.ProxyDigestAuthHandler()
+        self.opener = mechanize.build_opener(handler, self.proxy_digest_handler)
 
     def tearDown(self):
         self.server.stop()
@@ -257,13 +248,13 @@ class ProxyAuthTests(BaseTestCase):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD+"bad")
         self.digest_auth_handler.set_qop("auth")
-        self.assertRaises(urllib2.HTTPError,
+        self.assertRaises(mechanize.HTTPError,
                           self.opener.open,
                           self.URL)
 
     def test_proxy_with_no_password_raises_httperror(self):
         self.digest_auth_handler.set_qop("auth")
-        self.assertRaises(urllib2.HTTPError,
+        self.assertRaises(mechanize.HTTPError,
                           self.opener.open,
                           self.URL)
 
@@ -282,7 +273,7 @@ class ProxyAuthTests(BaseTestCase):
         self.digest_auth_handler.set_qop("auth-int")
         try:
             result = self.opener.open(self.URL)
-        except urllib2.URLError:
+        except mechanize.URLError:
             # It's okay if we don't support auth-int, but we certainly
             # shouldn't receive any kind of exception here other than
             # a URLError.
@@ -335,8 +326,8 @@ def GetRequestHandler(responses):
     return FakeHTTPRequestHandler
 
 
-class TestUrlopen(BaseTestCase):
-    """Tests urllib2.urlopen using the network.
+class TestUrlopen(unittest.TestCase):
+    """Tests mechanize.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
     good job overall of some of the basic interface features.  There are no
@@ -365,7 +356,7 @@ class TestUrlopen(BaseTestCase):
         handler = self.start_server(responses)
 
         try:
-            f = urllib2.urlopen('http://localhost:%s/' % handler.port)
+            f = mechanize.urlopen('http://localhost:%s/' % handler.port)
             data = f.read()
             f.close()
 
@@ -381,8 +372,8 @@ class TestUrlopen(BaseTestCase):
 
         try:
             try:
-                urllib2.urlopen('http://localhost:%s/weeble' % handler.port)
-            except urllib2.URLError, f:
+                mechanize.urlopen('http://localhost:%s/weeble' % handler.port)
+            except mechanize.URLError, f:
                 pass
             else:
                 self.fail('404 should raise URLError')
@@ -401,7 +392,7 @@ class TestUrlopen(BaseTestCase):
         handler = self.start_server([(200, [], expected_response)])
 
         try:
-            f = urllib2.urlopen('http://localhost:%s/bizarre' % handler.port)
+            f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port)
             data = f.read()
             f.close()
 
@@ -415,7 +406,7 @@ class TestUrlopen(BaseTestCase):
         handler = self.start_server([(200, [], expected_response)])
 
         try:
-            f = urllib2.urlopen('http://localhost:%s/bizarre' % handler.port, 'get=with_feeling')
+            f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port, 'get=with_feeling')
             data = f.read()
             f.close()
 
@@ -429,9 +420,9 @@ class TestUrlopen(BaseTestCase):
         handler = self.start_server([(200, [], "we don't care")])
 
         try:
-            req = urllib2.Request("http://localhost:%s/" % handler.port,
+            req = mechanize.Request("http://localhost:%s/" % handler.port,
                                   headers={'Range': 'bytes=20-39'})
-            urllib2.urlopen(req)
+            mechanize.urlopen(req)
             self.assertEqual(handler.headers_received['Range'], 'bytes=20-39')
         finally:
             self.server.stop()
@@ -440,7 +431,7 @@ class TestUrlopen(BaseTestCase):
         handler = self.start_server([(200, [], "we don't care")])
 
         try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
+            open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
             for attr in ("read", "close", "info", "geturl"):
                 self.assertTrue(hasattr(open_url, attr), "object returned from "
                              "urlopen lacks the %s attribute" % attr)
@@ -455,7 +446,7 @@ class TestUrlopen(BaseTestCase):
         handler = self.start_server([(200, [], "we don't care")])
 
         try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
+            open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
             info_obj = open_url.info()
             self.assertTrue(isinstance(info_obj, mimetools.Message),
                          "object returned by 'info' is not an instance of "
@@ -469,7 +460,7 @@ class TestUrlopen(BaseTestCase):
         handler = self.start_server([(200, [], "we don't care")])
 
         try:
-            open_url = urllib2.urlopen("http://localhost:%s" % handler.port)
+            open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
             url = open_url.geturl()
             self.assertEqual(url, "http://localhost:%s" % handler.port)
         finally:
@@ -497,7 +488,7 @@ class TestUrlopen(BaseTestCase):
                           # failing if the ISP hijacks all invalid domain
                           # requests.  The real solution would be to be able to
                           # parameterize the framework with a mock resolver.
-                          urllib2.urlopen, "http://sadflkjsasf.i.nvali.d./")
+                          mechanize.urlopen, "http://sadflkjsasf.i.nvali.d./")
 
 
 def test_main():
