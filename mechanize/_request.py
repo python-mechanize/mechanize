@@ -36,8 +36,5 @@ class Request(_urllib2_fork.Request):
         self.visit = visit
         self.timeout = timeout
 
-    def get_selector(self):
-        return urllib.splittag(self.__r_host)[0]
-
     def __str__(self):
         return "<Request for %s>" % self.get_full_url()

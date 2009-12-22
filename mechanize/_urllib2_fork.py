@@ -193,7 +193,12 @@ class Request:
         return self.host
 
     def get_selector(self):
-        return self.__r_host
+        scheme, authority, path, query, fragment = _rfc3986.urlsplit(
+            self.__r_host)
+        if path == "":
+            path = "/"  # RFC 2616, section 3.2.2
+        fragment = None  # RFC 3986, section 3.5
+        return _rfc3986.urlunsplit([scheme, authority, path, query, fragment])
 
     def set_proxy(self, host, type):
         if self.type == 'https' and not self._tunnel_host:
@@ -205,6 +210,8 @@ class Request:
         self.host = host
 
     def has_proxy(self):
+        """Private method."""
+        # has non-HTTPS proxy
         return self.__r_host == self.__original
 
     def get_origin_req_host(self):
