@@ -1,7 +1,12 @@
 >>> from mechanize import Request
->>> r = Request("http://example.com/foo#frag")
->>> r.get_selector()
+>>> Request("http://example.com/foo#frag").get_selector()
 '/foo'
+
+>>> Request("http://example.com?frag").get_selector()
+'/?frag'
+
+>>> Request("http://example.com").get_selector()
+'/'
 
 
 Request Headers Dictionary

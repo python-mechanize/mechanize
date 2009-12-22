@@ -12,17 +12,15 @@ COPYING.txt included with the distribution).
 
 """
 
-import time, htmlentitydefs, logging, socket, \
-       urllib2, urllib, httplib
+import time, htmlentitydefs, logging, socket
 import _sgmllib as sgmllib
-from urllib2 import URLError, HTTPError, BaseHandler
+from _urllib2_fork import HTTPError, BaseHandler
 from cStringIO import StringIO
 
-from _clientcookie import CookieJar
 from _headersutil import is_html
 from _html import unescape, unescape_charref
 from _request import Request
-from _response import closeable_response, response_seek_wrapper
+from _response import response_seek_wrapper
 import _rfc3986
 import _sockettimeout
 
@@ -30,6 +28,7 @@ debug = logging.getLogger("mechanize").debug
 debug_robots = logging.getLogger("mechanize.robots").debug
 
 # monkeypatch urllib2.HTTPError to show URL
+## import urllib2
 ## def urllib2_str(self):
 ##     return 'HTTP Error %s: %s (%s)' % (
 ##         self.code, self.msg, self.geturl())
@@ -38,121 +37,6 @@ debug_robots = logging.getLogger("mechanize.robots").debug
 
 CHUNK = 1024  # size of chunks fed to HTML HEAD parser, in bytes
 DEFAULT_ENCODING = 'latin-1'
-
-
-try:
-    socket._fileobject("fake socket", close=True)
-except TypeError:
-    # python <= 2.4
-    create_readline_wrapper = socket._fileobject
-else:
-    def create_readline_wrapper(fh):
-        return socket._fileobject(fh, close=True)
-
-
-# This adds "refresh" to the list of redirectables and provides a redirection
-# algorithm that doesn't go into a loop in the presence of cookies
-# (Python 2.4 has this new algorithm, 2.3 doesn't).
-class HTTPRedirectHandler(BaseHandler):
-    # maximum number of redirections to any single URL
-    # this is needed because of the state that cookies introduce
-    max_repeats = 4
-    # maximum total number of redirections (regardless of URL) before
-    # assuming we're in a loop
-    max_redirections = 10
-
-    # Implementation notes:
-
-    # To avoid the server sending us into an infinite loop, the request
-    # object needs to track what URLs we have already seen.  Do this by
-    # adding a handler-specific attribute to the Request object.  The value
-    # of the dict is used to count the number of times the same URL has
-    # been visited.  This is needed because visiting the same URL twice
-    # does not necessarily imply a loop, thanks to state introduced by
-    # cookies.
-
-    # Always unhandled redirection codes:
-    # 300 Multiple Choices: should not handle this here.
-    # 304 Not Modified: no need to handle here: only of interest to caches
-    #     that do conditional GETs
-    # 305 Use Proxy: probably not worth dealing with here
-    # 306 Unused: what was this for in the previous versions of protocol??
-
-    def redirect_request(self, newurl, req, fp, code, msg, headers):
-        """Return a Request or None in response to a redirect.
-
-        This is called by the http_error_30x methods when a redirection
-        response is received.  If a redirection should take place, return a
-        new Request to allow http_error_30x to perform the redirect;
-        otherwise, return None to indicate that an HTTPError should be
-        raised.
-
-        """
-        if code in (301, 302, 303, "refresh") or \
-               (code == 307 and not req.has_data()):
-            # Strictly (according to RFC 2616), 301 or 302 in response to
-            # a POST MUST NOT cause a redirection without confirmation
-            # from the user (of urllib2, in this case).  In practice,
-            # essentially all clients do redirect in this case, so we do
-            # the same.
-            # XXX really refresh redirections should be visiting; tricky to
-            #  fix, so this will wait until post-stable release
-            new = Request(newurl,
-                          headers=req.headers,
-                          origin_req_host=req.get_origin_req_host(),
-                          unverifiable=True,
-                          visit=False,
-                          )
-            new._origin_req = getattr(req, "_origin_req", req)
-            return new
-        else:
-            raise HTTPError(req.get_full_url(), code, msg, headers, fp)
-
-    def http_error_302(self, req, fp, code, msg, headers):
-        # Some servers (incorrectly) return multiple Location headers
-        # (so probably same goes for URI).  Use first header.
-        if headers.has_key('location'):
-            newurl = headers.getheaders('location')[0]
-        elif headers.has_key('uri'):
-            newurl = headers.getheaders('uri')[0]
-        else:
-            return
-        newurl = _rfc3986.clean_url(newurl, "latin-1")
-        newurl = _rfc3986.urljoin(req.get_full_url(), newurl)
-
-        # XXX Probably want to forget about the state of the current
-        # request, although that might interact poorly with other
-        # handlers that also use handler-specific request attributes
-        new = self.redirect_request(newurl, req, fp, code, msg, headers)
-        if new is None:
-            return
-
-        # loop detection
-        # .redirect_dict has a key url if url was previously visited.
-        if hasattr(req, 'redirect_dict'):
-            visited = new.redirect_dict = req.redirect_dict
-            if (visited.get(newurl, 0) >= self.max_repeats or
-                len(visited) >= self.max_redirections):
-                raise HTTPError(req.get_full_url(), code,
-                                self.inf_msg + msg, headers, fp)
-        else:
-            visited = new.redirect_dict = req.redirect_dict = {}
-        visited[newurl] = visited.get(newurl, 0) + 1
-
-        # Don't close the fp until we are sure that we won't use it
-        # with HTTPError.  
-        fp.read()
-        fp.close()
-
-        return self.parent.open(new)
-
-    http_error_301 = http_error_303 = http_error_307 = http_error_302
-    http_error_refresh = http_error_302
-
-    inf_msg = "The HTTP server returned a redirect error that would " \
-              "lead to an infinite loop.\n" \
-              "The last 30x error message was:\n"
-
 
 # XXX would self.reset() work, instead of raising this exception?
 class EndOfHeadError(Exception): pass
@@ -330,29 +214,6 @@ class HTTPEquivProcessor(BaseHandler):
 
     https_response = http_response
 
-class HTTPCookieProcessor(BaseHandler):
-    """Handle HTTP cookies.
-
-    Public attributes:
-
-    cookiejar: CookieJar instance
-
-    """
-    def __init__(self, cookiejar=None):
-        if cookiejar is None:
-            cookiejar = CookieJar()
-        self.cookiejar = cookiejar
-
-    def http_request(self, request):
-        self.cookiejar.add_cookie_header(request)
-        return request
-
-    def http_response(self, request, response):
-        self.cookiejar.extract_cookies(response, request)
-        return response
-
-    https_request = http_request
-    https_response = http_response
 
 try:
     import robotparser
@@ -405,9 +266,9 @@ else:
                 debug_robots("parse lines")
                 self.parse(lines)
 
-    class RobotExclusionError(urllib2.HTTPError):
+    class RobotExclusionError(HTTPError):
         def __init__(self, request, *args):
-            apply(urllib2.HTTPError.__init__, (self,)+args)
+            apply(HTTPError.__init__, (self,)+args)
             self.request = request
 
     class HTTPRobotRulesProcessor(BaseHandler):
@@ -588,172 +449,3 @@ class HTTPRefreshProcessor(BaseHandler):
         return response
 
     https_response = http_response
-
-class HTTPErrorProcessor(BaseHandler):
-    """Process HTTP error responses.
-
-    The purpose of this handler is to to allow other response processors a
-    look-in by removing the call to parent.error() from
-    AbstractHTTPHandler.
-
-    For non-200 error codes, this just passes the job on to the
-    Handler.<proto>_error_<code> methods, via the OpenerDirector.error
-    method.  Eventually, urllib2.HTTPDefaultErrorHandler will raise an
-    HTTPError if no other handler handles the error.
-
-    """
-    handler_order = 1000  # after all other processors
-
-    def http_response(self, request, response):
-        code, msg, hdrs = response.code, response.msg, response.info()
-
-        if code != 200:
-            # hardcoded http is NOT a bug
-            response = self.parent.error(
-                "http", request, response, code, msg, hdrs)
-
-        return response
-
-    https_response = http_response
-
-
-class HTTPDefaultErrorHandler(BaseHandler):
-    def http_error_default(self, req, fp, code, msg, hdrs):
-        # why these error methods took the code, msg, headers args in the first
-        # place rather than a response object, I don't know, but to avoid
-        # multiple wrapping, we're discarding them
-
-        if isinstance(fp, urllib2.HTTPError):
-            response = fp
-        else:
-            response = urllib2.HTTPError(
-                req.get_full_url(), code, msg, hdrs, fp)
-        assert code == response.code
-        assert msg == response.msg
-        assert hdrs == response.hdrs
-        raise response
-
-
-class AbstractHTTPHandler(BaseHandler):
-
-    def __init__(self, debuglevel=0):
-        self._debuglevel = debuglevel
-
-    def set_http_debuglevel(self, level):
-        self._debuglevel = level
-
-    def do_request_(self, request):
-        host = request.get_host()
-        if not host:
-            raise URLError('no host given')
-
-        if request.has_data():  # POST
-            data = request.get_data()
-            if not request.has_header('Content-type'):
-                request.add_unredirected_header(
-                    'Content-type',
-                    'application/x-www-form-urlencoded')
-            if not request.has_header('Content-length'):
-                request.add_unredirected_header(
-                    'Content-length', '%d' % len(data))
-
-        scheme, sel = urllib.splittype(request.get_selector())
-        sel_host, sel_path = urllib.splithost(sel)
-        if not request.has_header('Host'):
-            request.add_unredirected_header('Host', sel_host or host)
-        for name, value in self.parent.addheaders:
-            name = name.capitalize()
-            if not request.has_header(name):
-                request.add_unredirected_header(name, value)
-
-        return request
-
-    def do_open(self, http_class, req):
-        """Return an addinfourl object for the request, using http_class.
-
-        http_class must implement the HTTPConnection API from httplib.
-        The addinfourl return value is a file-like object.  It also
-        has methods and attributes including:
-            - info(): return a mimetools.Message object for the headers
-            - geturl(): return the original request URL
-            - code: HTTP status code
-        """
-        host_port = req.get_host()
-        if not host_port:
-            raise URLError('no host given')
-
-        try:
-            h = http_class(host_port, timeout=req.timeout)
-        except TypeError:
-            # Python < 2.6, no per-connection timeout support
-            h = http_class(host_port)
-        h.set_debuglevel(self._debuglevel)
-
-        headers = dict(req.headers)
-        headers.update(req.unredirected_hdrs)
-        # We want to make an HTTP/1.1 request, but the addinfourl
-        # class isn't prepared to deal with a persistent connection.
-        # It will try to read all remaining data from the socket,
-        # which will block while the server waits for the next request.
-        # So make sure the connection gets closed after the (only)
-        # request.
-        headers["Connection"] = "close"
-        headers = dict(
-            [(name.title(), val) for name, val in headers.items()])
-        try:
-            h.request(req.get_method(), req.get_selector(), req.data, headers)
-            r = h.getresponse()
-        except socket.error, err: # XXX what error?
-            raise URLError(err)
-
-        # Pick apart the HTTPResponse object to get the addinfourl
-        # object initialized properly.
-
-        # Wrap the HTTPResponse object in socket's file object adapter
-        # for Windows.  That adapter calls recv(), so delegate recv()
-        # to read().  This weird wrapping allows the returned object to
-        # have readline() and readlines() methods.
-
-        # XXX It might be better to extract the read buffering code
-        # out of socket._fileobject() and into a base class.
-
-        r.recv = r.read
-        fp = create_readline_wrapper(r)
-
-        resp = closeable_response(fp, r.msg, req.get_full_url(),
-                                  r.status, r.reason)
-        return resp
-
-
-class HTTPHandler(AbstractHTTPHandler):
-    def http_open(self, req):
-        return self.do_open(httplib.HTTPConnection, req)
-
-    http_request = AbstractHTTPHandler.do_request_
-
-if hasattr(httplib, 'HTTPS'):
-
-    class HTTPSConnectionFactory:
-        def __init__(self, key_file, cert_file):
-            self._key_file = key_file
-            self._cert_file = cert_file
-        def __call__(self, hostport):
-            return httplib.HTTPSConnection(
-                hostport,
-                key_file=self._key_file, cert_file=self._cert_file)
-
-    class HTTPSHandler(AbstractHTTPHandler):
-        def __init__(self, client_cert_manager=None):
-            AbstractHTTPHandler.__init__(self)
-            self.client_cert_manager = client_cert_manager
-
-        def https_open(self, req):
-            if self.client_cert_manager is not None:
-                key_file, cert_file = self.client_cert_manager.find_key_cert(
-                    req.get_full_url())
-                conn_factory = HTTPSConnectionFactory(key_file, cert_file)
-            else:
-                conn_factory = httplib.HTTPSConnection
-            return self.do_open(conn_factory, req)
-
-        https_request = AbstractHTTPHandler.do_request_

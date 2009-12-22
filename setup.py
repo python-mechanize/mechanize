@@ -4,7 +4,7 @@
 Stateful programmatic web browsing, after Andy Lester's Perl module
 WWW::Mechanize.
 
-mechanize.Browser implements the urllib2.OpenerDirectory interface.  Browser
+mechanize.Browser implements the urllib2.OpenerDirector interface.  Browser
 objects have state, including navigation history, HTML form state, cookies,
 etc.  The set of features and URL schemes handled by Browser objects is
 configurable.  The library also provides an API that is mostly compatible with

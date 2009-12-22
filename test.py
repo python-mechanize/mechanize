@@ -115,13 +115,14 @@ if __name__ == "__main__":
 
         # run doctests in docstrings
         from mechanize import _headersutil, _auth, _clientcookie, _pullparser, \
-             _http, _rfc3986, _useragent
-        doctest.testmod(_headersutil)
-        doctest.testmod(_rfc3986)
+             _http, _rfc3986, _useragent, _urllib2_fork
         doctest.testmod(_auth)
         doctest.testmod(_clientcookie)
-        doctest.testmod(_pullparser)
+        doctest.testmod(_headersutil)
         doctest.testmod(_http)
+        doctest.testmod(_pullparser)
+        doctest.testmod(_rfc3986)
+        doctest.testmod(_urllib2_fork)
         doctest.testmod(_useragent)
 
     if run_unittests:

@@ -2,46 +2,46 @@
 # ...from urllib2...
 from urllib2 import \
      URLError, \
-     HTTPError, \
-     BaseHandler, \
-     UnknownHandler, \
-     FTPHandler, \
-     CacheFTPHandler
+     HTTPError
 # ...and from mechanize
 from _auth import \
-     HTTPPasswordMgr, \
-     HTTPPasswordMgrWithDefaultRealm, \
-     AbstractBasicAuthHandler, \
-     AbstractDigestAuthHandler, \
      HTTPProxyPasswordMgr, \
-     ProxyHandler, \
-     ProxyBasicAuthHandler, \
-     ProxyDigestAuthHandler, \
-     HTTPBasicAuthHandler, \
-     HTTPDigestAuthHandler, \
      HTTPSClientCertMgr
 from _debug import \
      HTTPResponseDebugProcessor, \
      HTTPRedirectDebugProcessor
-from _file import \
-     FileHandler
 # crap ATM
 ## from _gzip import \
 ##      HTTPGzipProcessor
-from _http import \
-     HTTPHandler, \
-     HTTPDefaultErrorHandler, \
-     HTTPRedirectHandler, \
-     HTTPEquivProcessor, \
+from _urllib2_fork import \
+     AbstractBasicAuthHandler, \
+     AbstractDigestAuthHandler, \
+     BaseHandler, \
+     CacheFTPHandler, \
+     FileHandler, \
+     FTPHandler, \
+     HTTPBasicAuthHandler, \
      HTTPCookieProcessor, \
+     HTTPDefaultErrorHandler, \
+     HTTPDigestAuthHandler, \
+     HTTPErrorProcessor, \
+     HTTPHandler, \
+     HTTPPasswordMgr, \
+     HTTPPasswordMgrWithDefaultRealm, \
+     HTTPRedirectHandler, \
+     ProxyBasicAuthHandler, \
+     ProxyDigestAuthHandler, \
+     ProxyHandler, \
+     UnknownHandler
+from _http import \
+     HTTPEquivProcessor, \
      HTTPRefererProcessor, \
      HTTPRefreshProcessor, \
-     HTTPErrorProcessor, \
      HTTPRobotRulesProcessor, \
      RobotExclusionError
 import httplib
 if hasattr(httplib, 'HTTPS'):
-    from _http import HTTPSHandler
+    from _urllib2_fork import HTTPSHandler
 del httplib
 from _opener import OpenerDirector, \
      SeekableResponseOpener, \

@@ -1158,18 +1158,18 @@ class CookieJar:
         return attrs
 
     def add_cookie_header(self, request):
-        """Add correct Cookie: header to request (urllib2.Request object).
+        """Add correct Cookie: header to request (mechanize.Request object).
 
         The Cookie2 header is also added unless policy.hide_cookie2 is true.
 
-        The request object (usually a urllib2.Request instance) must support
+        The request object (usually a mechanize.Request instance) must support
         the methods get_full_url, get_host, is_unverifiable, get_type,
         has_header, get_header, header_items and add_unredirected_header, as
-        documented by urllib2, and the port attribute (the port number).
+        documented by mechanize, and the port attribute (the port number).
         Actually, RequestUpgradeProcessor will automatically upgrade your
         Request object to one with has_header, get_header, header_items and
         add_unredirected_header, if it lacks those methods, for compatibility
-        with pre-2.4 versions of urllib2.
+        with pre-2.4 versions of mechanize.
 
         """
         debug("add_cookie_header")
@@ -1495,9 +1495,9 @@ class CookieJar:
         returns a mimetools.Message object (in fact, the 'mimetools.Message
         object' may be any object that provides a getheaders method).
 
-        The request object (usually a urllib2.Request instance) must support
+        The request object (usually a mechanize.Request instance) must support
         the methods get_full_url, get_type, get_host, and is_unverifiable, as
-        documented by urllib2, and the port attribute (the port number).  The
+        documented by mechanize, and the port attribute (the port number).  The
         request is used to set default values for cookie-attributes as well as
         for checking that the cookie is OK to be set.
 

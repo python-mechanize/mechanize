@@ -171,14 +171,32 @@ class UserAgentBase(_opener.OpenerDirector):
 
     # XXX could use Greg Stein's httpx for some of this instead?
     # or httplib2??
-    def set_proxies(self, proxies):
-        """Set a dictionary mapping URL scheme to proxy specification, or None.
+    def set_proxies(self, proxies=None, proxy_bypass=None):
+        """Configure proxy settings.
 
-        e.g. {"http": "joe:password@myproxy.example.com:3128",
-              "ftp": "proxy.example.com"}
+        proxies: dictionary mapping URL scheme to proxy specification.  None
+          means use the default system-specific settings.
+        proxy_bypass: function taking hostname, returning whether proxy should
+          be used.  None means use the default system-specific settings.
+
+        The default is to try to obtain proxy settings from the system (see the
+        documentation for urllib.urlopen for information about the
+        system-specific methods used -- note that's urllib, not urllib2).
+
+        To avoid all use of proxies, pass an empty proxies dict.
+
+        >>> ua = UserAgentBase()
+        >>> def proxy_bypass(hostname):
+        ...     return hostname == "noproxy.com"
+        >>> ua.set_proxies(
+        ...     {"http": "joe:password@myproxy.example.com:3128",
+        ...      "ftp": "proxy.example.com"},
+        ...     proxy_bypass)
 
         """
-        self._set_handler("_proxy", obj=proxies)
+        self._set_handler("_proxy", True,
+                          constructor_kwds=dict(proxies=proxies,
+                                                proxy_bypass=proxy_bypass))
 
     def add_password(self, url, user, password, realm=None):
         self._password_manager.add_password(realm, url, user, password)

@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 import unittest
@@ -42,6 +43,8 @@ class TempDirMaker(TearDownConvenience):
 
 class MonkeyPatcher(TearDownConvenience):
 
+    Unset = object()
+
     def monkey_patch(self, obj, name, value):
         orig_value = getattr(obj, name)
         setattr(obj, name, value)
@@ -49,11 +52,28 @@ class MonkeyPatcher(TearDownConvenience):
             setattr(obj, name, orig_value)
         self._setup_stack.add_teardown(reverse_patch)
 
+    def _set_environ(self, env, name, value):
+        if value is self.Unset:
+            try:
+                del env[name]
+            except KeyError:
+                pass
+        else:
+            env[name] = value
+
+    def monkey_patch_environ(self, name, value, env=os.environ):
+        orig_value = env.get(name, self.Unset)
+        self._set_environ(env, name, value)
+        def reverse_patch():
+            self._set_environ(env, name, orig_value)
+        self._setup_stack.add_teardown(reverse_patch)
+
 
 class TestCase(unittest.TestCase):
 
     def setUp(self):
         self._setup_stack = SetupStack()
+        self._monkey_patcher = MonkeyPatcher(self._setup_stack)
 
     def tearDown(self):
         self._setup_stack.tear_down()
@@ -65,7 +85,10 @@ class TestCase(unittest.TestCase):
         return TempDirMaker(self._setup_stack).make_temp_dir(*args, **kwds)
 
     def monkey_patch(self, *args, **kwds):
-        return MonkeyPatcher(self._setup_stack).monkey_patch(*args, **kwds)
+        return self._monkey_patcher.monkey_patch(*args, **kwds)
+
+    def monkey_patch_environ(self, *args, **kwds):
+        return self._monkey_patcher.monkey_patch_environ(*args, **kwds)
 
     def assert_contains(self, container, containee):
         self.assertTrue(containee in container, "%r not in %r" %

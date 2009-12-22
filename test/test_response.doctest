@@ -4,6 +4,8 @@ has been read.  We want to know this because Browser.back() must
 
 I've noted here the various cases where .read_complete may be set.
 
+>>> import mechanize
+
 >>> text = "To err is human, to moo, bovine.\n"*10
 >>> def get_wrapper():
 ...     import cStringIO
@@ -151,11 +153,11 @@ True
 >>> r1 is r2.wrapped
 True
 
-urllib2.addinfourl: extract .fp and wrap it with closeable_response
-and seek_wrapper
+addinfourl: extract .fp and wrap it with closeable_response and
+seek_wrapper
 
->>> import urllib2
->>> r1= urllib2.addinfourl(StringIO(data), make_headers([]), url)
+>>> from mechanize._urllib2_fork import addinfourl
+>>> r1= addinfourl(StringIO(data), make_headers([]), url)
 >>> is_response(r1)
 False
 >>> r2 = upgrade_response(r1)
@@ -170,7 +172,7 @@ True
 
 addinfourl with code, msg
 
->>> r1= urllib2.addinfourl(StringIO(data), make_headers([]), url)
+>>> r1= addinfourl(StringIO(data), make_headers([]), url)
 >>> r1.code = 206
 >>> r1.msg = "cool"
 >>> r2 = upgrade_response(r1)
@@ -183,7 +185,7 @@ True
 
 addinfourl with seek wrapper: cached data is not lost
 
->>> r1= urllib2.addinfourl(StringIO(data), make_headers([]), url)
+>>> r1= addinfourl(StringIO(data), make_headers([]), url)
 >>> r1 = seek_wrapper(r1)
 >>> r1.read(4)
 'test'
@@ -195,8 +197,8 @@ addinfourl wrapped with HTTPError -- remains an HTTPError of the same
 subclass (through horrible trickery)
 
 >>> hdrs = make_headers([])
->>> r1 = urllib2.addinfourl(StringIO(data), hdrs, url)
->>> class MyHTTPError(urllib2.HTTPError): pass
+>>> r1 = addinfourl(StringIO(data), hdrs, url)
+>>> class MyHTTPError(mechanize.HTTPError): pass
 >>> r1 = MyHTTPError(url, code, msg, hdrs, r1)
 >>> is_response(r1)
 False
@@ -221,7 +223,7 @@ True
 Test dynamically-created class __repr__ for case where we have the
 module name
 
->>> r4 = urllib2.addinfourl(StringIO(data), hdrs, url)
->>> r4 = urllib2.HTTPError(url, code, msg, hdrs, r4)
+>>> r4 = addinfourl(StringIO(data), hdrs, url)
+>>> r4 = mechanize.HTTPError(url, code, msg, hdrs, r4)
 >>> upgrade_response(r4)  # doctest: +ELLIPSIS
 <httperror_seek_wrapper (urllib2.HTTPError instance) at ...

@@ -85,12 +85,6 @@ to get your proxies correctly set up: see <code>urllib2</code> documentation).
 <p>Cookie processing (etc.) is handled by processor objects, which are an
 extension of <code>urllib2</code>'s handlers: <code>HTTPCookieProcessor</code>,
 <code>HTTPRefererProcessor</code> etc.  They are used like any other handler.
-There is quite a bit of other <code>urllib2</code>-workalike code, too.  Note:
-This duplication has gone away in Python 2.4, since 2.4's <code>urllib2</code>
-contains the processor extensions from mechanize, so you can simply use
-mechanize's processor classes direct with 2.4's <code>urllib2</code>; also,
-mechanize's cookie functionality is included in Python 2.4 as module
-<code>cookielib</code> and <code>urllib2.HTTPCookieProcessor</code>.
 
 <p>There is also a <code>urlretrieve()</code> function, which works like
 <code>urllib.urlretrieve()</code>.
@@ -136,9 +130,10 @@ outgoing requests if they match the request's host name, path, etc.
 you're using <code>mechanize.HTTPCookieProcessor</code> by some other
 means), you don't need to call <code>.extract_cookies()</code> or
 <code>.add_cookie_header()</code> yourself</strong>.  If, on the other hand,
-you don't want to use <code>urllib2</code>, you will need to use this pair of
-methods.  You can make your own <code>request</code> and <code>response</code>
-objects, which must support the interfaces described in the docstrings of
+you want to use mechanize to provide cookie handling for an HTTP client other
+than mechanize itself, you will need to use this pair of methods.  You can make
+your own <code>request</code> and <code>response</code> objects, which must
+support the interfaces described in the docstrings of
 <code>.extract_cookies()</code> and <code>.add_cookie_header()</code>.
 
 <p>There are also some <code>CookieJar</code> subclasses which can store
@@ -319,10 +314,8 @@ robots.txt</code> file by which web site operators can request robots to keep
 out of their site, or out of particular areas of it.  This processor uses the
 standard Python library's <code>robotparser</code> module.  It raises
 <code>mechanize.RobotExclusionError</code> (subclass of
-<code>urllib2.HTTPError</code>) if an attempt is made to open a URL prohibited
-by <code>robots.txt</code>.  XXX ATM, this makes use of code in the
-<code>robotparser</code> module that uses <code>urllib</code> - this will
-likely change in future to use <code>urllib2</code>.
+<code>mechanize.HTTPError</code>) if an attempt is made to open a URL prohibited
+by <code>robots.txt</code>.
 
 <dt><code>HTTPEquivProcessor</code>
 
@@ -458,18 +451,17 @@ example when performing redirects) rather than adding headers to existing
 <p>Adding headers is done like so:
 
 @{colorize(r"""
-import mechanize, urllib2
-req = urllib2.Request("http://foobar.com/")
+import mechanize
+req = mechanize.Request("http://foobar.com/")
 req.add_header("Referer", "http://wwwsearch.sourceforge.net/mechanize/")
 r = mechanize.urlopen(req)
 """)}
 
-<p>You can also use the headers argument to the <code>urllib2.Request</code>
+<p>You can also use the headers argument to the <code>mechanize.Request</code>
 constructor.
 
-<p><code>urllib2</code> (in fact, mechanize takes over this task from
-<code>urllib2</code>) adds some headers to <code>Request</code> objects
-automatically - see the next section for details.
+<p>mechanize adds some headers to <code>Request</code> objects automatically -
+see the next section for details.
 
 
 <h2>Changing the automatically-added headers (User-Agent)</h2>
@@ -805,8 +797,6 @@ and open holes where required for Netscape protocol-compatibility.  RFC
      this?
   <p>No: Cookie.py does the server end of the job.  It doesn't know when to
      accept cookies from a server or when to pass them back.
-  <li>Is urllib2.py required?
-  <p>No.  You probably want it, though.
   <li>Where can I find out more about the HTTP cookie protocol?
   <p>There is more than one protocol, in fact (see the <a href="./doc.html">docs</a>
      for a brief explanation of the history):
@@ -874,18 +864,6 @@ and open holes where required for Netscape protocol-compatibility.  RFC
   <li>How do I do &lt;X&gt;
   <p>The module docstrings are worth reading if you want to do something
      unusual.
-  <li>What's this &quot;processor&quot; business about?  I knew
-      <code>urllib2</code> used &quot;handlers&quot;, but not these
-      &quot;processors&quot;.
-  <p>This Python library <a href="http://www.python.org/sf/852995">patch</a>
-     contains an explanation.  Processors are now a standard part of urllib2
-     in Python 2.4.
-  <li>How do I use it without urllib2.py?
-  @{colorize(r"""
-from mechanize import CookieJar
-print CookieJar.extract_cookies.__doc__
-print CookieJar.add_cookie_header.__doc__
-""")}
 </ul>
 
 <p>I prefer questions and comments to be sent to the <a

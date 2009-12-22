@@ -9,6 +9,21 @@ from test_browser import make_mock_handler
 
 class UserAgentTests(TestCase):
 
+    def _get_handler_from_ua(self, ua, name):
+        handler = ua._ua_handlers.get(name)
+        self.assertTrue(handler in ua.handlers)
+        return handler
+
+    def test_set_proxies(self):
+        ua = mechanize.UserAgentBase()
+        def proxy_bypass(hostname):
+            return False
+        proxies = {"http": "http://spam"}
+        ua.set_proxies(proxies, proxy_bypass)
+        proxy_handler = self._get_handler_from_ua(ua, "_proxy")
+        self.assertTrue(proxy_handler._proxy_bypass is proxy_bypass)
+        self.assertTrue(proxy_handler.proxies, proxies)
+
     def test_set_handled_schemes(self):
         class MockHandlerClass(make_mock_handler()):
             def __call__(self): return self
