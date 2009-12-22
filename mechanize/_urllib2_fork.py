@@ -201,8 +201,9 @@ class Request:
         return _rfc3986.urlunsplit([scheme, authority, path, query, fragment])
 
     def set_proxy(self, host, type):
-        if self.type == 'https' and not self._tunnel_host:
-            self._tunnel_host = self.host
+        orig_host = self.get_host()
+        if self.get_type() == 'https' and not self._tunnel_host:
+            self._tunnel_host = orig_host
         else:
             self.type = type
             self.__r_host = self.__original
@@ -667,7 +668,7 @@ class ProxyHandler(BaseHandler):
             req.add_header('Proxy-authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
-        if orig_type == proxy_type:
+        if orig_type == proxy_type or orig_type == 'https':
             # let other handlers take care of it
             return None
         else:
@@ -1081,6 +1082,19 @@ class AbstractHTTPHandler(BaseHandler):
         headers["Connection"] = "close"
         headers = dict(
             (name.title(), val) for name, val in headers.items())
+
+        if req._tunnel_host:
+            if not hasattr(h, "set_tunnel"):
+                if not hasattr(h, "_set_tunnel"):
+                    raise URLError("HTTPS through proxy not supported "
+                                   "(Python >= 2.6.4 required)")
+                else:
+                    # python 2.6
+                    set_tunnel = h._set_tunnel
+            else:
+                set_tunnel = h.set_tunnel
+            set_tunnel(req._tunnel_host)
+
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
             r = h.getresponse()
