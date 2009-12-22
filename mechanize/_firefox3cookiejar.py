@@ -87,8 +87,7 @@ class Firefox3CookieJar(CookieJar):
         cur = self._conn.cursor()
         try:
             cur.execute(query, params)
-            for row in cur.fetchall():
-                yield row
+            return cur.fetchall()
         finally:
             cur.close()
 

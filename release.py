@@ -170,6 +170,7 @@ class Releaser(object):
         ensure_installed("python2.4")
         ensure_installed("python2.5")
         ensure_installed("python2.6")
+        ensure_installed("python-setuptools")
         # for running functional tests against local web server
         ensure_installed("python-twisted-web2")
         # for generating docs from .in templates
@@ -180,17 +181,18 @@ class Releaser(object):
         ensure_installed("wdg-html-validator")
 
     def _make_test_step(self, env, python_version,
-                        skip_unit_tests=False,
-                        skip_functional_tests=False,
+                        unit_tests=True,
+                        functional_tests=True,
+                        easy_install_test=True,
                         local_server=True):
         python = "python%d.%d" % python_version
         name = "python%s" % "".join((map(str, python_version)))
         actions = []
-        if not skip_unit_tests:
+        if unit_tests:
             def test(log):
-                return env.cmd([python, "test.py"])
+                env.cmd([python, "test.py"])
             actions.append(("tests", test))
-        if not skip_functional_tests:
+        if functional_tests:
             def functional(log):
                 cmd = [python, "functional_tests.py"]
                 if local_server:
@@ -199,11 +201,25 @@ class Releaser(object):
                     # running against wwwsearch.sourceforge.net is slow, want
                     # to see where it failed
                     cmd.append("-v")
-                return env.cmd(cmd)
+                env.cmd(cmd)
             func_tests_name = "functional_tests"
             if not local_server:
                 func_tests_name += "_internet"
             actions.append((func_tests_name, functional))
+        import mechanize._testcase
+        temp_maker = mechanize._testcase.TempDirMaker()
+        temp_dir = temp_maker.make_temp_dir()
+        if easy_install_test:
+            def setup_py_easy_install(log):
+                output = release.get_cmd_stdout(
+                    cmd_env.set_environ_vars_env([("PYTHONPATH", temp_dir)], env),
+                    [python, "setup.py", "easy_install", "-d", temp_dir, "."],
+                    stderr=subprocess.STDOUT)
+                # easy_install doesn't fail properly :-(
+                if "SyntaxError" in output:
+                    raise Exception(output)
+                temp_maker.tear_down()
+            actions.append(setup_py_easy_install)
         return action_tree.make_node(actions, name)
 
     def performance_test(self, log):
@@ -512,7 +528,7 @@ John
                                    data))
 
     @action_tree.action_node
-    def easy_install_test(self):
+    def easy_install_test_internet(self):
         return [
             self.clean_easy_install_dir,
             self.check_not_installed,
@@ -526,7 +542,8 @@ John
             self._make_test_step(release.CwdEnv(self._easy_install_env,
                                                 self._easy_install_test_dir),
                                  python_version=(2, 6),
-                                 skip_unit_tests=True,
+                                 unit_tests=False,
+                                 easy_install_test=False,
                                  # run against wwwsearch.sourceforge.net
                                  local_server=False),
             ]
@@ -578,7 +595,7 @@ John
         return [
             self.push_tag,
             self.upload,
-            self.easy_install_test,
+            self.easy_install_test_internet,
             self.send_email,
             ]
 
