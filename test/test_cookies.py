@@ -18,7 +18,6 @@ class FakeResponse:
         self._headers = mimetools.Message(f)
         self._url = url
     def info(self): return self._headers
-    def url(): return self._url
 
 def interact_2965(cookiejar, url, *set_cookie_hdrs):
     return _interact(cookiejar, url, set_cookie_hdrs, "Set-Cookie2")
@@ -1116,7 +1115,7 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
         except ImportError:
             pass
         else:
-            from mechanize import DefaultCookiePolicy, Cookie
+            from mechanize import DefaultCookiePolicy
             filename = self.mktemp()
             hide_experimental_warnings()
             try:
@@ -1142,7 +1141,7 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
         except ImportError:
             pass
         else:
-            from mechanize import DefaultCookiePolicy, Cookie
+            from mechanize import DefaultCookiePolicy
             filename = self.mktemp()
             hide_experimental_warnings()
             try:
@@ -1179,7 +1178,6 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
         except ImportError:
             pass
         else:
-            from mechanize import DefaultCookiePolicy, Request
             filename = self.mktemp()
             hide_experimental_warnings()
             try:
