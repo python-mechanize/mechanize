@@ -76,7 +76,21 @@ else:
         return socket._fileobject(fh, close=True)
 
 
-from urllib import (unwrap, unquote, splittype, splithost, quote,
+# python 2.4 splithost has a bug in empty path component case
+_hostprog = None
+def splithost(url):
+    """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
+    global _hostprog
+    if _hostprog is None:
+        import re
+        _hostprog = re.compile('^//([^/?]*)(.*)$')
+
+    match = _hostprog.match(url)
+    if match: return match.group(1, 2)
+    return None, url
+
+
+from urllib import (unwrap, unquote, splittype, quote,
      addinfourl, splitport,
      splitattr, ftpwrapper, splituser, splitpasswd, splitvalue)
 

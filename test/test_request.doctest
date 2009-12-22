@@ -2,8 +2,8 @@
 >>> Request("http://example.com/foo#frag").get_selector()
 '/foo'
 
->>> Request("http://example.com?frag").get_selector()
-'/?frag'
+>>> Request("http://example.com?query").get_selector()
+'/?query'
 
 >>> Request("http://example.com").get_selector()
 '/'
