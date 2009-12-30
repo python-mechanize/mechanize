@@ -4,8 +4,8 @@
 @{
 from buildtools.colorize import colorize
 import time
-import release
-last_modified = release.last_modified(empy.identify()[0])
+import buildtools.release
+last_modified = buildtools.release.last_modified(empy.identify()[0])
 try:
     base
 except NameError:
@@ -436,7 +436,7 @@ direct to me.
 
 <div id="Menu">
 
-@(release.navbar('mechanize'))
+@(buildtools.release.navbar('mechanize'))
 
 <br>
 
