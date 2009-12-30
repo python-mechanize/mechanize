@@ -37,10 +37,6 @@ if __name__ == "__main__":
 
     top_level_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
-    # XXXX coverage output seems incorrect ATM
-    run_coverage = "-c" in sys.argv
-    if run_coverage:
-        sys.argv.remove("-c")
     use_cgitb = "-t" in sys.argv
     if use_cgitb:
         sys.argv.remove("-t")
@@ -75,12 +71,6 @@ if __name__ == "__main__":
     sys.path.insert(0, "test-tools")
     import doctest
     import testprogram
-
-    if run_coverage:
-        import coverage
-        print 'running coverage'
-        coverage.erase()
-        coverage.start()
 
     import mechanize
 
@@ -139,26 +129,6 @@ if __name__ == "__main__":
             localServerProcess=testprogram.TwistedServerProcess(),
             )
         result = prog.runTests()
-
-    if run_coverage:
-        # HTML coverage report
-        import buildtools.colorize
-        try:
-            os.mkdir("coverage")
-        except OSError:
-            pass
-        private_modules = glob.glob("mechanize/_*.py")
-        private_modules.remove("mechanize/__init__.py")
-        for module_filename in private_modules:
-            module_name = module_filename.replace("/", ".")[:-3]
-            print module_name
-            module = sys.modules[module_name]
-            f, s, m, mf = coverage.analysis(module)
-            fo = open(os.path.join('coverage', os.path.basename(f)+'.html'), 'wb')
-            buildtools.colorize.colorize_file(f, outstream=fo, not_covered=mf)
-            fo.close()
-            coverage.report(module)
-            #print coverage.analysis(module)
 
     # XXX exit status is wrong -- does not take account of doctests
     sys.exit(not result.wasSuccessful())

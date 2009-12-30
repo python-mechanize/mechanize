@@ -179,18 +179,29 @@ class Releaser(object):
         ensure_installed("lynx-cur-wrapper")
         # for the validate command
         ensure_installed("wdg-html-validator")
+        # for collecting code coverage data and generating coverage reports
+        ensure_installed("python-figleaf", ppa="jjl/python-figleaf")
 
     def _make_test_step(self, env, python_version,
                         unit_tests=True,
                         functional_tests=True,
                         easy_install_test=True,
-                        local_server=True):
+                        local_server=True,
+                        coverage=False):
         python = "python%d.%d" % python_version
+        if coverage:
+            # python-figleaf only supports Python 2.6 ATM
+            assert python_version == (2, 6), python_version
+            python = "figleaf"
         name = "python%s" % "".join((map(str, python_version)))
         actions = []
         if unit_tests:
             def test(log):
-                env.cmd([python, "test.py"])
+                test_cmd = [python, "test.py"]
+                if coverage:
+                    # TODO: Fix figleaf traceback with doctests
+                    test_cmd.append("-d")
+                env.cmd(test_cmd)
             actions.append(("tests", test))
         if functional_tests:
             def functional(log):
@@ -212,7 +223,8 @@ class Releaser(object):
         if easy_install_test:
             def setup_py_easy_install(log):
                 output = release.get_cmd_stdout(
-                    cmd_env.set_environ_vars_env([("PYTHONPATH", temp_dir)], env),
+                    cmd_env.set_environ_vars_env(
+                        [("PYTHONPATH", temp_dir)], env),
                     [python, "setup.py", "easy_install", "-d", temp_dir, "."],
                     stderr=subprocess.STDOUT)
                 # easy_install doesn't fail properly :-(
@@ -227,9 +239,16 @@ class Releaser(object):
         if not result.wasSuccessful():
             raise Exception("performance tests failed")
 
+    def clean_coverage_data(self, log):
+        self._in_repo.cmd(["rm", "-f", ".figleaf"])
+
     @action_tree.action_node
     def test(self):
         r = []
+        r.append(("python26_coverage",
+                  self._make_test_step(self._in_repo, python_version=(2, 6),
+                                       easy_install_test=False,
+                                       coverage=True)))
         r.append(self._make_test_step(self._in_repo, python_version=(2, 6)))
         r.append(self._make_test_step(self._in_repo, python_version=(2, 5)))
         # the functional tests rely on a local web server implemented using
@@ -240,6 +259,9 @@ class Releaser(object):
                                       local_server=False))
         r.append(self.performance_test)
         return r
+
+    def make_coverage_html(self, log):
+        self._in_repo.cmd(["figleaf2html"])
 
     def tag(self, log):
         self._in_repo.cmd(["git", "checkout", "master"])
@@ -569,7 +591,9 @@ John
             self.clone,
             self.checks,
             self.make_docs,  # functional tests depend on this!
+            self.clean_coverage_data,
             self.test,
+            self.make_coverage_html,
             self.tag,
             self.build_sdist,
             self.write_email,
