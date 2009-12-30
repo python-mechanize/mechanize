@@ -163,10 +163,11 @@ class Releaser(object):
         self._verify_versions()
 
     def install_deps(self, log):
-        def ensure_installed(package_name):
+        def ensure_installed(package_name, ppa=None):
             release.ensure_installed(self._env,
                                      cmd_env.PrefixCmdEnv(["sudo"], self._env),
-                                     package_name)
+                                     package_name,
+                                     ppa=ppa)
         ensure_installed("python2.4")
         ensure_installed("python2.5")
         ensure_installed("python2.6")
@@ -180,7 +181,7 @@ class Releaser(object):
         # for the validate command
         ensure_installed("wdg-html-validator")
         # for collecting code coverage data and generating coverage reports
-        ensure_installed("python-figleaf", ppa="jjl/python-figleaf")
+        ensure_installed("python-figleaf", ppa="jjl/figleaf")
 
     def _make_test_step(self, env, python_version,
                         unit_tests=True,
