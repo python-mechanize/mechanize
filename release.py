@@ -239,8 +239,9 @@ class Releaser(object):
         if not result.wasSuccessful():
             raise Exception("performance tests failed")
 
-    def clean_coverage_data(self, log):
+    def clean_coverage(self, log):
         self._in_repo.cmd(["rm", "-f", ".figleaf"])
+        self._in_repo.cmd(release.rm_rf_cmd("html"))
 
     @action_tree.action_node
     def test(self):
@@ -591,7 +592,7 @@ John
             self.clone,
             self.checks,
             self.make_docs,  # functional tests depend on this!
-            self.clean_coverage_data,
+            self.clean_coverage,
             self.test,
             self.make_coverage_html,
             self.tag,
