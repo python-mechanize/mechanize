@@ -90,6 +90,11 @@ class TestCase(unittest.TestCase):
     def monkey_patch_environ(self, *args, **kwds):
         return self._monkey_patcher.monkey_patch_environ(*args, **kwds)
 
+    def chdir(self, dir_path):
+        old = os.getcwd()
+        os.chdir(dir_path)
+        self.add_teardown(lambda: os.chdir(old))
+
     def assert_contains(self, container, containee):
         self.assertTrue(containee in container, "%r not in %r" %
                         (containee, container))

@@ -44,6 +44,9 @@ urls = [link.absolute_url for link in
         mech.links(url_regex=re.compile(r"\.tar\.gz$"))]
 print "Found", len(urls), "tarballs to download"
 
+if "--all" not in sys.argv[1:]:
+    urls = urls[:1]
+
 for url in urls:
     filename = os.path.basename(url)
     f = open(filename, "wb")

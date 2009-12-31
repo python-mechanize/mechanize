@@ -7,6 +7,7 @@
 import errno
 import os
 import socket
+import subprocess
 import sys
 import tempfile
 import urllib
@@ -581,6 +582,25 @@ class FunctionalTests(SocketTimeoutTest):
 ##         data2 = r.read()
 ##         r.close()
 ##         self.assert_(data1 != data2)
+
+
+class ExamplesTests(TestCase):
+
+    def check_download_script(self, name):
+        this_dir = os.path.dirname(__file__)
+        python = sys.executable
+        temp_dir = self.make_temp_dir()
+        self.chdir(temp_dir)
+        subprocess.check_call(
+            [python, os.path.join(this_dir, "examples", name)])
+        [tarball] = os.listdir(temp_dir)
+        self.assertTrue(tarball.endswith(".tar.gz"))
+
+    def test_hack21(self):
+        self.check_download_script("hack21.py")
+
+    def test_pypi(self):
+        self.check_download_script("pypi.py")
 
 
 class CookieJarTests(TestCase):
