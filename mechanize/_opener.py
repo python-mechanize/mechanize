@@ -27,6 +27,8 @@ import _upgrade
 import _urllib2_fork
 from _util import isstringlike
 
+open_file = open
+
 
 class ContentTooShortError(urllib2.URLError):
     def __init__(self, reason, result):
@@ -227,7 +229,8 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
 
     BLOCK_SIZE = 1024*8
     def retrieve(self, fullurl, filename=None, reporthook=None, data=None,
-                 timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
+                 timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT,
+                 open=open_file):
         """Returns (filename, headers).
 
         For remote objects, the default filename will refer to a temporary
@@ -246,43 +249,44 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
         req = self._request(fullurl, data, False, timeout)
         scheme = req.get_type()
         fp = self.open(req)
-        headers = fp.info()
-        if filename is None and scheme == 'file':
-            # XXX req.get_selector() seems broken here, return None,
-            #   pending sanity :-/
-            return None, headers
-            #return urllib.url2pathname(req.get_selector()), headers
-        if filename:
-            tfp = open(filename, 'wb')
-        else:
-            path = _rfc3986.urlsplit(req.get_full_url())[2]
-            suffix = os.path.splitext(path)[1]
-            fd, filename = tempfile.mkstemp(suffix)
-            self._tempfiles.append(filename)
-            tfp = os.fdopen(fd, 'wb')
-
-        result = filename, headers
-        bs = self.BLOCK_SIZE
-        size = -1
-        read = 0
-        blocknum = 0
-        if reporthook:
-            if "content-length" in headers:
-                size = int(headers["Content-Length"])
-            reporthook(blocknum, bs, size)
-        while 1:
-            block = fp.read(bs)
-            if block == "":
-                break
-            read += len(block)
-            tfp.write(block)
-            blocknum += 1
-            if reporthook:
-                reporthook(blocknum, bs, size)
-        fp.close()
-        tfp.close()
-        del fp
-        del tfp
+        try:
+            headers = fp.info()
+            if filename is None and scheme == 'file':
+                # XXX req.get_selector() seems broken here, return None,
+                #   pending sanity :-/
+                return None, headers
+                #return urllib.url2pathname(req.get_selector()), headers
+            if filename:
+                tfp = open(filename, 'wb')
+            else:
+                path = _rfc3986.urlsplit(req.get_full_url())[2]
+                suffix = os.path.splitext(path)[1]
+                fd, filename = tempfile.mkstemp(suffix)
+                self._tempfiles.append(filename)
+                tfp = os.fdopen(fd, 'wb')
+            try:
+                result = filename, headers
+                bs = self.BLOCK_SIZE
+                size = -1
+                read = 0
+                blocknum = 0
+                if reporthook:
+                    if "content-length" in headers:
+                        size = int(headers["Content-Length"])
+                    reporthook(blocknum, bs, size)
+                while 1:
+                    block = fp.read(bs)
+                    if block == "":
+                        break
+                    read += len(block)
+                    tfp.write(block)
+                    blocknum += 1
+                    if reporthook:
+                        reporthook(blocknum, bs, size)
+            finally:
+                tfp.close()
+        finally:
+            fp.close()
 
         # raise exception if actual size does not match content-length header
         if size >= 0 and read < size:

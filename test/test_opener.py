@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 
-import os, math, stat
-from unittest import TestCase
+import cStringIO as StringIO
+import gc
+import os
+import math
+import stat
+import unittest
 
 import mechanize
+import mechanize._response as _response
 import mechanize._sockettimeout as _sockettimeout
 
 
@@ -18,7 +23,108 @@ def killfile(filename):
             except OSError:
                 pass
 
-class OpenerTests(TestCase):
+
+class CloseVerifier(object):
+
+    def __init__(self):
+        self.count = 0
+
+    def opened(self):
+        self.count += 1
+
+    def closed(self):
+        self.count -= 1
+
+    def verify(self, assert_equals):
+        assert_equals(self.count, 0)
+
+
+class ResponseCloseWrapper(object):
+
+    def __init__(self, response, closed_callback, read):
+        self._response = response
+        self._closed_callback = closed_callback
+        if read is None:
+            self.read = response.read
+        else:
+            self.read = read
+
+    def __getattr__(self, name):
+        return getattr(self._response, name)
+
+    def close(self):
+        self._closed_callback()
+
+
+class ResponseCloseVerifier(CloseVerifier):
+
+    def __init__(self, read=None):
+        CloseVerifier.__init__(self)
+        self._read = read
+
+    def open(self):
+        self.opened()
+        response = _response.test_response("spam")
+        return ResponseCloseWrapper(response, self.closed, self._read)
+
+
+class URLOpener(mechanize.OpenerDirector):
+
+    def __init__(self, urlopen):
+        self._urlopen = urlopen
+
+    def open(self, *args, **kwds):
+        return self._urlopen()
+
+
+class FakeFile(object):
+
+    def __init__(self, closed_callback):
+        self._closed_callback = closed_callback
+
+    def write(self, *args, **kwds):
+        pass
+
+    def close(self):
+        self._closed_callback()
+
+
+class FakeFilesystem(CloseVerifier):
+
+    def open(self, path, mode="r"):
+        self.opened()
+        return FakeFile(self.closed)
+
+
+class OpenerTests(unittest.TestCase):
+
+    def _check_retrieve(self, urlopen):
+        opener = URLOpener(urlopen=urlopen)
+        fs = FakeFilesystem()
+        try:
+            filename, headers = opener.retrieve("http://example.com",
+                                                "dummy filename",
+                                                open=fs.open)
+        except mechanize.URLError:
+            pass
+        fs.verify(self.assertEquals)
+
+    def test_retrieve_closes_on_success(self):
+        response_verifier = ResponseCloseVerifier()
+        self._check_retrieve(urlopen=response_verifier.open)
+        response_verifier.verify(self.assertEquals)
+
+    def test_retrieve_closes_on_failure(self):
+        def fail_to_open():
+            raise mechanize.URLError("dummy reason")
+        self._check_retrieve(fail_to_open)
+
+    def test_retrieve_closes_on_read_failure(self):
+        def fail_to_read(*args, **kwds):
+            raise mechanize.URLError("dummy reason")
+        response_verifier = ResponseCloseVerifier(read=fail_to_read)
+        self._check_retrieve(urlopen=response_verifier.open)
+        response_verifier.verify(self.assertEquals)
 
     def test_retrieve(self):
         # The .retrieve() method deals with a number of different cases.  In
@@ -37,7 +143,6 @@ class OpenerTests(TestCase):
                 self._content_length = content_length
             def open(self, fullurl, data=None,
                      timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
-                from mechanize import _response
                 self.calls.append((fullurl, data, timeout))
                 headers = [("Foo", "Bar")]
                 if self._content_length is not None:
