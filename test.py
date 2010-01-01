@@ -13,6 +13,10 @@ import optparse
 import os
 import sys
 
+import mechanize
+from mechanize import _headersutil, _auth, _clientcookie, _pullparser, \
+    _http, _rfc3986, _useragent, _urllib2_fork
+
 
 # Modules containing tests to run
 MODULE_NAMES = [
@@ -34,6 +38,12 @@ MODULE_NAMES = [
     ]
 
 
+def mutate_sys_path():
+    this_dir = os.path.dirname(__file__)
+    sys.path.insert(0, os.path.join(this_dir, "test"))
+    sys.path.insert(0, os.path.join(this_dir, "test-tools"))
+
+
 def parse_options(args):
     parser = optparse.OptionParser(usage=__doc__.rstrip())
     parser.add_option("--cgitb")
@@ -48,24 +58,29 @@ def parse_options(args):
     return parser.parse_args(args)
 
 
+class DefaultResult:
+
+    def wasSuccessful(self):
+        return True
+
+
 def main(argv):
-    # XXX
-    # temporary stop-gap to run doctests &c.
-    # should switch to nose or something
+    # TODO: switch to nose or something
+
+    mutate_sys_path()
+    # test-tools/ dir includes a bundled Python 2.5 doctest / linecache -- this
+    # is only for testing purposes, these don't get installed
+    # doctest.py revision 45701 and linecache.py revision 45940.  Since
+    # linecache is used by Python itself, linecache.py is renamed
+    # linecache_copy.py, and this copy of doctest is modified (only) to use
+    # that renamed module.
+    assert "doctest" not in sys.modules
+    import doctest  # bundled copy
+    import testprogram
+
     options, remaining_args = parse_options(argv[1:])
 
-    # use_cgitb = "-t" in argv
-    # if use_cgitb:
-    #     argv.remove("-t")
-    # run_doctests = "-d" not in argv
-    # if not run_doctests:
-    #     argv.remove("-d")
-    # run_unittests = "-u" not in argv
-    # if not run_unittests:
-    #     argv.remove("-u")
-    # log = "-l" in argv
     if options.log:
-        # argv.remove("-l")
         level = logging.DEBUG
 #         level = logging.INFO
 #         level = logging.WARNING
@@ -76,28 +91,9 @@ def main(argv):
         handler.setLevel(level)
         logger.addHandler(handler)
 
-    # import local copy of Python 2.5 doctest
-    assert os.path.isdir("test")
-    sys.path.insert(0, "test")
-    # needed for recent doctest / linecache -- this is only for testing
-    # purposes, these don't get installed
-    # doctest.py revision 45701 and linecache.py revision 45940.  Since
-    # linecache is used by Python itself, linecache.py is renamed
-    # linecache_copy.py, and this copy of doctest is modified (only) to use
-    # that renamed module.
-    sys.path.insert(0, "test-tools")
-    import doctest
-    import testprogram
-
-    import mechanize
-
-    class DefaultResult:
-        def wasSuccessful(self):
-            return True
     result = DefaultResult()
 
     if options.run_doctests:
-        print "yup"
         # run .doctest files needing special support
         common_globs = {"mechanize": mechanize}
         pm_doctest_filename = os.path.join(
@@ -108,13 +104,6 @@ def main(argv):
             ]:
             globs.update(common_globs)
             doctest.testfile(pm_doctest_filename, globs=globs)
-        try:
-            import robotparser
-        except ImportError:
-            pass
-        else:
-            doctest.testfile(os.path.join(
-                    "test", "test_robotfileparser.special_doctest"))
 
         # run .doctest files
         doctest_files = glob.glob(os.path.join("test", "*.doctest"))
@@ -122,8 +111,6 @@ def main(argv):
             doctest.testfile(df)
 
         # run doctests in docstrings
-        from mechanize import _headersutil, _auth, _clientcookie, _pullparser, \
-             _http, _rfc3986, _useragent, _urllib2_fork
         doctest.testmod(_auth)
         doctest.testmod(_clientcookie)
         doctest.testmod(_headersutil)
@@ -135,8 +122,6 @@ def main(argv):
 
     if options.run_vanilla:
         # run vanilla unittest tests
-        test_path = os.path.join(os.path.dirname(argv[0]), "test")
-        sys.path.insert(0, test_path)
         test_runner = None
         if options.cgitb:
             test_runner = testprogram.CgitbTextTestRunner()
