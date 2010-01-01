@@ -30,25 +30,25 @@ MODULE_NAMES = [
 import sys, os, logging, glob
 
 
-if __name__ == "__main__":
+def main(argv):
     # XXX
     # temporary stop-gap to run doctests &c.
     # should switch to nose or something
 
-    top_level_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    top_level_dir = os.path.dirname(os.path.abspath(argv[0]))
 
-    use_cgitb = "-t" in sys.argv
+    use_cgitb = "-t" in argv
     if use_cgitb:
-        sys.argv.remove("-t")
-    run_doctests = "-d" not in sys.argv
+        argv.remove("-t")
+    run_doctests = "-d" not in argv
     if not run_doctests:
-        sys.argv.remove("-d")
-    run_unittests = "-u" not in sys.argv
+        argv.remove("-d")
+    run_unittests = "-u" not in argv
     if not run_unittests:
-        sys.argv.remove("-u")
-    log = "-l" in sys.argv
+        argv.remove("-u")
+    log = "-l" in argv
     if log:
-        sys.argv.remove("-l")
+        argv.remove("-l")
         level = logging.DEBUG
 #         level = logging.INFO
 #         level = logging.WARNING
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     if run_unittests:
         # run vanilla unittest tests
-        test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
+        test_path = os.path.join(os.path.dirname(argv[0]), "test")
         sys.path.insert(0, test_path)
         test_runner = None
         if use_cgitb:
@@ -127,3 +127,7 @@ if __name__ == "__main__":
 
     # XXX exit status is wrong -- does not take account of doctests
     sys.exit(not result.wasSuccessful())
+
+
+if __name__ == "__main__":
+    main(sys.argv)
