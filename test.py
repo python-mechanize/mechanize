@@ -123,11 +123,7 @@ if __name__ == "__main__":
         test_runner = None
         if use_cgitb:
             test_runner = testprogram.CgitbTextTestRunner()
-        prog = testprogram.TestProgram(
-            MODULE_NAMES,
-            testRunner=test_runner,
-            localServerProcess=testprogram.TwistedServerProcess(),
-            )
+        prog = testprogram.TestProgram(MODULE_NAMES, testRunner=test_runner)
         result = prog.runTests()
 
     # XXX exit status is wrong -- does not take account of doctests
