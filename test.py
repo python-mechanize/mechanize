@@ -7,8 +7,14 @@ For further help, enter this at a command prompt:
 python test.py --help
 """
 
-# Modules containing tests to run -- a test is anything named *Tests, which
-# should be classes deriving from unittest.TestCase.
+import glob
+import logging
+import optparse
+import os
+import sys
+
+
+# Modules containing tests to run
 MODULE_NAMES = [
     "test_api",
     "test_browser",
@@ -27,28 +33,39 @@ MODULE_NAMES = [
     "test_useragent",
     ]
 
-import sys, os, logging, glob
+
+def parse_options(args):
+    parser = optparse.OptionParser(usage=__doc__.rstrip())
+    parser.add_option("--cgitb")
+    parser.add_option("-d", "--skip-doctests",
+                      default=True, action="store_false", dest="run_doctests")
+    parser.add_option("-u", "--skip-vanilla",
+                      default=True, action="store_false", dest="run_vanilla",
+                      help="Skip vanilla unittest tests")
+    parser.add_option("--log",
+                      help=('Turn on logging for logger "mechanize" at level '
+                            'logging.DEBUG'))
+    return parser.parse_args(args)
 
 
 def main(argv):
     # XXX
     # temporary stop-gap to run doctests &c.
     # should switch to nose or something
+    options, remaining_args = parse_options(argv[1:])
 
-    top_level_dir = os.path.dirname(os.path.abspath(argv[0]))
-
-    use_cgitb = "-t" in argv
-    if use_cgitb:
-        argv.remove("-t")
-    run_doctests = "-d" not in argv
-    if not run_doctests:
-        argv.remove("-d")
-    run_unittests = "-u" not in argv
-    if not run_unittests:
-        argv.remove("-u")
-    log = "-l" in argv
-    if log:
-        argv.remove("-l")
+    # use_cgitb = "-t" in argv
+    # if use_cgitb:
+    #     argv.remove("-t")
+    # run_doctests = "-d" not in argv
+    # if not run_doctests:
+    #     argv.remove("-d")
+    # run_unittests = "-u" not in argv
+    # if not run_unittests:
+    #     argv.remove("-u")
+    # log = "-l" in argv
+    if options.log:
+        # argv.remove("-l")
         level = logging.DEBUG
 #         level = logging.INFO
 #         level = logging.WARNING
@@ -79,7 +96,8 @@ def main(argv):
             return True
     result = DefaultResult()
 
-    if run_doctests:
+    if options.run_doctests:
+        print "yup"
         # run .doctest files needing special support
         common_globs = {"mechanize": mechanize}
         pm_doctest_filename = os.path.join(
@@ -115,14 +133,16 @@ def main(argv):
         doctest.testmod(_urllib2_fork)
         doctest.testmod(_useragent)
 
-    if run_unittests:
+    if options.run_vanilla:
         # run vanilla unittest tests
         test_path = os.path.join(os.path.dirname(argv[0]), "test")
         sys.path.insert(0, test_path)
         test_runner = None
-        if use_cgitb:
+        if options.cgitb:
             test_runner = testprogram.CgitbTextTestRunner()
-        prog = testprogram.TestProgram(MODULE_NAMES, testRunner=test_runner)
+        prog = testprogram.TestProgram(MODULE_NAMES,
+                                       argv=[argv[0]] + remaining_args,
+                                       testRunner=test_runner)
         result = prog.runTests()
 
     # XXX exit status is wrong -- does not take account of doctests
