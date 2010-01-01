@@ -117,7 +117,6 @@ if __name__ == "__main__":
 
     if run_unittests:
         # run vanilla unittest tests
-        import unittest
         test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
         sys.path.insert(0, test_path)
         test_runner = None
