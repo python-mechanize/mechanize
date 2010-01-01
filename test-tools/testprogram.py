@@ -3,13 +3,20 @@
 import cgitb
 #cgitb.enable(format="text")
 
+import contextlib
 import errno
 import os
+import socket
 import subprocess
 import sys
 import time
 from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
      _TextTestResult
+import urllib
+
+import mechanize
+import mechanize._rfc3986
+import mechanize._testcase as _testcase
 
 
 class ServerStartupError(Exception):
@@ -47,7 +54,6 @@ class ServerProcess:
         self.report_hook("running")
 
     def _wait_for_startup(self):
-        import socket
         def connect():
             self._process.poll()
             if self._process.returncode is not None:
@@ -71,6 +77,7 @@ class ServerProcess:
         else:
             kill_posix(pid, self.report_hook)
 
+
 def backoff(func, errors,
             initial_timeout=1., hard_timeout=60., factor=1.2):
     starttime = time.time()
@@ -88,6 +95,7 @@ def backoff(func, errors,
     else:
         raise
 
+
 def kill_windows(handle, report_hook):
     try:
         import win32api
@@ -96,6 +104,7 @@ def kill_windows(handle, report_hook):
         ctypes.windll.kernel32.TerminateProcess(int(handle), -1)
     else:
         win32api.TerminateProcess(int(handle), -1)
+
 
 def kill_posix(pid, report_hook):
     import signal
@@ -125,15 +134,55 @@ def kill_posix(pid, report_hook):
     finally:
         signal.signal(signal.SIGCHLD, old_handler)
 
+
 class TwistedServerProcess(ServerProcess):
 
-    def __init__(self, name=None):
-        top_level_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-        path = os.path.join(top_level_dir, "test-tools/twisted-localserver.py")
+    def __init__(self, uri, name):
+        this_dir = os.path.dirname(__file__)
+        path = os.path.join(this_dir, "twisted-localserver.py")
         ServerProcess.__init__(self, path, name)
+        self.uri = uri
+        authority = mechanize._rfc3986.urlsplit(uri)[1]
+        host, port = urllib.splitport(authority)
+        if port is None:
+            port = "80"
+        self.port = int(port)
+        # def report(msg):
+        #     print "%s: %s" % (name, msg)
+        report = lambda msg: None
+        self.report_hook = report
 
     def _get_args(self):
         return [str(self.port)]
+
+
+class ServerCM(object):
+
+    def __init__(self, make_server):
+        self._server = None
+        self._make_server = make_server
+
+    def __enter__(self):
+        assert self._server is None
+        server = self._make_server()
+        server.start()
+        self._server = server
+        return self._server
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self._server.stop()
+        self._server = None
+
+
+class NullServer(object):
+
+    def __init__(self, uri, name=None):
+        self.uri = uri
+
+
+@contextlib.contextmanager
+def trivial_cm(obj):
+    yield obj
 
 
 class CgitbTextResult(_TextTestResult):
@@ -149,12 +198,14 @@ class CgitbTextResult(_TextTestResult):
             return cgitb.text((exctype, value, tb))
         return cgitb.text((exctype, value, tb))
 
+
 class CgitbTextTestRunner(TextTestRunner):
     def _makeResult(self):
         return CgitbTextResult(self.stream, self.descriptions, self.verbosity)
 
+
 def add_attributes_to_test_cases(suite, attributes):
-    for test in suite._tests:
+    for test in suite:
         if isinstance(test, TestCase):
             for name, value in attributes.iteritems():
                 setattr(test, name, value)
@@ -163,6 +214,25 @@ def add_attributes_to_test_cases(suite, attributes):
                 add_attributes_to_test_cases(test, attributes)
             except AttributeError:
                 pass
+
+
+class FixtureCacheSuite(TestSuite):
+
+    def __init__(self, fixture_factory, *args, **kwds):
+        TestSuite.__init__(self, *args, **kwds)
+        self._fixture_factory = fixture_factory
+
+    def run(self, result):
+        try:
+            super(FixtureCacheSuite, self).run(result)
+        finally:
+            self._fixture_factory.tear_down()
+
+
+def toplevel_test(suite, test_attributes):
+    suite = FixtureCacheSuite(test_attributes["fixture_factory"], suite)
+    add_attributes_to_test_cases(suite, test_attributes)
+    return suite
 
 
 class TestProgram:
@@ -224,7 +294,7 @@ Examples:
                    tests against that, rather than against SourceForge
                    (quicker!)
 """
-    def __init__(self, moduleNames, localServerProcess, defaultTest=None,
+    def __init__(self, moduleNames, defaultTest=None,
                  argv=None, testRunner=None, testLoader=defaultTestLoader,
                  defaultUri="http://wwwsearch.sourceforge.net/",
                  usageExamples=USAGE_EXAMPLES,
@@ -247,23 +317,6 @@ Examples:
         self.usageExamples = usageExamples
         self.runLocalServer = False
         self.parseArgs(argv)
-        if self.runLocalServer:
-            import urllib
-            from mechanize._rfc3986 import urlsplit
-            authority = urlsplit(self.uri)[1]
-            host, port = urllib.splitport(authority)
-            if port is None:
-                port = "80"
-            try:
-                port = int(port)
-            except:
-                self.usageExit("port in --uri value must be an integer "
-                               "(try --uri=http://127.0.0.1:8000/)")
-            self._serverProcess = localServerProcess
-            def report(msg):
-                print "%s: %s" % (localServerProcess.name, msg)
-            localServerProcess.port = port
-            localServerProcess.report_hook = report
 
     def usageExit(self, msg=None):
         if msg: print msg
@@ -306,21 +359,30 @@ Examples:
                 else:
                     uri = self._defaultUri
             self.uri = uri
-            test_attributes = dict(uri=self.uri, no_proxies=no_proxies)
+
+            fixture_factory = _testcase.FixtureFactory()
+            if self.runLocalServer:
+                cm = ServerCM(lambda: TwistedServerProcess(
+                        self.uri, "local twisted server"))
+            else:
+                cm = trivial_cm(lambda: NullServer(self.uri))
+            fixture_factory.register_context_manager("server", cm)
+
+            test_attributes = dict(uri=self.uri, no_proxies=no_proxies,
+                                   fixture_factory=fixture_factory)
             if len(args) == 0 and self.defaultTest is None:
                 suite = TestSuite()
                 for module in self.modules:
                     test = self.testLoader.loadTestsFromModule(module)
                     suite.addTest(test)
-                self.test = suite
-                add_attributes_to_test_cases(self.test, test_attributes)
+                self.test = toplevel_test(suite, test_attributes)
                 return
             if len(args) > 0:
                 self.testNames = args
             else:
                 self.testNames = (self.defaultTest,)
             self.createTests()
-            add_attributes_to_test_cases(self.test, test_attributes)
+            self.test = toplevel_test(self.test, test_attributes)
         except getopt.error, msg:
             self.usageExit(msg)
 
@@ -331,11 +393,4 @@ Examples:
         if self.testRunner is None:
             self.testRunner = TextTestRunner(verbosity=self.verbosity)
 
-        if self.runLocalServer:
-            self._serverProcess.start()
-        try:
-            result = self.testRunner.run(self.test)
-        finally:
-            if self.runLocalServer:
-                self._serverProcess.stop()
-        return result
+        return self.testRunner.run(self.test)

@@ -14,7 +14,6 @@ import urllib
 import urllib2
 
 import mechanize
-from mechanize import build_opener, install_opener, urlopen
 from mechanize import CookieJar, HTTPCookieProcessor, \
      HTTPHandler, HTTPRefreshProcessor, \
      HTTPEquivProcessor, HTTPRedirectHandler, \
@@ -22,9 +21,10 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
 from mechanize._rfc3986 import urljoin
 from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings
+import mechanize._opener
+import mechanize._rfc3986
 import mechanize._sockettimeout
 import mechanize._testcase
-import mechanize._opener
 
 #from cookielib import CookieJar
 #from urllib2 import build_opener, install_opener, urlopen
@@ -66,6 +66,7 @@ class TestCase(mechanize._testcase.TestCase):
 
     def setUp(self):
         mechanize._testcase.TestCase.setUp(self)
+        self.server = self.get_cached_fixture("server")
         if self.no_proxies:
             old_opener_m = mechanize._opener._opener
             old_opener_u = urllib2._opener
@@ -706,7 +707,6 @@ Examples:
     prog = testprogram.TestProgram(
         ["functional_tests",
          "test_urllib2_localnet"],
-        localServerProcess=testprogram.TwistedServerProcess(),
         usageExamples=USAGE_EXAMPLES,
         )
     result = prog.runTests()

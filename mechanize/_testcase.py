@@ -69,6 +69,33 @@ class MonkeyPatcher(TearDownConvenience):
         self._setup_stack.add_teardown(reverse_patch)
 
 
+class FixtureFactory(object):
+
+    def __init__(self):
+        self._setup_stack = SetupStack()
+        self._context_managers = {}
+        self._fixtures = {}
+
+    def register_context_manager(self, name, context_manager):
+        self._context_managers[name] = context_manager
+
+    def get_fixture(self, name, add_teardown):
+        context_manager = self._context_managers[name]
+        fixture = context_manager.__enter__()
+        add_teardown(lambda: context_manager.__exit__(None, None, None))
+        return fixture
+
+    def get_cached_fixture(self, name):
+        fixture = self._fixtures.get(name)
+        if fixture is None:
+            fixture = self.get_fixture(name, self._setup_stack.add_teardown)
+            self._fixtures[name] = fixture
+        return fixture
+
+    def tear_down(self):
+        self._setup_stack.tear_down()
+
+
 class TestCase(unittest.TestCase):
 
     def setUp(self):
@@ -77,6 +104,12 @@ class TestCase(unittest.TestCase):
 
     def tearDown(self):
         self._setup_stack.tear_down()
+
+    def get_fixture(self, name):
+        return self.fixture_factory.get_fixture(name, self.add_teardown)
+
+    def get_cached_fixture(self, name):
+        return self.fixture_factory.get_cached_fixture(name)
 
     def add_teardown(self, *args, **kwds):
         self._setup_stack.add_teardown(*args, **kwds)
