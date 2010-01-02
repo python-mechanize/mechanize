@@ -18,7 +18,7 @@ def with_(context, suite_func):
     except:
         context.__exit__(*sys.exc_info())
     else:
-        context.__exit(None, None, None)
+        context.__exit__(None, None, None)
 
 
 class SkipTest(Exception):
