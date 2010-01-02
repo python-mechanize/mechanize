@@ -1,7 +1,7 @@
 """Test case implementation"""
 
 import sys
-import functools
+import functools_copy
 import difflib
 import pprint
 import re
@@ -59,7 +59,7 @@ def skip(reason):
             test_item.__unittest_skip__ = True
             test_item.__unittest_skip_why__ = reason
             return test_item
-        @functools.wraps(test_item)
+        @functools_copy.wraps(test_item)
         def skip_wrapper(*args, **kwargs):
             raise SkipTest(reason)
         return skip_wrapper
@@ -83,7 +83,7 @@ def skipUnless(condition, reason):
 
 
 def expectedFailure(func):
-    @functools.wraps(func)
+    @functools_copy.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             func(*args, **kwargs)
