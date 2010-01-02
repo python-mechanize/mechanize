@@ -22,13 +22,6 @@ Johnny Lee (MSIE Cookie support) and last but not least Andy Lester
 
 """
 
-try:
-    import setuptools
-except ImportError:
-    import ez_setup
-    ez_setup.use_setuptools()
-    import setuptools
-
 VERSION = "0.1.12"
 
 CLASSIFIERS = """\
@@ -65,6 +58,12 @@ Topic :: Text Processing :: Markup :: XML
 """
 
 def main():
+    try:
+        import setuptools
+    except ImportError:
+        import ez_setup
+        ez_setup.use_setuptools()
+    import setuptools
     setuptools.setup(
         name = "mechanize",
         version = VERSION,
