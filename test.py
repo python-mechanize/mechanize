@@ -2,7 +2,8 @@
 
 """
 Note that the functional tests and doctests require test-tools to be on
-sys.path.  One way to ensure that is to use this script to run tests.
+sys.path before the stdlib.  One way to ensure that is to use this script to
+run tests.
 
 Usage examples:
 
