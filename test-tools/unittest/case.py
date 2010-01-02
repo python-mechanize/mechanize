@@ -11,14 +11,20 @@ from unittest import result, util
 
 
 # Python 2.4 compatibility
-def with_(context, suite_func):
+def with_(mgr, suite_func):
+    exit = mgr.__exit__  # Not calling it yet
+    value = mgr.__enter__()
+    exc = True
     try:
-        context.__enter__()
-        suite_func()
-    except:
-        context.__exit__(*sys.exc_info())
-    else:
-        context.__exit__(None, None, None)
+        try:
+            suite_func()
+        except:
+            exc = False
+            if not exit(*sys.exc_info()):
+                raise
+    finally:
+        if exc:
+            exit(None, None, None)
 
 
 class SkipTest(Exception):
