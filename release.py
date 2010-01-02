@@ -30,10 +30,19 @@ import subprocess
 import sys
 import unittest
 
-import action_tree
-import cmd_env
+# stop the test runner from reporting import failure if these modules aren't
+# available
+try:
+    import action_tree
+    import cmd_env
 
-import buildtools.release as release
+    import buildtools.release as release
+except ImportError:
+    # fake module
+    class action_tree(object):
+        @staticmethod
+        def action_node(func):
+            return func
 
 # based on Mark Seaborn's plash build-tools (action_tree) and Cmed's in-chroot
 # (cmd_env) -- which is also Mark's idea
@@ -663,6 +672,9 @@ def parse_options(args):
 
 
 def main(argv):
+    if not hasattr(action_tree, "action_main"):
+        sys.exit("failed to import required modules")
+
     options, action_tree_args = parse_options(argv[1:])
     env = release.get_env_from_options(options)
     git_repository_path = options.git_repository
