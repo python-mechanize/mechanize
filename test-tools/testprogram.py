@@ -40,7 +40,6 @@ class ServerProcess:
         self._filename = filename
         self._args = None
         self._process = None
-        self._start()
 
     def _get_args(self):
         """Return list of command line arguments.
@@ -155,6 +154,7 @@ class TwistedServerProcess(ServerProcess):
         #     print "%s: %s" % (name, msg)
         report = lambda msg: None
         self.report_hook = report
+        self._start()
 
     def _get_args(self):
         return [str(self.port)]

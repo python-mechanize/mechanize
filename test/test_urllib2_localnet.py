@@ -46,17 +46,24 @@ class LoopbackHttpServer(BaseHTTPServer.HTTPServer):
 class LoopbackHttpServerThread(threading.Thread):
     """Stoppable thread that runs a loopback http server."""
 
-    def __init__(self, request_handler):
+    def __init__(self, handle_request=None):
         threading.Thread.__init__(self)
-        self.request_handler = request_handler
         self._stop = False
         self.ready = threading.Event()
-        request_handler.protocol_version = "HTTP/1.0"
-        self.httpd = LoopbackHttpServer(('127.0.0.1', 0),
-                                        request_handler)
+        self._request_handler = None
+        if handle_request is None:
+            handle_request = self._handle_request
+        self.httpd = LoopbackHttpServer(('127.0.0.1', 0), handle_request)
         #print "Serving HTTP on %s port %s" % (self.httpd.server_name,
         #                                      self.httpd.server_port)
         self.port = self.httpd.server_port
+
+    def set_request_handler(self, request_handler):
+        self._request_handler = request_handler
+
+    def _handle_request(self, *args, **kwds):
+        self._request_handler.handle_request(*args, **kwds)
+        return self._request_handler
 
     def stop(self):
         """Stops the webserver if it's currently running."""
@@ -201,6 +208,8 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     testing.
     """
 
+    protocol_version = "HTTP/1.0"
+
     def __init__(self, digest_auth_handler, *args, **kwargs):
         # This has to be set before calling our parent's __init__(), which will
         # try to call do_GET().
@@ -225,8 +234,8 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                               "a sudden zombie invasion.")
 
 
-def make_started_server(request_handler):
-    server = LoopbackHttpServerThread(request_handler)
+def make_started_server(make_request_handler=None):
+    server = LoopbackHttpServerThread(make_request_handler)
     server.start()
     server.ready.wait()
     return server
@@ -253,11 +262,12 @@ class ProxyAuthTests(TestCase):
 
     def setUp(self):
         TestCase.setUp(self)
-        self.register_context_manager("test_urllib2_localnet_server",
+        fixture_name = "test_urllib2_localnet_ProxyAuthTests_server"
+        self.register_context_manager(fixture_name,
                                       testprogram.ServerCM(self._make_server))
-        self.server = self.get_cached_fixture("test_urllib2_localnet_server")
+        server = self.get_cached_fixture(fixture_name)
 
-        proxy_url = "http://127.0.0.1:%d" % self.server.port
+        proxy_url = "http://127.0.0.1:%d" % server.port
         handler = mechanize.ProxyHandler({"http" : proxy_url})
         self.proxy_digest_handler = mechanize.ProxyDigestAuthHandler()
         self.opener = mechanize.build_opener(handler, self.proxy_digest_handler)
@@ -300,46 +310,72 @@ class ProxyAuthTests(TestCase):
             result.close()
 
 
-def GetRequestHandler(responses):
+class RecordingHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
-    class FakeHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    server_version = "TestHTTP/"
+    protocol_version = "HTTP/1.0"
 
-        server_version = "TestHTTP/"
-        requests = []
-        headers_received = []
-        port = 80
+    def __init__(self, port, get_next_response,
+                 record_request, record_received_headers,
+                 *args, **kwds):
+        self._port = port
+        self._get_next_response = get_next_response
+        self._record_request = record_request
+        self._record_received_headers = record_received_headers
+        BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *args, **kwds)
 
-        def do_GET(self):
-            body = self.send_head()
-            if body:
-                self.wfile.write(body)
+    def do_GET(self):
+        body = self.send_head()
+        if body:
+            self.wfile.write(body)
 
-        def do_POST(self):
-            content_length = self.headers['Content-Length']
-            post_data = self.rfile.read(int(content_length))
-            self.do_GET()
-            self.requests.append(post_data)
+    def do_POST(self):
+        content_length = self.headers['Content-Length']
+        post_data = self.rfile.read(int(content_length))
+        self.do_GET()
+        self._record_request(post_data)
 
-        def send_head(self):
-            FakeHTTPRequestHandler.headers_received = self.headers
-            self.requests.append(self.path)
-            response_code, headers, body = responses.pop(0)
+    def send_head(self):
+        self._record_received_headers(self.headers)
+        self._record_request(self.path)
+        response_code, headers, body = self._get_next_response()
 
-            self.send_response(response_code)
+        self.send_response(response_code)
 
-            for (header, value) in headers:
-                self.send_header(header, value % self.port)
-            if body:
-                self.send_header('Content-type', 'text/plain')
-                self.end_headers()
-                return body
+        for (header, value) in headers:
+            self.send_header(header, value % self._port)
+        if body:
+            self.send_header('Content-type', 'text/plain')
             self.end_headers()
+            return body
+        self.end_headers()
 
-        def log_message(self, *args):
-            pass
+    def log_message(self, *args):
+        pass
 
 
-    return FakeHTTPRequestHandler
+class FakeHTTPRequestHandler(object):
+
+    def __init__(self, port, responses):
+        self.port = port
+        self._responses = responses
+        self.requests = []
+        self.received_headers = None
+
+    def _get_next_response(self):
+        return self._responses.pop(0)
+
+    def _record_request(self, request):
+        self.requests.append(request)
+
+    def _record_received_headers(self, headers):
+        self.received_headers = headers
+
+    def handle_request(self, *args, **kwds):
+        RecordingHTTPRequestHandler(
+            self.port, self._get_next_response,
+            self._record_request, self._record_received_headers,
+            *args, **kwds)
 
 
 class TestUrlopen(TestCase):
@@ -351,16 +387,21 @@ class TestUrlopen(TestCase):
     for transparent redirection have been written.
     """
 
-    def start_server(self, responses):
-        handler = GetRequestHandler(responses)
+    fixture_name = "test_urllib2_localnet_TestUrlopen_server"
 
-        self.server = LoopbackHttpServerThread(handler)
-        self.server.start()
-        self.server.ready.wait()
-        port = self.server.port
-        handler.port = port
+    def setUp(self):
+        TestCase.setUp(self)
+        self.register_context_manager(
+            self.fixture_name, testprogram.ServerCM(make_started_server))
+
+    def get_server(self):
+        return self.get_cached_fixture(self.fixture_name)
+
+    def _make_request_handler(self, responses):
+        server = self.get_server()
+        handler = FakeHTTPRequestHandler(server.port, responses)
+        server.set_request_handler(handler)
         return handler
-
 
     def test_redirection(self):
         expected_response = 'We got here...'
@@ -369,119 +410,92 @@ class TestUrlopen(TestCase):
             (200, [], expected_response)
         ]
 
-        handler = self.start_server(responses)
+        handler = self._make_request_handler(responses)
 
-        try:
-            f = mechanize.urlopen('http://localhost:%s/' % handler.port)
-            data = f.read()
-            f.close()
+        f = mechanize.urlopen('http://localhost:%s/' % handler.port)
+        data = f.read()
+        f.close()
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/', '/somewhere_else'])
-        finally:
-            self.server.stop()
-
+        self.assertEquals(data, expected_response)
+        self.assertEquals(handler.requests, ['/', '/somewhere_else'])
 
     def test_404(self):
         expected_response = 'Bad bad bad...'
-        handler = self.start_server([(404, [], expected_response)])
+        handler = self._make_request_handler([(404, [], expected_response)])
 
         try:
-            try:
-                mechanize.urlopen('http://localhost:%s/weeble' % handler.port)
-            except mechanize.URLError, f:
-                pass
-            else:
-                self.fail('404 should raise URLError')
+            mechanize.urlopen('http://localhost:%s/weeble' % handler.port)
+        except mechanize.URLError, f:
+            pass
+        else:
+            self.fail('404 should raise URLError')
 
-            data = f.read()
-            f.close()
+        data = f.read()
+        f.close()
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/weeble'])
-        finally:
-            self.server.stop()
-
+        self.assertEquals(data, expected_response)
+        self.assertEquals(handler.requests, ['/weeble'])
 
     def test_200(self):
         expected_response = 'pycon 2008...'
-        handler = self.start_server([(200, [], expected_response)])
+        handler = self._make_request_handler([(200, [], expected_response)])
 
-        try:
-            f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port)
-            data = f.read()
-            f.close()
+        f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port)
+        data = f.read()
+        f.close()
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/bizarre'])
-        finally:
-            self.server.stop()
+        self.assertEquals(data, expected_response)
+        self.assertEquals(handler.requests, ['/bizarre'])
 
     def test_200_with_parameters(self):
         expected_response = 'pycon 2008...'
-        handler = self.start_server([(200, [], expected_response)])
+        handler = self._make_request_handler([(200, [], expected_response)])
 
-        try:
-            f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port, 'get=with_feeling')
-            data = f.read()
-            f.close()
+        f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port,
+                              'get=with_feeling')
+        data = f.read()
+        f.close()
 
-            self.assertEquals(data, expected_response)
-            self.assertEquals(handler.requests, ['/bizarre', 'get=with_feeling'])
-        finally:
-            self.server.stop()
-
+        self.assertEquals(data, expected_response)
+        self.assertEquals(handler.requests, ['/bizarre', 'get=with_feeling'])
 
     def test_sending_headers(self):
-        handler = self.start_server([(200, [], "we don't care")])
+        handler = self._make_request_handler([(200, [], "we don't care")])
 
-        try:
-            req = mechanize.Request("http://localhost:%s/" % handler.port,
-                                  headers={'Range': 'bytes=20-39'})
-            mechanize.urlopen(req)
-            self.assertEqual(handler.headers_received['Range'], 'bytes=20-39')
-        finally:
-            self.server.stop()
+        req = mechanize.Request("http://localhost:%s/" % handler.port,
+                              headers={'Range': 'bytes=20-39'})
+        mechanize.urlopen(req)
+        self.assertEqual(handler.received_headers['Range'], 'bytes=20-39')
 
     def test_basic(self):
-        handler = self.start_server([(200, [], "we don't care")])
+        handler = self._make_request_handler([(200, [], "we don't care")])
 
+        open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
+        for attr in ("read", "close", "info", "geturl"):
+            self.assertTrue(hasattr(open_url, attr), "object returned from "
+                         "urlopen lacks the %s attribute" % attr)
         try:
-            open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
-            for attr in ("read", "close", "info", "geturl"):
-                self.assertTrue(hasattr(open_url, attr), "object returned from "
-                             "urlopen lacks the %s attribute" % attr)
-            try:
-                self.assertTrue(open_url.read(), "calling 'read' failed")
-            finally:
-                open_url.close()
+            self.assertTrue(open_url.read(), "calling 'read' failed")
         finally:
-            self.server.stop()
+            open_url.close()
 
     def test_info(self):
-        handler = self.start_server([(200, [], "we don't care")])
+        handler = self._make_request_handler([(200, [], "we don't care")])
 
-        try:
-            open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
-            info_obj = open_url.info()
-            self.assertTrue(isinstance(info_obj, mimetools.Message),
-                         "object returned by 'info' is not an instance of "
-                         "mimetools.Message")
-            self.assertEqual(info_obj.getsubtype(), "plain")
-        finally:
-            self.server.stop()
+        open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
+        info_obj = open_url.info()
+        self.assertTrue(isinstance(info_obj, mimetools.Message),
+                     "object returned by 'info' is not an instance of "
+                     "mimetools.Message")
+        self.assertEqual(info_obj.getsubtype(), "plain")
 
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
-        handler = self.start_server([(200, [], "we don't care")])
+        handler = self._make_request_handler([(200, [], "we don't care")])
 
-        try:
-            open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
-            url = open_url.geturl()
-            self.assertEqual(url, "http://localhost:%s" % handler.port)
-        finally:
-            self.server.stop()
-
+        open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
+        url = open_url.geturl()
+        self.assertEqual(url, "http://localhost:%s" % handler.port)
 
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
