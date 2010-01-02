@@ -11,7 +11,6 @@ import __builtin__
 import os
 import re
 import sys
-from test import test_support
 import unittest
 from unittest import TestCase, TestProgram
 import types
@@ -3776,11 +3775,6 @@ class TestDiscovery(TestCase):
 ## Main
 ######################################################################
 
-def test_main():
-    test_support.run_unittest(Test_TestCase, Test_TestLoader,
-        Test_TestSuite, Test_TestResult, Test_FunctionTestCase,
-        Test_TestSkipping, Test_Assertions, TestLongMessage,
-        Test_TestProgram, TestCleanUp, TestDiscovery, Test_TextTestRunner)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
