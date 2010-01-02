@@ -53,11 +53,11 @@ __all__ = ['TestResult', 'TestCase', 'TestSuite',
 __all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
 
 
-from .result import TestResult
-from .case import (TestCase, FunctionTestCase, SkipTest, skip, skipIf,
-                   skipUnless, expectedFailure)
-from .suite import TestSuite
-from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
-                     findTestCases)
-from .main import TestProgram, main
-from .runner import TextTestRunner
+from unittest.result import TestResult
+from unittest.case import (TestCase, FunctionTestCase, SkipTest, skip, skipIf,
+                           skipUnless, expectedFailure)
+from unittest.suite import TestSuite
+from unittest.loader import (TestLoader, defaultTestLoader, makeSuite,
+                             getTestCaseNames, findTestCases)
+from unittest.main import TestProgram, main
+from unittest.runner import TextTestRunner

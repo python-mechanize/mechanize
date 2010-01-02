@@ -4,7 +4,7 @@ import sys
 import os
 import types
 
-from . import loader, runner
+from unittest import loader, runner
 
 
 USAGE_AS_MAIN = """\

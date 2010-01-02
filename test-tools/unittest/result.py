@@ -2,7 +2,7 @@
 
 import traceback
 
-from . import util
+from unittest import util
 
 
 class TestResult(object):
