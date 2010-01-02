@@ -105,6 +105,10 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         self._setup_stack.tear_down()
 
+    def register_context_manager(self, name, context_manager):
+        return self.fixture_factory.register_context_manager(
+            name, context_manager)
+
     def get_fixture(self, name):
         return self.fixture_factory.get_fixture(name, self.add_teardown)
 

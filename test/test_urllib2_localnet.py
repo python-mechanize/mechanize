@@ -9,7 +9,10 @@ import mechanize
 import BaseHTTPServer
 import unittest
 
+from mechanize._testcase import TestCase
 from mechanize._urllib2_fork import md5_digest
+
+import testprogram
 
 
 # Loopback http server infrastructure
@@ -45,6 +48,7 @@ class LoopbackHttpServerThread(threading.Thread):
 
     def __init__(self, request_handler):
         threading.Thread.__init__(self)
+        self.request_handler = request_handler
         self._stop = False
         self.ready = threading.Event()
         request_handler.protocol_version = "HTTP/1.0"
@@ -220,44 +224,52 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.wfile.write("Our apologies, but our server is down due to "
                               "a sudden zombie invasion.")
 
+
+def make_started_server(request_handler):
+    server = LoopbackHttpServerThread(request_handler)
+    server.start()
+    server.ready.wait()
+    return server
+
+
 # Test cases
 
 
-class ProxyAuthTests(unittest.TestCase):
+class ProxyAuthTests(TestCase):
     URL = "http://localhost"
 
     USER = "tester"
     PASSWD = "test123"
     REALM = "TestRealm"
 
-    def setUp(self):
-        self.digest_auth_handler = DigestAuthHandler()
-        self.digest_auth_handler.set_users({self.USER: self.PASSWD})
-        self.digest_auth_handler.set_realm(self.REALM)
+    def _make_server(self, qop="auth"):
+        digest_auth_handler = DigestAuthHandler()
+        digest_auth_handler.set_users({self.USER: self.PASSWD})
+        digest_auth_handler.set_realm(self.REALM)
+        digest_auth_handler.set_qop(qop)
         def create_fake_proxy_handler(*args, **kwargs):
-            return FakeProxyHandler(self.digest_auth_handler, *args, **kwargs)
+            return FakeProxyHandler(digest_auth_handler, *args, **kwargs)
+        return make_started_server(create_fake_proxy_handler)
 
-        self.server = LoopbackHttpServerThread(create_fake_proxy_handler)
-        self.server.start()
-        self.server.ready.wait()
+    def setUp(self):
+        TestCase.setUp(self)
+        self.register_context_manager("test_urllib2_localnet_server",
+                                      testprogram.ServerCM(self._make_server))
+        self.server = self.get_cached_fixture("test_urllib2_localnet_server")
+
         proxy_url = "http://127.0.0.1:%d" % self.server.port
         handler = mechanize.ProxyHandler({"http" : proxy_url})
         self.proxy_digest_handler = mechanize.ProxyDigestAuthHandler()
         self.opener = mechanize.build_opener(handler, self.proxy_digest_handler)
 
-    def tearDown(self):
-        self.server.stop()
-
     def test_proxy_with_bad_password_raises_httperror(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD+"bad")
-        self.digest_auth_handler.set_qop("auth")
         self.assertRaises(mechanize.HTTPError,
                           self.opener.open,
                           self.URL)
 
     def test_proxy_with_no_password_raises_httperror(self):
-        self.digest_auth_handler.set_qop("auth")
         self.assertRaises(mechanize.HTTPError,
                           self.opener.open,
                           self.URL)
@@ -265,16 +277,16 @@ class ProxyAuthTests(unittest.TestCase):
     def test_proxy_qop_auth_works(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD)
-        self.digest_auth_handler.set_qop("auth")
         result = self.opener.open(self.URL)
         while result.read():
             pass
         result.close()
 
     def test_proxy_qop_auth_int_works_or_throws_urlerror(self):
+        server = self._make_server("auth-int")
+        self.add_teardown(lambda: server.stop())
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD)
-        self.digest_auth_handler.set_qop("auth-int")
         try:
             result = self.opener.open(self.URL)
         except mechanize.URLError:
@@ -330,7 +342,7 @@ def GetRequestHandler(responses):
     return FakeHTTPRequestHandler
 
 
-class TestUrlopen(unittest.TestCase):
+class TestUrlopen(TestCase):
     """Tests mechanize.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a

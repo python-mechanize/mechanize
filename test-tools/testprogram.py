@@ -40,6 +40,7 @@ class ServerProcess:
         self._filename = filename
         self._args = None
         self._process = None
+        self._start()
 
     def _get_args(self):
         """Return list of command line arguments.
@@ -48,7 +49,7 @@ class ServerProcess:
         """
         return []
 
-    def start(self):
+    def _start(self):
         self._args = [sys.executable, self._filename]+self._get_args()
         self.report_hook("starting (%s)" % (self._args,))
         self._process = subprocess.Popen(self._args)
@@ -168,7 +169,6 @@ class ServerCM(object):
     def __enter__(self):
         assert self._server is None
         server = self._make_server()
-        server.start()
         self._server = server
         return self._server
 
