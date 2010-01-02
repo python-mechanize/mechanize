@@ -21,7 +21,6 @@ of RELEASE_AREA.  Other actions install software.
 #  * 0install package?
 #  * test in a Windows VM
 
-import email.mime.text
 import optparse
 import os
 import re
@@ -30,14 +29,17 @@ import subprocess
 import sys
 import unittest
 
-# stop the test runner from reporting import failure if these modules aren't
-# available
+# Stop the test runner from reporting import failure if these modules aren't
+# available or not running under Python >= 2.6.  AttributeError occurs if run
+# with Python < 2.6, due to lack of collections.namedtuple
 try:
+    import email.mime.text
+
     import action_tree
     import cmd_env
 
     import buildtools.release as release
-except ImportError:
+except (ImportError, AttributeError):
     # fake module
     class action_tree(object):
         @staticmethod
@@ -193,8 +195,6 @@ class Releaser(object):
         ensure_installed("python-figleaf", ppa="jjl/figleaf")
 
     def _make_test_step(self, env, python_version,
-                        unit_tests=True,
-                        functional_tests=True,
                         easy_install_test=True,
                         local_server=True,
                         coverage=False):
@@ -205,28 +205,21 @@ class Releaser(object):
             python = "figleaf"
         name = "python%s" % "".join((map(str, python_version)))
         actions = []
-        if unit_tests:
-            def test(log):
-                test_cmd = [python, "test.py"]
-                if coverage:
-                    # TODO: Fix figleaf traceback with doctests
-                    test_cmd.append("-d")
-                env.cmd(test_cmd)
-            actions.append(("tests", test))
-        if functional_tests:
-            def functional(log):
-                cmd = [python, "functional_tests.py"]
-                if local_server:
-                    cmd.append("-l")
-                else:
-                    # running against wwwsearch.sourceforge.net is slow, want
-                    # to see where it failed
-                    cmd.append("-v")
-                env.cmd(cmd)
-            func_tests_name = "functional_tests"
+        def test(log):
+            test_cmd = [python, "test.py"]
             if not local_server:
-                func_tests_name += "_internet"
-            actions.append((func_tests_name, functional))
+                test_cmd.append("--no-local-server")
+                # running against wwwsearch.sourceforge.net is slow, want to
+                # see where it failed
+                test_cmd.append("-v")
+            if coverage:
+                # TODO: Fix figleaf traceback with doctests
+                test_cmd.append("--skip-doctests")
+            env.cmd(test_cmd)
+        tests_name = "tests"
+        if not local_server:
+            tests_name += "_internet"
+        actions.append((tests_name, test))
         import mechanize._testcase
         temp_maker = mechanize._testcase.TempDirMaker()
         temp_dir = temp_maker.make_temp_dir()
@@ -575,7 +568,6 @@ John
             self._make_test_step(release.CwdEnv(self._easy_install_env,
                                                 self._easy_install_test_dir),
                                  python_version=(2, 6),
-                                 unit_tests=False,
                                  easy_install_test=False,
                                  # run against wwwsearch.sourceforge.net
                                  local_server=False),
