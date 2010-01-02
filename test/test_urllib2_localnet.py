@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""Functional tests from the Python standard library test suite."""
+
 import mimetools
 import threading
 import urlparse
@@ -7,7 +9,7 @@ import mechanize
 import BaseHTTPServer
 import unittest
 
-from mechanize._urllib2_fork import sha1_digest, md5_digest
+from mechanize._urllib2_fork import md5_digest
 
 
 # Loopback http server infrastructure
