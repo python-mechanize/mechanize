@@ -7,7 +7,15 @@
 #   Copyright (C) 2006 Python Software Foundation.
 # See C source code for _functools credits/copyright
 
-from _functools import partial, reduce
+def partial(func, *args, **keywords):
+    def newfunc(*fargs, **fkeywords):
+        newkeywords = keywords.copy()
+        newkeywords.update(fkeywords)
+        return func(*(args + fargs), **newkeywords)
+    newfunc.func = func
+    newfunc.args = args
+    newfunc.keywords = keywords
+    return newfunc
 
 # update_wrapper() and wraps() are tools to help write
 # wrapper functions that can handle naive introspection

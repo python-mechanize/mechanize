@@ -10,6 +10,17 @@ import warnings
 from unittest import result, util
 
 
+# Python 2.4 compatibility
+def with_(context, suite_func):
+    try:
+        context.__enter__()
+        suite_func()
+    except:
+        context.__exit__(*sys.exc_info())
+    else:
+        context.__exit(None, None, None)
+
+
 class SkipTest(Exception):
     """
     Raise this exception in a test to skip it.
@@ -99,8 +110,7 @@ class _AssertRaisesContext(object):
                 exc_name = self.expected.__name__
             except AttributeError:
                 exc_name = str(self.expected)
-            raise self.failureException(
-                "{0} not raised".format(exc_name))
+            raise self.failureException("%s not raised" % (exc_name,))
         if not issubclass(exc_type, self.expected):
             # let unexpected exceptions pass through
             return False
@@ -276,7 +286,7 @@ class TestCase(object):
             success = False
             try:
                 self.setUp()
-            except SkipTest as e:
+            except SkipTest, e:
                 result.addSkip(self, str(e))
             except Exception:
                 result.addError(self, sys.exc_info())
@@ -285,11 +295,11 @@ class TestCase(object):
                     testMethod()
                 except self.failureException:
                     result.addFailure(self, sys.exc_info())
-                except _ExpectedFailure as e:
+                except _ExpectedFailure, e:
                     result.addExpectedFailure(self, e.exc_info)
                 except _UnexpectedSuccess:
                     result.addUnexpectedSuccess(self)
-                except SkipTest as e:
+                except SkipTest, e:
                     result.addSkip(self, str(e))
                 except Exception:
                     result.addError(self, sys.exc_info())
@@ -390,8 +400,7 @@ class TestCase(object):
         context = _AssertRaisesContext(excClass, self)
         if callableObj is None:
             return context
-        with context:
-            callableObj(*args, **kwargs)
+        with_(context, lambda: callableObj(*args, **kwargs))
 
     def _getAssertEqualityFunc(self, first, second):
         """Get a detailed comparison function for the types of the two args.
@@ -489,7 +498,7 @@ class TestCase(object):
     def _deprecate(original_func):
         def deprecated_func(*args, **kwargs):
             warnings.warn(
-                'Please use {0} instead.'.format(original_func.__name__),
+                'Please use %s instead.' % (original_func.__name__,),
                 PendingDeprecationWarning, 2)
             return original_func(*args, **kwargs)
         return deprecated_func
@@ -834,8 +843,7 @@ class TestCase(object):
         context = _AssertRaisesContext(expected_exception, self, expected_regexp)
         if callable_obj is None:
             return context
-        with context:
-            callable_obj(*args, **kwargs)
+        with_(context, lambda: callable_obj(*args, **kwargs))
 
     def assertRegexpMatches(self, text, expected_regex, msg=None):
         if isinstance(expected_regex, basestring):

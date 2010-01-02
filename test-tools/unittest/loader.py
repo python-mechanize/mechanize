@@ -11,6 +11,59 @@ from fnmatch import fnmatch
 
 from unittest import case, suite
 
+# Python 2.4 compatibility
+if os.name == "posix":
+    from os.path import join, abspath, commonprefix, pardir, curdir, sep
+    def relpath(path, start=curdir):
+        """Return a relative version of a path"""
+
+        if not path:
+            raise ValueError("no path specified")
+
+        start_list = abspath(start).split(sep)
+        path_list = abspath(path).split(sep)
+
+        # Work out how much of the filepath is shared by start and path.
+        i = len(commonprefix([start_list, path_list]))
+
+        rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+        if not rel_list:
+            return curdir
+        return join(*rel_list)
+elif os.name == "nt":
+    from os.path import join, abspath, pardir, curdir, sep, splitunc
+    def relpath(path, start=curdir):
+        """Return a relative version of a path"""
+
+        if not path:
+            raise ValueError("no path specified")
+        start_list = abspath(start).split(sep)
+        path_list = abspath(path).split(sep)
+        if start_list[0].lower() != path_list[0].lower():
+            unc_path, rest = splitunc(path)
+            unc_start, rest = splitunc(start)
+            if bool(unc_path) ^ bool(unc_start):
+                raise ValueError("Cannot mix UNC and non-UNC paths (%s and %s)"
+                                                                    % (path, start))
+            else:
+                raise ValueError("path is on drive %s, start on drive %s"
+                                                    % (path_list[0], start_list[0]))
+        # Work out how much of the filepath is shared by start and path.
+        for i in range(min(len(start_list), len(path_list))):
+            if start_list[i].lower() != path_list[i].lower():
+                break
+        else:
+            i += 1
+
+        rel_list = [pardir] * (len(start_list)-i) + path_list[i:]
+        if not rel_list:
+            return curdir
+        return join(*rel_list)
+else:
+    # seems test discovery code from Python 2.7 trunk doesn't support the mac
+    # yet
+    raise NotImplementedError("fixme")
+
 
 def _CmpToKey(mycmp):
     'Convert a cmp= function into a key= function'
@@ -74,13 +127,15 @@ def flatten_test(test):
                 yield flattened
 
 
-def is_not_skipped(test, skip_tags, allowed_tags):
+def is_not_skipped(test, skip_tags, allowed_tags, skip_doctests):
     skipped = False
     for tag in getattr(test, "tags", "").split():
         if tag not in allowed_tags:
             raise Exception("unknown tag: %r" % tag)
         if tag in skip_tags:
             skipped = True
+    if skip_doctests and isinstance(test, doctest.DocTestCase):
+        skipped = True
     return not skipped
 
 
@@ -202,7 +257,8 @@ class TestLoader(object):
         return testFnNames
 
     def discover(self, start_dir, pattern='test*.py', top_level_dir=None,
-                 skip_tags=frozenset(), allowed_tags=frozenset()):
+                 skip_tags=frozenset(), allowed_tags=frozenset(),
+                 skip_doctests=False):
         """Find and return all test modules from the specified start
         directory, recursing into subdirectories to find them. Only test files
         that match the pattern will be loaded. (Using shell style pattern
@@ -243,13 +299,14 @@ class TestLoader(object):
 
         tests = list(test for test in
                      flatten_test(self._find_tests(start_dir, pattern))
-                     if is_not_skipped(test, skip_tags, allowed_tags))
+                     if is_not_skipped(test, skip_tags, allowed_tags,
+                                       skip_doctests))
         return self.suiteClass(tests)
 
     def _get_name_from_path(self, path):
         path = os.path.splitext(os.path.normpath(path))[0]
 
-        _relpath = os.path.relpath(path, self._top_level_dir)
+        _relpath = relpath(path, self._top_level_dir)
         assert not os.path.isabs(_relpath), "Path must be within the project"
         assert not _relpath.startswith('..'), "Path must be within the project"
 

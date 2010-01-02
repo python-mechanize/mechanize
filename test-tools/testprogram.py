@@ -5,7 +5,6 @@ Local test HTTP server support and a few other bits and pieces.
 
 # TODO: resurrect cgitb support
 
-import contextlib
 import errno
 import logging
 import os
@@ -183,9 +182,16 @@ class NullServer(object):
         self.uri = uri
 
 
-@contextlib.contextmanager
-def trivial_cm(obj):
-    yield obj
+class TrivialCM(object):
+
+    def __init__(self, obj):
+        self._obj = obj
+
+    def __enter__(self):
+        return self._obj
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        pass
 
 
 def add_attributes_to_test_cases(suite, attributes):
@@ -263,6 +269,8 @@ class TestProgram(unittest.TestProgram):
         parser.add_option("--log", action="store_true",
                           help=('Turn on logging for logger "mechanize" at '
                                 'level logging.DEBUG'))
+        parser.add_option("--skip-doctests", action="store_true",
+                          help="Don't discover doctests.")
         allowed_tags = set(["internet"])
         parser.add_option("--tag", action="append", dest="tags", metavar="TAG",
                           help=("Discover tests tagged with TAG.  Tagged "
@@ -309,7 +317,8 @@ class TestProgram(unittest.TestProgram):
         loader = unittest.TestLoader()
         self.test = loader.discover(start_dir, pattern, top_level_dir,
                                     skip_tags=options.skip_tags,
-                                    allowed_tags=options.allowed_tags)
+                                    allowed_tags=options.allowed_tags,
+                                    skip_doctests=options.skip_doctests)
 
     def _vanilla_unittest_main(self, options):
         if len(options.test_names) == 0 and self.defaultTest is None:
@@ -348,7 +357,7 @@ class TestProgram(unittest.TestProgram):
             cm = ServerCM(lambda: TwistedServerProcess(
                     options.uri, "local twisted server"))
         else:
-            cm = trivial_cm(lambda: NullServer(options.uri))
+            cm = TrivialCM(NullServer(options.uri))
         fixture_factory.register_context_manager("server", cm)
         test_attributes = dict(uri=options.uri, no_proxies=options.no_proxies,
                                fixture_factory=fixture_factory)
