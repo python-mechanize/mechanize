@@ -507,14 +507,5 @@ class TestUrlopen(TestCase):
                           mechanize.urlopen, "http://sadflkjsasf.i.nvali.d./")
 
 
-def test_main():
-    # We will NOT depend on the network resource flag
-    # (Lib/test/regrtest.py -u network) since all tests here are only
-    # localhost.  However, if this is a bad rationale, then uncomment
-    # the next line.
-    #test_support.requires("network")
-
-    test_support.run_unittest(ProxyAuthTests, TestUrlopen)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
