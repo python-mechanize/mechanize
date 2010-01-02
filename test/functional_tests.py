@@ -278,7 +278,7 @@ class SimpleTests(SocketTimeoutTest):
 
     def test_file_url(self):
         url = "file://%s" % sanepathname2url(
-            os.path.abspath('functional_tests.py'))
+            os.path.abspath(os.path.join("test", "functional_tests.py")))
         r = self.browser.open(url)
         self.assert_("this string appears in this file ;-)" in r.read())
 
@@ -588,12 +588,13 @@ class FunctionalTests(SocketTimeoutTest):
 class ExamplesTests(TestCase):
 
     def check_download_script(self, name):
-        this_dir = os.path.dirname(__file__)
         python = sys.executable
+        parent_dir = os.path.dirname(os.path.dirname(
+                os.path.abspath(__file__)))
         temp_dir = self.make_temp_dir()
         self.chdir(temp_dir)
         subprocess.check_call(
-            [python, os.path.join(this_dir, "examples", name)])
+            [python, os.path.join(parent_dir, "examples", name)])
         [tarball] = os.listdir(temp_dir)
         self.assertTrue(tarball.endswith(".tar.gz"))
 
@@ -684,31 +685,5 @@ class CallbackVerifier:
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, "test-tools")
-    test_path = os.path.join(os.path.dirname(sys.argv[0]), "test")
-    sys.path.insert(0, test_path)
-    import testprogram
-    USAGE_EXAMPLES = """
-Examples:
-  %(progName)s
-                 - run all tests
-  %(progName)s functional_tests.SimpleTests
-                 - run all 'test*' test methods in class SimpleTests
-  %(progName)s functional_tests.SimpleTests.test_redirect
-                 - run SimpleTests.test_redirect
-
-  %(progName)s -l
-                 - start a local Twisted HTTP server and run the functional
-                   tests against that, rather than against SourceForge
-                   (quicker!)
-                   If this option doesn't work on Windows/Mac, somebody please
-                   tell me about it, or I'll never find out...
-"""
-    prog = testprogram.TestProgram(
-        ["functional_tests",
-         "test_urllib2_localnet"],
-        usageExamples=USAGE_EXAMPLES,
-        )
-    result = prog.runTests()
-    rc = int(not result.wasSuccessful())
-    sys.exit(rc)
+    import unittest
+    unittest.main()

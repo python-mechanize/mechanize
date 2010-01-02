@@ -1,17 +1,20 @@
-"""Local server and cgitb support."""
+"""Test runner.
 
-import cgitb
-#cgitb.enable(format="text")
+Local test HTTP server support and a few other bits and pieces.
+"""
+
+# TODO: resurrect cgitb support
 
 import contextlib
+import doctest
 import errno
 import os
+import optparse
 import socket
 import subprocess
 import sys
 import time
-from unittest import defaultTestLoader, TextTestRunner, TestSuite, TestCase, \
-     _TextTestResult
+import unittest
 import urllib
 
 import mechanize
@@ -185,28 +188,9 @@ def trivial_cm(obj):
     yield obj
 
 
-class CgitbTextResult(_TextTestResult):
-    def _exc_info_to_string(self, err, test):
-        """Converts a sys.exc_info()-style tuple of values into a string."""
-        exctype, value, tb = err
-        # Skip test runner traceback levels
-        while tb and self._is_relevant_tb_level(tb):
-            tb = tb.tb_next
-        if exctype is test.failureException:
-            # Skip assert*() traceback levels
-            length = self._count_relevant_tb_levels(tb)
-            return cgitb.text((exctype, value, tb))
-        return cgitb.text((exctype, value, tb))
-
-
-class CgitbTextTestRunner(TextTestRunner):
-    def _makeResult(self):
-        return CgitbTextResult(self.stream, self.descriptions, self.verbosity)
-
-
 def add_attributes_to_test_cases(suite, attributes):
     for test in suite:
-        if isinstance(test, TestCase):
+        if isinstance(test, unittest.TestCase):
             for name, value in attributes.iteritems():
                 setattr(test, name, value)
         else:
@@ -216,10 +200,10 @@ def add_attributes_to_test_cases(suite, attributes):
                 pass
 
 
-class FixtureCacheSuite(TestSuite):
+class FixtureCacheSuite(unittest.TestSuite):
 
     def __init__(self, fixture_factory, *args, **kwds):
-        TestSuite.__init__(self, *args, **kwds)
+        unittest.TestSuite.__init__(self, *args, **kwds)
         self._fixture_factory = fixture_factory
 
     def run(self, result):
@@ -235,162 +219,117 @@ def toplevel_test(suite, test_attributes):
     return suite
 
 
-class TestProgram:
-    """A command-line program that runs a set of tests; this is primarily
-       for making test modules conveniently executable.
-    """
-    USAGE = """\
-Usage: %(progName)s [options] [test] [...]
+class TestProgram(unittest.TestProgram):
 
-Note not all the functional tests take note of the --uri argument yet --
-some currently always access the internet regardless of the --uri and
---run-local-server options.
+    def __init__(self, default_discovery_args=None,
+                 *args, **kwds):
+        self._default_discovery_args = default_discovery_args
+        unittest.TestProgram.__init__(self, *args, **kwds)
 
-Options:
-  -l, --run-local-server
-                   Run a local Twisted HTTP server for the functional
-                   tests.  You need Twisted installed for this to work.
-                   The server is run on the port given in the --uri
-                   option.  If --run-local-server is given but no --uri is
-                   given, http://127.0.0.1:8000 is used as the base URI.
-                   Also, if you're on Windows and don't have pywin32 or
-                   ctypes installed, this option won't work, and you'll
-                   have to start up test-tools/localserver.py manually.
-  --uri=URL        Base URI for functional tests
-                   (test.py does not access the network, unless you tell
-                   it to run module functional_tests;
-                   functional_tests.py does access the network)
-                   e.g. --uri=http://127.0.0.1:8000/
-  --no-proxies     Don't use any HTTP proxy.  Implied by --run-local-server
-  -h, --help       Show this message
-  -v, --verbose    Verbose output
-  -q, --quiet      Minimal output
+    def _parse_options(self, argv):
+        parser = optparse.OptionParser()
+        # plain old unittest
+        parser.add_option("-v", "--verbose", action="store_true",
+                          help="Verbose output")
+        parser.add_option("-q", "--quiet", action="store_true",
+                          help="No output")
+        # test discovery
+        parser.add_option("-s", "--start-directory", dest="start", default=".",
+                          help='Directory to start discovery ("." default)')
+        parser.add_option("-p", "--pattern", dest="pattern",
+                          default="test*.py",
+                          help='Pattern to match tests ("test*.py" default)')
+        parser.add_option("-t", "--top-level-directory", dest="top",
+                          default=None,
+                          help=("Top level directory of project (defaults to "
+                                "start directory)"))
+        # mechanize
+        parser.add_option("--uri")
+        parser.add_option("--no-local-server", action="store_false",
+                          dest="run_local_server", default=True,
+                          help=("Don't run local test server.  By default, "
+                                "this runs the functional tests against "
+                                "mechanize sourceforge site, use --uri to "
+                                "override that."))
+        parser.add_option("--no-proxies", action="store_true")
+        parser.add_option("--log",
+                          help=('Turn on logging for logger "mechanize" at '
+                                'level logging.DEBUG'))
 
-The following options are only available through test.py (you can still run the
-functional tests through test.py, just give 'functional_tests' as the module
-name to run):
+        options, remaining_args = parser.parse_args(argv)
+        if len(remaining_args) > 3:
+            self.usageExit()
 
-  -u               Skip plain (non-doctest) unittests
-  -d               Skip doctests
-  -c               Run coverage (requires coverage.py, seems buggy)
-  -t               Display tracebacks using cgitb's text mode
+        options.do_discovery = ((len(remaining_args) == 0 and
+                                 self._default_discovery_args is not None) or
+                                (len(remaining_args) >= 1 and
+                                 remaining_args[0].lower() == "discover"))
+        if options.do_discovery:
+            if len(remaining_args) == 0:
+                discovery_args = self._default_discovery_args
+            else:
+                discovery_args = remaining_args[1:]
+            for name, value in zip(("start", "pattern", "top"),
+                                   discovery_args):
+                setattr(options, name, value)
+        else:
+            options.test_names = remaining_args
+        if options.uri is None:
+            if options.run_local_server:
+                options.uri = "http://127.0.0.1:8000"
+            else:
+                options.uri = "http://wwwsearch.sourceforge.net/"
+        return options
 
-"""
-    USAGE_EXAMPLES = """
-Examples:
-  %(progName)s
-                 - run all tests
-  %(progName)s test_cookies
-                 - run module 'test_cookies'
-  %(progName)s test_cookies.CookieTests
-                 - run all 'test*' test methods in test_cookies.CookieTests
-  %(progName)s test_cookies.CookieTests.test_expires
-                 - run test_cookies.CookieTests.test_expires
+    def _do_discovery(self, options):
+        start_dir = options.start
+        pattern = options.pattern
+        top_level_dir = options.top
+        loader = unittest.TestLoader()
+        self.test = loader.discover(start_dir, pattern, top_level_dir)
 
-  %(progName)s functional_tests
-                 - run the functional tests
-  %(progName)s -l functional_tests
-                 - start a local Twisted HTTP server and run the functional
-                   tests against that, rather than against SourceForge
-                   (quicker!)
-"""
-    def __init__(self, moduleNames, defaultTest=None,
-                 argv=None, testRunner=None, testLoader=defaultTestLoader,
-                 defaultUri="http://wwwsearch.sourceforge.net/",
-                 usageExamples=USAGE_EXAMPLES,
-                 ):
-        self.modules = []
-        for moduleName in moduleNames:
-            module = __import__(moduleName)
-            for part in moduleName.split('.')[1:]:
-                module = getattr(module, part)
-            self.modules.append(module)
-        self.uri = None
-        self._defaultUri = defaultUri
-        if argv is None:
-            argv = sys.argv
-        self.verbosity = 1
-        self.defaultTest = defaultTest
-        self.testRunner = testRunner
-        self.testLoader = testLoader
-        self.progName = os.path.basename(argv[0])
-        self.usageExamples = usageExamples
-        self.runLocalServer = False
-        self.parseArgs(argv)
-
-    def usageExit(self, msg=None):
-        if msg: print msg
-        print (self.USAGE + self.usageExamples) % self.__dict__
-        sys.exit(2)
+    def _vanilla_unittest_main(self, options):
+        if len(options.test_names) == 0 and self.defaultTest is None:
+            # createTests will load tests from self.module
+            self.testNames = None
+        elif len(options.test_names) > 0:
+            self.testNames = options.test_names
+        else:
+            self.testNames = (self.defaultTest,)
+        self.createTests()
 
     def parseArgs(self, argv):
-        import getopt
-        try:
-            options, args = getopt.getopt(
-                argv[1:],
-                'hHvql',
-                ['help',
-                 'verbose',
-                 'quiet',
-                 'uri=',
-                 'run-local-server',
-                 'no-proxies',
-                 ],
-                )
-            uri = None
-            no_proxies = False
-            for opt, value in options:
-                if opt in ('-h','-H','--help'):
-                    self.usageExit()
-                if opt in ('--uri',):
-                    uri = value
-                if opt in ('--no-proxies',):
-                    no_proxies = True
-                if opt in ('-q','--quiet'):
-                    self.verbosity = 0
-                if opt in ('-v','--verbose'):
-                    self.verbosity = 2
-                if opt in ('-l', '--run-local-server'):
-                    self.runLocalServer = True
-                    no_proxies = True
-            if uri is None:
-                if self.runLocalServer:
-                    uri = "http://127.0.0.1:8000"
-                else:
-                    uri = self._defaultUri
-            self.uri = uri
+        options = self._parse_options(argv[1:])
+        if options.verbose:
+            self.verbosity = 2
+        if options.quiet:
+            self.verbosity = 0
+        if options.do_discovery:
+            self._do_discovery(options)
+        else:
+            self._vanilla_unittest_main(options)
 
-            fixture_factory = _testcase.FixtureFactory()
-            if self.runLocalServer:
-                cm = ServerCM(lambda: TwistedServerProcess(
-                        self.uri, "local twisted server"))
-            else:
-                cm = trivial_cm(lambda: NullServer(self.uri))
-            fixture_factory.register_context_manager("server", cm)
+        if options.log:
+            level = logging.DEBUG
+            # level = logging.INFO
+            # level = logging.WARNING
+            # level = logging.NOTSET
+            logger = logging.getLogger("mechanize")
+            logger.setLevel(level)
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setLevel(level)
+            logger.addHandler(handler)
 
-            test_attributes = dict(uri=self.uri, no_proxies=no_proxies,
-                                   fixture_factory=fixture_factory)
-            if len(args) == 0 and self.defaultTest is None:
-                suite = TestSuite()
-                for module in self.modules:
-                    test = self.testLoader.loadTestsFromModule(module)
-                    suite.addTest(test)
-                self.test = toplevel_test(suite, test_attributes)
-                return
-            if len(args) > 0:
-                self.testNames = args
-            else:
-                self.testNames = (self.defaultTest,)
-            self.createTests()
-            self.test = toplevel_test(self.test, test_attributes)
-        except getopt.error, msg:
-            self.usageExit(msg)
+        fixture_factory = _testcase.FixtureFactory()
+        if options.run_local_server:
+            cm = ServerCM(lambda: TwistedServerProcess(
+                    options.uri, "local twisted server"))
+        else:
+            cm = trivial_cm(lambda: NullServer(options.uri))
+        fixture_factory.register_context_manager("server", cm)
+        test_attributes = dict(uri=options.uri, no_proxies=options.no_proxies,
+                               fixture_factory=fixture_factory)
+        self.test = toplevel_test(self.test, test_attributes)
 
-    def createTests(self):
-        self.test = self.testLoader.loadTestsFromNames(self.testNames)
 
-    def runTests(self):
-        if self.testRunner is None:
-            self.testRunner = TextTestRunner(verbosity=self.verbosity)
-
-        return self.testRunner.run(self.test)
+main = TestProgram

@@ -1,5 +1,6 @@
 """Loading unittests."""
 
+import doctest
 import os
 import re
 import sys
@@ -41,7 +42,35 @@ def _make_failed_import_test(name, suiteClass):
     return suiteClass((ModuleImportFailure(name),))
 
 
+def maybe_load_doctest(path):
+    if path.endswith(".doctest"):
+        return doctest.DocFileTest(path, module_relative=False)
+    elif path.endswith("test_password_manager.special_doctest"):
+        # TODO: get rid of this
+        import mechanize
+        tests = []
+        common_globs = {"mechanize": mechanize}
+        pm_doctest_filename = os.path.join(
+            "test", )
+        for globs in [
+            {"mgr_class": mechanize.HTTPPasswordMgr},
+            {"mgr_class": mechanize.HTTPProxyPasswordMgr},
+            ]:
+            globs.update(common_globs)
+            tests.append(doctest.DocFileTest(path, module_relative=False,
+                                             globs=globs))
+        return suite.TestSuite(tests)
+    return None
+
+
 class TestLoader(object):
+
+    # problems
+    #  * Can't load doctests from name
+    #  * I'm maintaining this :-(
+
+    # TODO: fix doctest support in nose, and use nose instead
+
     """
     This class is responsible for loading tests according to various criteria
     and returning them wrapped in a TestSuite
@@ -70,6 +99,12 @@ class TestLoader(object):
             if isinstance(obj, type) and issubclass(obj, case.TestCase):
                 tests.append(self.loadTestsFromTestCase(obj))
 
+        try:
+            tests.append(doctest.DocTestSuite(module))
+        except ValueError:
+            # no docstring doctests
+            pass
+
         load_tests = getattr(module, 'load_tests', None)
         if use_load_tests and load_tests is not None:
             return load_tests(self, tests, None)
@@ -94,7 +129,11 @@ class TestLoader(object):
                 except ImportError:
                     del parts_copy[-1]
                     if not parts_copy:
-                        raise
+                        doctest_test = maybe_load_doctest(name)
+                        if doctest_test is not None:
+                            obj = doctest_test
+                        else:
+                            raise
             parts = parts[1:]
         obj = module
         for part in parts:
@@ -204,6 +243,11 @@ class TestLoader(object):
         for path in paths:
             full_path = os.path.join(start_dir, path)
             if os.path.isfile(full_path):
+                doctest_test = maybe_load_doctest(full_path)
+                if doctest_test is not None:
+                    yield doctest_test
+                    continue
+
                 if not VALID_MODULE_NAME.match(path):
                     # valid Python identifiers only
                     continue
