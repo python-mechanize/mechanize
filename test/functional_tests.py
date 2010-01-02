@@ -587,6 +587,8 @@ class FunctionalTests(SocketTimeoutTest):
 
 class ExamplesTests(TestCase):
 
+    tags = "internet"
+
     def check_download_script(self, name):
         python = sys.executable
         parent_dir = os.path.dirname(os.path.dirname(

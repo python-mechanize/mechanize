@@ -233,7 +233,7 @@ class TestProgram(unittest.TestProgram):
                           help="Verbose output")
         parser.add_option("-q", "--quiet", action="store_true",
                           help="No output")
-        # test discovery
+        # from bundled Python 2.7 stdlib test discovery
         parser.add_option("-s", "--start-directory", dest="start", default=".",
                           help='Directory to start discovery ("." default)')
         parser.add_option("-p", "--pattern", dest="pattern",
@@ -243,7 +243,7 @@ class TestProgram(unittest.TestProgram):
                           default=None,
                           help=("Top level directory of project (defaults to "
                                 "start directory)"))
-        # mechanize
+        # mechanize additions
         # TODO: test_urllib2_localnet ignores --uri and --no-local-server
         note = ("Note that there are two local servers in use, and this "
                 "option only affects the twisted server, not the server used "
@@ -263,11 +263,24 @@ class TestProgram(unittest.TestProgram):
         parser.add_option("--log", action="store_true",
                           help=('Turn on logging for logger "mechanize" at '
                                 'level logging.DEBUG'))
+        allowed_tags = set(["internet"])
+        parser.add_option("--tag", action="append", dest="tags", metavar="TAG",
+                          help=("Discover tests tagged with TAG.  Tagged "
+                                "tests are not discovered by default.  Pass "
+                                "option more than once to specify more than "
+                                "one tag.  Current tags: %r" % allowed_tags))
 
         options, remaining_args = parser.parse_args(argv)
         if len(remaining_args) > 3:
             self.usageExit()
 
+        options.skip_tags = allowed_tags.copy()
+        if options.tags is not None:
+            unknown_tags = set(options.tags) - allowed_tags
+            if unknown_tags:
+                self.usageExit("Unknown tag(s) %r" % unknown_tags)
+            options.skip_tags -= set(options.tags)
+        options.allowed_tags = allowed_tags
         options.do_discovery = ((len(remaining_args) == 0 and
                                  self._default_discovery_args is not None) or
                                 (len(remaining_args) >= 1 and
@@ -294,7 +307,9 @@ class TestProgram(unittest.TestProgram):
         pattern = options.pattern
         top_level_dir = options.top
         loader = unittest.TestLoader()
-        self.test = loader.discover(start_dir, pattern, top_level_dir)
+        self.test = loader.discover(start_dir, pattern, top_level_dir,
+                                    skip_tags=options.skip_tags,
+                                    allowed_tags=options.allowed_tags)
 
     def _vanilla_unittest_main(self, options):
         if len(options.test_names) == 0 and self.defaultTest is None:

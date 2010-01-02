@@ -63,6 +63,27 @@ def maybe_load_doctest(path):
     return None
 
 
+def flatten_test(test):
+    try:
+        tests = iter(test)
+    except TypeError:
+        yield test
+    else:
+        for test in tests:
+            for flattened in flatten_test(test):
+                yield flattened
+
+
+def is_not_skipped(test, skip_tags, allowed_tags):
+    skipped = False
+    for tag in getattr(test, "tags", "").split():
+        if tag not in allowed_tags:
+            raise Exception("unknown tag: %r" % tag)
+        if tag in skip_tags:
+            skipped = True
+    return not skipped
+
+
 class TestLoader(object):
 
     # problems
@@ -180,7 +201,8 @@ class TestLoader(object):
             testFnNames.sort(key=_CmpToKey(self.sortTestMethodsUsing))
         return testFnNames
 
-    def discover(self, start_dir, pattern='test*.py', top_level_dir=None):
+    def discover(self, start_dir, pattern='test*.py', top_level_dir=None,
+                 skip_tags=frozenset(), allowed_tags=frozenset()):
         """Find and return all test modules from the specified start
         directory, recursing into subdirectories to find them. Only test files
         that match the pattern will be loaded. (Using shell style pattern
@@ -219,7 +241,9 @@ class TestLoader(object):
             # what about __init__.pyc or pyo (etc)
             raise ImportError('Start directory is not importable: %r' % start_dir)
 
-        tests = list(self._find_tests(start_dir, pattern))
+        tests = list(test for test in
+                     flatten_test(self._find_tests(start_dir, pattern))
+                     if is_not_skipped(test, skip_tags, allowed_tags))
         return self.suiteClass(tests)
 
     def _get_name_from_path(self, path):
