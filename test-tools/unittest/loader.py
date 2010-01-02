@@ -176,7 +176,8 @@ class TestLoader(object):
                 tests.append(self.loadTestsFromTestCase(obj))
 
         try:
-            tests.append(doctest.DocTestSuite(module))
+            if isinstance(module, types.ModuleType):
+                tests.append(doctest.DocTestSuite(module))
         except ValueError:
             # no docstring doctests
             pass

@@ -44,7 +44,7 @@ class _ExpectedFailure(Exception):
     """
 
     def __init__(self, exc_info):
-        super(_ExpectedFailure, self).__init__()
+        Exception.__init__(self)
         self.exc_info = exc_info
 
 class _UnexpectedSuccess(Exception):

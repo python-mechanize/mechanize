@@ -35,7 +35,9 @@ def main(argv):
     # bundled & modified Python trunk (2.7 vintage) unittest.  This is only for
     # testing purposes, and these don't get installed.
 
-    # unittest revision 77209, modified
+    # unittest revision 77209, modified (probably I should have used PyPI
+    # project discover, which is already backported to 2.4, but since I've
+    # already done that and made changes, I won't bother for now)
 
     # doctest.py revision 45701 and linecache.py revision 45940.  Since
     # linecache is used by Python itself, linecache.py is renamed

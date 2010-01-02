@@ -77,7 +77,7 @@ class _TextTestResult(result.TestResult):
     def addSkip(self, test, reason):
         super(_TextTestResult, self).addSkip(test, reason)
         if self.showAll:
-            self.stream.writeln("skipped {0!r}".format(reason))
+            self.stream.writeln("skipped %r" % (reason,))
         elif self.dots:
             self.stream.write("s")
             self.stream.flush()
