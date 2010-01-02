@@ -244,13 +244,21 @@ class TestProgram(unittest.TestProgram):
                           help=("Top level directory of project (defaults to "
                                 "start directory)"))
         # mechanize
-        parser.add_option("--uri")
-        parser.add_option("--no-local-server", action="store_false",
-                          dest="run_local_server", default=True,
-                          help=("Don't run local test server.  By default, "
-                                "this runs the functional tests against "
-                                "mechanize sourceforge site, use --uri to "
-                                "override that."))
+        # TODO: test_urllib2_localnet ignores --uri and --no-local-server
+        note = ("Note that there are two local servers in use, and this "
+                "option only affects the twisted server, not the server used "
+                "by test_urllib2_localnet (which originates from standard "
+                "library).")
+        parser.add_option(
+            "--uri", metavar="URI",
+            help="Run functional tests against base URI.  " + note)
+        parser.add_option(
+            "--no-local-server", action="store_false",
+            dest="run_local_server", default=True,
+            help=("Don't run local test server.  By default, this runs the "
+                  "functional tests against mechanize sourceforge site, use "
+                  "--uri to override that.  " + note))
+        # TODO: probably not everything respects this (test_urllib2_localnet?)
         parser.add_option("--no-proxies", action="store_true")
         parser.add_option("--log", action="store_true",
                           help=('Turn on logging for logger "mechanize" at '
