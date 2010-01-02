@@ -6,8 +6,8 @@ Local test HTTP server support and a few other bits and pieces.
 # TODO: resurrect cgitb support
 
 import contextlib
-import doctest
 import errno
+import logging
 import os
 import optparse
 import socket
@@ -252,7 +252,7 @@ class TestProgram(unittest.TestProgram):
                                 "mechanize sourceforge site, use --uri to "
                                 "override that."))
         parser.add_option("--no-proxies", action="store_true")
-        parser.add_option("--log",
+        parser.add_option("--log", action="store_true",
                           help=('Turn on logging for logger "mechanize" at '
                                 'level logging.DEBUG'))
 
