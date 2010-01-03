@@ -351,6 +351,7 @@ class Releaser(object):
         for archive in self._source_distributions:
             stage(os.path.join("dist", archive), src)
         stage("GeneralFAQ.html", "htdocs/bits")
+        stage("test-tools/cookietest.cgi", "cgi-bin")
         if self._build_tools_path is not None:
             def stage_from_website(*args):
                 self._stage(source_base_path=self._website_source_path, *args)
