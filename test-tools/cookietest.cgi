@@ -10,7 +10,8 @@ import time
 print "Content-Type: text/html"
 year_plus_one = time.localtime(time.time())[0] + 1
 expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
-print "Set-Cookie: foo=bar; %s\n" % expires
+print "Set-Cookie: foo=bar; %s" % expires
+print "Set-Cookie: sessioncookie=spam\n"
 import sys, os, string, cgi, Cookie, urllib
 from xml.sax import saxutils
 
@@ -38,7 +39,9 @@ print "<pre>"
 print cgi.escape(os.environ.get("HTTP_COOKIE", ""))
 print "</pre>"
 if cookie.has_key("foo"):
-    print "Your browser supports cookies!"
+    print "<p>Your browser supports cookies!"
+if cookie.has_key("sessioncookie"):
+    print "<p>Received session cookie"
 print "<p>Referer:</p>"
 print "<pre>"
 print cgi.escape(os.environ.get("HTTP_REFERER", ""))

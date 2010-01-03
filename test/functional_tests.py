@@ -609,26 +609,43 @@ class ExamplesTests(TestCase):
 
 class CookieJarTests(TestCase):
 
+    def _test_cookiejar(self, make_cookiejar, commit):
+        cookiejar = make_cookiejar()
+        br = self.make_browser()
+        #br.set_debug_http(True)
+        br.set_cookiejar(cookiejar)
+        br.set_handle_refresh(False)
+        url = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
+        # no cookie was set on the first request
+        html = br.open(url).read()
+        self.assertEquals(html.find("Your browser supports cookies!"), -1)
+        self.assertEquals(len(cookiejar), 2)
+        # ... but now we have the cookie
+        html = br.open(url).read()
+        self.assertIn("Your browser supports cookies!", html)
+        self.assertIn("Received session cookie", html)
+        commit(cookiejar)
+
+        # should still have the cookie when we load afresh
+        cookiejar = make_cookiejar()
+        br.set_cookiejar(cookiejar)
+        html = br.open(url).read()
+        self.assertIn("Your browser supports cookies!", html)
+        self.assertNotIn("Received session cookie", html)
+
     def test_mozilla_cookiejar(self):
-        filename = tempfile.mktemp()
-        try:
-            def get_cookiejar():
-                cj = mechanize.MozillaCookieJar(filename=filename)
-                try:
-                    cj.revert()
-                except IOError, exc:
-                    if exc.errno != errno.ENOENT:
-                        raise
-                return cj
-            def commit(cj):
-                cj.save()
-            self._test_cookiejar(get_cookiejar, commit)
-        finally:
+        filename = os.path.join(self.make_temp_dir(), "cookies.txt")
+        def make_cookiejar():
+            cj = mechanize.MozillaCookieJar(filename=filename)
             try:
-                os.remove(filename)
-            except OSError, exc:
+                cj.revert()
+            except IOError, exc:
                 if exc.errno != errno.ENOENT:
                     raise
+            return cj
+        def commit(cj):
+            cj.save()
+        self._test_cookiejar(make_cookiejar, commit)
 
     def test_firefox3_cookiejar(self):
         try:
@@ -636,44 +653,18 @@ class CookieJarTests(TestCase):
         except AttributeError:
             # firefox 3 cookiejar is only supported in Python 2.5 and later;
             # also, sqlite3 must be available
-            return
+            raise unittest.SkipTest()
 
-        filename = tempfile.mktemp()
-        try:
-            def get_cookiejar():
-                hide_experimental_warnings()
-                try:
-                    cj = mechanize.Firefox3CookieJar(filename=filename)
-                finally:
-                    reset_experimental_warnings()
-                cj.connect()
-                return cj
-            def commit(cj):
-                pass
-            self._test_cookiejar(get_cookiejar, commit)
-        finally:
-            os.remove(filename)
-
-    def _test_cookiejar(self, get_cookiejar, commit):
-        cookiejar = get_cookiejar()
-        br = self.make_browser()
-        br.set_cookiejar(cookiejar)
-        br.set_handle_refresh(False)
-        url = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
-        # no cookie was set on the first request
-        html = br.open(url).read()
-        self.assertEquals(html.find("Your browser supports cookies!"), -1)
-        self.assertEquals(len(cookiejar), 1)
-        # ... but now we have the cookie
-        html = br.open(url).read()
-        self.assert_("Your browser supports cookies!" in html)
-        commit(cookiejar)
-
-        # should still have the cookie when we load afresh
-        cookiejar = get_cookiejar()
-        br.set_cookiejar(cookiejar)
-        html = br.open(url).read()
-        self.assert_("Your browser supports cookies!" in html)
+        filename = os.path.join(self.make_temp_dir(), "cookies.sqlite")
+        def make_cookiejar():
+            hide_experimental_warnings()
+            try:
+                return mechanize.Firefox3CookieJar(filename=filename)
+            finally:
+                reset_experimental_warnings()
+        def commit(cj):
+            pass
+        self._test_cookiejar(make_cookiejar, commit)
 
 
 class CallbackVerifier:
