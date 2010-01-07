@@ -492,7 +492,7 @@ class FunctionalTests(SocketTimeoutTest):
         r = opener.open(urljoin(self.uri, "/cgi-bin/cookietest.cgi"))
         data = r.read()
         self.assert_(data.find("Your browser supports cookies!") >= 0)
-        self.assertEquals(len(cj), 1)
+        self.assertEquals(len(cj), 2)
 
         # test response.seek() (added by HTTPEquivProcessor)
         r.seek(0)
