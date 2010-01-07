@@ -99,6 +99,11 @@ def send_email(from_address, to_address, subject, body):
     s.quit()
 
 
+def ensure_unmodified(env, path):
+    # raise if working tree differs from HEAD
+    release.CwdEnv(env, path).cmd(["git", "diff", "--exit-code", "HEAD"])
+
+
 class Releaser(object):
 
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
@@ -332,14 +337,15 @@ class Releaser(object):
         else:
             print "not staging (unchanged): %s -> %s" % (full_path, dest)
 
+    def ensure_website_repo_unmodified(self, log):
+        ensure_unmodified(self._env, self._website_source_path)
+
     def make_website(self, log):
-        in_website_dir = release.CwdEnv(self._env, self._website_source_path)
-        # raise if working tree differs from HEAD
-        in_website_dir.cmd(["git", "diff", "--exit-code", "HEAD"])
-        release.empy(in_website_dir, "frontpage.html.in")
+        release.empy(release.CwdEnv(self._env, self._website_source_path),
+                     "frontpage.html.in")
 
     def ensure_staging_website_unmodified(self, log):
-        self._in_mirror.cmd(["git", "diff", "--exit-code", "HEAD"])
+        ensure_unmodified(self._env, self._mirror_path)
 
     def collate(self, log):
         stage = self._stage
@@ -607,11 +613,13 @@ John
     def update_staging_website(self):
         r = []
         if self._build_tools_path is not None:
-            r.append(self.make_website)
+            r.extend([
+                    self.ensure_website_repo_unmodified,
+                    self.make_website,
+                    ])
         if self._mirror_path is not None:
             r.extend([
-                    ("ensure_unmodified",
-                     self.ensure_staging_website_unmodified),
+                    self.ensure_staging_website_unmodified,
                     self.collate,
                     self.validate_website,
                     self.commit_staging_website,
