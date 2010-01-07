@@ -79,6 +79,7 @@ __all__ = [
     'str2time',
     'urlopen',
     'urlretrieve',
+    'urljoin',
 
     # ClientForm API
     'AmbiguityError',
@@ -138,15 +139,16 @@ from _html import \
 from _urllib2 import *
 
 # misc
-from _opener import ContentTooShortError, OpenerFactory, urlretrieve
-from _util import http2time as str2time
-from _response import \
-     response_seek_wrapper, seek_wrapped_response, make_response
 from _http import HeadParser
 try:
     from _http import XHTMLCompatibleHeadParser
 except ImportError:
     pass
+from _opener import ContentTooShortError, OpenerFactory, urlretrieve
+from _response import \
+     response_seek_wrapper, seek_wrapped_response, make_response
+from _rfc3986 import urljoin
+from _util import http2time as str2time
 
 # cookies
 from _clientcookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
