@@ -215,7 +215,7 @@ SELECT * FROM moz_cookies ORDER BY name, path, host"""):
         session_cookies = CookieJar._cookies_for_request(self, request)
         def get_cookies(cur):
             query = cur.execute("SELECT host from moz_cookies")
-            domains = [row[0] for row in query.fetchmany()]
+            domains = [row[0] for row in query.fetchall()]
             cookies = []
             for domain in domains:
                 cookies += self._persistent_cookies_for_domain(domain,
@@ -232,7 +232,7 @@ SELECT * FROM moz_cookies ORDER BY name, path, host"""):
         query = cur.execute("""\
 SELECT * from moz_cookies WHERE host = ? ORDER BY path""",
                             (domain,))
-        cookies = [self._cookie_from_row(row) for row in query.fetchmany()]
+        cookies = [self._cookie_from_row(row) for row in query.fetchall()]
         last_path = None
         r = []
         for cookie in cookies:
