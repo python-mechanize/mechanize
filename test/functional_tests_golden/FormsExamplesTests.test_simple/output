@@ -1,0 +1,19 @@
+<POST http://127.0.0.1:8000/cgi-bin/echo.cgi multipart/form-data
+  <TextareaControl(blah=)>
+  <TextControl(comments=)>
+  <CheckboxControl(eggs=[spam])>
+  <SelectControl(cheeses=[mozz, caerphilly, gouda, gorgonzola, parmesan, leicester, cheddar, mascarpone, curd, limburger, emmenthal])>
+  <CheckboxControl(apples=[pears])>
+  <CheckboxControl(whocares=[edam, gouda])>
+  <RadioControl(spam=[spam, rhubarb])>
+  <RadioControl(smelly=[on])>
+  <SelectControl(favorite_cheese=[*cheddar, brie, leicester, jahlsberg])>
+  <FileControl(<None>=<No files added>)>>
+<html><head><title>Form submission parameters</title></head>
+<p>Received parameters:</p>
+<pre>
+blah: 
+favorite_cheese: cheddar
+comments: Thanks, Gisle
+</pre></html>
+

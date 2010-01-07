@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 
+import sys
+
 import mechanize
-request = mechanize.Request(
-    "http://wwwsearch.sourceforge.net/ClientForm/example.html")
+
+if len(sys.argv) == 1:
+    uri = "http://wwwsearch.sourceforge.net/"
+else:
+    uri = sys.argv[1]
+
+request = mechanize.Request(mechanize.urljoin(uri, "ClientForm/example.html"))
 response = mechanize.urlopen(request)
 forms = mechanize.ParseResponse(response, backwards_compat=False)
 response.close()
@@ -178,6 +185,9 @@ except mechanize.HTTPError, response2:
     pass
 
 print response2.geturl()
-print response2.info()  # headers
+# headers
+for name, value in response2.info().items():
+    if name != "date":
+        print "%s: %s" % (name.title(), value)
 print response2.read()  # body
 response2.close()

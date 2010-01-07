@@ -593,9 +593,9 @@ class ExamplesTests(TestCase):
         parent_dir = os.path.dirname(os.path.dirname(
                 os.path.abspath(__file__)))
         temp_dir = self.make_temp_dir()
-        self.chdir(temp_dir)
         subprocess.check_call(
-            [python, os.path.join(parent_dir, "examples", name)])
+            [python, os.path.join(parent_dir, "examples", name)],
+            cwd=temp_dir)
         [tarball] = os.listdir(temp_dir)
         self.assertTrue(tarball.endswith(".tar.gz"))
 
@@ -604,6 +604,38 @@ class ExamplesTests(TestCase):
 
     def test_pypi(self):
         self.check_download_script("pypi.py")
+
+
+class FormsExamplesTests(mechanize._testcase.GoldenTestCase):
+
+    def check_forms_example(self, name, golden_path):
+        server = self.get_cached_fixture("server")
+        python = sys.executable
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        parent_dir = os.path.dirname(this_dir)
+        forms_examples_dir = os.path.join(parent_dir, "examples", "forms")
+        output_dir = self.make_temp_dir()
+        fh = open(os.path.join(output_dir, "output"), "w")
+        try:
+            subprocess.check_call([python, name, self.uri],
+                                  cwd=forms_examples_dir,
+                                  stdout=fh)
+        finally:
+            fh.close()
+        self.assert_golden(output_dir,
+                           os.path.join(this_dir, golden_path))
+
+    def test_simple(self):
+        self.check_forms_example(
+            "simple.py",
+            os.path.join("functional_tests_golden",
+                         "FormsExamplesTests.test_simple"))
+
+    def test_example(self):
+        self.check_forms_example(
+            "example.py",
+            os.path.join("functional_tests_golden",
+                         "FormsExamplesTests.test_example"))
 
 
 class CookieJarTests(TestCase):

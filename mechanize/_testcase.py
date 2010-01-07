@@ -1,5 +1,7 @@
 import os
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -127,11 +129,6 @@ class TestCase(unittest.TestCase):
     def monkey_patch_environ(self, *args, **kwds):
         return self._monkey_patcher.monkey_patch_environ(*args, **kwds)
 
-    def chdir(self, dir_path):
-        old = os.getcwd()
-        os.chdir(dir_path)
-        self.add_teardown(lambda: os.chdir(old))
-
     def assert_contains(self, container, containee):
         self.assertTrue(containee in container, "%r not in %r" %
                         (containee, container))
@@ -139,3 +136,27 @@ class TestCase(unittest.TestCase):
     def assert_less_than(self, got, expected):
         self.assertTrue(got < expected, "%r >= %r" %
                         (got, expected))
+
+
+#  http://lackingrhoticity.blogspot.com/2009/01/testing-using-golden-files-in-python.html
+
+class GoldenTestCase(TestCase):
+
+    run_meld = False
+
+    def assert_golden(self, dir_got, dir_expect):
+        assert os.path.exists(dir_expect), dir_expect
+        proc = subprocess.Popen(["diff", "--recursive", "-u", "-N",
+                                 "--exclude=.*", dir_expect, dir_got],
+                                stdout=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        if len(stdout) > 0:
+            if self.run_meld:
+                # Put expected output on the right because that is the
+                # side we usually edit.
+                subprocess.call(["meld", dir_got, dir_expect])
+            raise AssertionError(
+                "Differences from golden files found.\n"
+                "Try running with --meld to update golden files.\n"
+                "%s" % stdout)
+        self.assertEquals(proc.wait(), 0)

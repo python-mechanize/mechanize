@@ -139,7 +139,7 @@ def kill_posix(pid, report_hook):
 
 class TwistedServerProcess(ServerProcess):
 
-    def __init__(self, uri, name):
+    def __init__(self, uri, name, log=False):
         this_dir = os.path.dirname(__file__)
         path = os.path.join(this_dir, "twisted-localserver.py")
         ServerProcess.__init__(self, path, name)
@@ -153,10 +153,14 @@ class TwistedServerProcess(ServerProcess):
         #     print "%s: %s" % (name, msg)
         report = lambda msg: None
         self.report_hook = report
+        self._log = log
         self._start()
 
     def _get_args(self):
-        return [str(self.port)]
+        args = [str(self.port)]
+        if self._log:
+            args.append("--log")
+        return args
 
 
 class ServerCM(object):
@@ -269,6 +273,9 @@ class TestProgram(unittest.TestProgram):
         parser.add_option("--log", action="store_true",
                           help=('Turn on logging for logger "mechanize" at '
                                 'level logging.DEBUG'))
+        parser.add_option("--log-server", action="store_true",
+                          help=("Turn on logging for twisted.web2 local HTTP "
+                                " server"))
         parser.add_option("--skip-doctests", action="store_true",
                           help="Don't discover doctests.")
         allowed_tags = set(["internet"])
@@ -277,6 +284,7 @@ class TestProgram(unittest.TestProgram):
                                 "tests are not discovered by default.  Pass "
                                 "option more than once to specify more than "
                                 "one tag.  Current tags: %r" % allowed_tags))
+        parser.add_option("--meld", action="store_true")
 
         options, remaining_args = parser.parse_args(argv)
         if len(remaining_args) > 3:
@@ -355,12 +363,15 @@ class TestProgram(unittest.TestProgram):
         fixture_factory = _testcase.FixtureFactory()
         if options.run_local_server:
             cm = ServerCM(lambda: TwistedServerProcess(
-                    options.uri, "local twisted server"))
+                    options.uri, "local twisted server", options.log_server))
         else:
             cm = TrivialCM(NullServer(options.uri))
         fixture_factory.register_context_manager("server", cm)
         test_attributes = dict(uri=options.uri, no_proxies=options.no_proxies,
                                fixture_factory=fixture_factory)
+        if options.meld:
+            import mechanize._testcase
+            mechanize._testcase.GoldenTestCase.run_meld = True
         self.test = toplevel_test(self.test, test_attributes)
 
 

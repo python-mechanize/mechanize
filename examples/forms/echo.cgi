@@ -1,4 +1,4 @@
-#!/usr/bin/python1.5
+#!/usr/bin/python
 # -*-python-*-
 
 print "Content-Type: text/html\n"

@@ -14,10 +14,14 @@ You need twisted.web2 to run it.  On ubuntu feisty, you can install it like so:
 sudo apt-get install python-twisted-web2
 """
 
-import sys, re
+import optparse
+import os
+import re
+import sys
 
 from twisted.cred import portal, checkers
 from twisted.internet import reactor
+from twisted.python import log
 from twisted.python.hashlib import md5
 from twisted.web2 import server, http, resource, channel, \
      http_headers, responsecode, twcgi
@@ -127,14 +131,34 @@ class TestAuthRealm(object):
 
 class Page(resource.Resource):
 
-  addSlash = True
-  content_type = http_headers.MimeType("text", "html")
+    addSlash = True
+    content_type = http_headers.MimeType("text", "html")
 
-  def render(self, ctx):
-    return http.Response(
-        responsecode.OK,
-        {"content-type": self.content_type},
-        self.text)
+    def render(self, ctx):
+        return http.Response(
+            responsecode.OK,
+            {"content-type": self.content_type},
+            self.text)
+
+
+class Dir(resource.Resource):
+
+    addSlash = True
+
+    def locateChild(self, request, segments):
+        #import pdb; pdb.set_trace()
+        return resource.Resource.locateChild(self, request, segments)
+
+    def render(self, ctx):
+        print "render"
+        return http.Response(responsecode.FORBIDDEN)
+
+
+def make_dir(parent, name):
+    dir_ = Dir()
+    parent.putChild(name, dir_)
+    return dir_
+
 
 def _make_page(parent, name, text, content_type, wrapper,
                leaf=False):
@@ -163,6 +187,11 @@ def make_cgi_bin(parent, name, dir_name):
     cgi_bin = twcgi.CGIDirectory(dir_name)
     setattr(parent, "child_"+name, cgi_bin)
     return cgi_bin
+
+def make_cgi_script(parent, name, path):
+    cgi_script = twcgi.CGIScript(path)
+    setattr(parent, "child_"+name, cgi_script)
+    return cgi_script
 
 def require_basic_auth(resource):
     p = portal.Portal(TestAuthRealm())
@@ -197,7 +226,19 @@ def require_digest_auth(resource):
                                     p,
                                     interfaces=(IHTTPUser,))
 
-def main():
+
+def parse_options(args):
+    parser = optparse.OptionParser()
+    parser.add_option("--log", action="store_true")
+    options, remaining_args = parser.parse_args(args)
+    return options
+
+
+def main(argv):
+    options = parse_options(argv[1:])
+    if options.log:
+        log.startLogging(sys.stdout)
+
     root = Page()
     root.text = ROOT_HTML
     make_page(root, "mechanize", MECHANIZE_HTML)
@@ -213,7 +254,15 @@ def main():
     make_leaf_page(bits, "referertest.html", REFERER_TEST_HTML)
     make_leaf_page(bits, "mechanize_reload_test.html", RELOAD_TEST_HTML)
     make_redirect(root, "redirected", "/doesnotexist")
-    make_cgi_bin(root, "cgi-bin", "test-tools")
+    cgi_bin = make_dir(root, "cgi-bin")
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    make_cgi_script(cgi_bin, "cookietest.cgi",
+                    os.path.join(project_dir, "test-tools", "cookietest.cgi"))
+    clientform = make_dir(root, "ClientForm")
+    example_html = open(os.path.join("examples", "forms", "example.html")).read()
+    make_leaf_page(clientform, "example.html", example_html)
+    make_cgi_script(cgi_bin, "echo.cgi",
+                    os.path.join(project_dir, "examples", "forms", "echo.cgi"))
     make_page(root, "basic_auth", BASIC_AUTH_PAGE, wrapper=require_basic_auth)
     make_page(root, "digest_auth", DIGEST_AUTH_PAGE,
               wrapper=require_digest_auth)
@@ -222,4 +271,4 @@ def main():
     reactor.listenTCP(int(sys.argv[1]), channel.HTTPFactory(site))
     reactor.run()
 
-main()
+main(sys.argv)

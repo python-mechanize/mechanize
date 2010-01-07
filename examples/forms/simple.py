@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 
-from mechanize import ParseResponse, urlopen
+import sys
 
-response = urlopen("http://wwwsearch.sourceforge.net/ClientForm/example.html")
+from mechanize import ParseResponse, urlopen, urljoin
+
+if len(sys.argv) == 1:
+    uri = "http://wwwsearch.sourceforge.net/"
+else:
+    uri = sys.argv[1]
+
+response = urlopen(urljoin(uri, "ClientForm/example.html"))
 forms = ParseResponse(response, backwards_compat=False)
 form = forms[0]
 print form
