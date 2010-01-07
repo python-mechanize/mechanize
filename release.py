@@ -358,6 +358,8 @@ class Releaser(object):
             stage(os.path.join("dist", archive), src)
         stage("GeneralFAQ.html", "htdocs/bits")
         stage("test-tools/cookietest.cgi", "cgi-bin")
+        stage("examples/forms/echo.cgi", "cgi-bin")
+        stage("examples/forms/example.html", "htdocs/ClientForm")
         if self._build_tools_path is not None:
             def stage_from_website(*args):
                 self._stage(source_base_path=self._website_source_path, *args)
