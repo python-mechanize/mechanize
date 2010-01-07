@@ -244,7 +244,8 @@ ignore this section.
 <a name="docs"></a>
 <h2>Documentation</h2>
 
-<p>Full API documentation is in the docstrings.
+<p>Full API documentation is in the docstrings and the documentation
+of <a href="http://www.python.org/doc/2.6.4/library/urllib2.html"><code>urllib2</code></a>.
 
 <p>The documentation in the web pages is in need of reorganisation at the
 moment, after the merge of ClientCookie into mechanize.
