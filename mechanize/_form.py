@@ -58,50 +58,16 @@ __all__ = ['AmbiguityError', 'CheckboxControl', 'Control',
            'SubmitButtonControl', 'SubmitControl', 'TextControl',
            'TextareaControl', 'XHTMLCompatibleFormParser']
 
-try: True
-except NameError:
-    True = 1
-    False = 0
-
-try: bool
-except NameError:
-    def bool(expr):
-        if expr: return True
-        else: return False
-
-try:
-    import logging
-    import inspect
-except ImportError:
-    def debug(msg, *args, **kwds):
-        pass
-else:
-    _logger = logging.getLogger("ClientForm")
-    OPTIMIZATION_HACK = True
-
-    def debug(msg, *args, **kwds):
-        if OPTIMIZATION_HACK:
-            return
-
-        caller_name = inspect.stack()[1][3]
-        extended_msg = '%%s %s' % msg
-        extended_args = (caller_name,)+args
-        _logger.debug(extended_msg, *extended_args, **kwds)
-
-    def _show_debug_messages():
-        global OPTIMIZATION_HACK
-        OPTIMIZATION_HACK = False
-        _logger.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-        _logger.addHandler(handler)
-
+import HTMLParser
 from cStringIO import StringIO
+import inspect
+import logging
 import random
 import re
 import sys
 import urllib
 import urlparse
+import warnings
 
 import _request
 
@@ -110,29 +76,37 @@ import sgmllib
 # bundled copy of sgmllib
 import _sgmllib
 
-# HTMLParser.HTMLParser is recent, so live without it if it's not available
-# (also, sgmllib.SGMLParser is much more tolerant of bad HTML)
-try:
-    import HTMLParser
-except ImportError:
-    HAVE_MODULE_HTMLPARSER = False
-else:
-    HAVE_MODULE_HTMLPARSER = True
-
-try:
-    import warnings
-except ImportError:
-    def deprecation(message, stack_offset=0):
-        pass
-else:
-    def deprecation(message, stack_offset=0):
-        warnings.warn(message, DeprecationWarning, stacklevel=3+stack_offset)
 
 VERSION = "0.2.11"
 
 CHUNK = 1024  # size of chunks fed to parser, in bytes
 
 DEFAULT_ENCODING = "latin-1"
+
+_logger = logging.getLogger("ClientForm")
+OPTIMIZATION_HACK = True
+
+def debug(msg, *args, **kwds):
+    if OPTIMIZATION_HACK:
+        return
+
+    caller_name = inspect.stack()[1][3]
+    extended_msg = '%%s %s' % msg
+    extended_args = (caller_name,)+args
+    _logger.debug(extended_msg, *extended_args, **kwds)
+
+def _show_debug_messages():
+    global OPTIMIZATION_HACK
+    OPTIMIZATION_HACK = False
+    _logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    _logger.addHandler(handler)
+
+
+def deprecation(message, stack_offset=0):
+    warnings.warn(message, DeprecationWarning, stacklevel=3+stack_offset)
+
 
 class Missing: pass
 
@@ -377,21 +351,9 @@ class ItemCountError(ValueError): pass
 # for backwards compatibility, ParseError derives from exceptions that were
 # raised by versions of ClientForm <= 0.2.5
 # TODO: move to _html
-if HAVE_MODULE_HTMLPARSER:
-    SGMLLIB_PARSEERROR = _sgmllib.SGMLParseError
-    class ParseError(sgmllib.SGMLParseError,
-                     HTMLParser.HTMLParseError,
-                     ):
-        pass
-else:
-    if hasattr(sgmllib, "SGMLParseError"):
-        SGMLLIB_PARSEERROR = _sgmllib.SGMLParseError
-        class ParseError(sgmllib.SGMLParseError):
-            pass
-    else:
-        SGMLLIB_PARSEERROR = RuntimeError
-        class ParseError(RuntimeError):
-            pass
+class ParseError(sgmllib.SGMLParseError,
+                 HTMLParser.HTMLParseError):
+    pass
 
 
 class _AbstractFormParser:
@@ -705,64 +667,59 @@ class _AbstractFormParser:
     def unknown_charref(self, ref): self.handle_data("&#%s;" % ref)
 
 
-if not HAVE_MODULE_HTMLPARSER:
-    class XHTMLCompatibleFormParser:
-        def __init__(self, entitydefs=None, encoding=DEFAULT_ENCODING):
-            raise ValueError("HTMLParser could not be imported")
-else:
-    class XHTMLCompatibleFormParser(_AbstractFormParser, HTMLParser.HTMLParser):
-        """Good for XHTML, bad for tolerance of incorrect HTML."""
-        # thanks to Michael Howitz for this!
-        def __init__(self, entitydefs=None, encoding=DEFAULT_ENCODING):
-            HTMLParser.HTMLParser.__init__(self)
-            _AbstractFormParser.__init__(self, entitydefs, encoding)
+class XHTMLCompatibleFormParser(_AbstractFormParser, HTMLParser.HTMLParser):
+    """Good for XHTML, bad for tolerance of incorrect HTML."""
+    # thanks to Michael Howitz for this!
+    def __init__(self, entitydefs=None, encoding=DEFAULT_ENCODING):
+        HTMLParser.HTMLParser.__init__(self)
+        _AbstractFormParser.__init__(self, entitydefs, encoding)
 
-        def feed(self, data):
+    def feed(self, data):
+        try:
+            HTMLParser.HTMLParser.feed(self, data)
+        except HTMLParser.HTMLParseError, exc:
+            raise ParseError(exc)
+
+    def start_option(self, attrs):
+        _AbstractFormParser._start_option(self, attrs)
+
+    def end_option(self):
+        _AbstractFormParser._end_option(self)
+
+    def handle_starttag(self, tag, attrs):
+        try:
+            method = getattr(self, "start_" + tag)
+        except AttributeError:
             try:
-                HTMLParser.HTMLParser.feed(self, data)
-            except HTMLParser.HTMLParseError, exc:
-                raise ParseError(exc)
-
-        def start_option(self, attrs):
-            _AbstractFormParser._start_option(self, attrs)
-
-        def end_option(self):
-            _AbstractFormParser._end_option(self)
-
-        def handle_starttag(self, tag, attrs):
-            try:
-                method = getattr(self, "start_" + tag)
-            except AttributeError:
-                try:
-                    method = getattr(self, "do_" + tag)
-                except AttributeError:
-                    pass  # unknown tag
-                else:
-                    method(attrs)
-            else:
-                method(attrs)
-
-        def handle_endtag(self, tag):
-            try:
-                method = getattr(self, "end_" + tag)
+                method = getattr(self, "do_" + tag)
             except AttributeError:
                 pass  # unknown tag
             else:
-                method()
+                method(attrs)
+        else:
+            method(attrs)
 
-        def unescape(self, name):
-            # Use the entitydefs passed into constructor, not
-            # HTMLParser.HTMLParser's entitydefs.
-            return self.unescape_attr(name)
+    def handle_endtag(self, tag):
+        try:
+            method = getattr(self, "end_" + tag)
+        except AttributeError:
+            pass  # unknown tag
+        else:
+            method()
 
-        def unescape_attr_if_required(self, name):
-            return name  # HTMLParser.HTMLParser already did it
-        def unescape_attrs_if_required(self, attrs):
-            return attrs  # ditto
+    def unescape(self, name):
+        # Use the entitydefs passed into constructor, not
+        # HTMLParser.HTMLParser's entitydefs.
+        return self.unescape_attr(name)
 
-        def close(self):
-            HTMLParser.HTMLParser.close(self)
-            self.end_body()
+    def unescape_attr_if_required(self, name):
+        return name  # HTMLParser.HTMLParser already did it
+    def unescape_attrs_if_required(self, attrs):
+        return attrs  # ditto
+
+    def close(self):
+        HTMLParser.HTMLParser.close(self)
+        self.end_body()
 
 
 class _AbstractSgmllibParser(_AbstractFormParser):
@@ -792,7 +749,7 @@ class FormParser(_AbstractSgmllibParser, _sgmllib.SGMLParser):
     def feed(self, data):
         try:
             _sgmllib.SGMLParser.feed(self, data)
-        except SGMLLIB_PARSEERROR, exc:
+        except _sgmllib.SGMLParseError, exc:
             raise ParseError(exc)
 
     def close(self):
@@ -818,7 +775,7 @@ def _create_bs_classes(bs,
         def feed(self, data):
             try:
                 self.bs_base_class.feed(self, data)
-            except SGMLLIB_PARSEERROR, exc:
+            except _sgmllib.SGMLParseError, exc:
                 raise ParseError(exc)
         def close(self):
             self.bs_base_class.close(self)
