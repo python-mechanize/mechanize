@@ -602,7 +602,6 @@ John
             self.print_next_tag,
             self.clone,
             self.checks,
-            self.make_docs,  # functional tests depend on this!
             self.clean_coverage,
             self.test,
             self.make_coverage_html,

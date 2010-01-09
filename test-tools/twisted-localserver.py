@@ -32,8 +32,17 @@ from zope.interface import implements
 
 
 def html(title=None):
-    f = open("README.html", "r")
-    html = f.read()
+    html = """\
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <title>mechanize</title>
+  </head>
+  <body><a href="http://sourceforge.net"></body>
+</html>
+"""
     if title is not None:
         html = re.sub("<title>(.*)</title>", "<title>%s</title>" % title, html)
     return html
