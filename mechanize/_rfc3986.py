@@ -91,6 +91,10 @@ def urlunsplit(parts):
     return "".join(r)
 
 def urljoin(base_uri, uri_reference):
+    """Join a base URI with a URI reference and return the resulting URI.
+
+    See RFC 3986.
+    """
     return urlunsplit(urljoin_parts(urlsplit(base_uri),
                                     urlsplit(uri_reference)))
 
