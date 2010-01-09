@@ -547,7 +547,7 @@ John
         def copy_in(src):
             self._env.cmd(["cp", "-r", src, dst])
         # so that repository copy of mechanize is not on sys.path
-        copy_in(os.path.join(self._repo_path, "functional_tests.py"))
+        copy_in(os.path.join(self._repo_path, "test.py"))
         copy_in(os.path.join(self._repo_path, "test"))
         copy_in(os.path.join(self._repo_path, "test-tools"))
 
