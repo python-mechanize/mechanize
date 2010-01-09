@@ -23,7 +23,6 @@ from _request import Request
 import _response
 import _rfc3986
 import _sockettimeout
-import _upgrade
 import _urllib2_fork
 from _util import isstringlike
 
@@ -367,7 +366,6 @@ class OpenerFactory:
         _urllib2_fork.FTPHandler,
         _urllib2_fork.FileHandler,
         # processors
-        _upgrade.HTTPRequestUpgradeProcessor,
         _urllib2_fork.HTTPCookieProcessor,
         _urllib2_fork.HTTPErrorProcessor,
         ]

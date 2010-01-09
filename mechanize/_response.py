@@ -2,11 +2,10 @@
 
 The seek_wrapper code is not used if you're using UserAgent with
 .set_seekable_responses(False), or if you're using the urllib2-level interface
-without SeekableProcessor or HTTPEquivProcessor.  Class closeable_response is
-instantiated by some handlers (AbstractHTTPHandler), but the closeable_response
-interface is only depended upon by Browser-level code.  Function
-upgrade_response is only used if you're using Browser or
-ResponseUpgradeProcessor.
+HTTPEquivProcessor.  Class closeable_response is instantiated by some handlers
+(AbstractHTTPHandler), but the closeable_response interface is only depended
+upon by Browser-level code.  Function upgrade_response is only used if you're
+using Browser.
 
 
 Copyright 2006 John J. Lee <jjl@pobox.com>

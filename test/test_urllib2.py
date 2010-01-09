@@ -13,7 +13,6 @@ to mechanize.
 import StringIO
 import httplib
 import os
-import socket
 import sys
 import unittest
 
@@ -21,8 +20,8 @@ import mechanize
 
 from mechanize._http import parse_head
 from mechanize._response import test_response
-from mechanize import HTTPRedirectHandler, HTTPRequestUpgradeProcessor, \
-     HTTPEquivProcessor, HTTPRefreshProcessor, SeekableProcessor, \
+from mechanize import HTTPRedirectHandler, \
+     HTTPEquivProcessor, HTTPRefreshProcessor, \
      HTTPCookieProcessor, HTTPRefererProcessor, \
      HTTPErrorProcessor, HTTPHandler
 from mechanize import OpenerDirector, build_opener, Request
@@ -971,31 +970,6 @@ class HandlerTests(mechanize._testcase.TestCase):
         self.assertEqual(o.proto, "http")  # o.error called
         self.assertEqual(o.args, (req, r, 201, "Created", AlwaysEqual()))
 
-    def test_request_upgrade(self):
-        import urllib2
-        new_req_class = hasattr(urllib2.Request, "has_header")
-
-        h = HTTPRequestUpgradeProcessor()
-        o = h.parent = MockOpener()
-
-        # urllib2.Request gets upgraded, unless it's the new Request
-        # class from 2.4
-        req = urllib2.Request("http://example.com/")
-        newreq = h.http_request(req)
-        if new_req_class:
-            self.assert_(newreq is req)
-        else:
-            self.assert_(newreq is not req)
-        if new_req_class:
-            self.assert_(newreq.__class__ is not Request)
-        else:
-            self.assert_(newreq.__class__ is Request)
-        # ClientCookie._urllib2_support.Request doesn't get upgraded
-        req = Request("http://example.com/")
-        newreq = h.http_request(req)
-        self.assert_(newreq is req)
-        self.assert_(newreq.__class__ is Request)
-
     def test_referer(self):
         h = HTTPRefererProcessor()
         o = h.parent = MockOpener()
@@ -1185,25 +1159,6 @@ class HandlerTests(mechanize._testcase.TestCase):
         self.assertTrue(cj.ec_req is req)
         self.assertTrue(cj.ec_r is r is newr)
         self.assertFalse(cj.ec_u)
-
-    def test_seekable(self):
-        hide_deprecations()
-        try:
-            h = SeekableProcessor()
-        finally:
-            reset_deprecations()
-        o = h.parent = MockOpener()
-
-        req = mechanize.Request("http://example.com/")
-        class MockUnseekableResponse:
-            code = 200
-            msg = "OK"
-            def info(self): pass
-            def geturl(self): return ""
-        r = MockUnseekableResponse()
-        newr = h.any_response(req, r)
-        self.assert_(not hasattr(r, "seek"))
-        self.assert_(hasattr(newr, "seek"))
 
     def test_http_equiv(self):
         from mechanize import _response

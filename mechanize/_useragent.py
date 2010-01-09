@@ -56,7 +56,6 @@ class UserAgentBase(_opener.OpenerDirector):
         "_unknown": _urllib2.UnknownHandler,
         # HTTP{S,}Handler depend on HTTPErrorProcessor too
         "_http_error": _urllib2.HTTPErrorProcessor,
-        "_http_request_upgrade": _urllib2.HTTPRequestUpgradeProcessor,
         "_http_default_error": _urllib2.HTTPDefaultErrorHandler,
 
         # feature handlers
@@ -78,9 +77,7 @@ class UserAgentBase(_opener.OpenerDirector):
         }
 
     default_schemes = ["http", "ftp", "file"]
-    default_others = ["_unknown", "_http_error", "_http_request_upgrade",
-                      "_http_default_error",
-                      ]
+    default_others = ["_unknown", "_http_error", "_http_default_error"]
     default_features = ["_redirect", "_cookies",
                         "_refresh", "_equiv",
                         "_basicauth", "_digestauth",

@@ -71,11 +71,6 @@ print response2.info()  # headers
 print response2.read()  # body (readline and readlines work too)
 """)}
 
-<p>(The above example would also work with <code>urllib2.Request</code> objects
-too, since <code>mechanize.HTTPRequestUpgradeProcessor</code> knows about
-that class, but don't if you can avoid it, because this is an obscure hack for
-compatibility purposes only).
-
 <p>In these examples, the workings are hidden inside the
 <code>mechanize.urlopen()</code> function, which is an extension of
 <code>urllib2.urlopen()</code>.  Redirects, proxies and cookies are handled
@@ -385,10 +380,12 @@ assert response.get_data() == "blah\n"
 """)}
 
 <p>This caching behaviour can be avoided by using
-<code>mechanize.OpenerDirector</code> (as long as
-<code>SeekableProcessor</code>, <code>HTTPEquivProcessor</code> and
-<code>HTTPResponseDebugProcessor</code> are not used).  It can also be avoided
-with <code>mechanize.UserAgent</code>:
+<code>mechanize.OpenerDirector</code>.  It can also be avoided
+with <code>mechanize.UserAgent</code>.  Note
+that <code>HTTPEquivProcessor</code> and
+<code>HTTPResponseDebugProcessor</code> require seekable responses and so are
+not compatible with <code>mechanize.OpenerDirector</code>
+and <code>mechanize.UserAgent</code>.
 
 @{colorize(r"""
 import mechanize
@@ -418,29 +415,11 @@ mechanize.seek_wrapped_response(response)</code> if they require the
 <code>.seek()</code>, <code>.get_data()</code> or <code>.set_data()</code>
 methods.
 
-<p>Note that <code>SeekableProcessor</code> (and
-<code>ResponseUpgradeProcessor</code>) are deprecated since mechanize 0.1.6b.
-The reason for the deprecation is that these were really abuses of the response
-processing chain (the <code>.process_response()</code> support documented by
-urllib2).  The response processing chain is sensibly used only for processing
-response headers and data, not for processing response <em>objects</em>,
-because the same data may occur as different Python objects (this can occur for
-example when <code>HTTPError</code> is raised by
-<code>HTTPDefaultErrorHandler</code>), but should only get processed once
-(during <code>.open()</code>).
-
-
 
 <a name="requests"></a>
-<h2>Confusing fact about headers and Requests</h2>
+<h2>Request object lifetime</h2>
 
-<p>mechanize automatically upgrades <code>urllib2.Request</code> objects to
-<code>mechanize.Request</code>, as a backwards-compatibility hack.  This
-means that you won't see any headers that are added to Request objects by
-handlers unless you use <code>mechanize.Request</code> in the first place.
-Sorry about that.
-
-<p>Note also that handlers may create new <code>Request</code> instances (for
+<p>Note that handlers may create new <code>Request</code> instances (for
 example when performing redirects) rather than adding headers to existing
 <code>Request objects</code>.
 
@@ -614,16 +593,13 @@ opener = mechanize.build_opener(hh)
 response = opener.open(url)
 """)}
 
-<p>Alternatively, you can examine your individual request and response
-objects to see what's going on.  Note, though, that mechanize upgrades
-<code>urllib2.Request</code> objects to <code>mechanize.Request</code>, so you
-won't see any headers that are added to requests by handlers unless you use
-<code>mechanize.Request</code> in the first place.  In addition, requests may
-involve "sub-requests" in cases such as redirection, in which case you will
-also not see everything that's going on just by examining the original request
-and final response.  mechanize's responses can be made to
-have <code>.seek()</code> and <code>.get_data()</code> methods.  It's often
-useful to use the <code>.get_data()</code> method during debugging
+<p>Alternatively, you can examine request and response objects to see what's
+going on.  Note that requests may involve "sub-requests" in cases such as
+redirection, in which case you will also not see everything that's going on
+just by examining the original request and final response.  mechanize's
+responses can be made to have <code>.seek()</code>
+and <code>.get_data()</code> methods.  It's often useful to use
+the <code>.get_data()</code> method during debugging
 (see <a href="./doc.html#seekable">above</a>).
 
 <p>Also, note <code>HTTPRedirectDebugProcessor</code> (which prints information

@@ -48,8 +48,3 @@ from _opener import OpenerDirector, \
      build_opener, install_opener, urlopen
 from _request import \
      Request
-from _seek import \
-     SeekableProcessor
-from _upgrade import \
-     HTTPRequestUpgradeProcessor, \
-     ResponseUpgradeProcessor
