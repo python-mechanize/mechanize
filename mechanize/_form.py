@@ -100,7 +100,6 @@ from cStringIO import StringIO
 import random
 import re
 import sys
-import types
 import urllib
 import urlparse
 
@@ -143,75 +142,6 @@ def compress_text(text): return _compress_re.sub(" ", text.strip())
 def normalize_line_endings(text):
     return re.sub(r"(?:(?<!\r)\n)|(?:\r(?!\n))", "\r\n", text)
 
-
-# This version of urlencode is from my Python 1.5.2 back-port of the
-# Python 2.1 CVS maintenance branch of urllib.  It will accept a sequence
-# of pairs instead of a mapping -- the 2.0 version only accepts a mapping.
-def urlencode(query,doseq=False,):
-    """Encode a sequence of two-element tuples or dictionary into a URL query \
-string.
-
-    If any values in the query arg are sequences and doseq is true, each
-    sequence element is converted to a separate parameter.
-
-    If the query arg is a sequence of two-element tuples, the order of the
-    parameters in the output will match the order of parameters in the
-    input.
-    """
-
-    if hasattr(query,"items"):
-        # mapping objects
-        query = query.items()
-    else:
-        # it's a bother at times that strings and string-like objects are
-        # sequences...
-        try:
-            # non-sequence items should not work with len()
-            x = len(query)
-            # non-empty strings will fail this
-            if len(query) and type(query[0]) != types.TupleType:
-                raise TypeError()
-            # zero-length sequences of all types will get here and succeed,
-            # but that's a minor nit - since the original implementation
-            # allowed empty dicts that type of behavior probably should be
-            # preserved for consistency
-        except TypeError:
-            ty,va,tb = sys.exc_info()
-            raise TypeError("not a valid non-string sequence or mapping "
-                            "object", tb)
-
-    l = []
-    if not doseq:
-        # preserve old behavior
-        for k, v in query:
-            k = urllib.quote_plus(str(k))
-            v = urllib.quote_plus(str(v))
-            l.append(k + '=' + v)
-    else:
-        for k, v in query:
-            k = urllib.quote_plus(str(k))
-            if type(v) == types.StringType:
-                v = urllib.quote_plus(v)
-                l.append(k + '=' + v)
-            elif type(v) == types.UnicodeType:
-                # is there a reasonable way to convert to ASCII?
-                # encode generates a string, but "replace" or "ignore"
-                # lose information and "strict" can raise UnicodeError
-                v = urllib.quote_plus(v.encode("ASCII","replace"))
-                l.append(k + '=' + v)
-            else:
-                try:
-                    # is this a sufficient test for sequence-ness?
-                    x = len(v)
-                except TypeError:
-                    # not a sequence
-                    v = urllib.quote_plus(str(v))
-                    l.append(k + '=' + v)
-                else:
-                    # loop over the sequence
-                    for elt in v:
-                        l.append(k + '=' + urllib.quote_plus(str(elt)))
-    return '&'.join(l)
 
 def unescape(data, entities, encoding=DEFAULT_ENCODING):
     if data is None or "&" not in data:
@@ -3154,7 +3084,7 @@ class HTMLForm:
                     label=None):
         """As for click_request_data, but returns a list of (key, value) pairs.
 
-        You can use this list as an argument to ClientForm.urlencode.  This is
+        You can use this list as an argument to urllib.urlencode.  This is
         usually only useful if you're using httplib or urllib rather than
         mechanize.  It may also be useful if you want to manually tweak the
         keys and/or values, but this should not be necessary.  Otherwise, use
@@ -3164,12 +3094,6 @@ class HTMLForm:
         x-www-form-urlencoded.  In particular, it does not return the
         information required for file upload.  If you need file upload and are
         not using mechanize, use click_request_data.
-
-        Also note that Python 2.0's urllib.urlencode is slightly broken: it
-        only accepts a mapping, not a sequence of pairs, as an argument.  This
-        messes up any ordering in the argument.  Use ClientForm.urlencode
-        instead.
-
         """
         return self._click(name, type, id, label, nr, coord, "pairs",
                            self._request_class)
@@ -3356,14 +3280,14 @@ class HTMLForm:
             if self.enctype != "application/x-www-form-urlencoded":
                 raise ValueError(
                     "unknown GET form encoding type '%s'" % self.enctype)
-            parts = rest + (urlencode(self._pairs()), None)
+            parts = rest + (urllib.urlencode(self._pairs()), None)
             uri = self._urlunparse(parts)
             return uri, None, []
         elif method == "POST":
             parts = rest + (query, None)
             uri = self._urlunparse(parts)
             if self.enctype == "application/x-www-form-urlencoded":
-                return (uri, urlencode(self._pairs()),
+                return (uri, urllib.urlencode(self._pairs()),
                         [("Content-Type", self.enctype)])
             elif self.enctype == "multipart/form-data":
                 data = StringIO()
