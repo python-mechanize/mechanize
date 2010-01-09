@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 from unittest import TestCase
 
 def peek_token(p):
@@ -37,8 +36,8 @@ still a comment , blah and a space at the end
         return data, f
 
     def test_encoding(self):
-        from mechanize import _pullparser
-        #for pc, tolerant in [(pullparser.PullParser, False)]:#PullParserTests.PARSERS:
+        #from mechanize import _pullparser
+        #for pc, tolerant in [(_pullparser.PullParser, False)]:#PullParserTests.PARSERS:
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_encoding(pc, tolerant)
     def _test_encoding(self, parser_class, tolerant):
@@ -135,7 +134,6 @@ still a comment , blah and a space at the end
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_unget_token(pc, tolerant)
     def _test_unget_token(self, parser_class, tolerant):
-        from mechanize._pullparser import NoMoreTokensError
         data, f = self.data_and_file()
         p = parser_class(f)
         p.get_token()
@@ -205,7 +203,6 @@ still a comment , blah and a space at the end
             self._test_get_text_2(pc, tolerant)
     def _test_get_text_2(self, parser_class, tolerant):
         # more complicated stuff
-        from mechanize._pullparser import NoMoreTokensError
 
         # endat
         data, f = self.data_and_file()
@@ -245,8 +242,6 @@ still a comment , blah and a space at the end
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_tags(pc, tolerant)
     def _test_tags(self, parser_class, tolerant):
-        from mechanize._pullparser import NoMoreTokensError
-
         # no args
         data, f = self.data_and_file()
         p = parser_class(f)
@@ -278,8 +273,6 @@ still a comment , blah and a space at the end
         for pc, tolerant in PullParserTests.PARSERS:
             self._test_tokens(pc, tolerant)
     def _test_tokens(self, parser_class, tolerant):
-        from mechanize._pullparser import NoMoreTokensError
-
         # no args
         data, f = self.data_and_file()
         p = parser_class(f)

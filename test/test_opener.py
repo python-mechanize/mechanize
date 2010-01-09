@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import cStringIO as StringIO
-import gc
 import os
 import math
 import stat

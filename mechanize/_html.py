@@ -146,7 +146,6 @@ class LinksFactory:
                     continue
                 attrs = dict(token.attrs)
                 tag = token.data
-                name = attrs.get("name")
                 text = None
                 # XXX use attr_encoding for ref'd doc if that doc does not
                 #  provide one by other means
@@ -376,7 +375,6 @@ class RobustLinksFactory:
         bs = self._bs
         base_url = self._base_url
         encoding = self._encoding
-        gen = bs.recursiveChildGenerator()
         for ch in bs.recursiveChildGenerator():
             if (isinstance(ch, _beautifulsoup.Tag) and
                 ch.name in self.urltags.keys()+["base"]):

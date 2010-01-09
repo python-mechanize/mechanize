@@ -642,7 +642,6 @@ class Browser(UserAgentBase):
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
 
-        found_links = []
         orig_nr = nr
 
         for link in links:

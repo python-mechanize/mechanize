@@ -87,7 +87,7 @@ def backoff(func, errors,
     while time.time() < starttime + hard_timeout - 0.01:
         try:
             func()
-        except errors, exc:
+        except errors:
             time.sleep(timeout)
             timeout *= factor
             hard_limit = hard_timeout - (time.time() - starttime)

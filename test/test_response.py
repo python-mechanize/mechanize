@@ -57,8 +57,6 @@ dog.
     def testSeekable(self):
         from mechanize._response import seek_wrapper
         text = self.text
-        text_lines = self.text_lines
-
         for ii in range(1, 6):
             fh = TestUnSeekable(text)
             sfh = seek_wrapper(fh)
@@ -128,17 +126,14 @@ dog.
         assert sfh.readline() == "uick brown fox\n"
 
     def _test3(self, sfh):
-        text = self.text
         text_lines = self.text_lines
         sfh.read(25)
         sfh.seek(-1, 1)
         self.assertEqual(sfh.readlines(), ["s over the lazy\n"]+text_lines[2:])
-        nr_logs = len(sfh.log)
         sfh.seek(0)
         assert sfh.readlines() == text_lines
 
     def _test4(self, sfh):
-        text = self.text
         text_lines = self.text_lines
         count = 0
         limit = 10

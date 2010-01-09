@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """Tests for mechanize.Browser."""
 
-import sys, os, random
+import StringIO
 from unittest import TestCase
-import StringIO, re
+import re
 
 import mechanize
 from mechanize._response import test_html_response
@@ -311,7 +311,7 @@ class BrowserTests(TestCase):
                     hdrs["Content-Type"] = ct
                 b.add_handler(make_mock_handler()([("http_open",
                                             MockResponse(url, "", hdrs))]))
-                r = b.open(url)
+                b.open(url)
                 self.assertEqual(b.viewing_html(), expect)
 
         for allow_xhtml in False, True:
@@ -332,7 +332,7 @@ class BrowserTests(TestCase):
                 url = "http://example.com/foo"+ext
                 b.add_handler(make_mock_handler()(
                     [("http_open", MockResponse(url, "", {}))]))
-                r = b.open(url)
+                b.open(url)
                 self.assertEqual(b.viewing_html(), expect)
 
     def test_empty(self):
@@ -465,7 +465,6 @@ class BrowserTests(TestCase):
         for factory_class in FACTORY_CLASSES:
             self._test_link_encoding(factory_class())
     def _test_link_encoding(self, factory):
-        import urllib
         import mechanize
         from mechanize._rfc3986 import clean_url
         url = "http://example.com/"
@@ -626,7 +625,6 @@ class BrowserTests(TestCase):
             ])
 
     def test_base_uri(self):
-        import mechanize
         url = "http://example.com/"
 
         for html, urls in [

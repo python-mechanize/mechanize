@@ -103,8 +103,6 @@ def maybe_load_doctest(path):
         import mechanize
         tests = []
         common_globs = {"mechanize": mechanize}
-        pm_doctest_filename = os.path.join(
-            "test", )
         for globs in [
             {"mgr_class": mechanize.HTTPPasswordMgr},
             {"mgr_class": mechanize.HTTPProxyPasswordMgr},

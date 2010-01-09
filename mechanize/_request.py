@@ -8,7 +8,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import urllib, logging
+import logging
 
 import _rfc3986
 import _sockettimeout

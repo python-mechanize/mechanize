@@ -1587,8 +1587,6 @@ class LWPCookieTests(TestCase, TempfileTestMixin):
 
         c = LWPCookieJar(policy=pol)
 
-        max_age = "max-age=3600"
-
         # illegal domain (no embedded dots)
         cookie = interact_2965(c, "http://www.acme.com",
                                'foo=bar; domain=".com"; version=1')
@@ -1653,8 +1651,8 @@ class LWPCookieTests(TestCase, TempfileTestMixin):
 ##                           r'foo8=bar; version=1; path="/%66oo"')
         # but this is OK, because '<' is not an allowed HTTP URL path
         # character:
-        cookie = interact_2965(c, "http://www.sol.no/<oo/",
-                               r'foo8=bar; version=1; path="/%3coo"')
+        interact_2965(c, "http://www.sol.no/<oo/",
+                      r'foo8=bar; version=1; path="/%3coo"')
         assert len(c) == 6
 
         # save and restore

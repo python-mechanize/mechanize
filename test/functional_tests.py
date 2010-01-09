@@ -505,7 +505,7 @@ class FunctionalTests(SocketTimeoutTest):
             [mechanize.HTTPRobotRulesProcessor])
         browser = self.make_browser()
         for opener in plain_opener, browser:
-            r = opener.open(urljoin(self.uri, "robots"))
+            opener.open(urljoin(self.uri, "robots"))
             self.assertRaises(
                 mechanize.RobotExclusionError,
                 opener.open, urljoin(self.uri, "norobots"))
@@ -609,7 +609,7 @@ class ExamplesTests(TestCase):
 class FormsExamplesTests(mechanize._testcase.GoldenTestCase):
 
     def check_forms_example(self, name, golden_path):
-        server = self.get_cached_fixture("server")
+        self.get_cached_fixture("server")
         python = sys.executable
         this_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(this_dir)

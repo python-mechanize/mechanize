@@ -6,7 +6,6 @@
 # Copyright 2005 Zope Corporation
 # Copyright 1998-2000 Gisle Aas.
 
-import htmlentitydefs
 import os
 import unittest, string
 from unittest import TestCase
@@ -15,7 +14,7 @@ from cStringIO import StringIO
 import mechanize
 import mechanize._form as _form
 from mechanize import ControlNotFoundError,  ItemNotFoundError, \
-     ItemCountError, AmbiguityError, ParseError
+     ItemCountError, AmbiguityError
 
 # XXX
 # HTMLForm.set/get_value_by_label()
@@ -108,7 +107,6 @@ class UnescapeTests(TestCase):
 
     def test_unescape_charref(self):
         unescape_charref = _form.unescape_charref
-        get_entitydefs = _form.get_entitydefs
         mdash_utf8 = u"\u2014".encode("utf-8")
         for ref, codepoint, utf8, latin1 in [
             ("38", 38, u"&".encode("utf-8"), "&"),
@@ -847,7 +845,7 @@ Rhubarb.</button>
         # regression test: closing select and textarea tags should not be
         # ignored, causing a ParseError due to incorrect tag nesting
 
-        forms = mechanize.ParseFileEx(
+        mechanize.ParseFileEx(
             StringIO("""\
 <select name="a">
     <option>b</option>
@@ -861,7 +859,7 @@ Rhubarb.</button>
             "http://example.com/",
             )
 
-        forms = mechanize.ParseFile(
+        mechanize.ParseFile(
             StringIO("""\
 <textarea></textarea>
 <textarea></textarea>
@@ -1664,7 +1662,6 @@ class ControlTests(TestCase):
         self.assert_(c.value == [])
 
     def testSelectControlMultiple(self):
-        import copy
         attrs = {"type": "this is ignored",
                  "name": "name_value",
                  "value": "value_value",

@@ -86,7 +86,7 @@ else:
         caller_name = inspect.stack()[1][3]
         extended_msg = '%%s %s' % msg
         extended_args = (caller_name,)+args
-        debug = _logger.debug(extended_msg, *extended_args, **kwds)
+        _logger.debug(extended_msg, *extended_args, **kwds)
 
     def _show_debug_messages():
         global OPTIMIZATION_HACK
@@ -96,9 +96,13 @@ else:
         handler.setLevel(logging.DEBUG)
         _logger.addHandler(handler)
 
-import sys, urllib, types, mimetools, copy, urlparse, \
-       htmlentitydefs, re, random
 from cStringIO import StringIO
+import random
+import re
+import sys
+import types
+import urllib
+import urlparse
 
 import _request
 
@@ -3365,8 +3369,8 @@ class HTMLForm:
                 data = StringIO()
                 http_hdrs = []
                 mw = MimeWriter(data, http_hdrs)
-                f = mw.startmultipartbody("form-data", add_to_http_hdrs=True,
-                                          prefix=0)
+                mw.startmultipartbody("form-data", add_to_http_hdrs=True,
+                                      prefix=0)
                 for ii, k, v, control_index in self._pairs_and_controls():
                     self.controls[control_index]._write_mime_data(mw, k, v)
                 mw.lastpart()
