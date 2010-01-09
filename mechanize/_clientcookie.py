@@ -1165,12 +1165,7 @@ class CookieJar:
         The request object (usually a mechanize.Request instance) must support
         the methods get_full_url, get_host, is_unverifiable, get_type,
         has_header, get_header, header_items and add_unredirected_header, as
-        documented by mechanize, and the port attribute (the port number).
-        Actually, RequestUpgradeProcessor will automatically upgrade your
-        Request object to one with has_header, get_header, header_items and
-        add_unredirected_header, if it lacks those methods, for compatibility
-        with pre-2.4 versions of mechanize.
-
+        documented by urllib2.
         """
         debug("add_cookie_header")
         cookies = self.cookies_for_request(request)

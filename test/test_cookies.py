@@ -99,11 +99,6 @@ class CookieJarInterfaceTests(TestCase):
             def is_unverifiable(self):
                 self.log_called()
                 return False
-            @property
-            def port(self):
-                import traceback; traceback.print_stack()
-                self.log_called()
-                pass # currently not used, since urllib2 always sets .port None
         jar = CookieJar()
         interact_netscape(jar, "https://example.com:443",
                           "foo=bar; port=443; secure")
@@ -142,11 +137,6 @@ class CookieJarInterfaceTests(TestCase):
             def is_unverifiable(self):
                 self.log_called()
                 return False
-            @property
-            def port(self):
-                import traceback; traceback.print_stack()
-                self.log_called()
-                pass # currently not used, since urllib2 always sets .port None
         jar = CookieJar()
         response = StubResponse()
         request = StubRequest()
