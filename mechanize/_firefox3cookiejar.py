@@ -10,7 +10,6 @@ COPYING.txt included with the distribution).
 
 import logging
 import time
-import sqlite3
 
 from _clientcookie import CookieJar, Cookie, MappingIterator
 from _util import isstringlike, experimental
@@ -58,6 +57,7 @@ class Firefox3CookieJar(CookieJar):
             self.connect()
 
     def connect(self):
+        import sqlite3  # not available in Python 2.4 stdlib
         self._conn = sqlite3.connect(self.filename)
         self._conn.isolation_level = "DEFERRED"
         self._create_table_if_necessary()
