@@ -103,12 +103,13 @@ bad HTML.
 <h2>Backwards-compatibility mode</h2>
 
 <p>mechanize (and ClientForm 0.2) includes three minor backwards-incompatible
-interface changes from version 0.1.
+interface changes from ClientForm version 0.1.
 
-<p>To make upgrading from 0.1 easier, and to allow me to stop supporting
-version 0.1 sooner, there is support for operating in a backwards-compatible
-mode, under which code written for 0.1 should work without modification.  This
-is done on a per-<code>HTMLForm</code> basis via the
+<p>To make upgrading from ClientForm 0.1 easier, and to allow me to stop
+supporting version ClientForm 0.1 sooner, there is support for operating in a
+backwards-compatible mode, under which code written for ClientForm 0.1 should
+work without modification.  This is done on a per-<code>HTMLForm</code> basis
+via the
 <code>.backwards_compat</code> attribute, but for convenience the
 ParseResponse() and ParseFile() factory functions accept
 <code>backwards_compat</code> arguments.  These backwards-compatibility
@@ -134,17 +135,19 @@ string-equality (but note leading and trailing space is always stripped).
 (Control label matching is always done by substring.)
 
 <li><p>Handling of disabled list items has changed.  First, note that handling
-of disabled list items in 0.1 (and in 0.2's backwards-compatibility mode!) is
-buggy: disabled items are successful (ie. disabled item names are sent back to
-the server).  As a result, there was no distinction to be made between
-successful items and selected items.  In 0.2, the bug is fixed, so this is no
-longer the case, and it is important to note that list controls'
+of disabled list items in ClientForm 0.1 (and in ClientForm 0.2's
+backwards-compatibility mode!) is buggy: disabled items are successful
+(ie. disabled item names are sent back to the server).  As a result, there was
+no distinction to be made between successful items and selected items.  In
+ClientForm 0.2, the bug is fixed, so this is no longer the case, and it is
+important to note that list controls'
 <code>.value</code> attribute contains only the <em>successful</em> item names;
 items that are <em>selected </em> but not successful (because disabled) are not
 included in <code>.value</code>.  Second, disabled list items may no longer be
-deselected: AttributeError is raised in 0.2, whereas deselection was allowed in
-0.1.  The bug in 0.1 and in 0.2's backwards-compatibility mode will not be
-fixed, to preserve compatibility and to encourage people to upgrade to the new
+deselected: AttributeError is raised in ClientForm 0.2, whereas deselection was
+allowed in ClientForm 0.1.  The bug in ClientForm 0.1 and in ClientForm 0.2's
+backwards-compatibility mode will not be fixed, to preserve compatibility and
+to encourage people to upgrade to the new ClientForm
 0.2 <code>backwards_compat=False</code> behaviour.  </ul>
 
 <a name="credits"></a>
