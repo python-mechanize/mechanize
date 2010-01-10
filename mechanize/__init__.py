@@ -137,10 +137,7 @@ from _urllib2 import *
 
 # misc
 from _http import HeadParser
-try:
-    from _http import XHTMLCompatibleHeadParser
-except ImportError:
-    pass
+from _http import XHTMLCompatibleHeadParser
 from _opener import ContentTooShortError, OpenerFactory, urlretrieve
 from _response import \
      response_seek_wrapper, seek_wrapped_response, make_response

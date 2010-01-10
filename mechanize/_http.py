@@ -12,6 +12,7 @@ COPYING.txt included with the distribution).
 
 """
 
+import HTMLParser
 from cStringIO import StringIO
 import htmlentitydefs
 import logging
@@ -96,49 +97,44 @@ class AbstractHeadParser:
         self.handle_data("&#%s;" % ref)
 
 
-try:
-    import HTMLParser
-except ImportError:
-    pass
-else:
-    class XHTMLCompatibleHeadParser(AbstractHeadParser,
-                                    HTMLParser.HTMLParser):
-        def __init__(self):
-            HTMLParser.HTMLParser.__init__(self)
-            AbstractHeadParser.__init__(self)
+class XHTMLCompatibleHeadParser(AbstractHeadParser,
+                                HTMLParser.HTMLParser):
+    def __init__(self):
+        HTMLParser.HTMLParser.__init__(self)
+        AbstractHeadParser.__init__(self)
 
-        def handle_starttag(self, tag, attrs):
-            if tag not in self.head_elems:
-                raise EndOfHeadError()
+    def handle_starttag(self, tag, attrs):
+        if tag not in self.head_elems:
+            raise EndOfHeadError()
+        try:
+            method = getattr(self, 'start_' + tag)
+        except AttributeError:
             try:
-                method = getattr(self, 'start_' + tag)
-            except AttributeError:
-                try:
-                    method = getattr(self, 'do_' + tag)
-                except AttributeError:
-                    pass # unknown tag
-                else:
-                    method(attrs)
-            else:
-                method(attrs)
-
-        def handle_endtag(self, tag):
-            if tag not in self.head_elems:
-                raise EndOfHeadError()
-            try:
-                method = getattr(self, 'end_' + tag)
+                method = getattr(self, 'do_' + tag)
             except AttributeError:
                 pass # unknown tag
             else:
-                method()
+                method(attrs)
+        else:
+            method(attrs)
 
-        def unescape(self, name):
-            # Use the entitydefs passed into constructor, not
-            # HTMLParser.HTMLParser's entitydefs.
-            return self.unescape_attr(name)
+    def handle_endtag(self, tag):
+        if tag not in self.head_elems:
+            raise EndOfHeadError()
+        try:
+            method = getattr(self, 'end_' + tag)
+        except AttributeError:
+            pass # unknown tag
+        else:
+            method()
 
-        def unescape_attr_if_required(self, name):
-            return name  # HTMLParser.HTMLParser already did it
+    def unescape(self, name):
+        # Use the entitydefs passed into constructor, not
+        # HTMLParser.HTMLParser's entitydefs.
+        return self.unescape_attr(name)
+
+    def unescape_attr_if_required(self, name):
+        return name  # HTMLParser.HTMLParser already did it
 
 class HeadParser(AbstractHeadParser, sgmllib.SGMLParser):
 
