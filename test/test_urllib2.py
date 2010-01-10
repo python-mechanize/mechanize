@@ -1024,12 +1024,7 @@ class HandlerTests(mechanize._testcase.TestCase):
 
     def test_robots(self):
         # XXX useragent
-        try:
-            import robotparser
-        except ImportError:
-            return  # skip test
-        else:
-            from mechanize import HTTPRobotRulesProcessor
+        from mechanize import HTTPRobotRulesProcessor
         opener = OpenerDirector()
         rfpc = MockRobotFileParserClass()
         h = HTTPRobotRulesProcessor(rfpc)

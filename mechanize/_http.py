@@ -12,10 +12,15 @@ COPYING.txt included with the distribution).
 
 """
 
-import time, htmlentitydefs, logging, socket
+from cStringIO import StringIO
+import htmlentitydefs
+import logging
+import robotparser
+import socket
+import time
+
 import _sgmllib as sgmllib
 from _urllib2_fork import HTTPError, BaseHandler
-from cStringIO import StringIO
 
 from _headersutil import is_html
 from _html import unescape, unescape_charref
@@ -215,124 +220,119 @@ class HTTPEquivProcessor(BaseHandler):
     https_response = http_response
 
 
-try:
-    import robotparser
-except ImportError:
-    pass
-else:
-    class MechanizeRobotFileParser(robotparser.RobotFileParser):
+class MechanizeRobotFileParser(robotparser.RobotFileParser):
 
-        def __init__(self, url='', opener=None):
-            robotparser.RobotFileParser.__init__(self, url)
-            self._opener = opener
-            self._timeout = _sockettimeout._GLOBAL_DEFAULT_TIMEOUT
+    def __init__(self, url='', opener=None):
+        robotparser.RobotFileParser.__init__(self, url)
+        self._opener = opener
+        self._timeout = _sockettimeout._GLOBAL_DEFAULT_TIMEOUT
 
-        def set_opener(self, opener=None):
-            import _opener
-            if opener is None:
-                opener = _opener.OpenerDirector()
-            self._opener = opener
+    def set_opener(self, opener=None):
+        import _opener
+        if opener is None:
+            opener = _opener.OpenerDirector()
+        self._opener = opener
 
-        def set_timeout(self, timeout):
-            self._timeout = timeout
+    def set_timeout(self, timeout):
+        self._timeout = timeout
 
-        def read(self):
-            """Reads the robots.txt URL and feeds it to the parser."""
-            if self._opener is None:
-                self.set_opener()
-            req = Request(self.url, unverifiable=True, visit=False,
-                          timeout=self._timeout)
-            try:
-                f = self._opener.open(req)
-            except HTTPError, f:
-                pass
-            except (IOError, socket.error, OSError), exc:
-                debug_robots("ignoring error opening %r: %s" %
-                                   (self.url, exc))
-                return
-            lines = []
-            line = f.readline()
-            while line:
-                lines.append(line.strip())
-                line = f.readline()
-            status = f.code
-            if status == 401 or status == 403:
-                self.disallow_all = True
-                debug_robots("disallow all")
-            elif status >= 400:
-                self.allow_all = True
-                debug_robots("allow all")
-            elif status == 200 and lines:
-                debug_robots("parse lines")
-                self.parse(lines)
-
-    class RobotExclusionError(HTTPError):
-        def __init__(self, request, *args):
-            apply(HTTPError.__init__, (self,)+args)
-            self.request = request
-
-    class HTTPRobotRulesProcessor(BaseHandler):
-        # before redirections, after everything else
-        handler_order = 800
-
+    def read(self):
+        """Reads the robots.txt URL and feeds it to the parser."""
+        if self._opener is None:
+            self.set_opener()
+        req = Request(self.url, unverifiable=True, visit=False,
+                      timeout=self._timeout)
         try:
-            from httplib import HTTPMessage
-        except:
-            from mimetools import Message
-            http_response_class = Message
+            f = self._opener.open(req)
+        except HTTPError, f:
+            pass
+        except (IOError, socket.error, OSError), exc:
+            debug_robots("ignoring error opening %r: %s" %
+                               (self.url, exc))
+            return
+        lines = []
+        line = f.readline()
+        while line:
+            lines.append(line.strip())
+            line = f.readline()
+        status = f.code
+        if status == 401 or status == 403:
+            self.disallow_all = True
+            debug_robots("disallow all")
+        elif status >= 400:
+            self.allow_all = True
+            debug_robots("allow all")
+        elif status == 200 and lines:
+            debug_robots("parse lines")
+            self.parse(lines)
+
+class RobotExclusionError(HTTPError):
+    def __init__(self, request, *args):
+        apply(HTTPError.__init__, (self,)+args)
+        self.request = request
+
+class HTTPRobotRulesProcessor(BaseHandler):
+    # before redirections, after everything else
+    handler_order = 800
+
+    try:
+        from httplib import HTTPMessage
+    except:
+        from mimetools import Message
+        http_response_class = Message
+    else:
+        http_response_class = HTTPMessage
+
+    def __init__(self, rfp_class=MechanizeRobotFileParser):
+        self.rfp_class = rfp_class
+        self.rfp = None
+        self._host = None
+
+    def http_request(self, request):
+        scheme = request.get_type()
+        if scheme not in ["http", "https"]:
+            # robots exclusion only applies to HTTP
+            return request
+
+        if request.get_selector() == "/robots.txt":
+            # /robots.txt is always OK to fetch
+            return request
+
+        host = request.get_host()
+
+        # robots.txt requests don't need to be allowed by robots.txt :-)
+        origin_req = getattr(request, "_origin_req", None)
+        if (origin_req is not None and
+            origin_req.get_selector() == "/robots.txt" and
+            origin_req.get_host() == host
+            ):
+            return request
+
+        if host != self._host:
+            self.rfp = self.rfp_class()
+            try:
+                self.rfp.set_opener(self.parent)
+            except AttributeError:
+                debug("%r instance does not support set_opener" %
+                      self.rfp.__class__)
+            self.rfp.set_url(scheme+"://"+host+"/robots.txt")
+            self.rfp.set_timeout(request.timeout)
+            self.rfp.read()
+            self._host = host
+
+        ua = request.get_header("User-agent", "")
+        if self.rfp.can_fetch(ua, request.get_full_url()):
+            return request
         else:
-            http_response_class = HTTPMessage
+            # XXX This should really have raised URLError.  Too late now...
+            msg = "request disallowed by robots.txt"
+            raise RobotExclusionError(
+                request,
+                request.get_full_url(),
+                403, msg,
+                self.http_response_class(StringIO()), StringIO(msg))
 
-        def __init__(self, rfp_class=MechanizeRobotFileParser):
-            self.rfp_class = rfp_class
-            self.rfp = None
-            self._host = None
-
-        def http_request(self, request):
-            scheme = request.get_type()
-            if scheme not in ["http", "https"]:
-                # robots exclusion only applies to HTTP
-                return request
-
-            if request.get_selector() == "/robots.txt":
-                # /robots.txt is always OK to fetch
-                return request
-
-            host = request.get_host()
-
-            # robots.txt requests don't need to be allowed by robots.txt :-)
-            origin_req = getattr(request, "_origin_req", None)
-            if (origin_req is not None and
-                origin_req.get_selector() == "/robots.txt" and
-                origin_req.get_host() == host
-                ):
-                return request
-
-            if host != self._host:
-                self.rfp = self.rfp_class()
-                try:
-                    self.rfp.set_opener(self.parent)
-                except AttributeError:
-                    debug("%r instance does not support set_opener" %
-                          self.rfp.__class__)
-                self.rfp.set_url(scheme+"://"+host+"/robots.txt")
-                self.rfp.set_timeout(request.timeout)
-                self.rfp.read()
-                self._host = host
-
-            ua = request.get_header("User-agent", "")
-            if self.rfp.can_fetch(ua, request.get_full_url()):
-                return request
-            else:
-                # XXX This should really have raised URLError.  Too late now...
-                msg = "request disallowed by robots.txt"
-                raise RobotExclusionError(
-                    request,
-                    request.get_full_url(),
-                    403, msg,
-                    self.http_response_class(StringIO()), StringIO(msg))
-
-        https_request = http_request
+    https_request = http_request
 
 class HTTPRefererProcessor(BaseHandler):
     """Add Referer header to requests.
