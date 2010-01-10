@@ -375,6 +375,8 @@ class TestProgram(unittest.TestProgram):
                 import twisted.web2
                 import zope.interface
             except ImportError:
+                warnings.warn("Skipping functional tests: Failed to import "
+                              "twisted.web2 and/or zope.interface")
                 def skip():
                     raise unittest.SkipTest
                 cm = ServerCM(skip)
