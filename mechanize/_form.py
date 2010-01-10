@@ -69,6 +69,7 @@ import urllib
 import urlparse
 import warnings
 
+import _beautifulsoup
 import _request
 
 # from Python itself, for backwards compatibility of raised exceptions
@@ -757,57 +758,46 @@ class FormParser(_AbstractSgmllibParser, _sgmllib_copy.SGMLParser):
         self.end_body()
 
 
-# sigh, must support mechanize by allowing dynamic creation of classes based on
-# its bundled copy of BeautifulSoup (which was necessary because of dependency
-# problems)
+class _AbstractBSFormParser(_AbstractSgmllibParser):
 
-def _create_bs_classes(bs,
-                       icbinbs,
-                       ):
-    class _AbstractBSFormParser(_AbstractSgmllibParser):
-        bs_base_class = None
-        def __init__(self, entitydefs=None, encoding=DEFAULT_ENCODING):
-            _AbstractFormParser.__init__(self, entitydefs, encoding)
-            self.bs_base_class.__init__(self)
-        def handle_data(self, data):
-            _AbstractFormParser.handle_data(self, data)
-            self.bs_base_class.handle_data(self, data)
-        def feed(self, data):
-            try:
-                self.bs_base_class.feed(self, data)
-            except _sgmllib_copy.SGMLParseError, exc:
-                raise ParseError(exc)
-        def close(self):
-            self.bs_base_class.close(self)
-            self.end_body()
+    bs_base_class = None
 
-    class RobustFormParser(_AbstractBSFormParser, bs):
-        """Tries to be highly tolerant of incorrect HTML."""
-        pass
-    RobustFormParser.bs_base_class = bs
-    class NestingRobustFormParser(_AbstractBSFormParser, icbinbs):
-        """Tries to be highly tolerant of incorrect HTML.
+    def __init__(self, entitydefs=None, encoding=DEFAULT_ENCODING):
+        _AbstractFormParser.__init__(self, entitydefs, encoding)
+        self.bs_base_class.__init__(self)
 
-        Different from RobustFormParser in that it more often guesses nesting
-        above missing end tags (see BeautifulSoup docs).
+    def handle_data(self, data):
+        _AbstractFormParser.handle_data(self, data)
+        self.bs_base_class.handle_data(self, data)
 
-        """
-        pass
-    NestingRobustFormParser.bs_base_class = icbinbs
+    def feed(self, data):
+        try:
+            self.bs_base_class.feed(self, data)
+        except _sgmllib_copy.SGMLParseError, exc:
+            raise ParseError(exc)
 
-    return RobustFormParser, NestingRobustFormParser
+    def close(self):
+        self.bs_base_class.close(self)
+        self.end_body()
 
-try:
-    if sys.version_info[:2] < (2, 2):
-        raise ImportError  # BeautifulSoup uses generators
-    import BeautifulSoup
-except ImportError:
-    pass
-else:
-    RobustFormParser, NestingRobustFormParser = _create_bs_classes(
-        BeautifulSoup.BeautifulSoup, BeautifulSoup.ICantBelieveItsBeautifulSoup
-        )
-    __all__ += ['RobustFormParser', 'NestingRobustFormParser']
+
+class RobustFormParser(_AbstractBSFormParser, _beautifulsoup.BeautifulSoup):
+
+    """Tries to be highly tolerant of incorrect HTML."""
+
+    bs_base_class = _beautifulsoup.BeautifulSoup
+
+
+class NestingRobustFormParser(_AbstractBSFormParser,
+                              _beautifulsoup.ICantBelieveItsBeautifulSoup):
+
+    """Tries to be highly tolerant of incorrect HTML.
+
+    Different from RobustFormParser in that it more often guesses nesting
+    above missing end tags (see BeautifulSoup docs).
+    """
+
+    bs_base_class = _beautifulsoup.ICantBelieveItsBeautifulSoup
 
 
 #FormParser = XHTMLCompatibleFormParser  # testing hack

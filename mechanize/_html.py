@@ -8,9 +8,13 @@ included with the distribution).
 
 """
 
-import re, copy, htmlentitydefs
+import copy
+import htmlentitydefs
+import re
+
 import _sgmllib_copy as sgmllib
 
+import _beautifulsoup
 import _form
 from _headersutil import split_header_words, is_html as _is_html
 import _request
@@ -304,14 +308,6 @@ def unescape_charref(data, encoding):
         return repl
 
 
-# TODO: I think this had something to do with ClientForm being distributed
-# separately.  Remove.
-# bizarre import gymnastics for bundled BeautifulSoup
-import _beautifulsoup
-RobustFormParser, NestingRobustFormParser = _form._create_bs_classes(
-    _beautifulsoup.BeautifulSoup, _beautifulsoup.ICantBelieveItsBeautifulSoup
-    )
-
 class MechanizeBs(_beautifulsoup.BeautifulSoup):
     _entitydefs = htmlentitydefs.name2codepoint
     # don't want the magic Microsoft-char workaround
@@ -371,7 +367,6 @@ class RobustLinksFactory:
         self._encoding = encoding
 
     def links(self):
-        import _beautifulsoup
         bs = self._bs
         base_url = self._base_url
         encoding = self._encoding
@@ -407,7 +402,7 @@ class RobustFormsFactory(FormsFactory):
     def __init__(self, *args, **kwds):
         args = form_parser_args(*args, **kwds)
         if args.form_parser_class is None:
-            args.form_parser_class = RobustFormParser
+            args.form_parser_class = _form.RobustFormParser
         FormsFactory.__init__(self, **args.dictionary)
 
     def set_response(self, response, encoding):
@@ -424,7 +419,6 @@ class RobustTitleFactory:
         self._encoding = encoding
 
     def title(self):
-        import _beautifulsoup
         title = self._bs.first("title")
         if title == _beautifulsoup.Null:
             return None
