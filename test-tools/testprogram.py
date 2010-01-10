@@ -362,8 +362,17 @@ class TestProgram(unittest.TestProgram):
 
         fixture_factory = _testcase.FixtureFactory()
         if options.run_local_server:
-            cm = ServerCM(lambda: TwistedServerProcess(
-                    options.uri, "local twisted server", options.log_server))
+            try:
+                import twisted.web2
+                import zope.interface
+            except ImportError:
+                def skip():
+                    raise unittest.SkipTest
+                cm = ServerCM(skip)
+            else:
+                cm = ServerCM(lambda: TwistedServerProcess(
+                        options.uri, "local twisted server",
+                        options.log_server))
         else:
             cm = TrivialCM(NullServer(options.uri))
         fixture_factory.register_context_manager("server", cm)
