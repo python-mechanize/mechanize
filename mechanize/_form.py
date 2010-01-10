@@ -916,7 +916,7 @@ def ParseResponse(response, *args, **kwds):
      - De-selecting individual list items is allowed even if the Item is
        disabled.
 
-    The backwards_compat argument will be deprecated in a future release.
+    The backwards_compat argument will be removed in a future release.
 
     Pass a true value for select_default if you want the behaviour specified by
     RFC 1866 (the HTML 2.0 standard), which is to select the first item in a
