@@ -9,7 +9,7 @@ included with the distribution).
 """
 
 import re, copy, htmlentitydefs
-import _sgmllib as sgmllib
+import _sgmllib_copy as sgmllib
 
 import _form
 from _headersutil import split_header_words, is_html as _is_html

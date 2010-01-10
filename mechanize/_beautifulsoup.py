@@ -46,10 +46,10 @@ __date__ = "$Date: 2004/10/18 00:14:20 $"
 __copyright__ = "Copyright (c) 2004-2005 Leonard Richardson"
 __license__ = "PSF"
 
-from _sgmllib import SGMLParser, SGMLParseError
+from _sgmllib_copy import SGMLParser, SGMLParseError
 import types
 import re
-import _sgmllib as sgmllib
+import _sgmllib_copy as sgmllib
 
 class NullType(object):
 

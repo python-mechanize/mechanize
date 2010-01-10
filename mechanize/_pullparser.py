@@ -34,7 +34,7 @@ under the terms of the BSD or ZPL 2.1 licenses.
 """
 
 import re, htmlentitydefs
-import _sgmllib as sgmllib
+import _sgmllib_copy as sgmllib
 import HTMLParser
 from xml.sax import saxutils
 

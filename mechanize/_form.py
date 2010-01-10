@@ -74,7 +74,7 @@ import _request
 # from Python itself, for backwards compatibility of raised exceptions
 import sgmllib
 # bundled copy of sgmllib
-import _sgmllib
+import _sgmllib_copy
 
 
 VERSION = "0.2.11"
@@ -740,20 +740,20 @@ class _AbstractSgmllibParser(_AbstractFormParser):
         return attrs  # ditto
 
 
-class FormParser(_AbstractSgmllibParser, _sgmllib.SGMLParser):
+class FormParser(_AbstractSgmllibParser, _sgmllib_copy.SGMLParser):
     """Good for tolerance of incorrect HTML, bad for XHTML."""
     def __init__(self, entitydefs=None, encoding=DEFAULT_ENCODING):
-        _sgmllib.SGMLParser.__init__(self)
+        _sgmllib_copy.SGMLParser.__init__(self)
         _AbstractFormParser.__init__(self, entitydefs, encoding)
 
     def feed(self, data):
         try:
-            _sgmllib.SGMLParser.feed(self, data)
-        except _sgmllib.SGMLParseError, exc:
+            _sgmllib_copy.SGMLParser.feed(self, data)
+        except _sgmllib_copy.SGMLParseError, exc:
             raise ParseError(exc)
 
     def close(self):
-        _sgmllib.SGMLParser.close(self)
+        _sgmllib_copy.SGMLParser.close(self)
         self.end_body()
 
 
@@ -775,7 +775,7 @@ def _create_bs_classes(bs,
         def feed(self, data):
             try:
                 self.bs_base_class.feed(self, data)
-            except _sgmllib.SGMLParseError, exc:
+            except _sgmllib_copy.SGMLParseError, exc:
                 raise ParseError(exc)
         def close(self):
             self.bs_base_class.close(self)

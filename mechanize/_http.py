@@ -20,7 +20,7 @@ import robotparser
 import socket
 import time
 
-import _sgmllib as sgmllib
+import _sgmllib_copy as sgmllib
 from _urllib2_fork import HTTPError, BaseHandler
 
 from _headersutil import is_html
