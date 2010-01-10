@@ -27,6 +27,8 @@ from mechanize import HTTPRedirectHandler, \
 from mechanize import OpenerDirector, build_opener, Request
 from mechanize._urllib2_fork import AbstractHTTPHandler
 from mechanize._util import hide_deprecations, reset_deprecations
+
+import mechanize._response
 import mechanize._sockettimeout as _sockettimeout
 import mechanize._testcase
 import mechanize._urllib2_fork
@@ -954,21 +956,28 @@ class HandlerTests(mechanize._testcase.TestCase):
             self.assertEqual(p_ds_req.unredirected_hdrs["Host"],"example.com")
 
     def test_errors(self):
-        from mechanize import _response
         h = HTTPErrorProcessor()
         o = h.parent = MockOpener()
 
         req = Request("http://example.com")
-        # 200 OK is passed through
-        r = _response.test_response()
+        # all 2xx are passed through
+        r = mechanize._response.test_response()
+        newr = h.http_response(req, r)
+        self.assertTrue(r is newr)
+        self.assertTrue(not hasattr(o, "proto"))  # o.error not called
+        r = mechanize._response.test_response(code=202, msg="Accepted")
+        newr = h.http_response(req, r)
+        self.assertTrue(r is newr)
+        self.assertTrue(not hasattr(o, "proto"))  # o.error not called
+        r = mechanize._response.test_response(code=206, msg="Partial content")
         newr = h.http_response(req, r)
         self.assertTrue(r is newr)
         self.assertTrue(not hasattr(o, "proto"))  # o.error not called
         # anything else calls o.error (and MockOpener returns None, here)
-        r = _response.test_response(code=201, msg="Created")
+        r = mechanize._response.test_response(code=502, msg="Bad gateway")
         self.assertTrue(h.http_response(req, r) is None)
         self.assertEqual(o.proto, "http")  # o.error called
-        self.assertEqual(o.args, (req, r, 201, "Created", AlwaysEqual()))
+        self.assertEqual(o.args, (req, r, 502, "Bad gateway", AlwaysEqual()))
 
     def test_referer(self):
         h = HTTPRefererProcessor()
@@ -1156,7 +1165,6 @@ class HandlerTests(mechanize._testcase.TestCase):
         self.assertFalse(cj.ec_u)
 
     def test_http_equiv(self):
-        from mechanize import _response
         h = HTTPEquivProcessor()
         o = h.parent = MockOpener()
 
@@ -1170,7 +1178,7 @@ class HandlerTests(mechanize._testcase.TestCase):
                    ]
         url = "http://example.com/"
         req = Request(url)
-        r = _response.make_response(data, headers, url, 200, "OK")
+        r = mechanize._response.make_response(data, headers, url, 200, "OK")
         newr = h.http_response(req, r)
 
         new_headers = newr.info()

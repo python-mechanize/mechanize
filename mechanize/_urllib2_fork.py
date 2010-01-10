@@ -438,7 +438,7 @@ class HTTPErrorProcessor(BaseHandler):
     look-in by removing the call to parent.error() from
     AbstractHTTPHandler.
 
-    For non-200 error codes, this just passes the job on to the
+    For non-2xx error codes, this just passes the job on to the
     Handler.<proto>_error_<code> methods, via the OpenerDirector.error method.
     Eventually, HTTPDefaultErrorHandler will raise an HTTPError if no other
     handler handles the error.
@@ -449,10 +449,12 @@ class HTTPErrorProcessor(BaseHandler):
     def http_response(self, request, response):
         code, msg, hdrs = response.code, response.msg, response.info()
 
-        if code != 200:
+        # According to RFC 2616, "2xx" code indicates that the client's
+        # request was successfully received, understood, and accepted.
+        if not (200 <= code < 300):
             # hardcoded http is NOT a bug
             response = self.parent.error(
-                "http", request, response, code, msg, hdrs)
+                'http', request, response, code, msg, hdrs)
 
         return response
 
