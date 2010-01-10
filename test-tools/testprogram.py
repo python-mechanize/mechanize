@@ -362,6 +362,15 @@ class TestProgram(unittest.TestProgram):
 
         fixture_factory = _testcase.FixtureFactory()
         if options.run_local_server:
+            import warnings
+            # http://code.google.com/p/rdflib/issues/detail?id=101
+            warnings.filterwarnings(
+                action="ignore",
+                message=(".*Module test was already imported from "
+                         ".*test/__init__.pyc?, but .* is being added to "
+                         "sys.path"),
+                category=UserWarning,
+                module="zope")
             try:
                 import twisted.web2
                 import zope.interface
