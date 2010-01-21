@@ -39,7 +39,7 @@ except NameError:
 <p>This page is the old ClientCookie documentation.  It deals with operation on
 the level of urllib2 Handler objects, and also with adding headers, debugging,
 and cookie handling.  Documentation for the higher-level browser-style
-interface is <a href="./mechanize">elsewhere</a>.
+interface is <a href="../mechanize">elsewhere</a>.
 
 
 <a name="examples"></a>
