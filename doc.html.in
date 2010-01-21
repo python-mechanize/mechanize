@@ -673,8 +673,6 @@ class CommentCleanProcessor(mechanize.BaseProcessor):
       https_response = http_response
 """)}
 
-<p>XXX TidyProcessor: mxTidy?  tidylib?  tidy?
-
 
 <a name="standards"></a>
 <h2>Note about cookie standards</h2>
