@@ -606,6 +606,13 @@ class ExamplesTests(TestCase):
         self.check_download_script("pypi.py")
 
 
+def add_to_path(env, name, value):
+    old = env.get(name)
+    if old is not None and old != "":
+        value = old + ":" + value
+    env[name] = value
+
+
 class FormsExamplesTests(mechanize._testcase.GoldenTestCase):
 
     def check_forms_example(self, name, golden_path):
@@ -616,8 +623,11 @@ class FormsExamplesTests(mechanize._testcase.GoldenTestCase):
         forms_examples_dir = os.path.join(parent_dir, "examples", "forms")
         output_dir = self.make_temp_dir()
         fh = open(os.path.join(output_dir, "output"), "w")
+        env = os.environ.copy()
+        add_to_path(env, "PYTHONPATH", parent_dir)
         try:
             subprocess.check_call([python, name, self.uri],
+                                  env=env,
                                   cwd=forms_examples_dir,
                                   stdout=fh)
         finally:
