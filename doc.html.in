@@ -153,12 +153,8 @@ unless overwritten by newly loaded ones).
 Mozilla/Netscape/lynx-compatible <code>'cookies.txt'</code> format.  This
 format loses some information (unusual and nonstandard cookie attributes such
 as comment, and also information specific to RFC 2965 cookies).  The subclass
-<code>MSIECookieJar</code> can load (but not save, yet) from Microsoft Internet
-Explorer's cookie files (on Windows).  <code>BSDDBCookieJar</code> (NOT FULLY
-TESTED!) saves to a BSDDB database using the standard library's
-<code>bsddb</code> module.  There's an unfinished <code>MSIEDBCookieJar</code>,
-which uses (reads and writes) the Windows MSIE cookie database directly, rather
-than storing copies of cookies as <code>MSIECookieJar</code> does.
+<code>MSIECookieJar</code> can load (but not save) from Microsoft Internet
+Explorer's cookie files on Windows.
 
 <h2>Important note</h2>
 
@@ -170,8 +166,7 @@ subject to change or disappearance without notice.
 <h2>Cooperating with Mozilla/Netscape, lynx and Internet Explorer</h2>
 
 <p class="docwarning">Firefox since version 3 persists cookies in an sqlite
-database, which is not supported by MozillaCookieJar.  There
-is <em>experimental</em> support for this in Firefox3CookieJar.</p>
+database, which is not supported by MozillaCookieJar.</p>
 
 <p>The subclass <code>MozillaCookieJar</code> differs from
 <code>CookieJar</code> only in storing cookies using a different, Firefox
