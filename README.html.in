@@ -326,30 +326,20 @@ git clone git://github.com/jjlee/mechanize.git
 <h3>Examples</h3>
 
 <p>The <code>examples</code> directory in the source packages contains a couple
-of silly, but working, scripts to demonstrate basic use of the module.  Note
-that it's in the nature of web scraping for such scripts to break, so don't be
-too surprised if that happens &#8211; do let me know, though!
+of silly, but working, scripts to demonstrate basic use of the module.
 
 <p>See also the <a href="./forms/">forms examples</a> (these examples use the
-forms code independently of Browser).
+forms code independently of <code>mechanize.Browser</code>).
 
-<h3>Functional tests</h3>
+<h3>Tests</h3>
 
-<p>To run the functional tests (which <strong>do</strong> access the network):
-
-<pre>python functional_tests.py</pre>
-
-<p>To start a local server and run the functional tests against that (depends
-on <code>twisted.web2</code>):
-
-<pre>python functional_tests.py -l</pre>
-
-<h3>Unit tests</h3>
-
-<p>To run the unit tests (none of which access the network), run the following
-command:
+<p>To run the tests:
 
 <pre>python test.py</pre>
+
+<p>There are some tests that try to fetch URLs from the internet.  To include those in the test run:
+
+<pre>python test.py discover --tag internet</pre>
 
 
 <h2>See also</h2>
