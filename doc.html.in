@@ -77,10 +77,6 @@ print response2.read()  # body (readline and readlines work too)
 automatically by this function (note that you may need a bit of configuration
 to get your proxies correctly set up: see <code>urllib2</code> documentation).
 
-<p>Cookie processing (etc.) is handled by processor objects, which are an
-extension of <code>urllib2</code>'s handlers: <code>HTTPCookieProcessor</code>,
-<code>HTTPRefererProcessor</code> etc.  They are used like any other handler.
-
 <p>There is also a <code>urlretrieve()</code> function, which works like
 <code>urllib.urlretrieve()</code>.
 
@@ -298,9 +294,8 @@ cookies.set_policy(policy)
 <a name="extras"></a>
 <h2>Optional extras: robots.txt, HTTP-EQUIV, Refresh, Referer</h2>
 
-<p>These are implemented as processor classes.  Processors are an extension of
-<code>urllib2</code>'s handlers (now a standard part of urllib2 in Python 2.4):
-you just pass them to <code>build_opener()</code> (example code below).
+<p>The following handlers are provided in addition to those provided by 
+<code>urllib2</code>:
 
 <dl>
 
@@ -311,7 +306,7 @@ many pages in the World Wide Web by recursively retrieving linked pages.  This
 kind of program can place significant loads on web servers, so there is a <a
 href="http://www.robotstxt.org/wc/norobots.html">standard</a> for a <code>
 robots.txt</code> file by which web site operators can request robots to keep
-out of their site, or out of particular areas of it.  This processor uses the
+out of their site, or out of particular areas of it.  This handler uses the
 standard Python library's <code>robotparser</code> module.  It raises
 <code>mechanize.RobotExclusionError</code> (subclass of
 <code>mechanize.HTTPError</code>) if an attempt is made to open a URL prohibited
@@ -339,7 +334,7 @@ using the constructor arguments.
 you've just visited.  Some servers use this header as state information, and
 don't like it if this is not present.  It's a chore to add this header by hand
 every time you make a request.  This adds it automatically.
-<strong>NOTE</strong>: this only makes sense if you use each processor for a
+<strong>NOTE</strong>: this only makes sense if you use each handler for a
 single chain of HTTP requests (so, for example, if you use a single
 HTTPRefererProcessor to fetch a series of URLs extracted from a single page,
 <strong>this will break</strong>).  <a
@@ -868,7 +863,7 @@ mailing list</a> rather than direct to me.
 <a href="./doc.html#browsers">Mozilla &amp; MSIE</a><br>
 <a href="./doc.html#file">Cookies in a file</a><br>
 <a href="./doc.html#cookiejar">Using a <code>CookieJar</code></a><br>
-<a href="./doc.html#extras">Processors</a><br>
+<a href="./doc.html#extras">Handlers</a><br>
 <a href="./doc.html#seekable">Seekable responses</a><br>
 <a href="./doc.html#requests">Request object lifetime</a><br>
 <a href="./doc.html#headers">Adding headers</a><br>
