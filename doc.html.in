@@ -870,7 +870,7 @@ mailing list</a> rather than direct to me.
 <a href="./doc.html#cookiejar">Using a <code>CookieJar</code></a><br>
 <a href="./doc.html#extras">Processors</a><br>
 <a href="./doc.html#seekable">Seekable responses</a><br>
-<a href="./doc.html#requests">Request confusion</a><br>
+<a href="./doc.html#requests">Request object lifetime</a><br>
 <a href="./doc.html#headers">Adding headers</a><br>
 <a href="./doc.html#unverifiable">Verifiability</a><br>
 <a href="./doc.html#rfc2965">RFC 2965</a><br>
