@@ -749,12 +749,6 @@ Kristol</a>.
   <p>Did you call <code>response.read()</code> (eg., in a debug statement),
      then forget that all the data has already been read?  In that case, you
      may want to use <code>mechanize.response_seek_wrapper</code>.
-  <li>How do I download only part of a response body?
-  <p>Just call <code>.read()</code> or <code>.readline()</code> methods on your
-     response object as many times as you need.  The <code>.seek()</code>
-     method (which is not always present, see <a
-     href="./doc.html#seekable">above</a>) still works, because mechanize
-     caches read data.
   <li>What's the difference between the <code>.load()</code> and
       <code>.revert()</code> methods of <code>CookieJar</code>?
   <p><code>.load()</code> <em>appends</em> cookies from a file.
@@ -762,12 +756,10 @@ Kristol</a>.
      <code>CookieJar</code> first (but it won't lose any existing cookies if
      the loading fails).
   <li>Is it threadsafe?
-  <p>No.  <em>Tested</em> patches welcome.  Clarification: As far as I know,
-     it's perfectly possible to use mechanize in threaded code, but it
+  <p>No.  As far as I know, you can use mechanize in threaded code, but it
      provides no synchronisation: you have to provide that yourself.
   <li>How do I do &lt;X&gt;
-  <p>The module docstrings are worth reading if you want to do something
-     unusual.
+  <p>Refer to the API documentation in docstrings.
 </ul>
 
 <p>I prefer questions and comments to be sent to the <a
