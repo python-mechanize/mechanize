@@ -679,60 +679,27 @@ class CommentCleanProcessor(mechanize.BaseProcessor):
 <a name="standards"></a>
 <h2>Note about cookie standards</h2>
 
-<p>The various cookie standards and their history form a case study of the
-terrible things that can happen to a protocol.  The long-suffering David
-Kristol has written a <a
-href="http://arxiv.org/abs/cs.SE/0105018">paper</a> about it, if you
-want to know the gory details.
+<p>There are several standards relevant to HTTP cookies.
 
-<p>Here is a summary.
-
-<p>The <a href="http://www.netscape.com/newsref/std/cookie_spec.html">Netscape
-protocol</a> (cookie_spec.html) is still the only standard supported by most
-browsers (including Internet Explorer and Netscape).  Be aware that
-cookie_spec.html is not, and never was, actually followed to the letter (or
-anything close) by anyone (including Netscape, IE and mechanize): the
-Netscape protocol standard is really defined by the behaviour of Netscape (and
-now IE).  Netscape cookies are also known as V0 cookies, to distinguish them
-from RFC 2109 or RFC 2965 cookies, which have a version cookie-attribute with a
-value of 1.
+<p>The Netscape protocol is the only standard supported by most web browsers
+(including Internet Explorer and Firefox).  This is a de facto standard defined
+by the behaviour of popular browsers, and neither
+the <a href="http://curl.haxx.se/rfc/cookie_spec.html">cookie_spec.html</a>
+document that was published by Netscape, nor the RFCs that were published
+later, describe the Netscape protocol accurately or completely.  Netscape
+protocol cookies are also known as V0 cookies, to distinguish them from RFC
+2109 or RFC 2965 cookies, which have a version cookie-attribute with a value of
+1.
 
 <p><a href="http://www.ietf.org/rfcs/rfc2109.txt">RFC 2109</a> was introduced
 to fix some problems identified with the Netscape protocol, while still keeping
 the same HTTP headers (<code>Cookie</code> and <code>Set-Cookie</code>).  The
 most prominent of these problems is the 'third-party' cookie issue, which was
-an accidental feature of the Netscape protocol.  When one visits www.bland.org,
-one doesn't expect to get a cookie from www.lurid.com, a site one has never
-visited.  Depending on browser configuration, this can still happen, because
-the unreconstructed Netscape protocol is happy to accept cookies from, say, an
-image in a webpage (www.bland.org) that's included by linking to an
-advertiser's server (www.lurid.com).  This kind of event, where your browser
-talks to a server that you haven't explicitly okayed by some means, is what the
-RFCs call an 'unverifiable transaction'.  In addition to the potential for
-embarrassment caused by the presence of lurid.com's cookies on one's machine,
-this may also be used to track your movements on the web, because advertising
-agencies like doubleclick.net place ads on many sites.  RFC 2109 tried to
-change this by requiring cookies to be turned off during unverifiable
-transactions with third-party servers - unless the user explicitly asks them to
-be turned on.  This clashed with the business model of advertisers like
-doubleclick.net, who had started to take advantage of the third-party cookies
-'bug'.  Since the browser vendors were more interested in the advertisers'
-concerns than those of the browser users, this arguably doomed both RFC 2109
-and its successor, RFC 2965, from the start.  Other problems than the
-third-party cookie issue were also fixed by 2109.  However, even ignoring the
-advertising issue, 2109 was stillborn, because Internet Explorer and Netscape
-behaved differently in response to its extended <code>Set-Cookie</code>
-headers.  This was not really RFC 2109's fault: it worked the way it did to
-keep compatibility with the Netscape protocol as implemented by Netscape.
-Microsoft Internet Explorer (MSIE) was very new when the standard was designed,
-but was starting to be very popular when the standard was finalised.  XXX P3P,
-and MSIE &amp; Mozilla options
-
-<p>XXX Apparently MSIE implements bits of RFC 2109 - but not very compliant
-(surprise).  Presumably other browsers do too, as a result.  mechanize
-already does allow Netscape cookies to have <code>max-age</code> and
-<code>port</code> cookie-attributes, and as far as I know that's the extent of
-the support present in MSIE.  I haven't tested, though!
+an accidental feature of the Netscape protocol.  Some features defined by
+RFC2109 (such as the port and max-age cookie attributes) are now part of the de
+facto Netscape protocol, but the RFC was never implemented fully by browsers,
+because of differences in behaviour between the Netscape and Internet Explorer
+browsers of the time.
 
 <p><a href="http://www.ietf.org/rfcs/rfc2965.txt">RFC 2965</a> attempted to fix
 the compatibility problem by introducing two new headers,
@@ -740,27 +707,22 @@ the compatibility problem by introducing two new headers,
 <code>Cookie</code> header, <code>Cookie2</code> does <em>not</em> carry
 cookies to the server - rather, it simply advertises to the server that RFC
 2965 is understood.  <code>Set-Cookie2</code> <em>does</em> carry cookies, from
-server to client: the new header means that both IE and Netscape completely
-ignore these cookies.  This prevents breakage, but introduces a chicken-egg
-problem that means 2965 may never be widely adopted, especially since Microsoft
-shows no interest in it.  XXX Rumour has it that the European Union is unhappy
-with P3P, and might introduce legislation that requires something better,
-forming a gap that RFC 2965 might fill - any truth in this?  Opera is the only
-browser I know of that supports the standard.  On the server side, Apache's
-<code>mod_usertrack</code> supports it.  One confusing point to note about RFC
-2965 is that it uses the same value (1) of the Version attribute in HTTP
-headers as does RFC 2109.
+server to client: the new header means that both IE and Netscape ignore these
+cookies.  This preserves backwards compatibility, but popular browsers did not
+implement the RFC, so it was never widely adopted.  One confusing point to note
+about RFC 2965 is that it uses the same value (1) of the Version attribute in
+HTTP headers as does RFC 2109.  See
+also <a href="http://www.ietf.org/rfcs/rfc2964.txt">RFC 2964</a>, which
+discusses use of the protocol.
 
-<p>Most recently, it was discovered that RFC 2965 does not fully take account
-of issues arising when 2965 and Netscape cookies coexist, and errata were
-discussed on the W3C http-state mailing list, but the list traffic died and it
-seems RFC 2965 is dead as an internet protocol (but still a useful basis for
-implementing the de-facto standards, and perhaps as an intranet protocol).
+<p>Because Netscape cookies are so poorly specified, the general philosophy of
+the module's Netscape protocol implementation is to start with RFC 2965 and
+open holes where required for Netscape protocol-compatibility.  RFC 2965
+cookies are <em>always</em> treated as RFC 2965 requires, of course.
 
-<p>Because Netscape cookies are so poorly specified, the general philosophy
-of the module's Netscape cookie implementation is to start with RFC 2965
-and open holes where required for Netscape protocol-compatibility.  RFC
-2965 cookies are <em>always</em> treated as RFC 2965 requires, of course!
+<p>There is more information about the history of HTTP cookies
+in <a href="http://arxiv.org/abs/cs.SE/0105018">this paper by David
+Kristol</a>.
 
 
 <a name="faq"></a>
@@ -770,42 +732,12 @@ and open holes where required for Netscape protocol-compatibility.  RFC
      this?
   <p>No: Cookie.py does the server end of the job.  It doesn't know when to
      accept cookies from a server or when to pass them back.
-  <li>Where can I find out more about the HTTP cookie protocol?
-  <p>There is more than one protocol, in fact (see the <a href="./doc.html">docs</a>
-     for a brief explanation of the history):
-  <ul>
-    <li>The original <a href="http://www.netscape.com/newsref/std/cookie_spec.html">
-        Netscape cookie protocol</a> - the standard still in use today, in
-        theory (in reality, the protocol implemented by all the major browsers
-        only bears a passing resemblance to the protocol sketched out in this
-        document).
-    <li><a href="http://www.ietf.org/rfcs/rfc2109.txt">RFC 2109</a> - obsoleted
-        by RFC 2965.
-     <li><a href="http://www.ietf.org/rfcs/rfc2965.txt">RFC 2965</a> - the
-        Netscape protocol with the bugs fixed (not widely used - the Netscape
-        protocol still dominates, and seems likely to remain dominant
-        indefinitely, at least on the Internet).
-        <a href="http://www.ietf.org/rfcs/rfc2964.txt">RFC 2964</a> discusses use
-        of the protocol.
-        <a href="http://kristol.org/cookie/errata.html">Errata</a> to RFC 2965
-        are currently being discussed on the
-        <a href="http://lists.bell-labs.com/mailman/listinfo/http-state">
-        http-state mailing list</a> (update: list traffic died months ago and
-        hasn't revived).
-    <li>A <a href="http://doi.acm.org/10.1145/502152.502153">paper</a> by David
-        Kristol setting out the history of the cookie standards in exhausting
-        detail.
-    <li>HTTP cookies <a href="http://www.cookiecentral.com/">FAQ</a>.
-  </ul>
-  <li>Which protocols does mechanize support?
+  <li>Which HTTP cookie protocols does mechanize support?
      <p>Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
   <li>What about RFC 2109?
      <p>RFC 2109 cookies are currently parsed as Netscape cookies, and treated
      by default as RFC 2965 cookies thereafter if RFC 2965 handling is enabled,
-     or as Netscape cookies otherwise.  RFC 2109 is officially obsoleted by RFC
-     2965.  Browsers do use a few RFC 2109 features in their Netscape cookie
-     implementations (<code>port</code> and <code>max-age</code>), and
-     mechanize knows about that, too.
+     or as Netscape cookies otherwise.
 </ul>
 
 
