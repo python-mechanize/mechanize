@@ -763,7 +763,7 @@ and open holes where required for Netscape protocol-compatibility.  RFC
 2965 cookies are <em>always</em> treated as RFC 2965 requires, of course!
 
 
-<a name="faq_pre"></a>
+<a name="faq"></a>
 <h2>FAQs - pre install</h2>
 <ul>
   <li>Doesn't the standard Python library module, <code>Cookie</code>, do
@@ -809,7 +809,6 @@ and open holes where required for Netscape protocol-compatibility.  RFC
 </ul>
 
 
-<a name="faq_use"></a>
 <h2>FAQs - usage</h2>
 <ul>
   <li>Why don't I have any cookies?
@@ -870,7 +869,7 @@ mailing list</a> rather than direct to me.
 <a href="./doc.html#script">Embedded scripts</a><br>
 <a href="./doc.html#dates">HTTP date parsing</a><br>
 <a href="./doc.html#standards">Standards</a><br>
-<a href="./doc.html#faq_use">FAQs - usage</a><br>
+<a href="./doc.html#faq">FAQ</a><br>
 
 </div>
 
