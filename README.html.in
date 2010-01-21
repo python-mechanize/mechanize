@@ -328,7 +328,7 @@ git clone git://github.com/jjlee/mechanize.git
 <p>The <code>examples</code> directory in the source packages contains a couple
 of silly, but working, scripts to demonstrate basic use of the module.
 
-<p>See also the <a href="./forms/">forms examples</a> (these examples use the
+<p>See also the <a href="./forms.html">forms examples</a> (these examples use the
 forms code independently of <code>mechanize.Browser</code>).
 
 <h3>Tests</h3>
