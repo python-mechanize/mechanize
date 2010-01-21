@@ -3,6 +3,27 @@
 Local test HTTP server support and a few other bits and pieces.
 """
 
+USAGE = """
+%prog [OPTIONS...] [ARGUMENTS...]
+%prog [discover [OPTIONS...]] [ARGUMENTS...]
+
+Examples:
+
+python test.py  # all tests
+python test.py test_api  # run test/test_api.py
+python test.py functional_tests  # run test/functional_tests.py
+python test.py mechanize/_headersutil  # run the doctests from this module
+python test.py functional_tests.CookieJarTests  # just this class
+# just this test method
+python test.py functional_tests.CookieJarTests.test_mozilla_cookiejar
+
+python test.py discover --pattern test_browser.doctest  # doctest file
+# run test/functional_tests.py
+python test.py discover --pattern functional_tests.py
+
+python test.py --tag internet  # include tests that use the internet
+"""
+
 # TODO: resurrect cgitb support
 
 import errno
@@ -237,7 +258,7 @@ class TestProgram(unittest.TestProgram):
         unittest.TestProgram.__init__(self, *args, **kwds)
 
     def _parse_options(self, argv):
-        parser = optparse.OptionParser()
+        parser = optparse.OptionParser(usage=USAGE)
         # plain old unittest
         parser.add_option("-v", "--verbose", action="store_true",
                           help="Verbose output")
@@ -284,7 +305,9 @@ class TestProgram(unittest.TestProgram):
                                 "tests are not discovered by default.  Pass "
                                 "option more than once to specify more than "
                                 "one tag.  Current tags: %r" % allowed_tags))
-        parser.add_option("--meld", action="store_true")
+        parser.add_option("--meld", action="store_true",
+                          help=("On golden test failure, run meld to view & "
+                                "edit differences"))
 
         options, remaining_args = parser.parse_args(argv)
         if len(remaining_args) > 3:

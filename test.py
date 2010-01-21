@@ -4,20 +4,6 @@
 Note that the functional tests and doctests require test-tools to be on
 sys.path before the stdlib.  One way to ensure that is to use this script to
 run tests.
-
-Usage examples:
-
-python test.py  # all tests
-python test.py test_api  # run test/test_api.py
-python test.py functional_tests  # run test/functional_tests.py
-python test.py mechanize/_headersutil  # run the doctests from this module
-python test.py functional_tests.CookieJarTests  # just this class
-# just this test method
-python test.py functional_tests.CookieJarTests.test_mozilla_cookiejar
-
-python test.py discover --pattern test_browser.doctest  # doctest file
-# run test/functional_tests.py
-python test.py discover --pattern functional_tests.py
 """
 
 import os
