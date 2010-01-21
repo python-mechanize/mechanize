@@ -173,14 +173,19 @@ subject to change or disappearance without notice.
 <a name="browsers"></a>
 <h2>Cooperating with Mozilla/Netscape, lynx and Internet Explorer</h2>
 
+<p class="docwarning">Firefox since version 3 persists cookies in an sqlite
+database, which is not supported by MozillaCookieJar.  There
+is <em>experimental</em> support for this in Firefox3CookieJar.</p>
+
 <p>The subclass <code>MozillaCookieJar</code> differs from
-<code>CookieJar</code> only in storing cookies using a different,
-Mozilla/Netscape-compatible, file format.  The lynx browser also uses this
-format.  This file format can't store RFC 2965 cookies, so they are downgraded
-to Netscape cookies on saving.  <code>LWPCookieJar</code> itself uses a
-libwww-perl specific format (`Set-Cookie3') - see the example above.  Python
-and your browser should be able to share a cookies file (note that the file
-location here will differ on non-unix OSes):
+<code>CookieJar</code> only in storing cookies using a different, Firefox
+2/Mozilla/Netscape-compatible, file format known as "cookies.txt".  The lynx
+browser also uses this format.  This file format can't store RFC 2965 cookies,
+so they are downgraded to Netscape cookies on
+saving.  <code>LWPCookieJar</code> itself uses a libwww-perl specific format
+(`Set-Cookie3') - see the example above.  Python and your browser should be
+able to share a cookies file (note that the file location here will differ on
+non-unix OSes):
 
 <p><strong>WARNING:</strong> you may want to backup your browser's cookies file
 if you use <code>MozillaCookieJar</code> to save cookies.  I <em>think</em> it
