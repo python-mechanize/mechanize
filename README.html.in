@@ -239,6 +239,21 @@ ignore this section.
 
 </ol>
 
+<p>API differences between mechanize and urllib2:
+
+<ol>
+
+  <li>mechanize provides additional features
+
+  <li>Since Python 2.6, <code>urllib2</code> uses a <code>.timeout</code>
+  attribute on <code>Request</code> objects internally.
+  However, <code>urllib2.Request</code> has no timeout constructor argument,
+  and <code>urllib2.urlopen()</code> ignores this
+  parameter.  <code>mechanize.Request</code> has a <code>timeout</code>
+  constructor argument which is used to set the attribute of the same name, and
+  <code>mechanize.urlopen()</code> does not ignore the timeout attribute.
+
+</ol>
 
 
 <a name="docs"></a>
