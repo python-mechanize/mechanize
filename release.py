@@ -21,12 +21,15 @@ of RELEASE_AREA.  Other actions install software.
 #  * 0install package?
 #  * test in a Windows VM
 
+import glob
 import optparse
 import os
 import re
+import shutil
 import smtplib
 import subprocess
 import sys
+import tempfile
 import unittest
 
 # Stop the test runner from reporting import failure if these modules aren't
@@ -65,6 +68,18 @@ class MissingVersionError(Exception):
     def __str__(self):
         return ("Release version string not found in %s: should be %s" %
                 (self.path, self.release_version))
+
+
+class CSSValidationError(Exception):
+
+    def __init__(self, path, details):
+        Exception.__init__(self, path, details)
+        self.path = path
+        self.details = details
+
+    def __str__(self):
+        return ("CSS validation of %s failed:\n%s" % 
+                (self.path, self.details))
 
 
 def run_performance_tests(path):
@@ -141,6 +156,7 @@ class Releaser(object):
         self._easy_install_env = cmd_env.set_environ_vars_env(
             [("PYTHONPATH", self._easy_install_test_dir)],
             cmd_env.clean_environ_except_home_env(self._in_release_dir))
+        self._css_validator_path = "css-validator"
 
     def _get_next_release_version(self):
         tags = release.get_cmd_stdout(self._in_source_repo,
@@ -178,26 +194,61 @@ class Releaser(object):
     def checks(self, log):
         self._verify_versions()
 
-    def install_deps(self, log):
-        def ensure_installed(package_name, ppa=None):
-            release.ensure_installed(self._env,
-                                     cmd_env.PrefixCmdEnv(["sudo"], self._env),
-                                     package_name,
-                                     ppa=ppa)
-        ensure_installed("python2.4")
-        ensure_installed("python2.5")
-        ensure_installed("python2.6")
-        ensure_installed("python-setuptools")
+    def _ensure_installed(self, package_name, ppa):
+        release.ensure_installed(self._env,
+                                 cmd_env.PrefixCmdEnv(["sudo"], self._env),
+                                 package_name,
+                                 ppa=ppa)
+
+    def install_css_validator_in_release_dir(self, log):
+        jar_dir = os.path.join(self._release_dir, self._css_validator_path)
+        in_jar_dir = release.CwdEnv(self._env, jar_dir)
+        self._env.cmd(release.rm_rf_cmd(jar_dir))
+        self._env.cmd(["mkdir", "-p", jar_dir])
+        in_jar_dir.cmd([
+                "wget",
+                "http://www.w3.org/QA/Tools/css-validator/css-validator.jar"])
+        in_jar_dir.cmd(["wget",
+                        "http://jigsaw.w3.org/Distrib/jigsaw_2.2.6.tar.bz2"])
+        in_jar_dir.cmd(["sh", "-c", "tar xf jigsaw_*.tar.bz2"])
+        # TODO: probably only need jigsaw.jar
+        for jigsaw_jar_path in glob.glob(os.path.join(
+                jar_dir, "Jigsaw", "classes", "*.jar")):
+            in_jar_dir.cmd(
+                ["ln", "-s", os.path.relpath(jigsaw_jar_path, jar_dir)])
+
+    @action_tree.action_node
+    def install_deps(self):
+        dependency_actions = []
+        def add_dependency(package_name, ppa=None):
+            dependency_actions.append(
+                (package_name.replace(".", ""),
+                 lambda log: self._ensure_installed(package_name, ppa)))
+        add_dependency("python2.4"),
+        add_dependency("python2.5")
+        add_dependency("python2.6")
+        add_dependency("python-setuptools")
         # for running functional tests against local web server
-        ensure_installed("python-twisted-web2")
+        add_dependency("python-twisted-web2")
         # for generating docs from .in templates
-        ensure_installed("python-empy")
+        add_dependency("python-empy")
         # for generating .txt docs from .html
-        ensure_installed("lynx-cur-wrapper")
+        add_dependency("lynx-cur-wrapper")
         # for the validate command
-        ensure_installed("wdg-html-validator")
+        add_dependency("wdg-html-validator")
         # for collecting code coverage data and generating coverage reports
-        ensure_installed("python-figleaf", ppa="jjl/figleaf")
+        add_dependency("python-figleaf", ppa="jjl/figleaf")
+        # for css validator
+        add_dependency("sun-java6-jre")
+        add_dependency("libcommons-collections3-java")
+        add_dependency("libcommons-lang-java")
+        add_dependency("libxerces2-java")
+        add_dependency("libtagsoup-java")
+        # OMG, it depends on piles of java web server stuff, even for local
+        # command-line validation.  You're doing it wrong!
+        add_dependency("velocity")
+        dependency_actions.append(self.install_css_validator_in_release_dir)
+        return dependency_actions
 
     def _make_test_step(self, env, python_version,
                         easy_install_test=True,
@@ -371,7 +422,7 @@ class Releaser(object):
             ["git", "commit",
              "-m", "Automated update for release %s" % self._release_version])
 
-    def validate_website(self, log):
+    def validate_html(self, log):
         exclusions = set(f for f in """\
 ./cookietest.html
 htdocs/basic_auth/index.html
@@ -415,6 +466,76 @@ htdocs/seltest/TestSuite.html
                         os.path.relpath(dirpath, self._mirror_path), filename)
                     if page_path not in exclusions:
                         self._in_mirror.cmd(["validate", page_path])
+
+    def _classpath_cmd(self):
+        from_packages = ["/usr/share/java/commons-collections3.jar",
+                         "/usr/share/java/commons-lang.jar",
+                         "/usr/share/java/xercesImpl.jar",
+                         "/usr/share/java/tagsoup.jar",
+                         "/usr/share/java/velocity.jar",
+                         ]
+        jar_dir = os.path.join(self._release_dir, self._css_validator_path)
+        local = glob.glob(os.path.join(jar_dir, "*.jar"))
+        path = ":".join(local + from_packages)
+        return ["env", "CLASSPATH=%s" % path]
+
+    def _sanitise_css(self, path):
+        temp_dir = tempfile.mkdtemp(prefix="tmp-%s-" % self.__class__.__name__)
+        def tear_down():
+            shutil.rmtree(temp_dir)
+        temp_path = os.path.join(temp_dir, os.path.basename(path))
+        with open(temp_path, "w") as temp:
+            for line in open(path):
+                if line.rstrip().endswith("/*novalidate*/"):
+                    # temp.write("/*%s*/\n" % line.rstrip())
+                    temp.write("/*sanitised*/\n")
+                else:
+                    temp.write(line)
+        return temp_path, tear_down
+
+    def validate_css(self, log):
+        env = cmd_env.PrefixCmdEnv(self._classpath_cmd(), self._in_release_dir)
+        # env.cmd(["java", "org.w3c.css.css.CssValidator", "--help"])
+        """
+Usage: java org.w3c.css.css.CssValidator  [OPTIONS] | [URL]*
+OPTIONS
+	-p, --printCSS
+		Prints the validated CSS (only with text output, the CSS is printed with other outputs)
+	-profile PROFILE, --profile=PROFILE
+		Checks the Stylesheet against PROFILE
+		Possible values for PROFILE are css1, css2, css21 (default), css3, svg, svgbasic, svgtiny, atsc-tv, mobile, tv
+	-medium MEDIUM, --medium=MEDIUM
+		Checks the Stylesheet using the medium MEDIUM
+		Possible values for MEDIUM are all (default), aural, braille, embossed, handheld, print, projection, screen, tty, tv, presentation
+	-output OUTPUT, --output=OUTPUT
+		Prints the result in the selected format
+		Possible values for OUTPUT are text (default), xhtml, html (same result as xhtml), soap12
+	-lang LANG, --lang=LANG
+		Prints the result in the specified language
+		Possible values for LANG are de, en (default), es, fr, ja, ko, nl, zh-cn, pl, it
+	-warning WARN, --warning=WARN
+		Warnings verbosity level
+		Possible values for WARN are -1 (no warning), 0, 1, 2 (default, all the warnings
+
+URL
+	URL can either represent a distant web resource (http://) or a local file (file:/)
+"""
+        validate_cmd = ["java", "org.w3c.css.css.CssValidator"]
+        for dirpath, dirnames, filenames in os.walk(self._mirror_path):
+            for filename in filenames:
+                if filename.endswith(".css"):
+                    path = os.path.join(dirpath, filename)
+                    temp_path, tear_down = self._sanitise_css(path)
+                    try:
+                        page_url = "file://" + temp_path
+                        output = release.get_cmd_stdout(
+                            env, validate_cmd + [page_url])
+                        # the validator doesn't fail properly: it exits
+                        # successfully on validation failure
+                        if "Sorry! We found the following errors" in output:
+                            raise CSSValidationError(path, output)
+                    finally:
+                        tear_down()
 
     def upload_to_pypi(self, log):
         self._in_repo.cmd(["python", "setup.py", "sdist",
@@ -597,8 +718,8 @@ John
     @action_tree.action_node
     def build(self):
         return [
-            self.install_deps,
             self.clean,
+            self.install_deps,
             self.print_next_tag,
             self.clone,
             self.checks,
@@ -622,7 +743,8 @@ John
             r.extend([
                     self.ensure_staging_website_unmodified,
                     self.collate,
-                    self.validate_website,
+                    self.validate_html,
+                    self.validate_css,
                     self.commit_staging_website,
                     ])
         return r
@@ -654,6 +776,7 @@ def parse_options(args):
                       help=("path of mechanize-build-tools git repository, "
                             "from which to get other website source files "
                             "(default is not to build those files)"))
+    # TODO: this is actually the path of mirror/ directory in the repository
     parser.add_option("--mirror-path", metavar="DIRECTORY",
                       help=("path of local website mirror git repository "
                             "into which built files will be copied "
@@ -670,6 +793,9 @@ def parse_options(args):
         options.release_area = remaining_args.pop(0)
     except IndexError:
         parser.error("Expected at least 1 argument, got %d" % nr_args)
+    if options.mirror_path is not None and not \
+            os.path.exists(os.path.join(options.mirror_path, "..", ".git")):
+        parser.error("incorrect mirror path")
     return options, remaining_args
 
 
