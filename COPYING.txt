@@ -5,7 +5,7 @@ falls under the effbot.org license (also BSD-style) that appears at
 the end of this file.
 
 
-Copyright (c) 2002-2006 John J. Lee <jjl@pobox.com>
+Copyright (c) 2002-2010 John J. Lee <jjl@pobox.com>
 Copyright (c) 1997-1999 Gisle Aas
 Copyright (c) 1997-1999 Johnny Lee
 Copyright (c) 2003 Andy Lester
