@@ -250,7 +250,7 @@ def main(argv):
 
     root = Page()
     root.text = ROOT_HTML
-    make_page(root, "mechanize", MECHANIZE_HTML)
+    mechanize = make_page(root, "mechanize", MECHANIZE_HTML)
     make_leaf_page(root, "robots.txt",
                    "User-Agent: *\nDisallow: /norobots",
                    "text/plain")
@@ -267,9 +267,8 @@ def main(argv):
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     make_cgi_script(cgi_bin, "cookietest.cgi",
                     os.path.join(project_dir, "test-tools", "cookietest.cgi"))
-    clientform = make_dir(root, "ClientForm")
     example_html = open(os.path.join("examples", "forms", "example.html")).read()
-    make_leaf_page(clientform, "example.html", example_html)
+    make_leaf_page(mechanize, "example.html", example_html)
     make_cgi_script(cgi_bin, "echo.cgi",
                     os.path.join(project_dir, "examples", "forms", "echo.cgi"))
     make_page(root, "basic_auth", BASIC_AUTH_PAGE, wrapper=require_basic_auth)

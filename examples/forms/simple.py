@@ -9,7 +9,7 @@ if len(sys.argv) == 1:
 else:
     uri = sys.argv[1]
 
-response = urlopen(urljoin(uri, "ClientForm/example.html"))
+response = urlopen(urljoin(uri, "mechanize/example.html"))
 forms = ParseResponse(response, backwards_compat=False)
 form = forms[0]
 print form
