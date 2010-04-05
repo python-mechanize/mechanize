@@ -35,11 +35,7 @@ $if(title)$
 <h1 class="title">$title$</h1>
 $endif$
 
-<ul id="toc">
-$for(toclink)$
-  <li>$toclink$</li>
-$endfor$
-</ul>
+$toc$
 
 $body$
 

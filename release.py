@@ -403,13 +403,8 @@ class Releaser(object):
                     '<a href="download.html">Download</a>',
                     '<a href="support.html">Support</a>',
                     '<a href="development.html">Development</a>']
-        # XXX these don't work properly yet
-        toclinks = ['<a href="..">Home</a><br>',
-                    '<a href="GeneralFAQ.html">General FAQs</a>',
-                    '<span class="thispage">mechanize</span>',
-                    '<a href="doc.html">handlers etc.</a>',
-                    '<a href="forms.html">forms</a>']
         self._in_docs_dir.cmd(["mkdir", "-p", "html"])
+        site_map = release.site_map()
         def pandoc(filename):
             last_modified = release.last_modified(filename, self._in_docs_dir)
             variables = [
@@ -419,8 +414,10 @@ class Releaser(object):
                  time.strftime("%B %Y", last_modified))]
             for navlink in navlinks:
                 variables.append(("navlink", navlink))
-            for toclink in toclinks:
-                variables.append(("toclink", toclink))
+            page_name = os.path.splitext(os.path.basename(filename))[0]
+            if page_name == "index":
+                page_name = "mechanize"
+            variables.append(("toc", release.toc_html(site_map, page_name)))
             release.pandoc(self._in_docs_dir, filename, variables=variables)
         pandoc("doc.txt")
         pandoc("forms.txt")
