@@ -399,6 +399,7 @@ class Releaser(object):
         self._in_docs_dir.cmd(release.rm_rf_cmd("html"))
 
     def make_docs(self, log):
+        # TODO: still need to shuffle docs around into new website structure
         navlinks = ['<span class="thispage">Home</span>',
                     '<a href="download.html">Download</a>',
                     '<a href="support.html">Support</a>',
