@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-# These tests access the network.
+# These tests access the network.  python test.py runs a local test server and
+# doesn't try to fetch anything over the internet, since the few tests here
+# that do that are disabled by default since they have test tag "internet".
 
 # thanks Moof (aka Giles Antonio Radford) for some of these
 
@@ -65,6 +67,7 @@ class TestCase(mechanize._testcase.TestCase):
 
     def setUp(self):
         mechanize._testcase.TestCase.setUp(self)
+        self.test_uri = urljoin(self.uri, "test_fixtures")
         self.server = self.get_cached_fixture("server")
         if self.no_proxies:
             old_opener_m = mechanize._opener._opener
@@ -159,7 +162,7 @@ class SimpleTests(SocketTimeoutTest):
         self.browser = self.make_browser()
 
     def test_simple(self):
-        self.browser.open(self.uri)
+        self.browser.open(self.test_uri)
         self.assertEqual(self.browser.title(), 'Python bits')
         # relative URL
         self.browser.open('/mechanize/')
@@ -181,27 +184,27 @@ class SimpleTests(SocketTimeoutTest):
 
     def test_open_with_default_timeout(self):
         timeout_log = self._monkey_patch_socket()
-        self.browser.open(self.uri)
+        self.browser.open(self.test_uri)
         self.assertEqual(self.browser.title(), 'Python bits')
         timeout_log.verify_default()
 
     def test_open_with_timeout(self):
         timeout_log = self._monkey_patch_socket()
         timeout = 10.
-        self.browser.open(self.uri, timeout=timeout)
+        self.browser.open(self.test_uri, timeout=timeout)
         self.assertEqual(self.browser.title(), 'Python bits')
         timeout_log.verify(timeout)
 
     def test_urlopen_with_default_timeout(self):
         timeout_log = self._monkey_patch_socket()
-        response = mechanize.urlopen(self.uri)
+        response = mechanize.urlopen(self.test_uri)
         self.assert_contains(response.read(), "Python bits")
         timeout_log.verify_default()
 
     def test_urlopen_with_timeout(self):
         timeout_log = self._monkey_patch_socket()
         timeout = 10.
-        response = mechanize.urlopen(self.uri, timeout=timeout)
+        response = mechanize.urlopen(self.test_uri, timeout=timeout)
         self.assert_contains(response.read(), "Python bits")
         timeout_log.verify(timeout)
 
@@ -209,7 +212,8 @@ class SimpleTests(SocketTimeoutTest):
         timeout_log = self._monkey_patch_socket()
         timeout = 10.
         # 301 redirect due to missing final '/'
-        req = mechanize.Request(urljoin(self.uri, "bits"), timeout=timeout)
+        req = mechanize.Request(urljoin(self.test_uri, "test_fixtures"),
+                                timeout=timeout)
         r = self.browser.open(req)
         self.assert_("GeneralFAQ.html" in r.read(2048))
         timeout_log.verify(timeout)
@@ -238,7 +242,7 @@ class SimpleTests(SocketTimeoutTest):
     def test_error_recovery(self):
         self.assertRaises(mechanize.URLError, self.browser.open,
                           'file:///c|thisnoexistyiufheiurgbueirgbue')
-        self.browser.open(self.uri)
+        self.browser.open(self.test_uri)
         self.assertEqual(self.browser.title(), 'Python bits')
 
     def test_redirect(self):
@@ -249,7 +253,7 @@ class SimpleTests(SocketTimeoutTest):
                 codes.append(response.code)
                 return response
         self.browser.add_handler(ObservingHandler())
-        r = self.browser.open(urljoin(self.uri, "bits"))
+        r = self.browser.open(urljoin(self.uri, "test_fixtures"))
         self.assertEqual(r.code, 200)
         self.assertTrue(301 in codes)
         self.assert_("GeneralFAQ.html" in r.read(2048))
@@ -294,7 +298,7 @@ class SimpleTests(SocketTimeoutTest):
             self.assert_(br.response() is None)
             self.assertRaises(mechanize.BrowserStateError, br.back)
         test_state(self.browser)
-        uri = urljoin(self.uri, "bits")
+        uri = urljoin(self.uri, "test_fixtures")
         # note this involves a redirect, which should itself be non-visiting
         r = self.browser.open_novisit(uri)
         test_state(self.browser)
@@ -311,7 +315,7 @@ class SimpleTests(SocketTimeoutTest):
         ua = self.make_user_agent()
         ua.set_seekable_responses(False)
         ua.set_handle_equiv(False)
-        response = ua.open(self.uri)
+        response = ua.open(self.test_uri)
         self.failIf(hasattr(response, "seek"))
         data = response.read()
         self.assert_("Python bits" in data)
@@ -330,7 +334,7 @@ class ResponseTests(TestCase):
         build_opener = mechanize.OpenerFactory(
             mechanize.SeekableResponseOpener).build_opener
         opener = self.build_opener(build_opener=build_opener)
-        r = opener.open(urljoin(self.uri, "bits/cctest2.txt"))
+        r = opener.open(urljoin(self.uri, "test_fixtures/cctest2.txt"))
         r.read()
         r.seek(0)
         self.assertEqual(r.read(),
@@ -348,7 +352,7 @@ class ResponseTests(TestCase):
     def test_no_seek(self):
         # should be possible to turn off UserAgent's .seek() functionality
         def check_no_seek(opener):
-            r = opener.open(urljoin(self.uri, "bits/cctest2.txt"))
+            r = opener.open(urljoin(self.uri, "test_fixtures/cctest2.txt"))
             self.assert_(not hasattr(r, "seek"))
             try:
                 opener.open(urljoin(self.uri, "nonexistent"))
@@ -371,7 +375,7 @@ class ResponseTests(TestCase):
         # .seek() method, then raised HTTPError exceptions should also have the
         # .seek() method
         def check(opener, excs_also):
-            r = opener.open(urljoin(self.uri, "bits/cctest2.txt"))
+            r = opener.open(urljoin(self.uri, "test_fixtures/cctest2.txt"))
             data = r.read()
             r.seek(0)
             self.assertEqual(data, r.read(), r.get_data())
@@ -405,7 +409,7 @@ class ResponseTests(TestCase):
 
     def test_set_response(self):
         br = self.make_browser()
-        r = br.open(self.uri)
+        r = br.open(self.test_uri)
         html = r.read()
         self.assertEqual(br.title(), "Python bits")
 
@@ -416,7 +420,7 @@ class ResponseTests(TestCase):
         self.assertEqual(br.response().read(), html)
         br.response().set_data(newhtml)
         self.assertEqual(br.response().read(), html)
-        self.assertEqual(list(br.links())[0].url, 'http://sourceforge.net')
+        self.assertEqual(list(br.links())[0].url, "http://sourceforge.net/")
 
         br.set_response(r)
         self.assertEqual(br.response().read(), newhtml)
@@ -442,7 +446,7 @@ class ResponseTests(TestCase):
         import pickle
 
         b = self.make_browser()
-        r = b.open(urljoin(self.uri, "bits/cctest2.txt"))
+        r = b.open(urljoin(self.uri, "test_fixtures/cctest2.txt"))
         r.read()
 
         r.close()
@@ -464,7 +468,7 @@ class FunctionalTests(SocketTimeoutTest):
     def test_referer(self):
         br = self.make_browser()
         br.set_handle_refresh(True, honor_time=False)
-        referer = urljoin(self.uri, "bits/referertest.html")
+        referer = urljoin(self.uri, "test_fixtures/referertest.html")
         info = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
         r = br.open(info)
         self.assert_(referer not in r.get_data())
@@ -558,7 +562,8 @@ class FunctionalTests(SocketTimeoutTest):
 
     def test_reload_read_incomplete(self):
         browser = self.make_browser()
-        r1 = browser.open(urljoin(self.uri, "bits/mechanize_reload_test.html"))
+        r1 = browser.open(urljoin(self.uri,
+                                  "test_fixtures/mechanize_reload_test.html"))
         # if we don't do anything and go straight to another page, most of the
         # last page's response won't be .read()...
         r2 = browser.open(urljoin(self.uri, "mechanize"))

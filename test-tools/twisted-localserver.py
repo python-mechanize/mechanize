@@ -31,7 +31,7 @@ from twisted.web2.auth.interfaces import IHTTPUser
 from zope.interface import implements
 
 
-def html(title=None):
+def html(title=None, extra_content=""):
     html = """\
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
         "http://www.w3.org/TR/html4/strict.dtd">
@@ -40,15 +40,17 @@ def html(title=None):
     <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
     <title>mechanize</title>
   </head>
-  <body><a href="http://sourceforge.net"></body>
+  <body><a href="http://sourceforge.net/">
+%s
+</body>
 </html>
-"""
+""" % extra_content
     if title is not None:
         html = re.sub("<title>(.*)</title>", "<title>%s</title>" % title, html)
     return html
 
 MECHANIZE_HTML = html()
-ROOT_HTML = html("Python bits")
+ROOT_HTML = html("mechanize")
 RELOAD_TEST_HTML = """\
 <html>
 <head><title>Title</title></head>
@@ -248,6 +250,9 @@ def main(argv):
     if options.log:
         log.startLogging(sys.stdout)
 
+    # This is supposed to match the SF site so it's easy to run a functional
+    # test over the internet and against Apache.
+    # TODO: Remove bizarre structure and strings expected by functional tests.
     root = Page()
     root.text = ROOT_HTML
     mechanize = make_page(root, "mechanize", MECHANIZE_HTML)
@@ -256,12 +261,16 @@ def main(argv):
                    "text/plain")
     make_leaf_page(root, "robots", "Hello, robots.", "text/plain")
     make_leaf_page(root, "norobots", "Hello, non-robots.", "text/plain")
-    bits = make_page(root, "bits", "GeneralFAQ.html")
-    make_leaf_page(bits, "cctest2.txt",
+    test_fixtures = make_page(root, "test_fixtures",
+                              # satisfy stupid assertions in functional tests
+                              html("Python bits",
+                                   extra_content="GeneralFAQ.html"))
+    make_leaf_page(test_fixtures, "cctest2.txt",
                    "Hello ClientCookie functional test suite.",
                    "text/plain")
-    make_leaf_page(bits, "referertest.html", REFERER_TEST_HTML)
-    make_leaf_page(bits, "mechanize_reload_test.html", RELOAD_TEST_HTML)
+    make_leaf_page(test_fixtures, "referertest.html", REFERER_TEST_HTML)
+    make_leaf_page(test_fixtures, "mechanize_reload_test.html",
+                   RELOAD_TEST_HTML)
     make_redirect(root, "redirected", "/doesnotexist")
     cgi_bin = make_dir(root, "cgi-bin")
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
