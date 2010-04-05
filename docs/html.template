@@ -17,8 +17,8 @@
 </head>
 <body>
 <div id="sf">
-<!-- <a href="http://sourceforge.net/projects/wwwsearch"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=48205&amp;type=10" width="80" height="15" alt="SourceForge.net. Fast, secure and Free Open Source software downloads" /></a> -->
-<a href="http://sourceforge.net/projects/wwwsearch"><img src="../images/logo.gif" width="80" height="15" alt="SourceForge.net. Fast, secure and Free Open Source software downloads" /></a>
+<!-- <a href="http://sourceforge.net/"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=48205&amp;type=10" width="80" height="15" alt="SourceForge.net. Fast, secure and Free Open Source software downloads" /></a> -->
+<a href="http://sourceforge.net/"><img src="../images/logo.gif" width="80" height="15" alt="SourceForge.net. Fast, secure and Free Open Source software downloads" /></a>
 </div>
 
 <div id="content">
