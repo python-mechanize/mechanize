@@ -144,6 +144,10 @@ exec "$@"
 AddToPathEnv = release.make_env_maker(add_to_path_cmd)
 
 
+def ensure_trailing_slash(path):
+    return path.rstrip("/") + "/"
+
+
 class Releaser(object):
 
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
@@ -277,6 +281,8 @@ class Releaser(object):
         add_dependency("python2.5")
         add_dependency("python2.6")
         add_dependency("python-setuptools")
+        # for deployment to SF and local collation of files for release
+        add_dependency("rsync")
         # for running functional tests against local web server
         add_dependency("python-twisted-web2")
         # for generating docs from .in templates
@@ -422,6 +428,11 @@ class Releaser(object):
         release.empy(self._in_docs_dir, "index.txt.in",
                      defines=["version=%r" % str(self._release_version)])
         pandoc("index.txt")
+        if self._build_tools_path is not None:
+            styles = ensure_trailing_slash(
+                os.path.join(self._website_source_path, "styles"))
+            self._env.cmd(["rsync", "-a", styles,
+                           os.path.join(self._docs_dir, "styles")])
 
     def write_setup_cfg(self, log):
         # write empty setup.cfg so source distribution is built using a version
@@ -612,9 +623,9 @@ URL
     def sync_to_sf(self, log):
         assert os.path.isdir(
             os.path.join(self._mirror_path, "htdocs/mechanize"))
-        mirror_slash = self._mirror_path.rstrip("/") + "/"
         self._env.cmd(["rsync", "-rlptvuz", "--exclude", "*~", "--delete",
-                       mirror_slash, "jjlee,wwwsearch@web.sourceforge.net:"])
+                       ensure_trailing_slash(self._mirror_path),
+                       "jjlee,wwwsearch@web.sourceforge.net:"])
 
     @action_tree.action_node
     def upload(self):
