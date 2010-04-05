@@ -449,7 +449,7 @@ class BrowserTests(TestCase):
         # no form is set yet
         self.assertRaises(AttributeError, getattr, b, "possible_items")
         b.select_form("form1")
-        # now unknown methods are fed through to selected ClientForm.HTMLForm
+        # now unknown methods are fed through to selected mechanize.HTMLForm
         self.assertEqual(
             [i.name for i in b.find_control("cheeses").items],
             ["cheddar", "edam"])

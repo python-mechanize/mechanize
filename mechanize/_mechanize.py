@@ -415,7 +415,7 @@ class Browser(UserAgentBase):
     def forms(self):
         """Return iterable over forms.
 
-        The returned form objects implement the ClientForm.HTMLForm interface.
+        The returned form objects implement the mechanize.HTMLForm interface.
 
         """
         if not self.viewing_html():
@@ -429,7 +429,7 @@ class Browser(UserAgentBase):
         The "global" form object contains all controls that are not descendants
         of any FORM element.
 
-        The returned form object implements the ClientForm.HTMLForm interface.
+        The returned form object implements the mechanize.HTMLForm interface.
 
         This is a separate method since the global form is not regarded as part
         of the sequence of forms in the document -- mostly for
@@ -527,7 +527,7 @@ class Browser(UserAgentBase):
             raise FormNotFoundError("no form matching "+description)
 
     def click(self, *args, **kwds):
-        """See ClientForm.HTMLForm.click for documentation."""
+        """See mechanize.HTMLForm.click for documentation."""
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         request = self.form.click(*args, **kwds)
@@ -536,7 +536,7 @@ class Browser(UserAgentBase):
     def submit(self, *args, **kwds):
         """Submit current form.
 
-        Arguments are as for ClientForm.HTMLForm.click().
+        Arguments are as for mechanize.HTMLForm.click().
 
         Return value is same as for Browser.open().
 
@@ -623,7 +623,7 @@ class Browser(UserAgentBase):
             raise LinkNotFoundError()
 
     def __getattr__(self, name):
-        # pass through ClientForm / DOMForm methods and attributes
+        # pass through _form.HTMLForm methods and attributes
         form = self.__dict__.get("form")
         if form is None:
             raise AttributeError(

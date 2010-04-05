@@ -882,7 +882,7 @@ def ParseResponse(response, *args, **kwds):
     The return value of mechanize.urlopen can be conveniently passed to this
     function as the response parameter.
 
-    ClientForm.ParseError is raised on parse errors.
+    mechanize.ParseError is raised on parse errors.
 
     response: file-like object (supporting read() method) with a method
      geturl(), returning the URI of the HTTP response
@@ -894,9 +894,9 @@ def ParseResponse(response, *args, **kwds):
     entitydefs: mapping like {"&amp;": "&", ...} containing HTML entity
      definitions (a sensible default is used)
     encoding: character encoding used for encoding numeric character references
-     when matching link text.  ClientForm does not attempt to find the encoding
+     when matching link text.  mechanize does not attempt to find the encoding
      in a META HTTP-EQUIV attribute in the document itself (mechanize, for
-     example, does do that and will pass the correct value to ClientForm using
+     example, does do that and will pass the correct value to mechanize using
      this parameter).
 
     backwards_compat: boolean that determines whether the returned HTMLForm
@@ -928,8 +928,8 @@ def ParseResponse(response, *args, **kwds):
     button should be checked at all times, in contradiction to browser
     behaviour.
 
-    There is a choice of parsers.  ClientForm.XHTMLCompatibleFormParser (uses
-    HTMLParser.HTMLParser) works best for XHTML, ClientForm.FormParser (uses
+    There is a choice of parsers.  mechanize.XHTMLCompatibleFormParser (uses
+    HTMLParser.HTMLParser) works best for XHTML, mechanize.FormParser (uses
     bundled copy of sgmllib.SGMLParser) (the default) works better for ordinary
     grubby HTML.  Note that HTMLParser is only available in Python 2.2 and
     later.  You can pass your own class in here as a hack to work around bad
@@ -941,7 +941,7 @@ def ParseResponse(response, *args, **kwds):
 def ParseFile(file, base_uri, *args, **kwds):
     """Parse HTML and return a list of HTMLForm instances.
 
-    ClientForm.ParseError is raised on parse errors.
+    mechanize.ParseError is raised on parse errors.
 
     file: file-like object (supporting read() method) containing HTML with zero
      or more forms to be parsed
@@ -2206,7 +2206,7 @@ class SelectControl(ListControl):
     SELECT (and OPTION)
 
 
-    OPTION 'values', in HTML parlance, are Item 'names' in ClientForm parlance.
+    OPTION 'values', in HTML parlance, are Item 'names' in mechanize parlance.
 
     SELECT control values and labels are subject to some messy defaulting
     rules.  For example, if the HTML representation of the control is:
@@ -2405,10 +2405,10 @@ class HTMLForm:
     Forms can be filled in with data to be returned to the server, and then
     submitted, using the click method to generate a request object suitable for
     passing to mechanize.urlopen (or the click_request_data or click_pairs
-    methods if you're not using mechanize).
+    methods for integration with third-party code).
 
-    import ClientForm
-    forms = ClientForm.ParseFile(html, base_uri)
+    import mechanize
+    forms = mechanize.ParseFile(html, base_uri)
     form = forms[0]
 
     form["query"] = "Python"
@@ -2971,7 +2971,7 @@ class HTMLForm:
         """Return request that would result from clicking on a control.
 
         The request object is a mechanize.Request instance, which you can pass
-        to mechanize.urlopen (or ClientCookie.urlopen).
+        to mechanize.urlopen.
 
         Only some control types (INPUT/SUBMIT & BUTTON/SUBMIT buttons and
         IMAGEs) can be clicked.

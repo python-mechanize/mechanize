@@ -679,7 +679,7 @@ response = b.follow_link(text_regex=re.compile(r"cheese\s*shop"), nr=1)
 
 b.select_form(name="order")
 # Browser passes through unknown attributes (including methods)
-# to the selected HTMLForm (from ClientForm).
+# to the selected HTMLForm
 b["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
 response2 = b.submit()  # submit current form
 
