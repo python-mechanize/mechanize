@@ -166,7 +166,7 @@ class LinksFactory:
                     if token.type != "startendtag":
                         # hmm, this'd break if end tag is missing
                         text = p.get_compressed_text(("endtag", tag))
-                    # but this doesn't work for eg.
+                    # but this doesn't work for e.g.
                     # <a href="blah"><b>Andy</b></a>
                     #text = p.get_compressed_text()
 

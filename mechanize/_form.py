@@ -43,9 +43,10 @@ COPYING.txt included with the distribution).
 #  Single and multiple file upload
 #  File upload with missing name (check standards)
 # mailto: submission & enctype text/plain??
-# Replace by_label etc. with moniker / selector concept.  Allows, eg., a choice
-#  between selection by value / id / label / element contents.  Or choice
-#  between matching labels exactly or by substring.  Etc.
+
+# Replace by_label etc. with moniker / selector concept.  Allows, e.g., a
+#  choice between selection by value / id / label / element contents.  Or
+#  choice between matching labels exactly or by substring.  etc.
 
 
 __all__ = ['AmbiguityError', 'CheckboxControl', 'Control',
@@ -1727,7 +1728,7 @@ class ListControl(Control):
 
         If label is specified, then the item must have a label whose
         whitespace-compressed, stripped, text substring-matches the indicated
-        label string (eg. label="please choose" will match
+        label string (e.g. label="please choose" will match
         "  Do  please  choose an item ").
 
         If id is specified, then the item must have the indicated id.

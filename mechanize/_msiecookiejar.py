@@ -168,7 +168,7 @@ class MSIEBase:
                 domain_specified = False
 
             # assume path_specified is false
-            # XXX is there other stuff in here? -- eg. comment, commentURL?
+            # XXX is there other stuff in here? -- e.g. comment, commentURL?
             c = Cookie(0,
                        cookie["KEY"], cookie["VALUE"],
                        None, False,

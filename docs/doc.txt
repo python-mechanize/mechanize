@@ -652,7 +652,7 @@ FAQs -- usage
     <p>Read the [debugging section](./doc.html#debugging) of this page.
 
   * <p class="q">My response claims to be empty, but I know it's not!</p>
-    <p>Did you call `response.read()` (eg., in a debug statement), then forget
+    <p>Did you call `response.read()` (e.g., in a debug statement), then forget
     that all the data has already been read? In that case, you may want to use
     `mechanize.response_seek_wrapper`.
 

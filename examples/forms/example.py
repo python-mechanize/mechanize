@@ -90,7 +90,7 @@ item.selected = False
 
 # Controls may be referred to by label:
 #  find control with label that has a *substring* "Cheeses"
-#  (eg., a label "Please select a cheese" would match).
+#  (e.g., a label "Please select a cheese" would match).
 control = form.find_control(label="select a cheese")
 
 # You can explicitly say that you're referring to a ListControl:

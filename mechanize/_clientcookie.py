@@ -302,9 +302,9 @@ class Cookie:
     version: integer;
     name: string;
     value: string (may be None);
-    port: string; None indicates no attribute was supplied (eg. "Port", rather
+    port: string; None indicates no attribute was supplied (e.g. "Port", rather
      than eg. "Port=80"); otherwise, a port string (eg. "80") or a port list
-     string (eg. "80,8080")
+     string (e.g. "80,8080")
     port_specified: boolean; true if a value was supplied with the Port
      cookie-attribute
     domain: string;
@@ -560,11 +560,11 @@ class DefaultCookiePolicy(CookiePolicy):
     strict_ns_domain: flags indicating how strict to be with domain-matching
      rules for Netscape cookies:
       DomainStrictNoDots: when setting cookies, host prefix must not contain a
-       dot (eg. www.foo.bar.com can't set a cookie for .bar.com, because
+       dot (e.g. www.foo.bar.com can't set a cookie for .bar.com, because
        www.foo contains a dot)
       DomainStrictNonDomain: cookies that did not explicitly specify a Domain
        cookie-attribute can only be returned to a domain that string-compares
-       equal to the domain that set the cookie (eg. rockets.acme.com won't
+       equal to the domain that set the cookie (e.g. rockets.acme.com won't
        be returned cookies from acme.com that had no Domain cookie-attribute)
       DomainRFC2965Match: when setting cookies, require a full RFC 2965
        domain-match

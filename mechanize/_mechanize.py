@@ -82,7 +82,7 @@ class Browser(UserAgentBase):
     """Browser-like class with support for history, forms and links.
 
     BrowserStateError is raised whenever the browser is in the wrong state to
-    complete the requested operation - eg., when .back() is called when the
+    complete the requested operation - e.g., when .back() is called when the
     browser history is empty, or when .follow_link() is called when the current
     response does not contain HTML data.
 
@@ -599,7 +599,7 @@ class Browser(UserAgentBase):
 
         If a matching link is not found, mechanize.LinkNotFoundError is raised.
 
-        text: link text between link tags: eg. <a href="blah">this bit</a> (as
+        text: link text between link tags: e.g. <a href="blah">this bit</a> (as
          returned by pullparser.get_compressed_text(), ie. without tags but
          with opening tags "textified" as per the pullparser docs) must compare
          equal to this argument, if supplied
@@ -611,7 +611,7 @@ class Browser(UserAgentBase):
         url, url_regex: as for text and text_regex, but matched against the
          URL of the link tag (note this matches against Link.url, which is a
          relative or absolute URL according to how it was written in the HTML)
-        tag: element name of opening tag, eg. "a"
+        tag: element name of opening tag, e.g. "a"
         predicate: a function taking a Link object as its single argument,
          returning a boolean result, indicating whether the links
         nr: matches the nth link that matches all other criteria (default 0)

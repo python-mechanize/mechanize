@@ -179,9 +179,9 @@ class _AbstractParser:
 
           - an HTML attribute name, in which case the HTML attribute value is
             used as its text value along with the element name in square
-            brackets (eg."alt text goes here[IMG]", or, if the alt attribute
+            brackets (e.g. "alt text goes here[IMG]", or, if the alt attribute
             were missing, just "[IMG]")
-          - a callable object (eg. a function) which takes a Token and returns
+          - a callable object (e.g. a function) which takes a Token and returns
             the string to be used as its text value
 
         If textify has no key for an element name, nothing is substituted for
