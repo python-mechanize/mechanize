@@ -84,7 +84,7 @@ CHUNK = 1024  # size of chunks fed to parser, in bytes
 
 DEFAULT_ENCODING = "latin-1"
 
-_logger = logging.getLogger("ClientForm")
+_logger = logging.getLogger("mechanize.forms")
 OPTIMIZATION_HACK = True
 
 def debug(msg, *args, **kwds):
