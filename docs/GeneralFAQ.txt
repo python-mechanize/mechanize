@@ -1,0 +1,130 @@
+% Python web-client programming general FAQs
+
+<div class="expanded">
+
+  * <p class="q">Is there any example code?</p>
+    <p>Look in the examples directory of [mechanize](../mechanize).  Note that
+    the examples on the [forms page](../forms) are executable as-is.
+    Contributions of example code would be very welcome!
+
+  * <p class="q">HTTPS on Windows?</p>
+    <p>Use this
+    [\_socket.pyd](http://pypgsql.sourceforge.net/misc/python22-win32-ssl.zip),
+    or use Python 2.3.
+
+  * <p class="q">I want to see what my web browser is doing, but standard
+    network sniffers like [ethereal](http://www.ethereal.com/) or netcat (nc)
+    don't work for HTTPS.  How do I sniff HTTPS traffic?</p>
+    <p>Three good options:
+
+      * Mozilla plugin:
+        [livehttpheaders](http://livehttpheaders.mozdev.org/).
+
+      * [ieHTTPHeaders](http://www.blunck.info/iehttpheaders.html) does
+        the same for MSIE.
+
+      * Use [lynx](http://lynx.browser.org/) `-trace`, and filter out
+        the junk with a script.
+
+    I'm told you can also use a proxy like
+    [proxomitron](http://www.proxomitron.info/) (never tried it myself).
+    There's also a commercial [MSIE plugin](http://www.simtec.ltd.uk/).
+
+  * <p class="q">Embedded script is messing up my web-scraping.  What do I
+    do?</p>
+    <p>It is possible to embed script in HTML pages (sandwiched between
+    `<SCRIPT>here</SCRIPT>` tags, and in `javascript:` URLs) - JavaScript /
+    ECMAScript, VBScript, or even Python.  These scripts can do all sorts of
+    things, including causing cookies to be set in a browser, submitting or
+    filling in parts of forms in response to user actions, changing link
+    colours as the mouse moves over a link, etc.
+
+    If you come across this in a page you want to automate, you have four
+    options.  Here they are, roughly in order of simplicity.
+
+      * Simply figure out what the embedded script is doing and emulate it in
+        your Python code: for example, by manually adding cookies to your
+        `CookieJar` instance, calling methods on `HTMLForm`s, calling
+        `urlopen`, etc.
+
+      * Dump mechanize automate a browser instead.  For example use MS Internet
+        Explorer via its COM automation interfaces, using the [Python for
+        Windows extensions](http://starship.python.net/crew/mhammond/), aka
+        pywin32, aka win32all (eg.  [simple
+        function](http://vsbabu.org/mt/archives/2003/06/13/ie_automation.html),
+        [pamie](http://pamie.sourceforge.net/); [pywin32 chapter from the
+        O'Reilly
+        book](http://www.oreilly.com/catalog/pythonwin32/chapter/ch12.html)) or
+        [ctypes](http://starship.python.net/crew/theller/ctypes/) (
+        [example](http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/305273):
+        may be out of date, since `ctypes`' COM support is still evolving).
+        [This](http://www.brunningonline.net/simon/blog/archives/winGuiAuto.py.html)
+        kind of thing may also come in useful on Windows for cases where the
+        automation API is lacking.
+        [pyphany](http://ftp.acc.umu.se/pub/GNOME/sources/pyphany/) is a
+        binding to the [epiphany web
+        browser](http://www.gnome.org/projects/epiphany/), allowing both
+        plugins and automation code to be written in Python.  XXX Mozilla
+        automation & XPCOM / PyXPCOM, Konqueror & DCOP / KParts / PyKDE).
+
+      * Use Java's [httpunit](httpunit.sourceforge.net) from Jython, since it
+        knows some JavaScript.
+
+      * Get ambitious and automatically delegate the work to an appropriate
+        interpreter (Mozilla's JavaScript interpreter, for instance).  This
+        approach is the one taken by [DOMForm](../DOMForm) (the JavaScript
+        support is "very alpha", though!).
+
+  * <p class="q">Misc links</p>
+
+      * [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) is a
+        widely recommended HTML-parsing module.
+
+      * [urlgrabber](http://linux.duke.edu/projects/urlgrabber/) contains
+        useful stuff like persistent connections, mirroring and throttling, and
+        it looks like most or all of it is well-integrated with `urllib2`
+        (originally part of the yum package manager, but now becoming a
+        separate project).
+
+      * Another Java thing: [maxq](http://maxq.tigris.org/), which provides a
+        proxy to aid automatic generation of functional tests written in Jython
+        using the standard library unittest module (PyUnit) and the "Jakarta
+        Commons" HttpClient library.
+
+      * A useful set Zope-oriented links on [tools for testing web
+        applications](http://viii.dclxvi.org/bookmarks/tech/zope/test).
+
+      * O'Reilly book: [Spidering Hacks]().  Very Perl-oriented.
+
+      * Useful [Firefox extension](http://chrispederick.com/work/webdeveloper/)
+        which, amongst other things, can display HTML form information and HTML
+        table structure(thanks to Erno Kuusela for this link).
+
+      * [Selenium](http://www.openqa.org/selenium/): In-browser web functional
+        testing.
+
+      * [Open source functional testing
+        tools](http://www.opensourcetesting.org/functional.php).  A nice list.
+
+      * [A HOWTO on web
+        scraping](http://www.rexx.com/~dkuhlman/quixote_htmlscraping.html) from
+        Dave Kuhlman.
+
+  * <p class="q">Will any of this code make its way into the Python standard
+    library?</p>
+    <p>The request / response processing extensions to `urllib2` from mechanize
+    have been merged into `urllib2` for Python 2.4.  The cookie processing has
+    been added, as module `cookielib`.  Eventually, I'll submit patches to get
+    the http-equiv, refresh, and robots.txt code in there too, and maybe
+    `mechanize.UserAgent` too (but *not* `mechanize.Browser`).  The rest,
+    probably not.
+
+</div>
+
+I prefer questions and comments to be sent to the [mailing
+list](http://lists.sourceforge.net/lists/listinfo/wwwsearch-general) rather
+than direct to me.
+
+<!-- Local Variables: -->
+<!-- fill-column:79 -->
+<!-- End: -->

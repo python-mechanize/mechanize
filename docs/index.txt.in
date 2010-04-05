@@ -1,0 +1,390 @@
+% mechanize
+
+Stateful programmatic web browsing in Python, after Andy Lester's Perl
+module [`WWW::Mechanize`](http://search.cpan.org/dist/WWW-Mechanize/).
+
+  * `mechanize.Browser` and `mechanize.UserAgentBase` implement the
+    interface of `urllib2.OpenerDirector`, so:
+
+      * any URL can be opened, not just `http:`
+
+      * `mechanize.UserAgentBase` offers easy dynamic configuration of
+        user-agent features like protocol, cookie, redirection and
+        `robots.txt` handling, without having to make a new
+        `OpenerDirector` each time, e.g. by calling `build_opener()`.
+
+  * Easy HTML form filling.
+
+  * Convenient link parsing and following.
+
+  * Browser history (`.back()` and `.reload()` methods).
+
+  * The `Referer` HTTP header is added properly (optional).
+
+  * Automatic observance of
+    [`robots.txt`](http://www.robotstxt.org/wc/norobots.html).
+
+  * Automatic handling of HTTP-Equiv and Refresh.
+
+
+Examples
+--------
+
+<span class="warning">This documentation is in need of reorganisation and
+extension!</span>
+
+The examples below are written for a website that does not exist
+(`example.com`), so cannot be run.  There are also some [working
+examples](./#tests) that you can run.
+
+~~~~{.python}    
+import re
+import mechanize
+
+br = mechanize.Browser()
+br.open("http://www.example.com/")
+# follow second link with element text matching regular expression
+response1 = br.follow_link(text_regex=r"cheese\s*shop", nr=1)
+assert br.viewing_html()
+print br.title()
+print response1.geturl()
+print response1.info()  # headers
+print response1.read()  # body
+
+br.select_form(name="order")
+# Browser passes through unknown attributes (including methods)
+# to the selected HTMLForm.
+br["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
+# Submit current form.  Browser calls .close() on the current response on
+# navigation, so this closes response1
+response2 = br.submit()
+
+# print currently selected form (don't call .submit() on this, use br.submit())
+print br.form
+
+response3 = br.back()  # back to cheese shop (same data as response1)
+# the history mechanism returns cached response objects
+# we can still use the response, even though it was .close()d
+response3.get_data()  # like .seek(0) followed by .read()
+response4 = br.reload()  # fetches from server
+
+for form in br.forms():
+    print form
+# .links() optionally accepts the keyword args of .follow_/.find_link()
+for link in br.links(url_regex="python.org"):
+    print link
+    br.follow_link(link)  # takes EITHER Link instance OR keyword args
+    br.back()
+~~~~
+
+You may control the browser's policy by using the methods of
+`mechanize.Browser`'s base class, `mechanize.UserAgent`.  For example:
+
+~~~~{.python}
+br = mechanize.Browser()
+# Explicitly configure proxies (Browser will attempt to set good defaults).
+# Note the userinfo ("joe:password@@") and port number (":3128") are optional.
+br.set_proxies({"http": "joe:password@@myproxy.example.com:3128",
+                "ftp": "proxy.example.com",
+                })
+# Add HTTP Basic/Digest auth username and password for HTTP proxy access.
+# (equivalent to using "joe:password@@..." form above)
+br.add_proxy_password("joe", "password")
+# Add HTTP Basic/Digest auth username and password for website access.
+br.add_password("http://example.com/protected/", "joe", "password")
+# Don't handle HTTP-EQUIV headers (HTTP headers embedded in HTML).
+br.set_handle_equiv(False)
+# Ignore robots.txt.  Do not do this without thought and consideration.
+br.set_handle_robots(False)
+# Don't add Referer (sic) header
+br.set_handle_referer(False)
+# Don't handle Refresh redirections
+br.set_handle_refresh(False)
+# Don't handle cookies
+br.set_cookiejar()
+# Supply your own mechanize.CookieJar (NOTE: cookie handling is ON by
+# default: no need to do this unless you have some reason to use a
+# particular cookiejar)
+br.set_cookiejar(cj)
+# Log information about HTTP redirects and Refreshes.
+br.set_debug_redirects(True)
+# Log HTTP response bodies (ie. the HTML, most of the time).
+br.set_debug_responses(True)
+# Print HTTP headers.
+br.set_debug_http(True)
+
+# To make sure you're seeing all debug output:
+logger = logging.getLogger("mechanize")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+logger.setLevel(logging.INFO)
+
+# Sometimes it's useful to process bad headers or bad HTML:
+response = br.response()  # this is a copy of response
+headers = response.info()  # currently, this is a mimetools.Message
+headers["Content-type"] = "text/html; charset=utf-8"
+response.set_data(response.get_data().replace("<!---", "<!--"))
+br.set_response(response)
+~~~~
+
+mechanize exports the complete interface of `urllib2`:
+
+~~~~{.python}
+import mechanize
+response = mechanize.urlopen("http://www.example.com/")
+print response.read()
+~~~~
+
+When using mechanize, anything you would normally import from `urllib2` should
+be imported from mechanize instead.  In many cases, objects imported from
+mechanize are the same objects provided by `urllib2`.  In many other cases,
+though, the implementation comes from mechanize, either because bug fixes have
+been applied or the functionality of `urllib2` has been extended in some way.
+
+
+UserAgent vs UserAgentBase
+--------------------------
+
+`mechanize.UserAgent` is a trivial subclass of `mechanize.UserAgentBase`,
+adding just one method, `.set_seekable_responses()` (see the [documentation on
+seekable responses](./doc.html#seekable)).
+
+The reason for the extra class is that `mechanize.Browser` depends on seekable
+response objects (because response objects are used to implement the browser
+history).
+
+
+Compatibility
+-------------
+
+These notes explain the relationship between mechanize, ClientCookie,
+`cookielib` and `urllib2`, and which to use when.  If you're just using
+mechanize, and not any of those other libraries, you can ignore this section.
+
+ #. mechanize works with Python 2.4, Python 2.5, and Python 2.6.
+
+ #. When using mechanize, anything you would normally import from `urllib2`
+    should be imported from `mechanize` instead.
+
+ #. Use of mechanize classes with `urllib2` (and vice-versa) is no longer
+    supported.  However, existing classes implementing the urllib2 Handler
+    interface are likely to work unchanged with mechanize.
+
+ #. mechanize now only imports urllib2.URLError and urllib2.HTTPError.  The
+    rest is forked.  I intend to merge fixes from Python trunk frequently.
+
+ #. ClientCookie is no longer maintained as a separate package.  The code is
+    now part of mechanize, and its interface is now exported through module
+    mechanize (since mechanize 0.1.0).  Old code can simply be changed to
+    `import mechanize as ClientCookie` and should continue to work.
+
+ #. The cookie handling parts of mechanize are in Python 2.4 standard library
+    as module `cookielib` and extensions to module `urllib2`.  mechanize does
+    not currently use cookielib, due to the presence of thread synchronisation
+    code in cookielib that is not present in the mechanize fork of cookielib.
+
+API differences between mechanize and urllib2:
+
+ #. mechanize provides additional features
+
+ #. Since Python 2.6, `urllib2` uses a `.timeout` attribute on `Request`
+    objects internally.  However, `urllib2.Request` has no timeout constructor
+    argument, and `urllib2.urlopen()` ignores this parameter.
+    `mechanize.Request` has a `timeout` constructor argument which is used to
+    set the attribute of the same name, and `mechanize.urlopen()` does not
+    ignore the timeout attribute.
+
+
+Documentation
+-------------
+
+Full API documentation is in the docstrings and the documentation of
+[`urllib2`](http://www.python.org/doc/2.6.4/library/urllib2.html).  The
+documentation in the web pages is in need of reorganisation at the moment,
+after the merge of ClientCookie into mechanize.
+
+
+Credits
+-------
+
+Thanks to all the too-numerous-to-list people who reported bugs and provided
+patches.  Also thanks to Ian Bicking, for persuading me that a `UserAgent`
+class would be useful, and to Ronald Tschalar for advice on Netscape cookies.
+
+A lot of credit must go to Gisle Aas, who wrote libwww-perl, from which large
+parts of mechanize originally derived, and Andy Lester for the original,
+[`WWW::Mechanize`](http://search.cpan.org/dist/WWW-Mechanize/).
+
+Finally, thanks to the (coincidentally-named) Johnny Lee for the MSIE
+CookieJar Perl code from which mechanize's support for that is derived.
+
+
+Download
+--------
+
+You can install from source, or using
+[EasyInstall](http://peak.telecommunity.com/DevCenter/EasyInstall):
+
+    easy-install mechanize
+
+[git access](./#git) is also available.
+
+All documentation (including this web page) is included in the distribution.
+
+This is a stable release.
+
+  * [mechanize-@(version).tar.gz](./src/mechanize-@(version).tar.gz)
+
+  * [mechanize-@(version).zip](./src/mechanize-@(version).zip)
+
+  * [Change Log](./src/ChangeLog.txt) (included in distribution)
+
+  * [Older versions.](./src/)
+
+For an installation procedure that does not invoke EasyInstall's dependency
+resolution system, see the INSTALL file included with the distribution.
+
+Note re Windows and Mac support: currently the tests are only routinely run on
+Ubuntu karmic.  However, as far as I know, mechanize works fine on Windows and
+Mac platforms.
+
+
+git repository
+--------------
+
+The [git](http://git-scm.com/) repository is
+[here](http://github.com/).  To check it out:
+
+    git clone git://github.com/jjlee/mechanize.git
+
+
+Tests and examples
+------------------
+
+### Examples ###
+
+The `examples` directory in the source packages contains a couple of silly,
+but working, scripts to demonstrate basic use of the module.
+
+See also the [forms examples](./forms.html) (these examples use the forms code
+independently of `mechanize.Browser`).
+
+
+### Tests ###
+
+To run the tests:
+
+    python test.py
+
+There are some tests that try to fetch URLs from the internet.  To include
+those in the test run:
+
+    python test.py discover --tag internet
+
+
+See also
+--------
+
+There are several wrappers around mechanize designed for functional testing of
+web applications:
+
+  * [`zope.testbrowser`](http://cheeseshop.python.org/pypi?:action=display&name=zope.testbrowser)
+    (or
+    [`ZopeTestBrowser`](http://cheeseshop.python.org/pypi?%3Aaction=display&name=ZopeTestbrowser),
+    the standalone version).
+
+  * [twill](http://www.idyll.org/~t/www-tools/twill.html).
+
+See [General FAQ](../bits/GeneralFAQ.html) page for other links to related
+software.
+
+
+FAQs -- pre install
+-------------------
+
+  * <p class="q">Which version of Python do I need?</p>
+    Python 2.4, 2.5 or 2.6.  Python 3 is not yet supported.
+
+  * <p class="q">Does mechanize depend on BeautifulSoup?</p>
+    No.  mechanize offers a few (still rather experimental) classes that make
+use of BeautifulSoup, but these classes are not required to use mechanize.
+mechanize bundles BeautifulSoup version 2, so that module is no longer
+required.  A future version of mechanize will support BeautifulSoup version 3,
+at which point mechanize will likely no longer bundle the module.
+
+  * <p class="q">Does mechanize depend on ClientForm?</p>
+    No, ClientForm is now part of mechanize.
+
+  * <p class="q">Which license?</p>
+    mechanize is dual-licensed: you may pick either the [BSD
+license](http://www.opensource.org/licenses/bsd-license.php), or the [ZPL
+2.1](http://www.zope.org/Resources/ZPL) (both are included in the
+distribution).
+
+
+FAQs -- usage
+-------------
+
+  * <p class="q">I'm not getting the HTML page I expected to see.</p>
+
+      * [Debugging tips](http://wwwsearch.sourceforge.net/mechanize/doc.html#debugging)
+
+      * [More tips](http://wwwsearch.sourceforge.net/bits/GeneralFAQ.html)
+
+  * <p class="q">`Browser` doesn't have all of the forms/links I see in the
+HTML.  Why not?</p>
+    <p>Perhaps the default parser can't cope with invalid HTML.  Try using the
+included BeautifulSoup 2 parser instead:
+
+~~~~{.python}
+import mechanize
+
+browser = mechanize.Browser(factory=mechanize.RobustFactory())
+browser.open("http://example.com/")
+print browser.forms
+~~~~
+
+  * <p class="q">Is JavaScript supported?</p>
+    No, sorry.  Try [htmlunit](http://htmlunit.sourceforge.net/).
+
+  * <p class="q">My HTTP response data is truncated.</p>
+    `mechanize.Browser's` response objects support the .seek() method, and
+can still be used after .close() has been called.  Response data is not
+fetched until it is needed, so navigation away from a URL before fetching all
+of the response will truncate it.  Call `response.get_data()` before
+navigation if you don't want that to happen.
+
+  * <p class="q">I'm *sure* this page is HTML, why does `mechanize.Browser`
+think otherwise?</p>
+
+~~~~{.python}
+b = mechanize.Browser(
+    # mechanize's XHTML support needs work, so is currently switched off.  If
+    # we want to get our work done, we have to turn it on by supplying a
+    # mechanize.Factory (with XHTML support turned on):
+    factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
+    )
+~~~~
+
+  * <p class="q">Why don't timeouts work for me?</p>
+    <p>Timeouts are ignored with with versions of Python earlier than 2.6.
+Timeouts do not apply to DNS lookups.
+
+
+Bug tracker
+-----------
+
+The (rather new) bug tracker is [here on
+github](http://github.com/jjlee/mechanize/issues).  It's equally acceptable to
+file bugs on the tracker or post about them to the mailing list.
+
+
+Mailing list
+------------
+
+There is a [mailing
+list](http://lists.sourceforge.net/lists/listinfo/wwwsearch-general).  I prefer
+questions and comments to be sent there rather than direct to me.
+
+<!-- Local Variables: -->
+<!-- fill-column:79 -->
+<!-- End: -->

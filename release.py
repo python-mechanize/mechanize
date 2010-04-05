@@ -8,8 +8,16 @@ If no actions are given, print the tree of actions and do nothing.
 This is only intended to work on Unix (unlike mechanize itself).  Some of it
 only works on Ubuntu karmic.
 
-Note that some ("clean*") actions do rm -rf on RELEASE_AREA or subdirectories
-of RELEASE_AREA.  Other actions install software.
+Warning:
+
+ * Some ("clean*") actions do rm -rf on RELEASE_AREA or subdirectories of
+RELEASE_AREA.
+
+ * The install_deps action installs some debian packages system-wide.  The
+clean action doesn't uninstall them.
+
+ * The install_deps action downloads and installs software to RELEASE_AREA.
+The clean action uninstalls (by rm -rf).
 """
 
 # This script depends on the code from this git repository:
@@ -30,6 +38,7 @@ import smtplib
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 # Stop the test runner from reporting import failure if these modules aren't
@@ -119,12 +128,32 @@ def ensure_unmodified(env, path):
     release.CwdEnv(env, path).cmd(["git", "diff", "--exit-code", "HEAD"])
 
 
+def add_to_path_cmd(value):
+    set_path_script = """\
+if [ -n "$PATH" ]
+  then
+    export PATH="$PATH":%(value)s
+  else
+    export PATH=%(value)s
+fi
+exec "$@"
+""" % dict(value=value)
+    return ["sh", "-c", set_path_script, "inline_script"]
+
+
+AddToPathEnv = release.make_env_maker(add_to_path_cmd)
+
+
 class Releaser(object):
 
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
                  build_tools_repo_path=None, run_in_repository=False,
                  tag_name=None):
-        self._env = release.GitPagerWrapper(env)
+        env = release.GitPagerWrapper(env)
+        self._release_dir = release_dir
+        self._opt_dir = os.path.join(release_dir, "opt")
+        self._bin_dir = os.path.join(self._opt_dir, "bin")
+        self._env = AddToPathEnv(env, self._bin_dir)
         self._source_repo_path = git_repository_path
         self._in_source_repo = release.CwdEnv(self._env,
                                               self._source_repo_path)
@@ -144,7 +173,8 @@ class Releaser(object):
         else:
             self._in_repo = self._in_clone
             self._repo_path = self._clone_path
-        self._release_dir = release_dir
+        self._docs_dir = os.path.join(self._repo_path, "docs")
+        self._in_docs_dir = release.CwdEnv(self._env, self._docs_dir)
         self._in_release_dir = release.CwdEnv(self._env, self._release_dir)
         self._build_tools_path = build_tools_repo_path
         if self._build_tools_path is not None:
@@ -202,20 +232,39 @@ class Releaser(object):
 
     def install_css_validator_in_release_dir(self, log):
         jar_dir = os.path.join(self._release_dir, self._css_validator_path)
-        in_jar_dir = release.CwdEnv(self._env, jar_dir)
         self._env.cmd(release.rm_rf_cmd(jar_dir))
         self._env.cmd(["mkdir", "-p", jar_dir])
+        in_jar_dir = release.CwdEnv(self._env, jar_dir)
         in_jar_dir.cmd([
                 "wget",
                 "http://www.w3.org/QA/Tools/css-validator/css-validator.jar"])
         in_jar_dir.cmd(["wget",
                         "http://jigsaw.w3.org/Distrib/jigsaw_2.2.6.tar.bz2"])
         in_jar_dir.cmd(["sh", "-c", "tar xf jigsaw_*.tar.bz2"])
-        # TODO: probably only need jigsaw.jar
-        for jigsaw_jar_path in glob.glob(os.path.join(
-                jar_dir, "Jigsaw", "classes", "*.jar")):
-            in_jar_dir.cmd(
-                ["ln", "-s", os.path.relpath(jigsaw_jar_path, jar_dir)])
+        in_jar_dir.cmd(["ln", "-s", "Jigsaw/classes/jigsaw.jar"])
+
+    def install_haskell_platform_in_release_dir(self, log):
+        # TODO: test
+        version = "haskell-platform-2009.2.0.2"
+        tarball = "%s.tar.gz" % version
+        self._in_release_dir.cmd([
+                "wget",
+                "http://hackage.haskell.org/platform/2009.2.0.2/" + tarball])
+        self._in_release_dir.cmd(["tar", "xf", tarball])
+        in_src_dir = release.CwdEnv(self._env,
+                                    os.path.join(self._release_dir, version))
+        in_src_dir.cmd(["sh", "-c", "./configure --prefix=%s" % self._opt_dir])
+        in_src_dir.cmd(["make"])
+        #self._env.cmd(["mkdir", "-p", self._opt_dir])
+        in_src_dir.cmd(["make", "install"])
+        self._env.cmd(["cabal", "update"])
+        self._env.cmd(["cabal", "upgrade", "--prefix", self._opt_dir,
+                       "cabal-install"])
+
+    def install_pandoc_in_release_dir(self, log):
+        self._env.cmd(["cabal", "install", "--prefix", self._opt_dir,
+                       "-fhighlighting",
+                       "pandoc"])
 
     @action_tree.action_node
     def install_deps(self):
@@ -238,6 +287,7 @@ class Releaser(object):
         add_dependency("wdg-html-validator")
         # for collecting code coverage data and generating coverage reports
         add_dependency("python-figleaf", ppa="jjl/figleaf")
+
         # for css validator
         add_dependency("sun-java6-jre")
         add_dependency("libcommons-collections3-java")
@@ -248,6 +298,16 @@ class Releaser(object):
         # command-line validation.  You're doing it wrong!
         add_dependency("velocity")
         dependency_actions.append(self.install_css_validator_in_release_dir)
+
+        # for generating .html docs from .txt markdown files
+        # dependencies of haskell platform
+        # http://davidsiegel.org/haskell-platform-in-karmic-koala/
+        for pkg in ("ghc6 ghc6-prof ghc6-doc haddock libglut-dev happy alex "
+                    "libedit-dev zlib1g-dev checkinstall".split()):
+            add_dependency(pkg)
+        dependency_actions.append(self.install_haskell_platform_in_release_dir)
+        dependency_actions.append(self.install_pandoc_in_release_dir)
+
         return dependency_actions
 
     def _make_test_step(self, env, python_version,
@@ -329,22 +389,39 @@ class Releaser(object):
                            "-m", "Tagging release %s" % self._release_version,
                            str(self._release_version)])
 
-    def _make_readme(self):
-        defines = ["version=%r" % (tuple(self._release_version.tuple),)]
-        # html
-        release.empy(self._in_repo, "README.html.in", defines=defines)
-        # plain text
-        lynx_dump_env = release.PipeEnv(
-            release.OutputToFileEnv(self._in_repo, "README.txt"),
-            ["lynx", "-force_html", "-dump", "/dev/stdin"])
-        lynx_dump_env.cmd(release.empy_cmd("README.html.in",
-                                           defines=defines + ["base=True"]))
+    def clean_docs(self, log):
+        self._in_docs_dir.cmd(release.rm_rf_cmd("html"))
 
     def make_docs(self, log):
-        release.empy(self._in_repo, "doc.html.in")
-        release.empy(self._in_repo, "forms.html.in")
-        release.empy(self._in_repo, "GeneralFAQ.html.in")
-        self._make_readme()
+        navlinks = ['<span class="thispage">Home</span>',
+                    '<a href="download.html">Download</a>',
+                    '<a href="support.html">Support</a>',
+                    '<a href="development.html">Development</a>']
+        # XXX these don't work properly yet
+        toclinks = ['<a href="..">Home</a><br>',
+                    '<a href="GeneralFAQ.html">General FAQs</a>',
+                    '<span class="thispage">mechanize</span>',
+                    '<a href="doc.html">handlers etc.</a>',
+                    '<a href="forms.html">forms</a>']
+        self._in_docs_dir.cmd(["mkdir", "-p", "html"])
+        def pandoc(filename):
+            last_modified = release.last_modified(filename, self._in_docs_dir)
+            variables = [
+                ("last_modified_iso",
+                 time.strftime("%Y-%m-%d", last_modified)),
+                ("last_modified_month_year",
+                 time.strftime("%B %Y", last_modified))]
+            for navlink in navlinks:
+                variables.append(("navlink", navlink))
+            for toclink in toclinks:
+                variables.append(("toclink", toclink))
+            release.pandoc(self._in_docs_dir, filename, variables=variables)
+        pandoc("doc.txt")
+        pandoc("forms.txt")
+        pandoc("GeneralFAQ.txt")
+        release.empy(self._in_docs_dir, "index.txt.in",
+                     defines=["version=%r" % str(self._release_version)])
+        pandoc("index.txt")
 
     def write_setup_cfg(self, log):
         # write empty setup.cfg so source distribution is built using a version
@@ -361,6 +438,7 @@ class Releaser(object):
     @action_tree.action_node
     def build_sdist(self):
         return [
+            self.clean_docs,
             self.make_docs,
             self.write_setup_cfg,
             self.setup_py_sdist,
@@ -368,6 +446,10 @@ class Releaser(object):
 
     def _stage(self, path, dest_dir, dest_basename=None,
                source_base_path=None):
+        # IIRC not using rsync because didn't see easy way to avoid updating
+        # timestamp of unchanged files, which was upsetting git
+        # note: files in the website repository that are no longer generated
+        # must be manually deleted from the repository
         if source_base_path is None:
             source_base_path = self._repo_path
         full_path = os.path.join(source_base_path, path)
@@ -392,29 +474,40 @@ class Releaser(object):
         ensure_unmodified(self._env, self._website_source_path)
 
     def make_website(self, log):
-        release.empy(release.CwdEnv(self._env, self._website_source_path),
-                     "frontpage.html.in")
+        pass
 
     def ensure_staging_website_unmodified(self, log):
         ensure_unmodified(self._env, self._mirror_path)
 
+    def _stage_flat_dir(self, path, dest):
+        self._env.cmd(["mkdir", "-p", os.path.join(self._mirror_path, dest)])
+        for filename in os.listdir(path):
+            self._stage(os.path.join(path, filename), dest)
+
+    def _symlink_flat_dir(self, path):
+        for filename in os.listdir(path):
+            target = os.path.join(path, filename)
+            link_dir = os.path.dirname(path)
+            if not os.path.islink(os.path.join(link_dir, filename)):
+                self._env.cmd(["ln", "-s", "-t", link_dir, target])
+
     def collate(self, log):
         stage = self._stage
-        src = "htdocs/mechanize/src"
-        stage("README.html", src, "README-%s.html" % self._release_version)
-        stage("README.html", "htdocs/mechanize", "index.html")
-        stage("doc.html", src)
-        stage("forms.html", src)
+        html_dir = os.path.join(self._docs_dir, "html")
+        self._stage_flat_dir(html_dir, "htdocs/mechanize/docs")
+        self._symlink_flat_dir(
+            os.path.join(self._mirror_path, "htdocs/mechanize/docs"))
         for archive in self._source_distributions:
-            stage(os.path.join("dist", archive), src)
-        stage("GeneralFAQ.html", "htdocs/bits")
+            stage(os.path.join("dist", archive), "htdocs/mechanize/src")
         stage("test-tools/cookietest.cgi", "cgi-bin")
         stage("examples/forms/echo.cgi", "cgi-bin")
-        stage("examples/forms/example.html", "htdocs/ClientForm")
+        stage("examples/forms/example.html", "htdocs/mechanize")
         if self._build_tools_path is not None:
-            def stage_from_website(*args):
-                self._stage(source_base_path=self._website_source_path, *args)
-            stage_from_website("frontpage.html", "htdocs/bits")
+            stage(os.path.join(self._website_source_path, "frontpage.html"),
+                  "htdocs", "index.html")
+            self._stage_flat_dir(
+                os.path.join(self._website_source_path, "styles"),
+                "htdocs/styles")
 
     def commit_staging_website(self, log):
         self._in_mirror.cmd(["git", "add", "--all"])
@@ -426,40 +519,15 @@ class Releaser(object):
         exclusions = set(f for f in """\
 ./cookietest.html
 htdocs/basic_auth/index.html
-htdocs/bib/protest.html
-htdocs/bits/mechanize_reload_test.html
-htdocs/bits/referertest.html
-htdocs/ClientCookie/doc.html
-htdocs/ClientCookie/src/doc-0_4.html
-htdocs/ClientCookie/src/doc.html
-htdocs/ClientForm/example.html
-htdocs/ClientForm/src/README-0_1_10.html
-htdocs/ClientForm/src/README-0_1_11.html
-htdocs/ClientForm/src/README-0_1_12.html
-htdocs/ClientForm/src/README-0_1_13.html
-htdocs/ClientForm/src/README-0_1_14.html
-htdocs/ClientForm/src/README-0_1_15.html
-htdocs/ClientForm/src/README-0_1_9.html
 htdocs/digest_auth/index.html
-htdocs/DOMForm/index.html
-htdocs/DOMForm/src/README-0_0_1a.html
-htdocs/mechanize/src/README-0_0_1a.html
-htdocs/mechanize/src/README-0_0_2a.html
-htdocs/mechanize/src/README-0_0_3a.html
-htdocs/mechanize/src/README-0_0_4a.html
-htdocs/mechanize/src/README-0_0_5a.html
-htdocs/mechanize/src/README-0_0_6a.html
-htdocs/mechanize/src/README-0_0_7a.html
-htdocs/mechanize/src/README-0_0_8a.html
-htdocs/mechanize/src/README-0_0_9a.html
-htdocs/mechanize/src/README-0.1.0a.html
-htdocs/mechanize/src/README-0.1.11.html
-htdocs/mechanize/src/README-0.1.1a.html
-htdocs/mechanize/src/README-0.1.2b.html
-htdocs/seltest/Test1.html
-htdocs/seltest/TestSuite.html
+htdocs/mechanize/example.html
 """.splitlines() if not f.startswith("#"))
         for dirpath, dirnames, filenames in os.walk(self._mirror_path):
+            try:
+                # archived website
+                dirnames.remove("old")
+            except ValueError:
+                pass
             for filename in filenames:
                 if filename.endswith(".html"):
                     page_path = os.path.join(

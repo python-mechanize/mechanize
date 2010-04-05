@@ -9,7 +9,7 @@ if len(sys.argv) == 1:
 else:
     uri = sys.argv[1]
 
-request = mechanize.Request(mechanize.urljoin(uri, "ClientForm/example.html"))
+request = mechanize.Request(mechanize.urljoin(uri, "mechanize/example.html"))
 response = mechanize.urlopen(request)
 forms = mechanize.ParseResponse(response, backwards_compat=False)
 response.close()
