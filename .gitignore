@@ -1,4 +1,5 @@
-/*.html
-/README.txt
+/docs/html
+/docs/index.txt
+/docs/styles
 /build/
 *.egg-info/
