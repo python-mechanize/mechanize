@@ -530,6 +530,9 @@ class Releaser(object):
 htdocs/basic_auth/index.html
 htdocs/digest_auth/index.html
 htdocs/mechanize/example.html
+htdocs/test_fixtures/index.html
+htdocs/test_fixtures/mechanize_reload_test.html
+htdocs/test_fixtures/referertest.html
 """.splitlines() if not f.startswith("#"))
         for dirpath, dirnames, filenames in os.walk(self._mirror_path):
             try:
