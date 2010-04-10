@@ -10,7 +10,7 @@
   <meta name="keywords" content="cookie,HTTP,Python,web,client,client-side,HTML,META,HTTP-EQUIV,Refresh">
   <style type="text/css" media="screen">@import "../styles/style.css";</style>
   <!--breaks resizing text in IE6,7,8 (the lack of it also breaks baseline grid a bit in IE8 - can't win)-->
-  <!--[if !IE]--><style type="text/css" media="screen">body{font-size:14px;}</style><!--[endif]-->
+  <!--[if !IE]>--><style type="text/css" media="screen">body{font-size:14px;}</style><!--<![endif]-->
   <!--max-width-->
   <!--[if IE 6]><script type="text/javascript" src="../styles/ie6.js"></script><![endif]-->
   <title>$if(pagetitle)$$pagetitle$$endif$</title>
