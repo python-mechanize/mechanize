@@ -141,7 +141,7 @@ on saving.  `LWPCookieJar` itself uses a libwww-perl specific format
 able to share a cookies file (note that the file location here will differ on
 non-unix OSes):
 
-**WARNING:** you may want to backup your browser's cookies file if you use
+**WARNING:** you may want to back up your browser's cookies file if you use
 `MozillaCookieJar` to save cookies.  I *think* it works, but there have been
 bugs in the past!
 
@@ -631,15 +631,18 @@ David Kristol](http://arxiv.org/abs/cs.SE/0105018).
 FAQs -- pre install
 -------------------
 
-  * <p class="q">Doesn't the standard Python library module, `Cookie`, do
-    this?</p>
-    <p>No: Cookie.py does the server end of the job.  It doesn't know when to
+  * <span class="q">Doesn't the standard Python library module, `Cookie`, do
+    this?</span>
+
+    No: Cookie.py does the server end of the job.  It doesn't know when to
     accept cookies from a server or when to pass them back.
 
-  * <p class="q">Which HTTP cookie protocols does mechanize support?</p>
-    <p>Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
+  * <span class="q">Which HTTP cookie protocols does mechanize support?</span>
 
-  * <p class="q">What about RFC 2109?</p>
+    Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
+
+  * <span class="q">What about RFC 2109?</span>
+
     RFC 2109 cookies are currently parsed as Netscape cookies, and treated
     by default as RFC 2965 cookies thereafter if RFC 2965 handling is enabled,
     or as Netscape cookies otherwise.
@@ -648,25 +651,30 @@ FAQs -- pre install
 FAQs -- usage
 -------------
 
-  * <p class="q">Why don't I have any cookies?</p>
-    <p>Read the [debugging section](./doc.html#debugging) of this page.
+  * <span class="q">Why don't I have any cookies?</span>
 
-  * <p class="q">My response claims to be empty, but I know it's not!</p>
-    <p>Did you call `response.read()` (e.g., in a debug statement), then forget
+    Read the [debugging section](./doc.html#debugging) of this page.
+
+  * <span class="q">My response claims to be empty, but I know it's not!</span>
+
+    Did you call `response.read()` (e.g., in a debug statement), then forget
     that all the data has already been read? In that case, you may want to use
     `mechanize.response_seek_wrapper`.
 
-  * <p class="q">What's the difference between the `.load()` and `.revert()`
-    methods of `CookieJar`?</p>
-    <p>`.load()` *appends* cookies from a file.  `.revert()` discards all
+  * <span class="q">What's the difference between the `.load()` and `.revert()`
+    methods of `CookieJar`?</span>
+
+    `.load()` *appends* cookies from a file.  `.revert()` discards all
     existing cookies held by the `CookieJar` first (but it won't lose any
     existing cookies if the loading fails).
 
-  * <p class="q">Is it threadsafe?</p>
-    <p>No.  As far as I know, you can use mechanize in threaded code, but it
+  * <span class="q">Is it threadsafe?</span>
+
+    No.  As far as I know, you can use mechanize in threaded code, but it
     provides no synchronisation: you have to provide that yourself.
 
-  * <p class="q">How do I do <X\></p>
+  * <span class="q">How do I do <X\></span>
+
     Refer to the API documentation in docstrings.
 
 

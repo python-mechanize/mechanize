@@ -2,15 +2,17 @@
 
 <div class="expanded">
 
-  * <p class="q">Is there any example code?</p>
-    <p>Look in the examples directory of [mechanize](./).  Note that
-    the examples on the [forms page](./forms.html) are executable as-is.
-    Contributions of example code would be very welcome!
+  * <span class="q">Is there any example code?</span>
 
-  * <p class="q">I want to see what my web browser is doing, but standard
-    network sniffers like [ethereal](http://www.ethereal.com/) or netcat (nc)
-    don't work for HTTPS.  How do I sniff HTTPS traffic?</p>
-    <p>Three good options:
+    Look in the examples directory of [mechanize](./).  Note that the examples
+    on the [forms page](./forms.html) are executable as-is.  Contributions of
+    example code would be very welcome!
+
+  * <span class="q">I want to see what my web browser is doing, but standard
+    network sniffers like [wireshark](http://www.wireshark.org/) or netcat (nc)
+    don't work for HTTPS.  How do I sniff HTTPS traffic?</span>
+
+    Three good options:
 
       * Mozilla plugin:
         [livehttpheaders](http://livehttpheaders.mozdev.org/).
@@ -21,9 +23,10 @@
       * Use [lynx](http://lynx.browser.org/) `-trace`, and filter out
         the junk with a script.
 
-  * <p class="q">Embedded script is messing up my web-scraping.  What do I
-    do?</p>
-    <p>It is possible to embed script in HTML pages (sandwiched between
+  * <span class="q">Embedded script is messing up my web-scraping.  What do I
+    do?</span>
+
+    It is possible to embed script in HTML pages (sandwiched between
     `<SCRIPT>here</SCRIPT>` tags, and in `javascript:` URLs) - JavaScript /
     ECMAScript, VBScript, or even Python.  These scripts can do all sorts of
     things, including causing cookies to be set in a browser, submitting or
@@ -63,7 +66,7 @@
         spike along these lines some years ago, but I think it would (still) be
         quite a lot of work to do well.
 
-  * <p class="q">Misc links</p>
+  * <span class="q">Misc links</span>
 
       * [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) is a
         widely recommended HTML-parsing module.
@@ -91,10 +94,10 @@
         scraping](http://www.rexx.com/~dkuhlman/quixote_htmlscraping.html) from
         Dave Kuhlman.
 
-  * <p class="q">Will any of this code make its way into the Python standard
-    library?</p>
+  * <span class="q">Will any of this code make its way into the Python standard
+    library?</span>
 
-    <p>The request / response processing extensions to `urllib2` from mechanize
+    The request / response processing extensions to `urllib2` from mechanize
     have been merged into `urllib2` for Python 2.4.  The cookie processing has
     been added, as module `cookielib`.  There are other features that would be
     appropriate additions to urllib2, but since Python 2 is heading into

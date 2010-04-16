@@ -105,42 +105,48 @@ reports.
 FAQs
 ----
 
-  * <p class="q">Doesn't the standard Python library module, `cgi`, do this?</p>
-    <p>No: the `cgi` module does the server end of the job.  It doesn't know
+  * <span class="q">Doesn't the standard Python library module, `cgi`, do this?</span>
+
+    No: the `cgi` module does the server end of the job.  It doesn't know
     how to parse or fill in a form or how to send it back to the server.
 
-  * <p class="q">How do I figure out what control names and values to use?</p>
-    <p>`print form` is usually all you need.  In your code, things like the
+  * <span class="q">How do I figure out what control names and values to use?</span>
+
+    `print form` is usually all you need.  In your code, things like the
     `HTMLForm.items` attribute of `HTMLForm` instances can be useful to inspect
     forms at runtime.  Note that it's possible to use item labels instead of
     item names, which can be useful — use the `by_label` arguments to the
     various methods, and the `.get_value_by_label()` / `.set_value_by_label()`
     methods on `ListControl`.
 
-  * <p class="q">What do those `'*'` characters mean in the string
-    representations of list controls?</p>
-    <p>A `*` next to an item means that item is selected.
+  * <span class="q">What do those `'*'` characters mean in the string
+    representations of list controls?</span>
 
-  * <p class="q">What do those parentheses (round brackets) mean in the string
-    representations of list controls?</p>
-    <p>Parentheses `(foo)` around an item mean that item is disabled.
+    A `*` next to an item means that item is selected.
 
-  * <p class="q">Why doesn't <some control\> turn up in the data returned by
-    `.click*()` when that control has non-`None` value?</p>
-    <p>Either the control is disabled, or it is not successful for some other
+  * <span class="q">What do those parentheses (round brackets) mean in the string
+    representations of list controls?</span>
+
+    Parentheses `(foo)` around an item mean that item is disabled.
+
+  * <span class="q">Why doesn't <some control\> turn up in the data returned by
+    `.click*()` when that control has non-`None` value?</span>
+
+    Either the control is disabled, or it is not successful for some other
     reason. 'Successful' (see HTML 4 specification) means that the control will
     cause data to get sent to the server.
 
-  * <p class="q">Why does mechanize not follow the HTML 4.0 / RFC 1866
-    standards for `RADIO` and multiple-selection `SELECT` controls?</p>
-    <p>Because by default, it follows browser behaviour when setting the
+  * <span class="q">Why does mechanize not follow the HTML 4.0 / RFC 1866
+    standards for `RADIO` and multiple-selection `SELECT` controls?</span>
+
+    Because by default, it follows browser behaviour when setting the
     initially-selected items in list controls that have no items explicitly
     selected in the HTML.  Use the `select_default` argument to `ParseResponse`
     if you want to follow the RFC 1866 rules instead.  Note that browser
     behaviour violates the HTML 4.01 specification in the case of `RADIO`
     controls.
 
-  * <p class="q">Why does `.click()`ing on a button not work for me?</p>
+  * <span class="q">Why does `.click()`ing on a button not work for me?</span>
 
       * Clicking on a `RESET` button doesn't do anything, by design - this is a
         library for web automation, not an interactive browser.  Even in an
@@ -159,37 +165,40 @@ FAQs
       * Generally, embedded script may be messing things up in all kinds of
         ways.  See the answer to the next question.
 
-  * <p class="q">Embedded script is messing up my form filling.  What do I
-    do?</p>
-    <p>See the [General FAQs](../../bits/GeneralFAQ.html) page and the next FAQ
+  * <span class="q">Embedded script is messing up my form filling.  What do I
+    do?</span>
+
+    See the [General FAQs](../../bits/GeneralFAQ.html) page and the next FAQ
     entry for what to do about this.
 
-  * <p class="q">How do I change `INPUT TYPE=HIDDEN` field values (for example,
-to emulate the effect of JavaScript code)?</p>
-    <p>As with any control, set the control's `readonly` attribute false.
+  * <span class="q">How do I change `INPUT TYPE=HIDDEN` field values (for example,
+to emulate the effect of JavaScript code)?</span>
 
-~~~~{.python}
-form.find_control("foo").readonly = False # allow changing .value of control foo
-form.set_all_readonly(False) # allow changing the .value of all controls
-~~~~
+    As with any control, set the control's `readonly` attribute false.
 
-  * <p class="q">I'm having trouble debugging my code.</p>
-    <p>See [here](./doc.html#debugging) for few relevant tips.  Also see
+    ~~~~{.python}
+    form.find_control("foo").readonly = False # allow changing .value of control foo
+    form.set_all_readonly(False) # allow changing the .value of all controls
+    ~~~~
+
+  * <span class="q">I'm having trouble debugging my code.</span>
+
+    See [here](./doc.html#debugging) for few relevant tips.  Also see
     [General FAQs](./GeneralFAQ.html).
 
-  * <p class="q">I have a control containing a list of integers.  How do I
-    select the one whose value is nearest to the one I want?</p>
+  * <span class="q">I have a control containing a list of integers.  How do I
+    select the one whose value is nearest to the one I want?</span>
 
-~~~~{.python}
-import bisect
-def closest_int_value(form, ctrl_name, value):
-    values = map(int, [item.name for item in form.find_control(ctrl_name).items])
-    return str(values[bisect.bisect(values, value) - 1])
+    ~~~~{.python}
+    import bisect
+    def closest_int_value(form, ctrl_name, value):
+	values = map(int, [item.name for item in form.find_control(ctrl_name).items])
+	return str(values[bisect.bisect(values, value) - 1])
 
-form["distance"] = [closest_int_value(form, "distance", 23)]
-~~~~
+    form["distance"] = [closest_int_value(form, "distance", 23)]
+    ~~~~
 
-  * <p class="q">Where can I find out more about the HTML and HTTP standards?</p>
+  * <span class="q">Where can I find out more about the HTML and HTTP standards?</span>
 
       * W3C [HTML 4.01 Specification](http://www.w3.org/TR/html401/).
 
