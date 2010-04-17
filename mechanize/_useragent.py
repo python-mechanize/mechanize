@@ -284,7 +284,7 @@ class UserAgentBase(_opener.OpenerDirector):
         Other logger names relevant to this module:
 
         "mechanize.http_responses"
-        "mechanize.cookies" (or "cookielib" if running Python 2.4)
+        "mechanize.cookies"
 
         To turn on everything:
 
