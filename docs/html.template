@@ -33,6 +33,8 @@ $endif$
 
 $subnav$
 
+$toc$
+
 $body$
 
 <p><a href="mailto:jjl@pobox.com">John J. Lee</a>, $last_modified_month_year$.

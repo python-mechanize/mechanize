@@ -13,7 +13,7 @@ Examples
 
 ~~~~{.python}
 import mechanize
-response = mechanize.urlopen("http://foo.bar.com/")
+response = mechanize.urlopen("http://example.com/")
 ~~~~
 
 This function behaves identically to `urllib2.urlopen()`, except that it deals
@@ -24,11 +24,12 @@ want to pass `Request`s around, add headers to them, etc.):
 
 ~~~~{.python}
 import mechanize
-request = mechanize.Request("http://www.acme.com/")
+request = mechanize.Request("http://example.com/")
 # note we're using the urlopen from mechanize, not urllib2
 response = mechanize.urlopen(request)
-# let's say this next request requires a cookie that was set in response
-request2 = mechanize.Request("http://www.acme.com/flying_machines.html")
+# let's say this next request requires a cookie that was set
+# in response
+request2 = mechanize.Request("http://example.com/spam.html")
 response2 = mechanize.urlopen(request2)
 
 print response2.geturl()
@@ -60,12 +61,12 @@ class NullCookieProcessor(mechanize.HTTPCookieProcessor):
     def http_response(self, request, response): return response
 opener = mechanize.build_opener(NullCookieProcessor)
 
-request = mechanize.Request("http://www.acme.com/")
+request = mechanize.Request("http://example.com/")
 response = mechanize.urlopen(request)
 cj = mechanize.CookieJar()
 cj.extract_cookies(response, request)
 # let's say this next request requires a cookie that was set in response
-request2 = mechanize.Request("http://www.acme.com/flying_machines.html")
+request2 = mechanize.Request("http://example.com/spam.html")
 cj.add_cookie_header(request2)
 response2 = mechanize.urlopen(request2)
 ~~~~
@@ -125,8 +126,8 @@ don't start with a single underscore.  Everything else is subject to change or
 disappearance without notice.
 
 
-Cooperating with Mozilla/Netscape, lynx and Internet Explorer
--------------------------------------------------------------
+Cooperating with Browsers
+-------------------------
 
 **Firefox since version 3 persists cookies in an sqlite database, which is not
 supported by MozillaCookieJar.**
@@ -191,8 +192,8 @@ save cookies on disk between sessions in human-readable form is to use
 information.
 
 
-Using your own CookieJar instance
----------------------------------
+Supplying a CookieJar
+---------------------
 
 You might want to do this to [use your browser's cookies](./doc.html#browsers),
 to customize `CookieJar`'s behaviour by passing constructor arguments, or to be
@@ -210,8 +211,8 @@ cookies = mechanize.CookieJar()
 # will replace the default one.
 opener = mechanize.build_opener(mechanize.HTTPCookieProcessor(cookies))
 
-r = opener.open("http://acme.com/")  # GET
-r = opener.open("http://acme.com/", data)  # POST
+r = opener.open("http://example.com/")  # GET
+r = opener.open("http://example.com/", data)  # POST
 ~~~~
 
 The `urlopen()` function uses a global `OpenerDirector` instance to do its
@@ -221,11 +222,13 @@ work, so if you want to use `urlopen()` with your own `CookieJar`, install the
 
 ~~~~{.python}
 mechanize.install_opener(opener)
-r = mechanize.urlopen("http://www.acme.com/")
+r = mechanize.urlopen("http://example.com/")
 ~~~~
 
 Of course, everyone using `urlopen` is using the same global `CookieJar`
 instance!
+
+<a name="policy" />
 
 You can set a policy object (must satisfy the interface defined by
 `mechanize.CookiePolicy`), which determines which cookies are allowed to be set
@@ -246,8 +249,8 @@ cookies.set_policy(policy)
 ~~~~
 
 
-Handlers for robots.txt, HTTP-EQUIV, Refresh, Referer
------------------------------------------------------
+Additional Handlers
+-------------------
 
 The following handlers are provided in addition to those provided by `urllib2`:
 
@@ -299,8 +302,6 @@ opener = mechanize.build_opener(mechanize.HTTPRefererProcessor,
 opener.open("http://www.rhubarb.com/")
 ~~~~
 
-
-<a name="seekable" />
 
 Seekable responses
 ------------------
@@ -379,8 +380,8 @@ mechanize adds some headers to `Request` objects automatically -- see the next
 section for details.
 
 
-Changing the automatically-added headers (User-Agent)
------------------------------------------------------
+Automatically-added headers
+---------------------------
 
 `OpenerDirector` automatically adds a `User-Agent` header to every `Request`.
 
@@ -398,7 +399,7 @@ Again, to use `urlopen()`, install your `OpenerDirector` globally:
 
 ~~~~{.python}
 mechanize.install_opener(opener)
-r = mechanize.urlopen("http://acme.com/")
+r = mechanize.urlopen("http://example.com/")
 ~~~~
 
 Also, a few standard headers (`Content-Length`, `Content-Type` and `Host`) are
@@ -442,16 +443,16 @@ request = Request(origin_req_host="www.example.com", unverifiable=True)
 ~~~~
 
 
-RFC 2965 handling
------------------
+RFC 2965 support
+----------------
 
-RFC 2965 handling is switched off by default, because few browsers implement
-it, so the RFC 2965 protocol is essentially never seen on the internet.  To
-switch it on, see [here](./doc.html#policy).
+Support for the RFC 2965 protocol is switched off by default, because few
+browsers implement it, so the RFC 2965 protocol is essentially never seen on
+the internet.  To switch it on, see [here](#policy).
 
 
-Parsing HTTP date strings
--------------------------
+Parsing HTTP dates
+------------------
 
 A function named `str2time` is provided by the package, which may be useful for
 parsing dates in HTTP headers.  `str2time` is intended to be liberal, since

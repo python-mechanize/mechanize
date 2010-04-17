@@ -10,8 +10,6 @@ mechanize.
 Tests and examples
 ------------------
 
-<a name="examples" />
-
 ### Examples ###
 
 The [front page](./) has some introductory examples.
@@ -96,7 +94,7 @@ UserAgent vs UserAgentBase
 
 `mechanize.UserAgent` is a trivial subclass of `mechanize.UserAgentBase`,
 adding just one method, `.set_seekable_responses()` (see the [documentation on
-seekable responses](./doc.html#seekable)).
+seekable responses](./doc.html#seekable-responses)).
 
 The reason for the extra class is that `mechanize.Browser` depends on seekable
 response objects (because response objects are used to implement the browser
