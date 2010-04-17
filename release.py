@@ -424,6 +424,7 @@ class Releaser(object):
             if page.name in ["forms", "download"]:
                 source_filename += ".in"
             pandoc(filename, source_filename)
+        self._env.cmd(["cp", "-r", "ChangeLog", "docs/html/ChangeLog.txt"])
         if self._build_tools_path is not None:
             styles = ensure_trailing_slash(
                 os.path.join(self._website_source_path, "styles"))
