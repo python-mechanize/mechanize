@@ -410,8 +410,8 @@ class Releaser(object):
                 ("last_modified_month_year",
                  time.strftime("%B %Y", last_modified))]
             page_name = os.path.splitext(os.path.basename(filename))[0]
-            variables.append(("toc", release.toc_html(site_map, page_name)))
             variables.append(("nav", release.nav_html(site_map, page_name)))
+            variables.append(("subnav", release.toc_html(site_map, page_name)))
             release.pandoc(self._in_docs_dir, filename, variables=variables)
         release.empy(self._in_docs_dir, "forms.txt.in")
         release.empy(self._in_docs_dir, "download.txt.in",
