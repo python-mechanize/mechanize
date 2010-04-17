@@ -413,19 +413,19 @@ class Releaser(object):
                  time.strftime("%Y-%m-%d", last_modified)),
                 ("last_modified_month_year",
                  time.strftime("%B %Y", last_modified))]
-            for navlink in navlinks:
-                variables.append(("navlink", navlink))
             page_name = os.path.splitext(os.path.basename(filename))[0]
-            if page_name == "index":
-                page_name = "mechanize"
             variables.append(("toc", release.toc_html(site_map, page_name)))
+            variables.append(("nav", release.nav_html(site_map, page_name)))
             release.pandoc(self._in_docs_dir, filename, variables=variables)
         pandoc("doc.txt")
         pandoc("forms.txt")
         pandoc("GeneralFAQ.txt")
-        release.empy(self._in_docs_dir, "index.txt.in",
-                     defines=["version=%r" % str(self._release_version)])
         pandoc("index.txt")
+        pandoc("documentation.txt")
+        pandoc("support.txt")
+        release.empy(self._in_docs_dir, "download.txt.in",
+                     defines=["version=%r" % str(self._release_version)])
+        pandoc("download.txt")
         if self._build_tools_path is not None:
             styles = ensure_trailing_slash(
                 os.path.join(self._website_source_path, "styles"))

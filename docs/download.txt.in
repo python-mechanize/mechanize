@@ -1,0 +1,43 @@
+% Download
+
+Download
+--------
+
+You can install from source, or using
+[EasyInstall](http://peak.telecommunity.com/DevCenter/EasyInstall):
+
+    easy-install mechanize
+
+[git access](./#git) is also available.
+
+All documentation (including this web page) is included in the distribution.
+
+This is a stable release.
+
+  * [mechanize-@(version).tar.gz](./src/mechanize-@(version).tar.gz)
+
+  * [mechanize-@(version).zip](./src/mechanize-@(version).zip)
+
+  * [Change Log](./src/ChangeLog.txt) (included in distribution)
+
+  * [Older versions.](./src/)
+
+For an installation procedure that does not invoke EasyInstall's dependency
+resolution system, see the INSTALL file included with the distribution.
+
+Note re Windows and Mac support: currently the tests are only routinely run on
+Ubuntu karmic.  However, as far as I know, mechanize works fine on Windows and
+Mac platforms.
+
+
+git repository
+--------------
+
+The [git](http://git-scm.com/) repository is [here](http://github.com/).  To
+check it out:
+
+    git clone git://github.com/jjlee/mechanize.git
+
+<!-- Local Variables: -->
+<!-- fill-column:79 -->
+<!-- End: -->

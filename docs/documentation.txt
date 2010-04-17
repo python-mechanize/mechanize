@@ -1,0 +1,13 @@
+% Documentation
+
+Documentation
+-------------
+
+Full API documentation is in the docstrings and the documentation of
+[`urllib2`](http://www.python.org/doc/2.6.4/library/urllib2.html).  The
+documentation in the web pages is in need of reorganisation at the moment,
+after the merge of ClientCookie into mechanize.
+
+<!-- Local Variables: -->
+<!-- fill-column:79 -->
+<!-- End: -->

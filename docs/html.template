@@ -23,11 +23,7 @@
 
 <div id="content">
 
-<ul id="nav">
-$for(navlink)$
-  <li>$navlink$</li>
-$endfor$
-</ul>
+$nav$
 
 <div id="main">
 
