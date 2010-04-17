@@ -3,20 +3,24 @@
 <div class="expanded">
 
 
-  * <p class="q">Which version of Python do I need?</p>
+  * <span class="q">Which version of Python do I need?</span>
+
     Python 2.4, 2.5 or 2.6.  Python 3 is not yet supported.
 
-  * <p class="q">Does mechanize depend on BeautifulSoup?</p>
+  * <span class="q">Does mechanize depend on BeautifulSoup?</span>
+
     No.  mechanize offers a few (still rather experimental) classes that make
 use of BeautifulSoup, but these classes are not required to use mechanize.
 mechanize bundles BeautifulSoup version 2, so that module is no longer
 required.  A future version of mechanize will support BeautifulSoup version 3,
 at which point mechanize will likely no longer bundle the module.
 
-  * <p class="q">Does mechanize depend on ClientForm?</p>
+  * <span class="q">Does mechanize depend on ClientForm?</span>
+
     No, ClientForm is now part of mechanize.
 
-  * <p class="q">Which license?</p>
+  * <span class="q">Which license?</span>
+
     mechanize is dual-licensed: you may pick either the [BSD
 license](http://www.opensource.org/licenses/bsd-license.php), or the [ZPL
 2.1](http://www.zope.org/Resources/ZPL) (both are included in the
@@ -26,49 +30,53 @@ distribution).
 Usage
 -----
 
-  * <p class="q">I'm not getting the HTML page I expected to see.</p>
+  * <span class="q">I'm not getting the HTML page I expected to see.</span>
 
-      * [Debugging tips](doc.html#debugging)
+      * [Debugging tips](hints.html)
 
       * [More tips](faq.html)
 
-  * <p class="q">`Browser` doesn't have all of the forms/links I see in the
-HTML.  Why not?</p>
-    <p>Perhaps the default parser can't cope with invalid HTML.  Try using the
+  * <span class="q">`Browser` doesn't have all of the forms/links I see in the
+HTML.  Why not?</span>
+
+    Perhaps the default parser can't cope with invalid HTML.  Try using the
 included BeautifulSoup 2 parser instead:
 
-~~~~{.python}
-import mechanize
+    ~~~~{.python}
+    import mechanize
 
-browser = mechanize.Browser(factory=mechanize.RobustFactory())
-browser.open("http://example.com/")
-print browser.forms
-~~~~
+    browser = mechanize.Browser(factory=mechanize.RobustFactory())
+    browser.open("http://example.com/")
+    print browser.forms
+    ~~~~
 
-  * <p class="q">Is JavaScript supported?</p>
-    No, sorry.  Try [htmlunit](http://htmlunit.sourceforge.net/).
+  * <span class="q">Is JavaScript supported?</span>
 
-  * <p class="q">My HTTP response data is truncated.</p>
-    `mechanize.Browser's` response objects support the .seek() method, and
-can still be used after .close() has been called.  Response data is not
+    No, sorry.  See [FAQs](#change-value) [below](#script).
+
+  * <span class="q">My HTTP response data is truncated.</span>
+
+    `mechanize.Browser's` response objects support the `.seek()` method, and
+can still be used after `.close()` has been called.  Response data is not
 fetched until it is needed, so navigation away from a URL before fetching all
-of the response will truncate it.  Call `response.get_data()` before
-navigation if you don't want that to happen.
+of the response will truncate it.  Call `response.get_data()` before navigation
+if you don't want that to happen.
 
-  * <p class="q">I'm *sure* this page is HTML, why does `mechanize.Browser`
-think otherwise?</p>
+  * <a name="xhtml" /><span class="q">I'm *sure* this page is HTML, why does `mechanize.Browser`
+think otherwise?</span>
 
-~~~~{.python}
-b = mechanize.Browser(
-    # mechanize's XHTML support needs work, so is currently switched off.  If
-    # we want to get our work done, we have to turn it on by supplying a
-    # mechanize.Factory (with XHTML support turned on):
-    factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
-    )
-~~~~
+    ~~~~{.python}
+    b = mechanize.Browser(
+	# mechanize's XHTML support needs work, so is currently switched off.  If
+	# we want to get our work done, we have to turn it on by supplying a
+	# mechanize.Factory (with XHTML support turned on):
+	factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
+	)
+    ~~~~
 
-  * <p class="q">Why don't timeouts work for me?</p>
-    <p>Timeouts are ignored with with versions of Python earlier than 2.6.
+  * <span class="q">Why don't timeouts work for me?</span>
+
+    Timeouts are ignored with with versions of Python earlier than 2.6.
 Timeouts do not apply to DNS lookups.
 
   * <span class="q">Is there any example code?</span>
@@ -78,18 +86,40 @@ Timeouts do not apply to DNS lookups.
     example code would be very welcome!
 
 
-FAQs -- usage
--------------
+Cookies
+-------
+
+  * <span class="q">Doesn't the standard Python library module, `Cookie`, do
+    this?</span>
+
+    No: module `Cookie` does the server end of the job.  It doesn't know when
+    to accept cookies from a server or when to send them back.  Part of
+    mechanize has been contributed back to the standard library as module
+    `cookielib` (there are a few differences, notably that `cookielib` contains
+    thread synchronization; mechanize does not use `cookielib`).
+
+  * <span class="q">Which HTTP cookie protocols does mechanize support?</span>
+
+    Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
+
+  * <span class="q">What about RFC 2109?</span>
+
+    RFC 2109 cookies are currently parsed as Netscape cookies, and treated
+    by default as RFC 2965 cookies thereafter if RFC 2965 handling is enabled,
+    or as Netscape cookies otherwise.
+
 
   * <span class="q">Why don't I have any cookies?</span>
 
-    Read the [debugging section](./doc.html#debugging) of this page.
+    See [here](hints.html).
 
   * <span class="q">My response claims to be empty, but I know it's not!</span>
 
     Did you call `response.read()` (e.g., in a debug statement), then forget
-    that all the data has already been read? In that case, you may want to use
-    `mechanize.response_seek_wrapper`.
+    that all the data has already been read?  In that case, you may want to use
+    `mechanize.response_seek_wrapper`.  `mechanize.Browser` always returns
+    [seekable responses](doc.html#seekable-responses), so it's not necessary to
+    use this explicitly in that case.
 
   * <span class="q">What's the difference between the `.load()` and `.revert()`
     methods of `CookieJar`?</span>
@@ -106,26 +136,6 @@ FAQs -- usage
   * <span class="q">How do I do <X\></span>
 
     Refer to the API documentation in docstrings.
-
-
-Cookies
--------
-
-  * <span class="q">Doesn't the standard Python library module, `Cookie`, do
-    this?</span>
-
-    No: Cookie.py does the server end of the job.  It doesn't know when to
-    accept cookies from a server or when to pass them back.
-
-  * <span class="q">Which HTTP cookie protocols does mechanize support?</span>
-
-    Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
-
-  * <span class="q">What about RFC 2109?</span>
-
-    RFC 2109 cookies are currently parsed as Netscape cookies, and treated
-    by default as RFC 2965 cookies thereafter if RFC 2965 handling is enabled,
-    or as Netscape cookies otherwise.
 
 
 Forms
@@ -159,8 +169,9 @@ Forms
     `.click*()` when that control has non-`None` value?</span>
 
     Either the control is disabled, or it is not successful for some other
-    reason. 'Successful' (see HTML 4 specification) means that the control will
-    cause data to get sent to the server.
+    reason. 'Successful' (see [HTML 4
+    specification](http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13.2))
+    means that the control will cause data to get sent to the server.
 
   * <span class="q">Why does mechanize not follow the HTML 4.0 / RFC 1866
     standards for `RADIO` and multiple-selection `SELECT` controls?</span>
@@ -181,24 +192,18 @@ Forms
 
       * Clicking on a `BUTTON TYPE=BUTTON` doesn't do anything either, also by
         design.  This time, the reason is that that `BUTTON` is only in the
-        HTML standard so that one can attach callbacks to its events.  The
-        callbacks are functions in `SCRIPT` elements (such as Javascript)
-        embedded in the HTML, and their execution may result in information
-        getting sent back to the server. mechanize, however, knows nothing
-        about these callbacks, so it can't do anything useful with a click on a
-        `BUTTON` whose type is `BUTTON`.
+        HTML standard so that one can attach JavaScript callbacks to its
+        events.  Their execution may result in information getting sent back to
+        the server.  mechanize, however, knows nothing about these callbacks,
+        so it can't do anything useful with a click on a `BUTTON` whose type is
+        `BUTTON`.
 
-      * Generally, embedded script may be messing things up in all kinds of
-        ways.  See the answer to the next question.
+      * Generally, JavaScript may be messing things up in all kinds of ways.
+        See the answer to the next question.
 
-  * <span class="q">Embedded script is messing up my form filling.  What do I
-    do?</span>
-
-    See the [FAQs](faq.html) page and the next FAQ entry for what to do about
-    this.
-
-  * <span class="q">How do I change `INPUT TYPE=HIDDEN` field values (for example,
-to emulate the effect of JavaScript code)?</span>
+  * <a name="change-value" /><span class="q">How do I change `INPUT
+TYPE=HIDDEN` field values (for example, to emulate the effect of JavaScript
+code)?</span>
 
     As with any control, set the control's `readonly` attribute false.
 
@@ -209,8 +214,7 @@ to emulate the effect of JavaScript code)?</span>
 
   * <span class="q">I'm having trouble debugging my code.</span>
 
-    See [here](./doc.html#debugging) for few relevant tips.  Also see
-    [the FAQ](faq.html).
+    See [here](hints.html) for few relevant tips.
 
   * <span class="q">I have a control containing a list of integers.  How do I
     select the one whose value is nearest to the one I want?</span>
@@ -235,13 +239,12 @@ General
 
     Three good options:
 
-      * Mozilla plugin:
-        [livehttpheaders](http://livehttpheaders.mozdev.org/).
+      * Mozilla plugin: [LiveHTTPHeaders](http://livehttpheaders.mozdev.org/).
 
       * [ieHTTPHeaders](http://www.blunck.info/iehttpheaders.html) does
         the same for MSIE.
 
-      * Use [lynx](http://lynx.browser.org/) `-trace`, and filter out
+      * Use [`lynx`](http://lynx.browser.org/) `-trace`, and filter out
         the junk with a script.
 
   * <a name="script" /><span class="q">JavaScript is messing up my
@@ -255,14 +258,14 @@ General
     If you come across this in a page you want to automate, you have four
     options.  Here they are, roughly in order of simplicity.
 
-      * Figure out what the embedded script is doing and emulate it in your
-        Python code: for example, by manually adding cookies to your
-        `CookieJar` instance, calling methods on `HTMLForm`s, calling
-        `urlopen`, etc.
+      * Figure out what the JavaScript is doing and emulate it in your Python
+        code: for example, by manually adding cookies to your `CookieJar`
+        instance, calling methods on `HTMLForm`s, calling `urlopen`, etc.  See
+        [above](#change-value) re forms.
 
       * Use Java's [HtmlUnit](http://htmlunit.sourceforge.net/) or
-        [httpunit](httpunit.sourceforge.net) from Jython, since they know some
-        JavaScript.
+        [HttpUnit](http://httpunit.sourceforge.net) from Jython, since they
+        know some JavaScript.
 
       * Instead of using mechanize, automate a browser instead.  For example
         use MS Internet Explorer via its COM automation interfaces, using the
@@ -273,8 +276,8 @@ General
         [pamie](http://pamie.sourceforge.net/); [pywin32 chapter from the
         O'Reilly
         book](http://www.oreilly.com/catalog/pythonwin32/chapter/ch12.html)) or
-        [ctypes](http://python.net/crew/theller/ctypes/) (
-        [example](http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/305273).
+        [ctypes](http://python.net/crew/theller/ctypes/)
+        ([example](http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/305273)).
         [This](http://www.brunningonline.net/simon/blog/archives/winGuiAuto.py.html)
         kind of thing may also come in useful on Windows for cases where the
         automation API is lacking.  For Firefox, there is
@@ -288,14 +291,19 @@ General
 
   * <span class="q">Misc links</span>
 
-      * [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup/) is a
-        widely recommended HTML-parsing module.
+      * <a name="parsing" />The following libraries can be useful for dealing
+        with bad HTML: [lxml.html](http://codespeak.net/lxml/lxmlhtml.html),
+        [html5lib](http://code.google.com/p/html5lib/), [BeautifulSoup
+        3](http://www.crummy.com/software/BeautifulSoup/CHANGELOG.html),
+        [mxTidy](http://www.egenix.com/files/python/mxTidy.html) and
+        [mu-Tidylib](http://utidylib.berlios.de/).
 
       * [Selenium](http://www.openqa.org/selenium/): In-browser web functional
         testing.  If you need to test websites against real browsers, this is a
         standard way to do it.
 
-      * O'Reilly book: Spidering Hacks.  Very Perl-oriented.
+      * O'Reilly book: [Spidering
+        Hacks](http://oreilly.com/catalog/9780596005771).  Very Perl-oriented.
 
       * Standard extensions for web development with Firefox, which are also
         handy if you're scraping the web: [Web
@@ -305,7 +313,7 @@ General
 
       * Similar functionality for IE6 and IE7: [Internet Explorer Developer
         Toolbar](http://www.google.co.uk/search?q=internet+explorer+developer+toolbar&btnI=I'm+Feeling+Lucky)
-        (IE8 comes with this built-in, as does Google Chrome).
+        (IE8 comes with something equivalent built-in, as does Google Chrome).
 
       * [Open source functional testing
         tools](http://www.opensourcetesting.org/functional.php).
@@ -327,7 +335,7 @@ General
 
       * [HTML 4.01 Specification](http://www.w3.org/TR/html401/)
 
-      * [Draft HTML 5 Specification](dev.w3.org/html5/spec/)
+      * [Draft HTML 5 Specification](http://dev.w3.org/html5/spec/)
 
       * [RFC 1866](http://www.ietf.org/rfc/rfc1866.txt) - the HTML 2.0
         standard (you don't want to read this)
@@ -343,10 +351,6 @@ General
       * [RFC 3987](http://www.ietf.org/rfc/rfc3987.txt) - IRIs
 
 </div>
-
-I prefer questions and comments to be sent to the [mailing
-list](http://lists.sourceforge.net/lists/listinfo/wwwsearch-general) rather
-than direct to me.
 
 <!-- Local Variables: -->
 <!-- fill-column:79 -->

@@ -47,11 +47,12 @@ For full documentation, see the docstrings.
 Parsers
 -------
 
-There are two parsers.  See [the FAQ entry on XHTML](./#faq) for details.
+There are two parsers.
 
-[mxTidy](http://www.egenix.com/files/python/mxTidy.html) or
-[mu-Tidylib](http://utidylib.berlios.de/) can be useful for dealing with bad
-HTML.
+TODO: more!
+
+See the FAQ entries on [XHTML](./faq.html#xhtml) and [parsing bad
+HTML](./faq.html#parsing).
 
 
 Backwards-compatibility mode
@@ -101,10 +102,6 @@ The backwards-incompatible changes are:
     not be fixed, to preserve compatibility and to encourage people to upgrade
     to the new ClientForm 0.2 `backwards_compat=False` behaviour.
 
-
-I prefer questions and comments to be sent to the [mailing
-list](http://lists.sourceforge.net/lists/listinfo/wwwsearch-general) rather
-than direct to me.
 
 <!-- Local Variables: -->
 <!-- fill-column:79 -->

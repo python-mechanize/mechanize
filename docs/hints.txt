@@ -39,7 +39,7 @@ FAQ](faq.html#script).
 General
 -------
 
-Enable [.](#logging).
+Enable [logging](#logging).
 
 Sometimes, a server wants particular HTTP headers set to the values it expects.
 For example, the `User-Agent` header may need to be [set](./doc.html#headers)
@@ -119,8 +119,8 @@ Alternatively, you can examine request and response objects to see what's going
 on.  Note that requests may involve "sub-requests" in cases such as
 redirection, in which case you will also not see everything that's going on
 just by examining the original request and final response.  It's often useful
-to use the `.get_data()` method on responses during debugging (see
-[above](./doc.html#seekable-responses)).
+to [use the `.get_data()` method](./doc.html#seekable-responses) on responses
+during debugging.
 
 ## Handlers ##
 
@@ -141,7 +141,7 @@ The following handlers are available:
 
 **NOTE**: as well as having these handlers in your `OpenerDirector` (for
 example, by passing them to `build_opener()`) you have to [turn on
-logging](./#logging) at the `INFO` level or lower in order to see any output.
+logging](#logging) at the `INFO` level or lower in order to see any output.
 
 `HTTPRedirectDebugProcessor`: logs information about redirections
 

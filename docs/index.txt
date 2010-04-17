@@ -166,11 +166,8 @@ There are several wrappers around mechanize designed for functional testing of
 web applications:
 
   * [`zope.testbrowser`](http://cheeseshop.python.org/pypi?:action=display&name=zope.testbrowser)
-    (or
-    [`ZopeTestBrowser`](http://cheeseshop.python.org/pypi?%3Aaction=display&name=ZopeTestbrowser),
-    the standalone version).
 
-  * [twill](http://www.idyll.org/~t/www-tools/twill.html).
+  * [twill](http://twill.idyll.org/)
 
 See [the FAQ](faq.html) page for other links to related
 software.

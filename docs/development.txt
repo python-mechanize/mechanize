@@ -39,8 +39,7 @@ Mailing list
 ------------
 
 There is a [mailing
-list](http://lists.sourceforge.net/lists/listinfo/wwwsearch-general).  I prefer
-questions and comments to be sent there rather than direct to me.
+list](http://lists.sourceforge.net/lists/listinfo/wwwsearch-general).
 
 
 <!-- Local Variables: -->

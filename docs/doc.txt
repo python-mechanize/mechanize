@@ -73,8 +73,7 @@ response2 = mechanize.urlopen(request2)
 
 The `CookieJar` class does all the work.  There are essentially two operations:
 `.extract_cookies()` extracts HTTP cookies from `Set-Cookie` (the original
-[Netscape cookie
-standard](http://www.netscape.com/newsref/std/cookie_spec.html)) and
+[Netscape cookie standard](http://curl.haxx.se/rfc/cookie_spec.html)) and
 `Set-Cookie2` ([RFC 2965](http://www.ietf.org/rfc/rfc2965.txt)) headers from a
 response if and only if they should be set given the request, and
 `.add_cookie_header()` adds `Cookie` headers if and only if they are
@@ -195,10 +194,10 @@ information.
 Supplying a CookieJar
 ---------------------
 
-You might want to do this to [use your browser's cookies](./doc.html#browsers),
-to customize `CookieJar`'s behaviour by passing constructor arguments, or to be
-able to get at the cookies it will hold (for example, for saving cookies
-between sessions and for debugging).
+You might want to do this to [use your browser's
+cookies](#cooperating-with-browsers), to customize `CookieJar`'s behaviour by
+passing constructor arguments, or to be able to get at the cookies it will hold
+(for example, for saving cookies between sessions and for debugging).
 
 If you're using the higher-level `urllib2`-like interface (`urlopen()`, etc),
 you'll have to let it know what `CookieJar` it should use:
@@ -232,8 +231,8 @@ instance!
 
 You can set a policy object (must satisfy the interface defined by
 `mechanize.CookiePolicy`), which determines which cookies are allowed to be set
-and returned.  Use the policy argument to the `CookieJar` constructor, or use
-the .set\_policy() method.  The default implementation has some useful
+and returned.  Use the `policy` argument to the `CookieJar` constructor, or use
+the `.set\_policy()` method.  The default implementation has some useful
 switches:
 
 ~~~~{.python}
@@ -484,7 +483,7 @@ Netscape protocol accurately or completely.  Netscape protocol cookies are also
 known as V0 cookies, to distinguish them from RFC 2109 or RFC 2965 cookies,
 which have a version cookie-attribute with a value of 1.
 
-[RFC 2109](http://www.ietf.org/rfcs/rfc2109.txt) was introduced to fix some
+[RFC 2109](http://www.ietf.org/rfc/rfc2109.txt) was introduced to fix some
 problems identified with the Netscape protocol, while still keeping the same
 HTTP headers (`Cookie` and `Set-Cookie`).  The most prominent of these problems
 is the 'third-party' cookie issue, which was an accidental feature of the
@@ -493,7 +492,7 @@ max-age cookie attributes) are now part of the de facto Netscape protocol, but
 the RFC was never implemented fully by browsers, because of differences in
 behaviour between the Netscape and Internet Explorer browsers of the time.
 
-[RFC 2965](http://www.ietf.org/rfcs/rfc2965.txt) attempted to fix the
+[RFC 2965](http://www.ietf.org/rfc/rfc2965.txt) attempted to fix the
 compatibility problem by introducing two new headers, `Set-Cookie2` and
 `Cookie2`.  Unlike the `Cookie` header, `Cookie2` does *not* carry cookies to
 the server -- rather, it simply advertises to the server that RFC 2965 is
@@ -502,7 +501,7 @@ header means that both IE and Netscape ignore these cookies.  This preserves
 backwards compatibility, but popular browsers did not implement the RFC, so it
 was never widely adopted.  One confusing point to note about RFC 2965 is that
 it uses the same value (1) of the Version attribute in HTTP headers as does RFC
-2109.  See also [RFC 2964](http://www.ietf.org/rfcs/rfc2964.txt), which
+2109.  See also [RFC 2964](http://www.ietf.org/rfc/rfc2964.txt), which
 discusses use of the protocol.
 
 Because Netscape cookies are so poorly specified, the general philosophy of the
@@ -512,11 +511,6 @@ holes where required for Netscape protocol-compatibility.  RFC 2965 cookies are
 
 There is more information about the history of HTTP cookies in [this paper by
 David Kristol](http://arxiv.org/abs/cs.SE/0105018).
-
-
-I prefer questions and comments to be sent to the [mailing
-list](http://lists.sourceforge.net/lists/listinfo/wwwsearch-general)
-rather than direct to me.
 
 
 <!-- Local Variables: -->
