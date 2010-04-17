@@ -401,8 +401,9 @@ class Releaser(object):
     def make_docs(self, log):
         self._in_docs_dir.cmd(["mkdir", "-p", "html"])
         site_map = release.site_map()
-        def pandoc(filename):
-            last_modified = release.last_modified(filename, self._in_docs_dir)
+        def pandoc(filename, source_filename):
+            last_modified = release.last_modified(source_filename,
+                                                  self._in_docs_dir)
             variables = [
                 ("last_modified_iso",
                  time.strftime("%Y-%m-%d", last_modified)),
@@ -418,7 +419,10 @@ class Releaser(object):
         for page in site_map.iter_pages():
             if page.name in ["Root", "Changelog"]:
                 continue
-            pandoc(page.name + ".txt")
+            source_filename = filename = page.name + ".txt"
+            if page.name in ["forms", "download"]:
+                source_filename += ".in"
+            pandoc(filename, source_filename)
         if self._build_tools_path is not None:
             styles = ensure_trailing_slash(
                 os.path.join(self._website_source_path, "styles"))
