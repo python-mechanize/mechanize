@@ -399,11 +399,6 @@ class Releaser(object):
         self._in_docs_dir.cmd(release.rm_rf_cmd("html"))
 
     def make_docs(self, log):
-        # TODO: still need to shuffle docs around into new website structure
-        navlinks = ['<span class="thispage">Home</span>',
-                    '<a href="download.html">Download</a>',
-                    '<a href="support.html">Support</a>',
-                    '<a href="development.html">Development</a>']
         self._in_docs_dir.cmd(["mkdir", "-p", "html"])
         site_map = release.site_map()
         def pandoc(filename):
@@ -420,16 +415,10 @@ class Releaser(object):
         release.empy(self._in_docs_dir, "forms.txt.in")
         release.empy(self._in_docs_dir, "download.txt.in",
                      defines=["version=%r" % str(self._release_version)])
-        # TODO: just process all pages in site_map
-        pandoc("index.txt")
-        pandoc("support.txt")
-        pandoc("documentation.txt")
-        pandoc("doc.txt")
-        pandoc("faq.txt")
-        pandoc("hints.txt")
-        pandoc("forms.txt")
-        pandoc("download.txt")
-        pandoc("development.txt")
+        for page in site_map.iter_pages():
+            if page.name in ["Root", "Changelog"]:
+                continue
+            pandoc(page.name + ".txt")
         if self._build_tools_path is not None:
             styles = ensure_trailing_slash(
                 os.path.join(self._website_source_path, "styles"))
