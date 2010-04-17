@@ -44,8 +44,8 @@ changelog](./ChangeLog.txt)) is included in the distribution.
 git repository
 --------------
 
-The [git](http://git-scm.com/) repository is [here](http://github.com/).  To
-check it out:
+The [git](http://git-scm.com/) repository is
+[here](http://github.com/jjlee/mechanize).  To check it out:
 
   #. <p>`git clone git://github.com/jjlee/mechanize.git`</p>
 
