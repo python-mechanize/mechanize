@@ -1,6 +1,54 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2009-04-18 John J Lee <jjl@pobox.com>
+	* 0.2.0 release.
+	* Behaviour change: merged upstream urllib2 change (allegedly a
+	  "bug fix") to return a response for all 2** HTTP responses (e.g.
+	  206 Partial Content).  Previously, only 200 caused a response
+	  object to be returned.  All other HTTP response codes resulted
+	  in a response object being raised as an exception.
+	* Behaviour change: Use of mechanize classes with `urllib2` (and
+	  vice-versa) is no longer supported.  However, existing classes
+	  implementing the urllib2 Handler interface are likely to work
+	  unchanged with mechanize.  Removed RequestUpgradeProcessor,
+	  ResponseUpgradeProcessor, SeekableProcessor.
+	* ClientForm has been merged into mechanize.  This means that
+	  mechanize has no dependencies other than Python itself.  The
+	  ClientForm API is still available -- to switch from ClientForm to
+	  mechanize, just s/ClientForm/mechanize in your source code, and
+	  ensure any use of the module logging logger named "ClientForm" is
+	  updated to use the new logger name "mechanize.forms".  I probably
+	  won't do further standalone releases of ClientForm.
+	* Stop monkey-patching Python stdlib.
+	* Merge fixes from urllib2 trunk
+	* Close file objects on .read() failure in .retrieve()
+	* Fix a python 2.4 bug due to buggy urllib.splithost
+	* Fix Python 2.4 syntax error in _firefox3cookiejar
+	* Fix __init__.py typo that hid mechanize.seek_wrapped_response and
+	  mechanize.str2time.  Fixes
+	  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=465206
+	* Fix an obvious bug with experimental firefox 3 cookiejar support.
+	  It's still experimental and not properly tested.
+	* Change documentation to not require a .port attribute on request
+	  objects, since that's unused.
+	* Doc fixes
+	* Added mechanize.urljoin (RFC 3986 compliant function for joining
+	  a base URI with a URI reference)
+	* Merge of ClientForm (see above).
+	* Moved to git (from SVN) http://github.com/jjlee/mechanize
+	* Created an issue tracker http://github.com/jjlee/mechanize/issues
+	* Docs are now in markdown format (thanks John Gabriele).
+	* Website rearranged.  The old website has been archived at
+	  http://wwwsearch.sourceforge.net/old/ .  The new website is
+	  essentially just the mechanize pages, rearranged and cleaned up a
+	  bit.
+	* Source code rearranged for easier merging with upstream urllib2
+	* Fully automated release process.
+	* New test runner.  Single test suite; tests create their own HTTP
+	  server fixtures (server fixtures are cached where possible for
+	  speed).
+
 2009-02-07 John J Lee <jjl@pobox.com>
 	* 0.1.11 release.
 	* Fix quadratic performance in number of .read() calls (and add an
