@@ -1,5 +1,6 @@
-/docs/html
-/docs/download.txt
-/docs/styles
 /build/
+/docs/download.txt
+/docs/forms.txt
+/docs/html
+/docs/styles
 *.egg-info/

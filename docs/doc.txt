@@ -4,9 +4,8 @@
 reorganisation!</span>
 
 This page is the old ClientCookie documentation.  It deals with operation on
-the level of urllib2 Handler objects, and also with adding headers, debugging,
-and cookie handling.  Documentation for the higher-level browser-style
-interface is [elsewhere](../mechanize).
+the level of `urllib2 Handler` objects, and also with adding headers,
+debugging, and cookie handling.  See the [front page](./) for more typical use.
 
 
 Examples
@@ -129,8 +128,8 @@ disappearance without notice.
 Cooperating with Mozilla/Netscape, lynx and Internet Explorer
 -------------------------------------------------------------
 
-Firefox since version 3 persists cookies in an sqlite database, which is not
-supported by MozillaCookieJar.
+**Firefox since version 3 persists cookies in an sqlite database, which is not
+supported by MozillaCookieJar.**
 
 The subclass `MozillaCookieJar` differs from `CookieJar` only in storing
 cookies using a different, Firefox 2/Mozilla/Netscape-compatible, file format
@@ -301,6 +300,8 @@ opener.open("http://www.rhubarb.com/")
 ~~~~
 
 
+<a name="seekable" />
+
 Seekable responses
 ------------------
 
@@ -449,122 +450,6 @@ it, so the RFC 2965 protocol is essentially never seen on the internet.  To
 switch it on, see [here](./doc.html#policy).
 
 
-Debugging
----------
-
-First, a few common problems.  The most frequent mistake people seem to make is
-to use `mechanize.urlopen()`, *and* the `.extract_cookies()` and
-`.add_cookie_header()` methods on a cookie object themselves.  If you use
-`mechanize.urlopen()` (or `OpenerDirector.open()`), the module handles
-extraction and adding of cookies by itself, so you should not call
-`.extract_cookies()` or `.add_cookie_header()`.
-
-Are you sure the server is sending you any cookies in the first place?  Maybe
-the server is keeping track of state in some other way (`HIDDEN` HTML form
-entries (possibly in a separate page referenced by a frame), URL-encoded
-session keys, IP address, HTTP `Referer` headers)? Perhaps some embedded script
-in the HTML is setting cookies (see below)? Maybe you messed up your request,
-and the server is sending you some standard failure page (even if the page
-doesn't appear to indicate any failure).  Sometimes, a server wants particular
-headers set to the values it expects, or it won't play nicely.  The most
-frequent offenders here are the `Referer` [*sic*] and / or `User-Agent` HTTP
-headers ([see above](./doc.html#headers) for how to set these).  The
-`User-Agent` header may need to be set to a value like that of a popular
-browser.  The `Referer` header may need to be set to the URL that the server
-expects you to have followed a link from.  Occasionally, it may even be that
-operators deliberately configure a server to insist on precisely the headers
-that the popular browsers (MS Internet Explorer, Mozilla/Netscape, Opera,
-Konqueror/Safari) generate, but remember that incompetence (possibly on your
-part) is more probable than deliberate sabotage (and if a site owner is that
-keen to stop robots, you probably shouldn't be scraping it anyway).
-
-When you `.save()` to or `.load()`/`.revert()` from a file, single-session
-cookies will expire unless you explicitly request otherwise with the
-`ignore_discard` argument.  This may be your problem if you find cookies are
-going away after saving and loading.
-
-~~~~{.python}
-import mechanize
-cj = mechanize.LWPCookieJar()
-opener = mechanize.build_opener(mechanize.HTTPCookieProcessor(cj))
-mechanize.install_opener(opener)
-r = mechanize.urlopen("http://foobar.com/")
-cj.save("/some/file", ignore_discard=True, ignore_expires=True)
-~~~~
-
-If none of the advice above solves your problem quickly, try comparing the
-headers and data that you are sending out with those that a browser emits.
-Often this will give you the clue you need.  Of course, you'll want to check
-that the browser is able to do manually what you're trying to achieve
-programatically before minutely examining the headers.  Make sure that what you
-do manually is *exactly* the same as what you're trying to do from Python --
-you may simply be hitting a server bug that only gets revealed if you view
-pages in a particular order, for example.  In order to see what your browser is
-sending to the server (even if HTTPS is in use), see [the General FAQ
-page](../clientx.html).  If nothing is obviously wrong with the requests your
-program is sending and you're out of ideas, you can try the last resort of good
-old brute force binary-search debugging.  Temporarily switch to sending HTTP
-headers (with `httplib`).  Start by copying Netscape/Mozilla or IE slavishly
-(apart from session IDs, etc., of course), then begin the tedious process of
-mutating your headers and data until they match what your higher-level code was
-sending.  This will at least reliably find your problem.
-
-You can turn on display of HTTP headers:
-
-~~~~{.python}
-import mechanize
-hh = mechanize.HTTPHandler()  # you might want HTTPSHandler, too
-hh.set_http_debuglevel(1)
-opener = mechanize.build_opener(hh)
-response = opener.open(url)
-~~~~
-
-Alternatively, you can examine request and response objects to see what's going
-on.  Note that requests may involve "sub-requests" in cases such as
-redirection, in which case you will also not see everything that's going on
-just by examining the original request and final response.  mechanize's
-responses can be made to have `.seek()` and `.get_data()` methods.  It's often
-useful to use the `.get_data()` method during debugging (see
-[above](./doc.html#seekable)).
-
-Also, note `HTTPRedirectDebugProcessor` (which prints information about
-redirections) and `HTTPResponseDebugProcessor` (which prints out all response
-bodies, including those that are read during redirections).  **NOTE**: as well
-as having these processors in your `OpenerDirector` (for example, by passing
-them to `build_opener()`) you have to turn on logging at the `INFO` level or
-lower in order to see any output.
-
-If you would like to see what is going on in mechanize's tiny mind, do this:
-
-~~~~{.python}
-import sys, logging
-# logging.DEBUG covers masses of debugging information,
-# logging.INFO just shows the output from HTTPRedirectDebugProcessor,
-logger = logging.getLogger("mechanize")
-logger.addHandler(logging.StreamHandler(sys.stdout))
-logger.setLevel(logging.DEBUG)
-~~~~
-
-The `DEBUG` level (as opposed to the `INFO` level) can actually be quite
-useful, as it explains why particular cookies are accepted or rejected and why
-they are or are not returned.
-
-One final thing to note is that there are some catch-all bare `except:`
-statements in the module, which are there to handle unexpected bad input
-without crashing your program.  If this happens, it's a bug in mechanize, so
-please mail me the warning text.
-
-
-Embedded script that sets cookies
----------------------------------
-
-It is possible to embed script in HTML pages (sandwiched between
-`<SCRIPT>here</SCRIPT>` tags, and in `javascript:` URLs) -- JavaScript /
-ECMAScript, VBScript, or even Python -- that causes cookies to be set in a
-browser.  See the [General FAQs](../bits/clientx.html) page for what to do
-about this.
-
-
 Parsing HTTP date strings
 -------------------------
 
@@ -628,59 +513,10 @@ There is more information about the history of HTTP cookies in [this paper by
 David Kristol](http://arxiv.org/abs/cs.SE/0105018).
 
 
-FAQs -- pre install
--------------------
-
-  * <span class="q">Doesn't the standard Python library module, `Cookie`, do
-    this?</span>
-
-    No: Cookie.py does the server end of the job.  It doesn't know when to
-    accept cookies from a server or when to pass them back.
-
-  * <span class="q">Which HTTP cookie protocols does mechanize support?</span>
-
-    Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
-
-  * <span class="q">What about RFC 2109?</span>
-
-    RFC 2109 cookies are currently parsed as Netscape cookies, and treated
-    by default as RFC 2965 cookies thereafter if RFC 2965 handling is enabled,
-    or as Netscape cookies otherwise.
-
-
-FAQs -- usage
--------------
-
-  * <span class="q">Why don't I have any cookies?</span>
-
-    Read the [debugging section](./doc.html#debugging) of this page.
-
-  * <span class="q">My response claims to be empty, but I know it's not!</span>
-
-    Did you call `response.read()` (e.g., in a debug statement), then forget
-    that all the data has already been read? In that case, you may want to use
-    `mechanize.response_seek_wrapper`.
-
-  * <span class="q">What's the difference between the `.load()` and `.revert()`
-    methods of `CookieJar`?</span>
-
-    `.load()` *appends* cookies from a file.  `.revert()` discards all
-    existing cookies held by the `CookieJar` first (but it won't lose any
-    existing cookies if the loading fails).
-
-  * <span class="q">Is it threadsafe?</span>
-
-    No.  As far as I know, you can use mechanize in threaded code, but it
-    provides no synchronisation: you have to provide that yourself.
-
-  * <span class="q">How do I do <X\></span>
-
-    Refer to the API documentation in docstrings.
-
-
 I prefer questions and comments to be sent to the [mailing
 list](http://lists.sourceforge.net/lists/listinfo/wwwsearch-general)
 rather than direct to me.
+
 
 <!-- Local Variables: -->
 <!-- fill-column:79 -->

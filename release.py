@@ -417,15 +417,19 @@ class Releaser(object):
             variables.append(("toc", release.toc_html(site_map, page_name)))
             variables.append(("nav", release.nav_html(site_map, page_name)))
             release.pandoc(self._in_docs_dir, filename, variables=variables)
-        pandoc("doc.txt")
-        pandoc("forms.txt")
-        pandoc("GeneralFAQ.txt")
-        pandoc("index.txt")
-        pandoc("documentation.txt")
-        pandoc("support.txt")
+        release.empy(self._in_docs_dir, "forms.txt.in")
         release.empy(self._in_docs_dir, "download.txt.in",
                      defines=["version=%r" % str(self._release_version)])
+        # TODO: just process all pages in site_map
+        pandoc("index.txt")
+        pandoc("support.txt")
+        pandoc("documentation.txt")
+        pandoc("doc.txt")
+        pandoc("faq.txt")
+        pandoc("hints.txt")
+        pandoc("forms.txt")
         pandoc("download.txt")
+        pandoc("development.txt")
         if self._build_tools_path is not None:
             styles = ensure_trailing_slash(
                 os.path.join(self._website_source_path, "styles"))
