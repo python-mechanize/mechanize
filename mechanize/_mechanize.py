@@ -20,7 +20,7 @@ import _sockettimeout
 import _urllib2_fork
 from _useragent import UserAgentBase
 
-__version__ = (0, 1, 12, None, None)  # 0.1.12
+__version__ = (0, 2, 0, None, None)  # 0.2.0
 
 class BrowserStateError(Exception): pass
 class LinkNotFoundError(Exception): pass

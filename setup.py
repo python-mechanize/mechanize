@@ -22,7 +22,7 @@ Johnny Lee (MSIE Cookie support) and last but not least Andy Lester
 
 """
 
-VERSION = "0.1.12"
+VERSION = "0.2.0"
 
 CLASSIFIERS = """\
 Development Status :: 5 - Production/Stable
