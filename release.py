@@ -141,9 +141,6 @@ exec "$@"
     return ["sh", "-c", set_path_script, "inline_script"]
 
 
-AddToPathEnv = release.make_env_maker(add_to_path_cmd)
-
-
 def ensure_trailing_slash(path):
     return path.rstrip("/") + "/"
 
@@ -157,6 +154,7 @@ class Releaser(object):
         self._release_dir = release_dir
         self._opt_dir = os.path.join(release_dir, "opt")
         self._bin_dir = os.path.join(self._opt_dir, "bin")
+        AddToPathEnv = release.make_env_maker(add_to_path_cmd)
         self._env = AddToPathEnv(env, self._bin_dir)
         self._source_repo_path = git_repository_path
         self._in_source_repo = release.CwdEnv(self._env,
