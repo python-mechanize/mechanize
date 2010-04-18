@@ -159,12 +159,10 @@ class Releaser(object):
         self._source_repo_path = git_repository_path
         self._in_source_repo = release.CwdEnv(self._env,
                                               self._source_repo_path)
-        if tag_name is None:
-            self._previous_version, self._release_version = \
-                self._get_next_release_version()
-        else:
-            self._previous_version, self._release_version = \
-                "dummy version", tag_name
+        self._previous_version, self._release_version = \
+            self._get_next_release_version()
+        if tag_name is not None:
+            self._release_version = tag_name
         self._source_distributions = self._get_source_distributions(
             self._release_version)
         self._clone_path = os.path.join(release_dir, "clone")
