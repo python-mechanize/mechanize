@@ -122,12 +122,12 @@ just by examining the original request and final response.  It's often useful
 to [use the `.get_data()` method](./doc.html#seekable-responses) on responses
 during debugging.
 
-## Handlers ##
+### Handlers ###
 
 **This section is not relevant if you use `mechanize.Browser`.**
 
 An example showing how to enable printing of HTTP headers to stdout, at the
-HTTPHandler level:
+`HTTPHandler` level:
 
 ~~~~{.python}
 import mechanize
