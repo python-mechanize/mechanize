@@ -1,4 +1,4 @@
-% mechanize documentation
+% mechanize -- Documentation
 
 <span class="docwarning">This documentation is in need of
 reorganisation!</span>

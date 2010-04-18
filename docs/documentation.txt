@@ -1,4 +1,4 @@
-% Documentation
+% mechanize -- Documentation
 
 Full API documentation is in the docstrings and the documentation of
 [`urllib2`](http://www.python.org/doc/2.6.4/library/urllib2.html).

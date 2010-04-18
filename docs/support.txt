@@ -1,4 +1,4 @@
-% Support
+% mechanize -- Support
 
 Bug tracker
 -----------

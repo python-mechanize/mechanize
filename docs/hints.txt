@@ -1,4 +1,4 @@
-% Hints
+% mechanize -- Hints
 
 Hints for debugging programs that use mechanize.
 
