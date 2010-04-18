@@ -565,13 +565,16 @@ htdocs/test_fixtures/referertest.html
         def tear_down():
             shutil.rmtree(temp_dir)
         temp_path = os.path.join(temp_dir, os.path.basename(path))
-        with open(temp_path, "w") as temp:
+        temp = open(temp_path, "w")
+        try:
             for line in open(path):
                 if line.rstrip().endswith("/*novalidate*/"):
                     # temp.write("/*%s*/\n" % line.rstrip())
                     temp.write("/*sanitised*/\n")
                 else:
                     temp.write(line)
+        finally:
+            temp.close()
         return temp_path, tear_down
 
     def validate_css(self, log):
