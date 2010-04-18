@@ -5,6 +5,14 @@ import tempfile
 import unittest
 
 
+def write_file(filename, data):
+    f = open(filename, "wb")
+    try:
+        f.write(data)
+    finally:
+        f.close()
+
+
 class SetupStack(object):
 
     def __init__(self):

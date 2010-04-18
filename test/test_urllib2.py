@@ -34,6 +34,9 @@ import mechanize._testcase
 import mechanize._urllib2_fork
 
 
+write_file = mechanize._testcase.write_file
+
+
 ## from logging import getLogger, DEBUG
 ## l = getLogger("mechanize")
 ## l.setLevel(DEBUG)
@@ -662,14 +665,6 @@ class OpenerDirectorTests(unittest.TestCase):
                     # handler that defines http_open to handle it
                     self.assert_(args[1] is None or
                                  isinstance(args[1], MockResponse))
-
-
-def write_file(filename, data):
-    f = open(filename, "wb")
-    try:
-        f.write(data)
-    finally:
-        f.close()
 
 
 def sanepathname2url(path):

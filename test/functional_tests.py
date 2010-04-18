@@ -11,6 +11,7 @@ import os
 import socket
 import subprocess
 import sys
+import unittest
 import urllib
 import urllib2
 
@@ -26,6 +27,10 @@ import mechanize._opener
 import mechanize._rfc3986
 import mechanize._sockettimeout
 import mechanize._testcase
+
+
+write_file = mechanize._testcase.write_file
+
 
 #from cookielib import CookieJar
 #from urllib2 import build_opener, install_opener, urlopen
@@ -589,6 +594,25 @@ class FunctionalTests(SocketTimeoutTest):
 ##         self.assert_(data1 != data2)
 
 
+class CommandFailedError(Exception):
+
+    def __init__(self, message, rc):
+        Exception.__init__(self, message)
+        self.rc = rc
+
+
+def get_cmd_stdout(args, **kwargs):
+    process = subprocess.Popen(args, stdout=subprocess.PIPE, **kwargs)
+    stdout, stderr = process.communicate()
+    rc = process.returncode
+    if rc != 0:
+        raise CommandFailedError(
+            "Command failed with return code %i: %s:\n%s" %
+            (rc, args, stderr), rc)
+    else:
+        return stdout
+
+
 class ExamplesTests(TestCase):
 
     tags = "internet"
@@ -598,7 +622,7 @@ class ExamplesTests(TestCase):
         parent_dir = os.path.dirname(os.path.dirname(
                 os.path.abspath(__file__)))
         temp_dir = self.make_temp_dir()
-        subprocess.check_call(
+        get_cmd_stdout(
             [python, os.path.join(parent_dir, "examples", name)],
             cwd=temp_dir)
         [tarball] = os.listdir(temp_dir)
@@ -620,37 +644,48 @@ def add_to_path(env, name, value):
 
 class FormsExamplesTests(mechanize._testcase.GoldenTestCase):
 
-    def check_forms_example(self, name, golden_path):
+    def check_forms_example(self, name, golden_path, fixup):
         self.get_cached_fixture("server")
         python = sys.executable
         this_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(this_dir)
         forms_examples_dir = os.path.join(parent_dir, "examples", "forms")
         output_dir = self.make_temp_dir()
-        fh = open(os.path.join(output_dir, "output"), "w")
         env = os.environ.copy()
         add_to_path(env, "PYTHONPATH", parent_dir)
-        try:
-            subprocess.check_call([python, name, self.uri],
-                                  env=env,
-                                  cwd=forms_examples_dir,
-                                  stdout=fh)
-        finally:
-            fh.close()
+        output = get_cmd_stdout([python, name, self.uri],
+                                env=env,
+                                cwd=forms_examples_dir)
+        output = fixup(output)
+        write_file(os.path.join(output_dir, "output"), output)
         self.assert_golden(output_dir,
                            os.path.join(this_dir, golden_path))
 
     def test_simple(self):
+        def fixup(output):
+            return output.replace("POST %s" % self.uri.rstrip("/"),
+                                  "POST http://127.0.0.1:8000")
         self.check_forms_example(
             "simple.py",
             os.path.join("functional_tests_golden",
-                         "FormsExamplesTests.test_simple"))
+                         "FormsExamplesTests.test_simple"),
+            fixup)
 
     def test_example(self):
+        def fixup(output):
+            lines = [l for l in output.splitlines(True) if
+                     not l.startswith("Vary:") and
+                     not l.startswith("Server:") and
+                     not l.startswith("Transfer-Encoding:") and
+                     not l.startswith("Content-Length:")]
+            output = "".join(lines)
+            return output.replace(self.uri.rstrip("/"),
+                                  "http://127.0.0.1:8000")
         self.check_forms_example(
             "example.py",
             os.path.join("functional_tests_golden",
-                         "FormsExamplesTests.test_example"))
+                         "FormsExamplesTests.test_example"),
+            fixup)
 
 
 class CookieJarTests(TestCase):
@@ -724,5 +759,4 @@ class CallbackVerifier:
 
 
 if __name__ == "__main__":
-    import unittest
     unittest.main()
