@@ -321,7 +321,9 @@ class Releaser(object):
                         local_server=True,
                         coverage=False):
         python = "python%d.%d" % python_version
-        if coverage:
+        if 0:#coverage:
+            # disabled for the moment -- think I probably built the launchpad
+            # .deb from wrong branch, without bug fixes
             # python-figleaf only supports Python 2.6 ATM
             assert python_version == (2, 6), python_version
             python = "figleaf"
