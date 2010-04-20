@@ -7,12 +7,12 @@ Ubuntu karmic.  However, as far as I know, mechanize works fine on Windows and
 Mac platforms._
 
 
-easy-install
+easy_install
 ------------
 
   #. Install [EasyInstall](http://peak.telecommunity.com/DevCenter/EasyInstall)
 
-  #. `easy-install mechanize`
+  #. `easy_install mechanize`
 
 Easy install will automatically download the latest source code release and
 install it.
