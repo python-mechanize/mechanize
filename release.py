@@ -162,7 +162,7 @@ class Releaser(object):
         self._previous_version, self._release_version = \
             self._get_next_release_version()
         if tag_name is not None:
-            self._release_version = tag_name
+            self._release_version = release.parse_version(tag_name)
         self._source_distributions = self._get_source_distributions(
             self._release_version)
         self._clone_path = os.path.join(release_dir, "clone")
