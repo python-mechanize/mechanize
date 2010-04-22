@@ -1,7 +1,7 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
-2009-04-18 John J Lee <jjl@pobox.com>
+2009-04-22 John J Lee <jjl@pobox.com>
 	* 0.2.0 release.
 	* Behaviour change: merged upstream urllib2 change (allegedly a
 	  "bug fix") to return a response for all 2** HTTP responses (e.g.
