@@ -32,16 +32,8 @@ The module is designed for testing and automation of web interfaces, not for
 implementing interactive user agents.
 
 ***Security note*: Remember that any passwords you store in `HTMLForm`
-instances will be saved to disk in the clear if you pickle them (directly or
-indirectly).  The simplest solution to this is to avoid pickling `HTMLForm`
-objects.  You could also pickle before filling in any password, or just set the
-password to `""` before pickling.**
-
-Python 2.0 or above is required.  To run the tests, you need the `unittest`
-module (from [PyUnit](http://pyunit.sourceforge.net/)).  `unittest` is a
-standard library module with Python 2.1 and above.
-
-For full documentation, see the docstrings.
+instances will be saved to disk in the clear if, for example, you
+[pickle](http://docs.python.org/library/pickle.html) them.**
 
 
 Parsers
@@ -51,7 +43,7 @@ There are two parsers.
 
 TODO: more!
 
-See the FAQ entries on [XHTML](./faq.html#xhtml) and [parsing bad
+See also the FAQ entries on [XHTML](faq.html#xhtml) and [parsing bad
 HTML](./faq.html#parsing).
 
 
@@ -65,8 +57,8 @@ To make upgrading from ClientForm 0.1 easier, and to allow me to stop
 supporting version ClientForm 0.1 sooner, there is support for operating in a
 backwards-compatible mode, under which code written for ClientForm 0.1 should
 work without modification.  This is done on a per-`HTMLForm` basis via the
-`.backwards_compat` attribute, but for convenience the ParseResponse() and
-ParseFile() factory functions accept `backwards_compat` arguments.  These
+`.backwards_compat` attribute, but for convenience the `ParseResponse()` and
+`ParseFile()` factory functions accept `backwards_compat` arguments.  These
 backwards-compatibility features will be removed soon.  The default is to
 operate in backwards-compatible mode.  To run with backwards compatible mode
 turned ***OFF*** (**strongly recommended**):

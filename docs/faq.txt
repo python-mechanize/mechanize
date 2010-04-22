@@ -32,9 +32,7 @@ Usage
 
   * <span class="q">I'm not getting the HTML page I expected to see.</span>
 
-      * [Debugging tips](hints.html)
-
-      * [More tips](faq.html)
+    [Debugging tips](hints.html)
 
   * <span class="q">`Browser` doesn't have all of the forms/links I see in the
 HTML.  Why not?</span>
@@ -81,9 +79,9 @@ Timeouts do not apply to DNS lookups.
 
   * <span class="q">Is there any example code?</span>
 
-    Look in the examples directory of [mechanize](./).  Note that the examples
-    on the [forms page](./forms.html) are executable as-is.  Contributions of
-    example code would be very welcome!
+    Look in the `examples/` directory.  Note that the examples on the [forms
+    page](./forms.html) are executable as-is.  Contributions of example code
+    would be very welcome!
 
 
 Cookies
@@ -96,11 +94,12 @@ Cookies
     to accept cookies from a server or when to send them back.  Part of
     mechanize has been contributed back to the standard library as module
     `cookielib` (there are a few differences, notably that `cookielib` contains
-    thread synchronization; mechanize does not use `cookielib`).
+    thread synchronization code; mechanize does not use `cookielib`).
 
   * <span class="q">Which HTTP cookie protocols does mechanize support?</span>
 
-    Netscape and RFC 2965.  RFC 2965 handling is switched off by default.
+    Netscape and [RFC 2965](http://www.ietf.org/rfc/rfc2965.txt).  RFC 2965
+    handling is switched off by default.
 
   * <span class="q">What about RFC 2109?</span>
 
@@ -111,7 +110,7 @@ Cookies
 
   * <span class="q">Why don't I have any cookies?</span>
 
-    See [here](hints.html).
+    See [here](hints.html#cookies).
 
   * <span class="q">My response claims to be empty, but I know it's not!</span>
 

@@ -61,7 +61,7 @@ that a browser sends, and then changing headers until your program stops
 working again.  Temporarily switch to explicitly sending individual HTTP
 headers (by calling `.add_header()`, or by using `httplib` directly).  Start by
 sending exactly the headers that Firefox or IE send.  You may need to make sure
-that an valid session ID is sent -- the one you got from your browser may no
+that a valid session ID is sent -- the one you got from your browser may no
 longer be valid.  If that works, you can begin the tedious process of changing
 your headers and data until they match what your original code was sending.
 You should end up with a minimal set of changes.  If you think that reveals a
@@ -91,7 +91,7 @@ they are or are not returned.  Requires logging enabled at the `DEBUG` level.
 
   * `"mechanize.http_responses"`: HTTP response body data.
 
-  * `"mechanize.http_redirects"`: HTTP response body data.
+  * `"mechanize.http_redirects"`: HTTP redirect information.
 
 
 HTTP headers
@@ -117,10 +117,10 @@ response = browser.open("http://python.org/")
 
 Alternatively, you can examine request and response objects to see what's going
 on.  Note that requests may involve "sub-requests" in cases such as
-redirection, in which case you will also not see everything that's going on
-just by examining the original request and final response.  It's often useful
-to [use the `.get_data()` method](./doc.html#seekable-responses) on responses
-during debugging.
+redirection, in which case you will not see everything that's going on just by
+examining the original request and final response.  It's often useful to [use
+the `.get_data()` method](./doc.html#seekable-responses) on responses during
+debugging.
 
 ### Handlers ###
 

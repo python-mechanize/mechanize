@@ -140,11 +140,12 @@ Credits
 
 Much of the code was originally derived from the work of the following people:
 
- * Gisle Aas -- libwww-perl
+ * Gisle Aas -- [libwww-perl](http://search.cpan.org/dist/libwww-perl/)
 
- * Jeremy Hylton (and many others) -- urllib2
+ * Jeremy Hylton (and many others) --
+[urllib2](http://docs.python.org/release/2.6/library/urllib2.html)
 
- * Andy Lester -- WWW::Mechanize
+ * Andy Lester -- [WWW::Mechanize](http://search.cpan.org/dist/WWW-Mechanize/)
 
  * Johnny Lee (coincidentally-named) -- MSIE CookieJar Perl code from which
 mechanize's support for that is derived.
@@ -156,7 +157,8 @@ changes to the HTML forms code
 
  * Ronald Tschalar -- provided help with Netscape cookies
 
-Thanks also to the many people who have contributed bug reports and patches.
+Thanks also to the many people who have contributed [bug reports and
+patches](support.html).
 
 
 See also

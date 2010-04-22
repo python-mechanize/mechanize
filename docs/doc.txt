@@ -358,7 +358,7 @@ Request object lifetime
 -----------------------
 
 Note that handlers may create new `Request` instances (for example when
-performing redirects) rather than adding headers to existing `Request objects`.
+performing redirects) rather than adding headers to existing `Request` objects.
 
 
 Adding headers
@@ -406,7 +406,7 @@ added when the `Request` is passed to `urlopen()` (or `OpenerDirector.open()`).
 You shouldn't need to change these headers, but since this is done by
 `AbstractHTTPHandler`, you can change the way it works by passing a subclass of
 that handler to `build_opener()` (or, as always, by constructing an opener
-yourself and calling .add\_handler()).
+yourself and calling `.add_handler()`).
 
 
 
@@ -414,15 +414,16 @@ Initiating unverifiable transactions
 ------------------------------------
 
 This section is only of interest for correct handling of third-party HTTP
-cookies.  See [below](./doc.html#standards) for an explanation of
+cookies.  See [below](#note-about-cookie-standards) for an explanation of
 'third-party'.
 
 First, some terminology.
 
-An *unverifiable request* (defined fully by RFC 2965) is one whose URL the user
-did not have the option to approve.  For example, a transaction is unverifiable
-if the request is for an image in an HTML document, and the user had no option
-to approve the fetching of the image from a particular URL.
+An *unverifiable request* (defined fully by ([RFC
+2965](http://www.ietf.org/rfc/rfc2965.txt)) is one whose URL the user did not
+have the option to approve.  For example, a transaction is unverifiable if the
+request is for an image in an HTML document, and the user had no option to
+approve the fetching of the image from a particular URL.
 
 The *request-host of the origin transaction* (defined fully by RFC 2965) is the
 host name or IP address of the original request that was initiated by the user.
@@ -475,8 +476,8 @@ Note about cookie standards
 There are several standards relevant to HTTP cookies.
 
 The Netscape protocol is the only standard supported by most web browsers
-(including Internet Explorer and Firefox).  This is a de facto standard defined
-by the behaviour of popular browsers, and neither the
+(including Internet Explorer and Firefox).  This is a *de facto* standard
+defined by the behaviour of popular browsers, and neither the
 [cookie\_spec.html](http://curl.haxx.se/rfc/cookie_spec.html) document that was
 published by Netscape, nor the RFCs that were published later, describe the
 Netscape protocol accurately or completely.  Netscape protocol cookies are also

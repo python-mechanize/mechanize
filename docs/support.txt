@@ -1,5 +1,11 @@
 % mechanize -- Support
 
+Documentation
+-------------
+
+See links at right.  [Start here](documentation.html).
+
+
 Bug tracker
 -----------
 

@@ -1,10 +1,9 @@
 % mechanize -- Documentation
 
 Full API documentation is in the docstrings and the documentation of
-[`urllib2`](http://www.python.org/doc/2.6.4/library/urllib2.html).
-The documentation in these web pages is in need of reorganisation at
-the moment, after the merge of ClientCookie and ClientForm into
-mechanize.
+[`urllib2`](http://docs.python.org/release/2.6/library/urllib2.html).  The
+documentation in these web pages is in need of reorganisation at the moment,
+after the merge of ClientCookie and ClientForm into mechanize.
 
 
 Tests and examples
@@ -17,7 +16,7 @@ The [front page](./) has some introductory examples.
 The `examples` directory in the source packages contains a couple of silly,
 but working, scripts to demonstrate basic use of the module.
 
-See also the [forms examples](./forms.html) (these examples use the forms code
+See also the [forms examples](./forms.html) (these examples use the forms API
 independently of `mechanize.Browser`).
 
 
@@ -36,10 +35,9 @@ those in the test run:
 The `urllib2` interface
 -----------------------
 
-mechanize exports the complete interface of `urllib2`.  See the
-[`urllib2`
-documentation](http://docs.python.org/release/2.6/library/urllib2.html)
-for documentation.  For example:
+mechanize exports the complete interface of `urllib2`.  See the [`urllib2`
+documentation](http://docs.python.org/release/2.6/library/urllib2.html).  For
+example:
 
 ~~~~{.python}
 import mechanize
@@ -52,8 +50,9 @@ Compatibility
 -------------
 
 These notes explain the relationship between mechanize, ClientCookie,
-`cookielib` and `urllib2`, and which to use when.  If you're just using
-mechanize, and not any of those other libraries, you can ignore this section.
+ClientForm, `cookielib` and `urllib2`, and which to use when.  If you're just
+using mechanize, and not any of those other libraries, you can ignore this
+section.
 
  #. mechanize works with Python 2.4, Python 2.5, and Python 2.6.
 
@@ -61,11 +60,17 @@ mechanize, and not any of those other libraries, you can ignore this section.
     should be imported from `mechanize` instead.
 
  #. Use of mechanize classes with `urllib2` (and vice-versa) is no longer
-    supported.  However, existing classes implementing the urllib2 Handler
+    supported.  However, existing classes implementing the `urllib2 Handler`
     interface are likely to work unchanged with mechanize.
 
- #. mechanize now only imports urllib2.URLError and urllib2.HTTPError.  The
-    rest is forked.  I intend to merge fixes from Python trunk frequently.
+ #. mechanize now only imports `urllib2.URLError` and `urllib2.HTTPError` from
+    `urllib2`.  The rest is forked.  I intend to merge fixes from Python trunk
+    frequently.
+
+ #. ClientForm is no longer maintained as a separate package.  The code is
+    now part of mechanize, and its interface is now exported through module
+    mechanize (since mechanize 0.2.0).  Old code can simply be changed to
+    `import mechanize as ClientForm` and should continue to work.
 
  #. ClientCookie is no longer maintained as a separate package.  The code is
     now part of mechanize, and its interface is now exported through module
@@ -74,12 +79,13 @@ mechanize, and not any of those other libraries, you can ignore this section.
 
  #. The cookie handling parts of mechanize are in Python 2.4 standard library
     as module `cookielib` and extensions to module `urllib2`.  mechanize does
-    not currently use cookielib, due to the presence of thread synchronisation
-    code in cookielib that is not present in the mechanize fork of cookielib.
+    not currently use `cookielib`, due to the presence of thread
+    synchronisation code in `cookielib` that is not present in the mechanize
+    fork of `cookielib`.
 
-API differences between mechanize and urllib2:
+API differences between mechanize and `urllib2`:
 
- #. mechanize provides additional features
+ #. mechanize provides additional features.
 
  #. Since Python 2.6, `urllib2` uses a `.timeout` attribute on `Request`
     objects internally.  However, `urllib2.Request` has no timeout constructor
