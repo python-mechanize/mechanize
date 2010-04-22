@@ -492,10 +492,12 @@ class Releaser(object):
 
     def _symlink_flat_dir(self, path):
         for filename in os.listdir(path):
-            target = os.path.join(path, filename)
             link_dir = os.path.dirname(path)
-            if not os.path.islink(os.path.join(link_dir, filename)):
-                self._env.cmd(["ln", "-s", "-t", link_dir, target])
+            target = os.path.relpath(os.path.join(path, filename), link_dir)
+            link_path = os.path.join(link_dir, filename)
+            if not os.path.islink(link_path) or \
+                    os.path.realpath(link_path) != target:
+                self._env.cmd(["ln", "-f", "-s", "-t", link_dir, target])
 
     def collate(self, log):
         stage = self._stage
