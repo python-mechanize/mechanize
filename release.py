@@ -705,7 +705,7 @@ John
 
     def push_tag(self, log):
         self._in_repo.cmd(["git", "push", "git@github.com:jjlee/mechanize.git",
-                           "tag", self._release_version])
+                           "tag", str(self._release_version)])
 
     def clean_easy_install_dir(self, log):
         test_dir = self._easy_install_test_dir
