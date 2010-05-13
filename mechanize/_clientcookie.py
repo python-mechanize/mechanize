@@ -181,14 +181,12 @@ def effective_request_host(request):
     return eff_request_host(request)[1]
 
 def request_path(request):
-    """request-URI, as defined by RFC 2965."""
+    """Return path component of request-URI, as defined by RFC 2965."""
     url = request.get_full_url()
-    path, query, frag = _rfc3986.urlsplit(url)[2:]
-    path = escape_path(path)
-    req_path = _rfc3986.urlunsplit((None, None, path, query, frag))
-    if not req_path.startswith("/"):
-        req_path = "/"+req_path
-    return req_path
+    path = escape_path(_rfc3986.urlsplit(url)[2])
+    if not path.startswith("/"):
+        path = "/" + path
+    return path
 
 def request_port(request):
     host = request.get_host()

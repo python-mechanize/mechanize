@@ -1,9 +1,17 @@
 """Tests for _ClientCookie."""
 
-import sys, re, os, StringIO, mimetools, time, tempfile, errno, inspect
-from time import localtime
-from unittest import TestCase
+import StringIO
+import errno
+import inspect
+import mimetools
+import os
+import re
+import sys
+import tempfile
+import time
+import unittest
 
+import mechanize
 from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings
 from mechanize import Request
@@ -64,7 +72,7 @@ def attribute_names(obj):
     return set([spec[0] for spec in inspect.getmembers(obj)
                 if not spec[0].startswith("__")])
 
-class CookieJarInterfaceTests(TestCase):
+class CookieJarInterfaceTests(unittest.TestCase):
 
     def test_add_cookie_header(self):
         from mechanize import CookieJar
@@ -173,7 +181,7 @@ class CookieJarInterfaceTests(TestCase):
         self.assertEquals(request_is_unverifiable(request), False)
 
 
-class CookieTests(TestCase):
+class CookieTests(unittest.TestCase):
     # XXX
     # Get rid of string comparisons where not actually testing str / repr.
     # .clear() etc.
@@ -465,6 +473,16 @@ class CookieTests(TestCase):
         interact_netscape(c, "http://www.acme.com/blah/rhubarb/", 'eggs="bar"')
         assert c._cookies["www.acme.com"].has_key("/blah/rhubarb")
 
+    def test_default_path_with_query(self):
+        cj = mechanize.CookieJar()
+        uri = "http://example.com/?spam/eggs"
+        value = 'eggs="bar"'
+        interact_netscape(cj, uri, value)
+        # default path does not include query, so is "/", not "/?spam"
+        self.assertIn("/", cj._cookies["example.com"])
+        # cookie is sent back to the same URI
+        self.assertEqual(interact_netscape(cj, uri), value)
+
     def test_escape_path(self):
         from mechanize._clientcookie import escape_path
         cases = [
@@ -492,15 +510,14 @@ class CookieTests(TestCase):
     def test_request_path(self):
         from mechanize._clientcookie import request_path
         # with parameters
-        req = Request("http://www.example.com/rheum/rhaponicum;"
+        req = Request("http://www.example.com/rheum/rhaponticum;"
                       "foo=bar;sing=song?apples=pears&spam=eggs#ni")
-        self.assert_(request_path(req) == "/rheum/rhaponicum;"
-                     "foo=bar;sing=song?apples=pears&spam=eggs#ni")
+        self.assertEquals(request_path(req),
+                          "/rheum/rhaponticum;foo=bar;sing=song")
         # without parameters
-        req = Request("http://www.example.com/rheum/rhaponicum?"
+        req = Request("http://www.example.com/rheum/rhaponticum?"
                       "apples=pears&spam=eggs#ni")
-        self.assert_(request_path(req) == "/rheum/rhaponicum?"
-                     "apples=pears&spam=eggs#ni")
+        self.assertEquals(request_path(req), "/rheum/rhaponticum")
         # missing final slash
         req = Request("http://www.example.com")
         self.assert_(request_path(req) == "/")
@@ -1056,10 +1073,10 @@ class CookieTests(TestCase):
                           ["longer", "short"])
 
 
-class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
+class CookieJarPersistenceTests(TempfileTestMixin, unittest.TestCase):
 
     def _interact(self, cj):
-        year_plus_one = localtime(time.time())[0] + 1
+        year_plus_one = time.localtime(time.time())[0] + 1
         interact_2965(cj, "http://www.acme.com/",
                       "foo1=bar; max-age=100; Version=1")
         interact_2965(cj, "http://www.acme.com/",
@@ -1177,7 +1194,7 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
             cj.connect()
             # Session cookies (true .discard) and persistent cookies (false
             # .discard) are stored differently.  Check they both get sent.
-            year_plus_one = localtime(time.time())[0] + 1
+            year_plus_one = time.localtime(time.time())[0] + 1
             expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
             interact_netscape(cj, "http://www.foo.com/", "fooa=bar")
             interact_netscape(cj, "http://www.foo.com/",
@@ -1260,7 +1277,7 @@ class CookieJarPersistenceTests(TempfileTestMixin, TestCase):
 
 
 
-class LWPCookieTests(TestCase, TempfileTestMixin):
+class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
     # Tests taken from libwww-perl, with a few modifications.
 
     def test_netscape_example_1(self):
@@ -1302,7 +1319,7 @@ class LWPCookieTests(TestCase, TempfileTestMixin):
         # most specific cookie must be sent first.  SHIPPING=FEDEX is the
         # most specific and should thus be first.
 
-        year_plus_one = localtime(time.time())[0] + 1
+        year_plus_one = time.localtime(time.time())[0] + 1
 
         headers = []
 
@@ -1827,7 +1844,7 @@ class LWPCookieTests(TestCase, TempfileTestMixin):
     def test_session_cookies(self):
         from mechanize import CookieJar, Request
 
-        year_plus_one = localtime(time.time())[0] + 1
+        year_plus_one = time.localtime(time.time())[0] + 1
 
         # Check session cookies are deleted properly by
         # CookieJar.clear_session_cookies method
