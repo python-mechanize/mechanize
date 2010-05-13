@@ -16,6 +16,7 @@ import mechanize._form as _form
 from mechanize import ControlNotFoundError,  ItemNotFoundError, \
      ItemCountError, AmbiguityError
 from mechanize._testcase import get1
+import mechanize._testcase as _testcase
 
 # XXX
 # HTMLForm.set/get_value_by_label()
@@ -71,37 +72,6 @@ class DummyForm:
 
     def find_control(self, name, type):
         raise mechanize.ControlNotFoundError
-
-
-class MonkeyPatcher:
-
-    def __init__(self):
-        self._patches = []
-
-    def monkey_patch(self, obj, name, value):
-        orig_value = getattr(obj, name)
-        setattr(obj, name, value)
-        self._patches.append((obj, name, orig_value))
-
-    def reverse_patches(self):
-        while self._patches:
-            obj, name, orig_value = self._patches[-1]
-            setattr(obj, name, orig_value)
-            self._patches.pop()
-
-
-class MonkeyTestCase(TestCase):
-
-    def setUp(self):
-        unittest.TestCase.setUp(self)
-        self._patcher = MonkeyPatcher()
-
-    def tearDown(self):
-        unittest.TestCase.tearDown(self)
-        self._patcher.reverse_patches()
-
-    def monkey_patch(self, obj, name, value):
-        self._patcher.monkey_patch(obj, name, value)
 
 
 class UnescapeTests(TestCase):
@@ -3407,7 +3377,8 @@ class CaseInsensitiveDict:
     def __getattr__(self, name): return getattr(self._dict, name)
 
 
-class UploadTests(MonkeyTestCase):
+class UploadTests(_testcase.TestCase):
+
     def test_choose_boundary(self):
         bndy = _form.choose_boundary()
         ii = string.find(bndy, '.')
