@@ -40,13 +40,13 @@ HTML.  Why not?</span>
     Perhaps the default parser can't cope with invalid HTML.  Try using the
 included BeautifulSoup 2 parser instead:
 
-    ~~~~{.python}
-    import mechanize
+~~~~{.python}
+import mechanize
 
-    browser = mechanize.Browser(factory=mechanize.RobustFactory())
-    browser.open("http://example.com/")
-    print browser.forms
-    ~~~~
+browser = mechanize.Browser(factory=mechanize.RobustFactory())
+browser.open("http://example.com/")
+print browser.forms
+~~~~
 
   * <span class="q">Is JavaScript supported?</span>
 
@@ -63,14 +63,14 @@ if you don't want that to happen.
   * <a name="xhtml" /><span class="q">I'm *sure* this page is HTML, why does `mechanize.Browser`
 think otherwise?</span>
 
-    ~~~~{.python}
-    b = mechanize.Browser(
-	# mechanize's XHTML support needs work, so is currently switched off.  If
-	# we want to get our work done, we have to turn it on by supplying a
-	# mechanize.Factory (with XHTML support turned on):
-	factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
-	)
-    ~~~~
+~~~~{.python}
+b = mechanize.Browser(
+    # mechanize's XHTML support needs work, so is currently switched off.  If
+    # we want to get our work done, we have to turn it on by supplying a
+    # mechanize.Factory (with XHTML support turned on):
+    factory=mechanize.DefaultFactory(i_want_broken_xhtml_support=True)
+    )
+~~~~
 
   * <span class="q">Why don't timeouts work for me?</span>
 
@@ -206,10 +206,10 @@ code)?</span>
 
     As with any control, set the control's `readonly` attribute false.
 
-    ~~~~{.python}
-    form.find_control("foo").readonly = False # allow changing .value of control foo
-    form.set_all_readonly(False) # allow changing the .value of all controls
-    ~~~~
+~~~~{.python}
+form.find_control("foo").readonly = False # allow changing .value of control foo
+form.set_all_readonly(False) # allow changing the .value of all controls
+~~~~
 
   * <span class="q">I'm having trouble debugging my code.</span>
 
@@ -218,14 +218,14 @@ code)?</span>
   * <span class="q">I have a control containing a list of integers.  How do I
     select the one whose value is nearest to the one I want?</span>
 
-    ~~~~{.python}
-    import bisect
-    def closest_int_value(form, ctrl_name, value):
+~~~~{.python}
+import bisect
+def closest_int_value(form, ctrl_name, value):
 	values = map(int, [item.name for item in form.find_control(ctrl_name).items])
 	return str(values[bisect.bisect(values, value) - 1])
 
-    form["distance"] = [closest_int_value(form, "distance", 23)]
-    ~~~~
+form["distance"] = [closest_int_value(form, "distance", 23)]
+~~~~
 
 
 General
