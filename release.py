@@ -490,8 +490,10 @@ class Releaser(object):
         for filename in os.listdir(path):
             self._stage(os.path.join(path, filename), dest)
 
-    def _symlink_flat_dir(self, path):
+    def _symlink_flat_dir(self, path, exclude):
         for filename in os.listdir(path):
+            if filename in exclude:
+                continue
             link_dir = os.path.dirname(path)
             target = os.path.relpath(os.path.join(path, filename), link_dir)
             link_path = os.path.join(link_dir, filename)
@@ -504,7 +506,8 @@ class Releaser(object):
         html_dir = os.path.join(self._docs_dir, "html")
         self._stage_flat_dir(html_dir, "htdocs/mechanize/docs")
         self._symlink_flat_dir(
-            os.path.join(self._mirror_path, "htdocs/mechanize/docs"))
+            os.path.join(self._mirror_path, "htdocs/mechanize/docs"),
+            exclude=[".git", ".htaccess", ".svn", "CVS"])
         for archive in self._source_distributions:
             stage(os.path.join("dist", archive), "htdocs/mechanize/src")
         stage("test-tools/cookietest.cgi", "cgi-bin")
