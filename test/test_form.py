@@ -3360,11 +3360,6 @@ class FunctionTests(unittest.TestCase):
         check("\r\n\n\r\r\r\n", "\r\n"*5)
 
 
-def startswith(string, initial):
-    if len(initial) > len(string): return False
-    return string[:len(initial)] == initial
-
-
 class CaseInsensitiveDict:
 
     def __init__(self, items):
@@ -3409,8 +3404,8 @@ class UploadTests(_testcase.TestCase):
         data_control.add_file(StringIO(data))
         #print "data_control._upload_data", data_control._upload_data
         req = form.click()
-        self.assert_(startswith(get_header(req, "Content-type"),
-                                'multipart/form-data; boundary='))
+        self.assertTrue(get_header(req, "Content-type").startswith(
+                "multipart/form-data; boundary="))
 
         #print "req.get_data()\n>>%s<<" % req.get_data()
 
@@ -3432,8 +3427,8 @@ class UploadTests(_testcase.TestCase):
         data = "blah\nbaz\n"
         data_control.add_file(StringIO(data), filename="afilename")
         req = form.click()
-        self.assert_(startswith(get_header(req, "Content-type"),
-                                'multipart/form-data; boundary='))
+        self.assert_(get_header(req, "Content-type").startswith(
+                "multipart/form-data; boundary="))
 
         # ...and check the resulting request is understood by cgi module
         fs = cgi.FieldStorage(StringIO(req.get_data()),
@@ -3457,8 +3452,8 @@ class UploadTests(_testcase.TestCase):
         yet_more_data = "rheum\nrhaponicum\n"
         data_control.add_file(StringIO(yet_more_data), filename="filenamec")
         req = form.click()
-        self.assert_(startswith(get_header(req, "Content-type"),
-                                'multipart/form-data; boundary='))
+        self.assertTrue(get_header(req, "Content-type").startswith(
+                "multipart/form-data; boundary="))
 
         #print "req.get_data()\n>>%s<<" % req.get_data()
 
@@ -3481,7 +3476,7 @@ class UploadTests(_testcase.TestCase):
     def test_upload_data(self):
         form = self.make_form()
         data = form.click().get_data()
-        self.assert_(startswith(data, "--"))
+        self.assertTrue(data.startswith("--"))
 
     def test_empty_upload(self):
         # no controls except for INPUT/SUBMIT
@@ -3492,11 +3487,12 @@ class UploadTests(_testcase.TestCase):
         form = forms[0]
         data = form.click().get_data()
         lines = string.split(data, "\r\n")
-        self.assert_(startswith(lines[0], "--"))
-        self.assert_(lines[1] == 
-                     'Content-Disposition: form-data; name="submit"')
-        self.assert_(lines[2] == lines[3] == "")
-        self.assert_(startswith(lines[4], "--"))
+        self.assertTrue(lines[0].startswith("--"))
+        self.assertEqual(lines[1],
+                         'Content-Disposition: form-data; name="submit"')
+        self.assertEqual(lines[2], "")
+        self.assertEqual(lines[3], "")
+        self.assertTrue(lines[4].startswith("--"))
 
     def test_no_files(self):
         # no files uploaded
