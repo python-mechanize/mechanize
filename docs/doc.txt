@@ -373,7 +373,7 @@ req.add_header("Referer", "http://wwwsearch.sourceforge.net/mechanize/")
 r = mechanize.urlopen(req)
 ~~~~
 
-You can also use the headers argument to the `mechanize.Request` constructor.
+You can also use the `headers` argument to the `mechanize.Request` constructor.
 
 mechanize adds some headers to `Request` objects automatically -- see the next
 section for details.
