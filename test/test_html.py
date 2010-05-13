@@ -3,6 +3,7 @@
 from unittest import TestCase
 
 import mechanize
+import mechanize._form
 from mechanize._response import test_html_response
 
 
@@ -23,6 +24,28 @@ class RegressionTests(TestCase):
                 "<BASE TARGET='_main'><a href='http://example.com/'>eg</a>")
             br.set_response(response)
             list(br.links())
+
+    def test_robust_form_parser_uses_beautifulsoup(self):
+        factory = mechanize.RobustFormsFactory()
+        self.assertIs(factory.form_parser_class,
+                      mechanize._form.RobustFormParser)
+
+    def test_form_parser_does_not_use_beautifulsoup(self):
+        factory = mechanize.FormsFactory()
+        self.assertIs(factory.form_parser_class, mechanize._form.FormParser)
+
+    def _make_forms_from_bad_html(self, factory):
+        bad_html = "<! -- : -- >"
+        factory.set_response(test_html_response(bad_html), "utf-8")
+        return list(factory.forms())
+
+    def test_robust_form_parser_does_not_raise_on_bad_html(self):
+        self._make_forms_from_bad_html(mechanize.RobustFormsFactory())
+
+    def test_form_parser_fails_on_bad_html(self):
+        self.assertRaises(
+            mechanize.ParseError,
+            self._make_forms_from_bad_html, mechanize.FormsFactory())
 
 
 class CachingGeneratorFunctionTests(TestCase):

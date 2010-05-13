@@ -89,20 +89,20 @@ parsing, I'd uncomment these!
 #Traceback (most recent call last):
 #ParseError:
 
->>> html = """\
-... <table>
-... <tr><td>
-... <input name='broken'>
-... </td>
-... </form>
-... </tr>
-... </form>
-... """
->>> f = RobustFormsFactory()
->>> f.set_response(create_response(), "latin-1")
->>> list(f.forms())  # doctest: +IGNORE_EXCEPTION_DETAIL
-Traceback (most recent call last):
-ParseError:
+#>>> html = """\
+#... <table>
+#... <tr><td>
+#... <input name='broken'>
+#... </td>
+#... </form>
+#... </tr>
+#... </form>
+#... """
+#>>> f = RobustFormsFactory()
+#>>> f.set_response(create_response(), "latin-1")
+#>>> list(f.forms())  # doctest: +IGNORE_EXCEPTION_DETAIL
+#Traceback (most recent call last):
+#ParseError:
 
 #>>> f = RobustTitleFactory()
 #>>> f.set_soup(create_soup(""), "latin-1")

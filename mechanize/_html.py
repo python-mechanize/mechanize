@@ -66,15 +66,24 @@ class ResponseTypeFinder:
         return _is_html(ct_hdrs, url, self._allow_xhtml)
 
 
-# idea for this argument-processing trick is from Peter Otten
-class Args:
+class Args(object):
+
+    # idea for this argument-processing trick is from Peter Otten
+
     def __init__(self, args_map):
-        self.dictionary = dict(args_map)
+        self.__dict__["dictionary"] = dict(args_map)
+
     def __getattr__(self, key):
         try:
             return self.dictionary[key]
         except KeyError:
             return getattr(self.__class__, key)
+
+    def __setattr__(self, key, value):
+        if key == "dictionary":
+            raise AttributeError()
+        self.dictionary[key] = value
+
 
 def form_parser_args(
     select_default=False,
