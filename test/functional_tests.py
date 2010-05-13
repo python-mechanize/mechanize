@@ -22,14 +22,11 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
      HTTPRedirectDebugProcessor, HTTPResponseDebugProcessor
 from mechanize._rfc3986 import urljoin
 from mechanize._util import hide_experimental_warnings, \
-    reset_experimental_warnings
+    reset_experimental_warnings, write_file
 import mechanize._opener
 import mechanize._rfc3986
 import mechanize._sockettimeout
 import mechanize._testcase
-
-
-write_file = mechanize._testcase.write_file
 
 
 #from cookielib import CookieJar

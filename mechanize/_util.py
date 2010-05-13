@@ -5,10 +5,11 @@
 This code is free software; you can redistribute it and/or modify it
 under the terms of the BSD or ZPL 2.1 licenses (see the file
 COPYING.txt included with the distribution).
-
 """
 
-import re, time, warnings
+import re
+import time
+import warnings
 
 
 class ExperimentalWarning(UserWarning):
@@ -27,6 +28,19 @@ def hide_deprecations():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 def reset_deprecations():
     warnings.filterwarnings("default", category=DeprecationWarning)
+
+
+def write_file(filename, data):
+    f = open(filename, "wb")
+    try:
+        f.write(data)
+    finally:
+        f.close()
+
+
+def get1(sequence):
+    assert len(sequence) == 1
+    return sequence[0]
 
 
 def isstringlike(x):

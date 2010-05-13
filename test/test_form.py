@@ -7,16 +7,16 @@
 # Copyright 1998-2000 Gisle Aas.
 
 import os
-import unittest, string
-from unittest import TestCase
+import string
+import unittest
 from cStringIO import StringIO
 
 import mechanize
 import mechanize._form as _form
 from mechanize import ControlNotFoundError,  ItemNotFoundError, \
      ItemCountError, AmbiguityError
-from mechanize._testcase import get1
 import mechanize._testcase as _testcase
+from mechanize._util import get1
 
 # XXX
 # HTMLForm.set/get_value_by_label()
@@ -74,7 +74,7 @@ class DummyForm:
         raise mechanize.ControlNotFoundError
 
 
-class UnescapeTests(TestCase):
+class UnescapeTests(unittest.TestCase):
 
     def test_unescape_charref(self):
         unescape_charref = _form.unescape_charref
@@ -187,7 +187,7 @@ class UnescapeTests(TestCase):
         self.assertEqual(label.text, "Blah &#x201d; &rdquo; blah")
 
 
-class LWPFormTests(TestCase):
+class LWPFormTests(unittest.TestCase):
     """The original tests from libwww-perl 5.64."""
     def testEmptyParse(self):
         forms = mechanize.ParseFile(StringIO(""), "http://localhost",
@@ -244,7 +244,7 @@ class MockResponse:
     def __getattr__(self, name):
         return getattr(self._file, name)
 
-class ParseTests(TestCase):
+class ParseTests(unittest.TestCase):
 
     def test_failing_parse(self):
         # XXX couldn't provoke an error from BeautifulSoup (!), so this has not
@@ -854,7 +854,7 @@ Rhubarb.</button>
         self.assertEquals(forms[1].name, "spam")
 
 
-class DisabledTests(TestCase):
+class DisabledTests(unittest.TestCase):
     def testOptgroup(self):
         for compat in [False, True]:
             self._testOptgroup(compat)
@@ -1261,7 +1261,7 @@ class DisabledTests(TestCase):
         reset_deprecations()
 
 
-class ControlTests(TestCase):
+class ControlTests(unittest.TestCase):
     def testTextControl(self):
         attrs = {"type": "this is ignored",
                  "name": "ath_Uname",
@@ -2184,7 +2184,7 @@ class ControlTests(TestCase):
         self.assertEqual(c1.get_value_by_label(), ['First Option'])
 
 
-class FormTests(TestCase):
+class FormTests(unittest.TestCase):
     
     base_uri = "http://auth.athensams.net/"
 
@@ -2992,7 +2992,7 @@ def make_form_global(html):
     return get1(mechanize.ParseFileEx(StringIO(html), "http://example.com/"))
 
 
-class MoreFormTests(TestCase):
+class MoreFormTests(unittest.TestCase):
 
     def test_interspersed_controls(self):
         # must preserve item ordering even across controls
@@ -3306,7 +3306,7 @@ class MoreFormTests(TestCase):
                           form.click, label="no control has this label")
 
 
-class ContentTypeTests(TestCase):
+class ContentTypeTests(unittest.TestCase):
 
     def test_content_type(self):
         class OldStyleRequest:
@@ -3334,7 +3334,7 @@ class ContentTypeTests(TestCase):
             self.assertEqual(req.ah, not auh)
 
 
-class FunctionTests(TestCase):
+class FunctionTests(unittest.TestCase):
 
     def test_normalize_line_endings(self):
         def check(text, expected, self=self):

@@ -26,15 +26,12 @@ from mechanize import HTTPRedirectHandler, \
      HTTPErrorProcessor, HTTPHandler
 from mechanize import OpenerDirector, build_opener, Request
 from mechanize._urllib2_fork import AbstractHTTPHandler
-from mechanize._util import hide_deprecations, reset_deprecations
+from mechanize._util import write_file
 
 import mechanize._response
 import mechanize._sockettimeout as _sockettimeout
 import mechanize._testcase
 import mechanize._urllib2_fork
-
-
-write_file = mechanize._testcase.write_file
 
 
 ## from logging import getLogger, DEBUG
