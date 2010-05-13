@@ -13,6 +13,11 @@ def write_file(filename, data):
         f.close()
 
 
+def get1(sequence):
+    assert len(sequence) == 1
+    return sequence[0]
+
+
 class SetupStack(object):
 
     def __init__(self):

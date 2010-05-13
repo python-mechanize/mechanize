@@ -15,6 +15,7 @@ import mechanize
 import mechanize._form as _form
 from mechanize import ControlNotFoundError,  ItemNotFoundError, \
      ItemCountError, AmbiguityError
+from mechanize._testcase import get1
 
 # XXX
 # HTMLForm.set/get_value_by_label()
@@ -2212,6 +2213,7 @@ class ControlTests(TestCase):
         c1.set_value_by_label(['irst'])  # by substring
         self.assertEqual(c1.get_value_by_label(), ['First Option'])
 
+
 class FormTests(TestCase):
     
     base_uri = "http://auth.athensams.net/"
@@ -3009,6 +3011,17 @@ class FormTests(TestCase):
         pass  # XXX
 
 
+def make_form(html):
+    global_form, form = mechanize.ParseFileEx(StringIO(html),
+                                              "http://example.com/")
+    assert len(global_form.controls) == 0
+    return form
+
+
+def make_form_global(html):
+    return get1(mechanize.ParseFileEx(StringIO(html), "http://example.com/"))
+
+
 class MoreFormTests(TestCase):
 
     def test_interspersed_controls(self):
@@ -3315,8 +3328,16 @@ class MoreFormTests(TestCase):
         self.assertEqual(form.click(type="isindex").get_full_url(),
                          "http://example.com/?blah")
 
+    def test_click_empty_form_by_label(self):
+        # http://github.com/jjlee/mechanize/issues#issue/16
+        form = make_form_global("")
+        assert len(form.controls) == 0
+        self.assertRaises(mechanize.ControlNotFoundError,
+                          form.click, label="no control has this label")
+
 
 class ContentTypeTests(TestCase):
+
     def test_content_type(self):
         class OldStyleRequest:
             def __init__(self, url, data=None, hdrs=None):
@@ -3373,7 +3394,9 @@ def startswith(string, initial):
     if len(initial) > len(string): return False
     return string[:len(initial)] == initial
 
+
 class CaseInsensitiveDict:
+
     def __init__(self, items):
         self._dict = {}
         for key, val in items:

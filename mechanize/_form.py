@@ -3187,7 +3187,7 @@ class HTMLForm:
                 name, type, "clickable", id, label, None, nr)
         except ControlNotFoundError:
             if ((name is not None) or (type is not None) or (id is not None) or
-                (nr != 0)):
+                (label is not None) or (nr != 0)):
                 raise
             # no clickable controls, but no control was explicitly requested,
             # so return state without clicking any control
