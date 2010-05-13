@@ -48,6 +48,18 @@ browser.open("http://example.com/")
 print browser.forms
 ~~~~
 
+    Alternatively, you can process the HTML (and headers) arbitrarily:
+
+~~~~{.python}
+browser = mechanize.Browser()
+browser.open("http://example.com/")
+html = browser.response().get_data().replace("<br/>", "<br />")
+response = mechanize.make_response(
+    html, [("Content-Type", "text/html")],
+    "http://example.com/", 200, "OK")
+browser.set_response(response)
+~~~~
+
   * <span class="q">Is JavaScript supported?</span>
 
     No, sorry.  See [FAQs](#change-value) [below](#script).
@@ -221,8 +233,8 @@ form.set_all_readonly(False) # allow changing the .value of all controls
 ~~~~{.python}
 import bisect
 def closest_int_value(form, ctrl_name, value):
-	values = map(int, [item.name for item in form.find_control(ctrl_name).items])
-	return str(values[bisect.bisect(values, value) - 1])
+    values = map(int, [item.name for item in form.find_control(ctrl_name).items])
+    return str(values[bisect.bisect(values, value) - 1])
 
 form["distance"] = [closest_int_value(form, "distance", 23)]
 ~~~~
