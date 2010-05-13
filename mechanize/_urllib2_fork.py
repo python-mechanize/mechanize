@@ -1408,11 +1408,3 @@ class CacheFTPHandler(FTPHandler):
                     del self.timeout[k]
                     break
             self.soonest = min(self.timeout.values())
-
-
-
-
-
-
-
-
