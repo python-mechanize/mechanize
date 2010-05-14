@@ -501,7 +501,7 @@ class HTTPRedirectHandler(BaseHandler):
     # 305 Use Proxy: probably not worth dealing with here
     # 306 Unused: what was this for in the previous versions of protocol??
 
-    def redirect_request(self, newurl, req, fp, code, msg, headers):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
         """Return a Request or None in response to a redirect.
 
         This is called by the http_error_30x methods when a
@@ -547,7 +547,7 @@ class HTTPRedirectHandler(BaseHandler):
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
-        new = self.redirect_request(newurl, req, fp, code, msg, headers)
+        new = self.redirect_request(req, fp, code, msg, headers, newurl)
         if new is None:
             return
 
