@@ -87,6 +87,26 @@ API differences between mechanize and `urllib2`:
 
  #. mechanize provides additional features.
 
+ #. `mechanize.urlopen` differs in its behaviour: it handles cookies, whereas
+    `urllib2.urlopen` does not.  To make a `urlopen` function with the
+    `urllib2` behaviour:
+
+~~~~{.python}
+import mechanize
+handler_classes = [mechanize.ProxyHandler,
+                   mechanize.UnknownHandler,
+                   mechanize.HTTPHandler,
+                   mechanize.HTTPDefaultErrorHandler,
+                   mechanize.HTTPRedirectHandler,
+                   mechanize.FTPHandler,
+                   mechanize.FileHandler,
+                   mechanize.HTTPErrorProcessor]
+opener = mechanize.OpenerDirector()
+for handler_class in handler_classes:
+    opener.add_handler(handler_class())
+urlopen = opener.open
+~~~~
+
  #. Since Python 2.6, `urllib2` uses a `.timeout` attribute on `Request`
     objects internally.  However, `urllib2.Request` has no timeout constructor
     argument, and `urllib2.urlopen()` ignores this parameter.
