@@ -25,7 +25,6 @@ The clean action uninstalls (by rm -rf).
 
 # TODO
 
-#  * Keep version in one place!
 #  * 0install package?
 #  * test in a Windows VM
 
@@ -149,6 +148,98 @@ def ensure_trailing_slash(path):
     return path.rstrip("/") + "/"
 
 
+class EasyInstallTester(object):
+
+    def __init__(self, env, install_dir, project_name,
+                 test_cmd, expected_version,
+                 easy_install_cmd=("easy_install",)):
+        self._env = env
+        self._install_dir = install_dir
+        self._project_name = project_name
+        self._test_cmd = test_cmd
+        self._expected_version = expected_version
+        self._easy_install_cmd = easy_install_cmd
+        self._install_dir_on_pythonpath = cmd_env.set_environ_vars_env(
+            [("PYTHONPATH", self._install_dir)], env)
+
+    def clean_install_dir(self, log):
+        self._env.cmd(release.rm_rf_cmd(self._install_dir))
+        self._env.cmd(["mkdir", "-p", self._install_dir])
+
+    def _check_version_equals(self, version):
+        try:
+            output = release.get_cmd_stdout(
+                self._install_dir_on_pythonpath,
+                ["python", "-c",
+                 "import mechanize; print mechanize.__version__"],
+                stderr=subprocess.PIPE)
+        except cmd_env.CommandFailedError:
+            raise WrongVersionError(None)
+        else:
+            version_tuple_string = output.strip()
+            assert len(version.tuple) == 6, len(version.tuple)
+            if not(version_tuple_string == str(version.tuple) or
+                   version_tuple_string == str(version.tuple[:-1])):
+                raise WrongVersionError(version_tuple_string)
+
+    def check_not_installed(self, log):
+        try:
+            self._check_version_equals(self._expected_version)
+        except WrongVersionError:
+            pass
+        else:
+            raise WrongVersionError("Expected version != %s" %
+                                    self._expected_version)
+
+    def easy_install(self, log):
+        output = release.get_cmd_stdout(
+            self._install_dir_on_pythonpath,
+            self._easy_install_cmd + ["-d", self._install_dir,
+                                      self._project_name])
+        # easy_install doesn't fail properly :-(
+        if "SyntaxError" in output:
+            raise Exception(output)
+
+    def check_installed_version(self, log):
+        self._check_version_equals(self._expected_version)
+
+    @action_tree.action_node
+    def easy_install_test(self):
+        return [
+            self.clean_install_dir,
+            self.check_not_installed,
+            self.easy_install,
+            self.check_installed_version,
+            ("test", lambda log:
+                 self._install_dir_on_pythonpath.cmd(self._test_cmd)),
+            ]
+
+
+def make_local_easy_install_test_step(env, install_dir,
+                                      source_dir,
+                                      test_cmd, expected_version):
+    tester = EasyInstallTester(
+        env,
+        install_dir,
+        project_name=".",
+        test_cmd=test_cmd,
+        expected_version=expected_version,
+        easy_install_cmd=(cmd_env.in_dir(source_dir) +
+                          ["python", "setup.py", "easy_install"]))
+    return tester.easy_install_test
+
+
+def make_pypi_easy_install_test_step(env, install_dir,
+                                     test_cmd, expected_version):
+    tester = EasyInstallTester(
+        env,
+        install_dir,
+        project_name="mechanize",
+        test_cmd=test_cmd,
+        expected_version=expected_version)
+    return tester.easy_install_test
+
+
 class Releaser(object):
 
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
@@ -186,12 +277,12 @@ class Releaser(object):
                                                      "website")
         self._mirror_path = mirror_path
         self._in_mirror = release.CwdEnv(self._env, self._mirror_path)
-        self._easy_install_test_dir = "easy_install_test"
-        self._easy_install_env = cmd_env.set_environ_vars_env(
-            [("PYTHONPATH", self._easy_install_test_dir)],
-            cmd_env.clean_environ_except_home_env(self._in_release_dir))
         self._css_validator_path = "css-validator"
         self._test_uri = test_uri
+        self._functional_test_deps_dir = os.path.join(release_dir,
+                                                      "functional_test_deps")
+        self._easy_install_test_dir = os.path.join(release_dir,
+                                                   "easy_install_test")
 
     def _get_next_release_version(self):
         tags = release.get_cmd_stdout(self._in_source_repo,
@@ -219,7 +310,7 @@ class Releaser(object):
             raise MissingVersionError(path, self._release_version)
 
     def _verify_versions(self):
-        for path in ["ChangeLog", "setup.py"]:
+        for path in ["ChangeLog", "mechanize/_version.py"]:
             self._verify_version(path)
 
     def clone(self, log):
@@ -317,51 +408,70 @@ class Releaser(object):
 
         return dependency_actions
 
+    def copy_functional_test_dependencies(self, log):
+        # so test.py can be run without the mechanize alongside it being on
+        # sys.path
+        # TODO: move mechanize package into a top-level directory, so it's not
+        # automatically on sys.path
+        def copy_in(src):
+            self._env.cmd(["cp", "-r", src, self._functional_test_deps_dir])
+        self._env.cmd(release.rm_rf_cmd(self._functional_test_deps_dir))
+        self._env.cmd(["mkdir", "-p", self._functional_test_deps_dir])
+        copy_in(os.path.join(self._repo_path, "test.py"))
+        copy_in(os.path.join(self._repo_path, "test"))
+        copy_in(os.path.join(self._repo_path, "test-tools"))
+        copy_in(os.path.join(self._repo_path, "examples"))
+
     def _make_test_step(self, env, python_version,
                         easy_install_test=True,
+                        easy_install_from_pypi=False,
                         local_server=True,
-                        coverage=False,
-                        uri=None):
+                        uri=None,
+                        coverage=False):
         python = "python%d.%d" % python_version
         if coverage:
             # python-figleaf only supports Python 2.6 ATM
             assert python_version == (2, 6), python_version
             python = "figleaf"
-        name = "python%s" % "".join((map(str, python_version)))
-        actions = []
-        def test(log):
-            test_cmd = [python, "test.py"]
-            if not local_server:
-                test_cmd.append("--no-local-server")
-                # running against wwwsearch.sourceforge.net is slow, want to
-                # see where it failed
-                test_cmd.append("-v")
-            if coverage:
-                # TODO: Fix figleaf traceback with doctests
-                test_cmd.append("--skip-doctests")
-            if uri is not None:
-                test_cmd.extend(["--uri", uri])
-            env.cmd(test_cmd)
-        tests_name = "tests"
+        test_cmd = [python, "test.py"]
         if not local_server:
-            tests_name += "_internet"
-        actions.append((tests_name, test))
-        import mechanize._testcase
-        temp_maker = mechanize._testcase.TempDirMaker()
-        temp_dir = temp_maker.make_temp_dir()
+            test_cmd.append("--no-local-server")
+            # running against wwwsearch.sourceforge.net is slow, want to
+            # see where it failed
+            test_cmd.append("-v")
+        if coverage:
+            # TODO: Fix figleaf traceback with doctests
+            test_cmd.append("--skip-doctests")
+        if uri is not None:
+            test_cmd.extend(["--uri", uri])
+
         if easy_install_test:
-            def setup_py_easy_install(log):
-                output = release.get_cmd_stdout(
-                    cmd_env.set_environ_vars_env(
-                        [("PYTHONPATH", temp_dir)], env),
-                    [python, "setup.py", "easy_install", "-d", temp_dir, "."],
-                    stderr=subprocess.STDOUT)
-                # easy_install doesn't fail properly :-(
-                if "SyntaxError" in output:
-                    raise Exception(output)
-                temp_maker.tear_down()
-            actions.append(setup_py_easy_install)
-        return action_tree.make_node(actions, name)
+            install_dir = self._easy_install_test_dir
+            test_cmd.extend(
+                ["discover",
+                 "--start-directory", self._functional_test_deps_dir])
+            # prevent anything other than functional test dependencies being on
+            # sys.path due to cwd or PYTHONPATH
+            clean_env = cmd_env.clean_environ_except_home_env(
+                release.CwdEnv(env, self._functional_test_deps_dir))
+            if easy_install_from_pypi:
+                test_step = make_pypi_easy_install_test_step(
+                    clean_env, install_dir,
+                    test_cmd, self._release_version)
+            else:
+                test_step = make_local_easy_install_test_step(
+                    clean_env, install_dir, self._repo_path,
+                    test_cmd, self._release_version)
+        else:
+            def test_step(log):
+                env.cmd(test_cmd)
+
+        name = "python%s_tests" % "".join((map(str, python_version)))
+        if easy_install_test:
+            name += "_easy_install"
+        if not local_server:
+            name += "_internet"
+        return (name, test_step)
 
     def performance_test(self, log):
         result = run_performance_tests(self._repo_path)
@@ -375,6 +485,8 @@ class Releaser(object):
     @action_tree.action_node
     def test(self):
         r = []
+        r.append(self._make_test_step(self._in_repo, python_version=(2, 6),
+                                      easy_install_test=False))
         # disabled for the moment -- think I probably built the launchpad .deb
         # from wrong branch, without bug fixes
         # r.append(("python26_coverage",
@@ -718,84 +830,6 @@ John
         self._in_repo.cmd(["git", "push", "git@github.com:jjlee/mechanize.git",
                            "tag", str(self._release_version)])
 
-    def clean_easy_install_dir(self, log):
-        test_dir = self._easy_install_test_dir
-        self._in_release_dir.cmd(release.rm_rf_cmd(test_dir))
-        self._in_release_dir.cmd(["mkdir", "-p", test_dir])
-
-    def _check_easy_installed_version_equals(self, version):
-        try:
-            output = release.get_cmd_stdout(
-                self._easy_install_env,
-                ["python", "-c",
-                 "import mechanize; print mechanize.__version__"],
-                stderr=subprocess.PIPE)
-        except cmd_env.CommandFailedError:
-            raise WrongVersionError(None)
-        else:
-            version_tuple_string = output.strip()
-            assert len(version.tuple) == 6, len(version.tuple)
-            if not(version_tuple_string == str(version.tuple) or
-                   version_tuple_string == str(version.tuple[:-1])):
-                raise WrongVersionError(version_tuple_string)
-
-    def check_not_installed(self, log):
-        try:
-            self._check_easy_installed_version_equals(self._release_version)
-        except WrongVersionError:
-            pass
-        else:
-            raise WrongVersionError("Expected version != %s" %
-                                    self._release_version)
-
-    def easy_install(self, log):
-        self._easy_install_env.cmd(["easy_install",
-                                    "-d", self._easy_install_test_dir,
-                                    "mechanize"])
-
-    def check_easy_installed_version(self, log):
-        self._check_easy_installed_version_equals(self._release_version)
-
-    def copy_in_functional_test_dependencies(self, log):
-        dst = os.path.join(self._release_dir, self._easy_install_test_dir)
-        def copy_in(src):
-            self._env.cmd(["cp", "-r", src, dst])
-        # so that repository copy of mechanize is not on sys.path
-        copy_in(os.path.join(self._repo_path, "test.py"))
-        copy_in(os.path.join(self._repo_path, "test"))
-        copy_in(os.path.join(self._repo_path, "test-tools"))
-
-        expected_content = "def open_local_file(self, filename):"
-        data = """\
-# functional tests reads this file and expects this content:
-#%s
-""" % expected_content
-        dirpath = os.path.join(dst, "mechanize")
-        self._env.cmd(["mkdir", "-p", dirpath])
-        self._env.cmd(
-            cmd_env.write_file_cmd(os.path.join(dirpath, "_mechanize.py"),
-                                   data))
-
-    @action_tree.action_node
-    def easy_install_test_internet(self):
-        return [
-            self.clean_easy_install_dir,
-            self.check_not_installed,
-            self.easy_install,
-            self.check_easy_installed_version,
-            self.copy_in_functional_test_dependencies,
-            # Run in test dir, because the test step expects that.  The
-            # PYTHONPATH from self._easy_install_env is wrong here because
-            # we're running in the test dir rather than its parent.  That's OK
-            # because the test dir is still on sys.path, for the same reason.
-            self._make_test_step(release.CwdEnv(self._easy_install_env,
-                                                self._easy_install_test_dir),
-                                 python_version=(2, 6),
-                                 easy_install_test=False,
-                                 local_server=False,
-                                 uri=self._test_uri),
-            ]
-
     def send_email(self, log):
         text = release.read_file_from_env(self._in_release_dir,
                                           "announce_email.txt")
@@ -817,12 +851,35 @@ John
             self.clone,
             self.checks,
             self.clean_coverage,
+            self.copy_functional_test_dependencies,
             self.test,
             self.make_coverage_html,
             self.tag,
             self.build_sdist,
             self.write_email,
             ]
+
+    def update_version(self, log):
+        version_path = "mechanize/_version.py"
+        template = """\
+"%(text)s"
+__version__ = %(tuple)s
+"""
+        old_text = release.read_file_from_env(self._in_source_repo,
+                                              version_path)
+        old_version = old_text.splitlines()[0].strip(' "')
+        assert old_version == str(self._release_version), \
+            (old_version, str(self._release_version))
+        def version_text(version):
+            return template % {"text": str(version),
+                               "tuple": repr(tuple(version.tuple[:-1]))}
+        assert old_text == version_text(release.parse_version(old_version)), \
+            (old_text, version_text(release.parse_version(old_version)))
+        self._in_source_repo.cmd(cmd_env.write_file_cmd(
+                version_path,
+                version_text(self._release_version.next_version())))
+        self._in_source_repo.cmd(["git", "commit", "-m", "Update version",
+                                  version_path])
 
     @action_tree.action_node
     def update_staging_website(self):
@@ -847,7 +904,8 @@ John
         return [
             self.push_tag,
             self.upload,
-            self.easy_install_test_internet,
+            self._make_test_step(self._in_repo, python_version=(2, 6),
+                                 local_server=False, uri=self._test_uri),
             self.send_email,
             ]
 
@@ -856,6 +914,7 @@ John
         return [
             self.build,
             self.update_staging_website,
+            self.update_version,
             self.tell_the_world,
             ]
 

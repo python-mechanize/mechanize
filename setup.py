@@ -22,7 +22,10 @@ Johnny Lee (MSIE Cookie support) and last but not least Andy Lester
 
 """
 
-VERSION = "0.2.0"
+import os
+
+VERSION = open(os.path.join("mechanize", "_version.py")).\
+    readlines()[0].strip(' "\n')
 
 CLASSIFIERS = """\
 Development Status :: 5 - Production/Stable

@@ -117,7 +117,7 @@ __all__ = [
 import logging
 import sys
 
-from _mechanize import __version__
+from _version import __version__
 
 # high-level stateful browser-style interface
 from _mechanize import \
