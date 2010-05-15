@@ -123,6 +123,10 @@ def send_email(from_address, to_address, subject, body):
     s.quit()
 
 
+def is_git_repository(path):
+    return os.path.exists(os.path.join(path, ".git"))
+
+
 def ensure_unmodified(env, path):
     # raise if working tree differs from HEAD
     release.CwdEnv(env, path).cmd(["git", "diff", "--exit-code", "HEAD"])
@@ -149,7 +153,7 @@ class Releaser(object):
 
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
                  build_tools_repo_path=None, run_in_repository=False,
-                 tag_name=None):
+                 tag_name=None, test_uri=None):
         env = release.GitPagerWrapper(env)
         self._release_dir = release_dir
         self._opt_dir = os.path.join(release_dir, "opt")
@@ -187,6 +191,7 @@ class Releaser(object):
             [("PYTHONPATH", self._easy_install_test_dir)],
             cmd_env.clean_environ_except_home_env(self._in_release_dir))
         self._css_validator_path = "css-validator"
+        self._test_uri = test_uri
 
     def _get_next_release_version(self):
         tags = release.get_cmd_stdout(self._in_source_repo,
@@ -315,11 +320,10 @@ class Releaser(object):
     def _make_test_step(self, env, python_version,
                         easy_install_test=True,
                         local_server=True,
-                        coverage=False):
+                        coverage=False,
+                        uri=None):
         python = "python%d.%d" % python_version
-        if 0:#coverage:
-            # disabled for the moment -- think I probably built the launchpad
-            # .deb from wrong branch, without bug fixes
+        if coverage:
             # python-figleaf only supports Python 2.6 ATM
             assert python_version == (2, 6), python_version
             python = "figleaf"
@@ -335,6 +339,8 @@ class Releaser(object):
             if coverage:
                 # TODO: Fix figleaf traceback with doctests
                 test_cmd.append("--skip-doctests")
+            if uri is not None:
+                test_cmd.extend(["--uri", uri])
             env.cmd(test_cmd)
         tests_name = "tests"
         if not local_server:
@@ -369,18 +375,20 @@ class Releaser(object):
     @action_tree.action_node
     def test(self):
         r = []
-        r.append(("python26_coverage",
-                  self._make_test_step(self._in_repo, python_version=(2, 6),
-                                       easy_install_test=False,
-                                       coverage=True)))
+        # disabled for the moment -- think I probably built the launchpad .deb
+        # from wrong branch, without bug fixes
+        # r.append(("python26_coverage",
+        #           self._make_test_step(self._in_repo, python_version=(2, 6),
+        #                                easy_install_test=False,
+        #                                coverage=True)))
         r.append(self._make_test_step(self._in_repo, python_version=(2, 6)))
         r.append(self._make_test_step(self._in_repo, python_version=(2, 5)))
         # the functional tests rely on a local web server implemented using
         # twisted.web2, which depends on zope.interface, but ubuntu karmic
         # doesn't have a Python 2.4 package for zope.interface, so run them
-        # against wwwsearch.sourceforge.net
+        # against external website
         r.append(self._make_test_step(self._in_repo, python_version=(2, 4),
-                                      local_server=False))
+                                      local_server=False, uri=self._test_uri))
         r.append(self.performance_test)
         return r
 
@@ -784,8 +792,8 @@ John
                                                 self._easy_install_test_dir),
                                  python_version=(2, 6),
                                  easy_install_test=False,
-                                 # run against wwwsearch.sourceforge.net
-                                 local_server=False),
+                                 local_server=False,
+                                 uri=self._test_uri),
             ]
 
     def send_email(self, log):
@@ -855,32 +863,47 @@ John
 def parse_options(args):
     parser = optparse.OptionParser(usage=__doc__.strip())
     release.add_basic_env_options(parser)
-    parser.add_option("--git-repository", metavar="DIRECTORY",
+    parser.add_option("--mechanize-repository", metavar="DIRECTORY",
+                      dest="git_repository_path",
                       help="path to mechanize git repository (default is cwd)")
     parser.add_option("--build-tools-repository", metavar="DIRECTORY",
                       help=("path of mechanize-build-tools git repository, "
                             "from which to get other website source files "
                             "(default is not to build those files)"))
-    # TODO: this is actually the path of mirror/ directory in the repository
-    parser.add_option("--mirror-path", metavar="DIRECTORY",
-                      help=("path of local website mirror git repository "
-                            "into which built files will be copied "
-                            "(default is not to copy the files)"))
+    parser.add_option("--website-repository", metavar="DIRECTORY",
+                      dest="mirror_path",
+                      help=("path of local website mirror git repository into "
+                            "which built files will be copied (default is not "
+                            "to copy the files)"))
     parser.add_option("--in-source-repository", action="store_true",
                       dest="in_repository",
                       help=("run all commands in original repository "
                             "(specified by --git-repository), rather than in "
                             "the clone of it in the release area"))
     parser.add_option("--tag-name", metavar="TAG_NAME")
+    parser.add_option("--uri", default="http://wwwsearch.sourceforge.net/",
+                      help=("base URI to run tests against when not using a "
+                            "built-in web server"))
     options, remaining_args = parser.parse_args(args)
     nr_args = len(remaining_args)
     try:
         options.release_area = remaining_args.pop(0)
     except IndexError:
         parser.error("Expected at least 1 argument, got %d" % nr_args)
-    if options.mirror_path is not None and not \
-            os.path.exists(os.path.join(options.mirror_path, "..", ".git")):
-        parser.error("incorrect mirror path")
+    if options.git_repository_path is None:
+        options.git_repository_path = os.getcwd()
+    if not is_git_repository(options.git_repository_path):
+        parser.error("incorrect git repository path")
+    if not is_git_repository(options.build_tools_repository):
+        parser.error("incorrect mechanize-build-tools repository path")
+    mirror_path = options.mirror_path
+    if mirror_path is not None:
+        if not is_git_repository(options.mirror_path):
+            parser.error("mirror path is not a git reporsitory")
+        mirror_path = os.path.join(mirror_path, "mirror")
+        if not os.path.isdir(mirror_path):
+            parser.error("%r does not exist" % mirror_path)
+    options.mirror_path = mirror_path
     return options, remaining_args
 
 
@@ -890,12 +913,9 @@ def main(argv):
 
     options, action_tree_args = parse_options(argv[1:])
     env = release.get_env_from_options(options)
-    git_repository_path = options.git_repository
-    if git_repository_path is None:
-        git_repository_path = os.getcwd()
-    releaser = Releaser(env, git_repository_path, options.release_area,
+    releaser = Releaser(env, options.git_repository_path, options.release_area,
                         options.mirror_path, options.build_tools_repository,
-                        options.in_repository, options.tag_name)
+                        options.in_repository, options.tag_name, options.uri)
     action_tree.action_main(releaser.all, action_tree_args)
 
 
