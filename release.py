@@ -148,10 +148,15 @@ def ensure_trailing_slash(path):
     return path.rstrip("/") + "/"
 
 
+def clean_dir(env, path):
+    env.cmd(release.rm_rf_cmd(path))
+    env.cmd(["mkdir", "-p", path])
+
+
 class EasyInstallTester(object):
 
     def __init__(self, env, install_dir, project_name,
-                 test_cmd, expected_version,
+                 test_cmd, expected_version=None,
                  easy_install_cmd=("easy_install",)):
         self._env = env
         self._install_dir = install_dir
@@ -163,8 +168,7 @@ class EasyInstallTester(object):
             [("PYTHONPATH", self._install_dir)], env)
 
     def clean_install_dir(self, log):
-        self._env.cmd(release.rm_rf_cmd(self._install_dir))
-        self._env.cmd(["mkdir", "-p", self._install_dir])
+        clean_dir(self._env, self._install_dir)
 
     def _check_version_equals(self, version):
         try:
@@ -203,6 +207,9 @@ class EasyInstallTester(object):
     def check_installed_version(self, log):
         self._check_version_equals(self._expected_version)
 
+    def test(self, log):
+        self._install_dir_on_pythonpath.cmd(self._test_cmd)
+
     @action_tree.action_node
     def easy_install_test(self):
         return [
@@ -210,8 +217,7 @@ class EasyInstallTester(object):
             self.check_not_installed,
             self.easy_install,
             self.check_installed_version,
-            ("test", lambda log:
-                 self._install_dir_on_pythonpath.cmd(self._test_cmd)),
+            self.test,
             ]
 
 
@@ -295,11 +301,14 @@ class Releaser(object):
                                                       "functional_test_deps")
         self._easy_install_test_dir = os.path.join(release_dir,
                                                    "easy_install_test")
+        self._in_easy_install_dir = release.CwdEnv(self._env,
+                                                   self._easy_install_test_dir)
         # prevent anything other than functional test dependencies being on
         # sys.path due to cwd or PYTHONPATH
         self._easy_install_env = cmd_env.clean_environ_except_home_env(
             release.CwdEnv(env, self._functional_test_deps_dir))
-
+        self._zope_testbrowser_dir = os.path.join(release_dir,
+                                                  "zope_testbrowser_test")
 
     def _get_next_release_version(self):
         tags = release.get_cmd_stdout(self._in_source_repo,
@@ -345,8 +354,7 @@ class Releaser(object):
 
     def install_css_validator_in_release_dir(self, log):
         jar_dir = os.path.join(self._release_dir, self._css_validator_path)
-        self._env.cmd(release.rm_rf_cmd(jar_dir))
-        self._env.cmd(["mkdir", "-p", jar_dir])
+        clean_dir(self._env, jar_dir)
         in_jar_dir = release.CwdEnv(self._env, jar_dir)
         in_jar_dir.cmd([
                 "wget",
@@ -390,6 +398,8 @@ class Releaser(object):
         add_dependency("python2.5")
         add_dependency("python2.6")
         add_dependency("python-setuptools")
+        # for running zope_testbrowser tests
+        add_dependency("python-virtualenv")
         # for deployment to SF and local collation of files for release
         add_dependency("rsync")
         # for running functional tests against local web server
@@ -432,8 +442,7 @@ class Releaser(object):
         # automatically on sys.path
         def copy_in(src):
             self._env.cmd(["cp", "-r", src, self._functional_test_deps_dir])
-        self._env.cmd(release.rm_rf_cmd(self._functional_test_deps_dir))
-        self._env.cmd(["mkdir", "-p", self._functional_test_deps_dir])
+        clean_dir(self._env, self._functional_test_deps_dir)
         copy_in(os.path.join(self._repo_path, "test.py"))
         copy_in(os.path.join(self._repo_path, "test"))
         copy_in(os.path.join(self._repo_path, "test-tools"))
@@ -496,10 +505,9 @@ class Releaser(object):
             test_cmd, self._release_version)
 
     def _make_tarball_easy_install_test_step(self, env, *args, **kwds):
-        from mechanize._util import get1
         test_cmd = self._make_easy_install_test_cmd(*args, **kwds)
-        tarball = get1(list(d for d in self._source_distributions if
-                            d.endswith(".tar.gz")))
+        [tarball] = list(d for d in self._source_distributions if
+                         d.endswith(".tar.gz"))
         return make_tarball_easy_install_test_step(
             self._easy_install_env, self._easy_install_test_dir,
             os.path.abspath(os.path.join("dist", tarball)),
@@ -653,24 +661,29 @@ class Releaser(object):
                     os.path.realpath(link_path) != target:
                 self._env.cmd(["ln", "-f", "-s", "-t", link_dir, target])
 
-    def collate(self, log):
-        stage = self._stage
+    def collate(self):
         html_dir = os.path.join(self._docs_dir, "html")
         self._stage_flat_dir(html_dir, "htdocs/mechanize/docs")
         self._symlink_flat_dir(
             os.path.join(self._mirror_path, "htdocs/mechanize/docs"),
             exclude=[".git", ".htaccess", ".svn", "CVS"])
-        for archive in self._source_distributions:
-            stage(os.path.join("dist", archive), "htdocs/mechanize/src")
-        stage("test-tools/cookietest.cgi", "cgi-bin")
-        stage("examples/forms/echo.cgi", "cgi-bin")
-        stage("examples/forms/example.html", "htdocs/mechanize")
+        self._stage("test-tools/cookietest.cgi", "cgi-bin")
+        self._stage("examples/forms/echo.cgi", "cgi-bin")
+        self._stage("examples/forms/example.html", "htdocs/mechanize")
         if self._build_tools_path is not None:
-            stage(os.path.join(self._website_source_path, "frontpage.html"),
-                  "htdocs", "index.html")
+            self._stage(
+                os.path.join(self._website_source_path, "frontpage.html"),
+                "htdocs", "index.html")
             self._stage_flat_dir(
                 os.path.join(self._website_source_path, "styles"),
                 "htdocs/styles")
+        for archive in self._source_distributions:
+            placeholder = os.path.join("htdocs/mechanize/src", archive)
+            self._in_mirror.cmd(["touch", placeholder])
+
+    def collate_pypi_upload_built_items(self, log):
+        for archive in self._source_distributions:
+            self._stage(os.path.join("dist", archive), "htdocs/mechanize/src")
 
     def commit_staging_website(self, log):
         self._in_mirror.cmd(["git", "add", "--all"])
@@ -774,6 +787,38 @@ URL
                     finally:
                         tear_down()
 
+    def fetch_zope_testbrowser(self, log):
+        clean_dir(self._env, self._zope_testbrowser_dir)
+        in_testbrowser = release.CwdEnv(self._env, self._zope_testbrowser_dir)
+        in_testbrowser.cmd(["easy_install", "--editable",
+                            "--build-directory", ".",
+                            "zope.testbrowser[test]"])
+        in_testbrowser.cmd(
+            ["virtualenv", "--no-site-packages", "zope.testbrowser"])
+        project_dir = os.path.join(self._zope_testbrowser_dir,
+                                   "zope.testbrowser")
+        in_project_dir = release.CwdEnv(self._env, project_dir)
+        in_project_dir.cmd(
+            ["sed", "-i", "-e", "s/mechanize[^\"']*/mechanize/", "setup.py"])
+        in_project_dir.cmd(["bin/easy_install", "zc.buildout"])
+        in_project_dir.cmd(["bin/buildout", "init"])
+        [mechanize_tarball] = list(d for d in self._source_distributions if
+                                   d.endswith(".tar.gz"))
+        tarball_path = os.path.join(self._repo_path, "dist", mechanize_tarball)
+        in_project_dir.cmd(["bin/easy_install", tarball_path])
+        in_project_dir.cmd(["bin/buildout", "install"])
+
+    def test_zope_testbrowser(self, log):
+        project_dir = os.path.join(self._zope_testbrowser_dir,
+                                   "zope.testbrowser")
+        self._env.cmd(cmd_env.in_dir(project_dir) + ["bin/test"])
+
+    @action_tree.action_node
+    def zope_testbrowser(self):
+        return [self.fetch_zope_testbrowser,
+                self.test_zope_testbrowser,
+                ]
+
     def upload_to_pypi(self, log):
         self._in_repo.cmd(["python", "setup.py", "sdist",
                            "--formats=gztar,zip", "upload"])
@@ -788,9 +833,19 @@ URL
     @action_tree.action_node
     def upload(self):
         r = []
+        r.append(self.upload_to_pypi)
+        # setup.py upload requires sdist command to upload zip files, and the
+        # sdist comment insists on rebuilding source distributions, so it's not
+        # possible to use the upload command to upload the already-built zip
+        # file.  Work around that by copying the rebuilt source distributions
+        # into website repository again so don't end up with two different sets
+        # of source distributions with different md5 sums due to timestamps in
+        # the archives.
+        r.append(self.collate_pypi_upload_built_items)
+        r.append(self.commit_staging_website)
+
         if self._mirror_path is not None:
             r.append(self.sync_to_sf)
-        r.append(self.upload_to_pypi)
         return r
 
     def clean(self, log):
@@ -882,15 +937,16 @@ John
             self.print_next_tag,
             self.clone,
             self.checks,
-            self.clean_coverage,
+            # self.clean_coverage,
             self.copy_functional_test_dependencies,
             self.test,
-            self.make_coverage_html,
+            # self.make_coverage_html,
             self.tag,
             self.build_sdist,
             ("easy_install_test ", self._make_tarball_easy_install_test_step(
                     self._in_repo, python_version=(2, 6),
                     local_server=False, uri=self._test_uri)),
+            self.zope_testbrowser,
             self.write_email,
             ]
 
@@ -942,7 +998,8 @@ __version__ = %(tuple)s
             ("easy_install_test_internet",
              self._make_pypi_easy_install_test_step(
                     self._in_repo, python_version=(2, 6),
-                    local_server=False, uri=self._test_uri)),
+                    local_server=False,
+                    uri="http://wwwsearch.sourceforge.net/")),
             self.send_email,
             ]
 
