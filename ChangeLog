@@ -1,6 +1,16 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2010-05-16 John J Lee <jjl@pobox.com>
+	* 0.2.1 release.
+	* API change: Change argument order of
+	  HTTPRedirectHandler.redirect_request() to match urllib2.
+	* Fix failure to use bundled BeautifulSoup for forms. (GH-15)
+	* Fix default cookie path where request path has query containing
+	  / character. (http://bugs.python.org/issue3704)
+	* Fix failure to raise on click for nonexistent label. (GH-16)
+	* Documentation fixes.
+
 2010-04-22 John J Lee <jjl@pobox.com>
 	* 0.2.0 release.
 	* Behaviour change: merged upstream urllib2 change (allegedly a
