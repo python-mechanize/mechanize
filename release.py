@@ -943,7 +943,7 @@ John
             # self.make_coverage_html,
             self.tag,
             self.build_sdist,
-            ("easy_install_test ", self._make_tarball_easy_install_test_step(
+            ("easy_install_test", self._make_tarball_easy_install_test_step(
                     self._in_repo, python_version=(2, 6),
                     local_server=False, uri=self._test_uri)),
             self.zope_testbrowser,
