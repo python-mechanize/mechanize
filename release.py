@@ -158,7 +158,7 @@ class EasyInstallTester(object):
         self._project_name = project_name
         self._test_cmd = test_cmd
         self._expected_version = expected_version
-        self._easy_install_cmd = easy_install_cmd
+        self._easy_install_cmd = list(easy_install_cmd)
         self._install_dir_on_pythonpath = cmd_env.set_environ_vars_env(
             [("PYTHONPATH", self._install_dir)], env)
 
@@ -215,9 +215,9 @@ class EasyInstallTester(object):
             ]
 
 
-def make_local_easy_install_test_step(env, install_dir,
-                                      source_dir,
-                                      test_cmd, expected_version):
+def make_source_dist_easy_install_test_step(env, install_dir,
+                                            source_dir,
+                                            test_cmd, expected_version):
     tester = EasyInstallTester(
         env,
         install_dir,
@@ -235,6 +235,18 @@ def make_pypi_easy_install_test_step(env, install_dir,
         env,
         install_dir,
         project_name="mechanize",
+        test_cmd=test_cmd,
+        expected_version=expected_version)
+    return tester.easy_install_test
+
+
+def make_tarball_easy_install_test_step(env, install_dir,
+                                        tarball_path,
+                                        test_cmd, expected_version):
+    tester = EasyInstallTester(
+        env,
+        install_dir,
+        project_name=tarball_path,
         test_cmd=test_cmd,
         expected_version=expected_version)
     return tester.easy_install_test
@@ -283,6 +295,11 @@ class Releaser(object):
                                                       "functional_test_deps")
         self._easy_install_test_dir = os.path.join(release_dir,
                                                    "easy_install_test")
+        # prevent anything other than functional test dependencies being on
+        # sys.path due to cwd or PYTHONPATH
+        self._easy_install_env = cmd_env.clean_environ_except_home_env(
+            release.CwdEnv(env, self._functional_test_deps_dir))
+
 
     def _get_next_release_version(self):
         tags = release.get_cmd_stdout(self._in_source_repo,
@@ -422,12 +439,10 @@ class Releaser(object):
         copy_in(os.path.join(self._repo_path, "test-tools"))
         copy_in(os.path.join(self._repo_path, "examples"))
 
-    def _make_test_step(self, env, python_version,
-                        easy_install_test=True,
-                        easy_install_from_pypi=False,
-                        local_server=True,
-                        uri=None,
-                        coverage=False):
+    def _make_test_cmd(self, python_version,
+                       local_server=True,
+                       uri=None,
+                       coverage=False):
         python = "python%d.%d" % python_version
         if coverage:
             # python-figleaf only supports Python 2.6 ATM
@@ -444,34 +459,7 @@ class Releaser(object):
             test_cmd.append("--skip-doctests")
         if uri is not None:
             test_cmd.extend(["--uri", uri])
-
-        if easy_install_test:
-            install_dir = self._easy_install_test_dir
-            test_cmd.extend(
-                ["discover",
-                 "--start-directory", self._functional_test_deps_dir])
-            # prevent anything other than functional test dependencies being on
-            # sys.path due to cwd or PYTHONPATH
-            clean_env = cmd_env.clean_environ_except_home_env(
-                release.CwdEnv(env, self._functional_test_deps_dir))
-            if easy_install_from_pypi:
-                test_step = make_pypi_easy_install_test_step(
-                    clean_env, install_dir,
-                    test_cmd, self._release_version)
-            else:
-                test_step = make_local_easy_install_test_step(
-                    clean_env, install_dir, self._repo_path,
-                    test_cmd, self._release_version)
-        else:
-            def test_step(log):
-                env.cmd(test_cmd)
-
-        name = "python%s_tests" % "".join((map(str, python_version)))
-        if easy_install_test:
-            name += "_easy_install"
-        if not local_server:
-            name += "_internet"
-        return (name, test_step)
+        return test_cmd
 
     def performance_test(self, log):
         result = run_performance_tests(self._repo_path)
@@ -482,25 +470,65 @@ class Releaser(object):
         self._in_repo.cmd(["rm", "-f", ".figleaf"])
         self._in_repo.cmd(release.rm_rf_cmd("html"))
 
+    def _make_test_step(self, env, *args, **kwds):
+        test_cmd = self._make_test_cmd(*args, **kwds)
+        def test_step(log):
+            env.cmd(test_cmd)
+        return test_step
+
+    def _make_easy_install_test_cmd(self, *args, **kwds):
+        test_cmd = self._make_test_cmd(*args, **kwds)
+        test_cmd.extend(
+            ["discover",
+             "--start-directory", self._functional_test_deps_dir])
+        return test_cmd
+
+    def _make_source_dist_easy_install_test_step(self, env, *args, **kwds):
+        test_cmd = self._make_easy_install_test_cmd(*args, **kwds)
+        return make_source_dist_easy_install_test_step(
+            self._easy_install_env, self._easy_install_test_dir,
+            self._repo_path, test_cmd, self._release_version)
+
+    def _make_pypi_easy_install_test_step(self, env, *args, **kwds):
+        test_cmd = self._make_easy_install_test_cmd(*args, **kwds)
+        return make_pypi_easy_install_test_step(
+            self._easy_install_env, self._easy_install_test_dir,
+            test_cmd, self._release_version)
+
+    def _make_tarball_easy_install_test_step(self, env, *args, **kwds):
+        from mechanize._util import get1
+        test_cmd = self._make_easy_install_test_cmd(*args, **kwds)
+        tarball = get1(list(d for d in self._source_distributions if
+                            d.endswith(".tar.gz")))
+        return make_tarball_easy_install_test_step(
+            self._easy_install_env, self._easy_install_test_dir,
+            os.path.abspath(os.path.join("dist", tarball)),
+            test_cmd, self._release_version)
+
     @action_tree.action_node
     def test(self):
         r = []
-        r.append(self._make_test_step(self._in_repo, python_version=(2, 6),
-                                      easy_install_test=False))
+        r.append(("python26_test",
+                  self._make_test_step(self._in_repo, python_version=(2, 6))))
         # disabled for the moment -- think I probably built the launchpad .deb
         # from wrong branch, without bug fixes
         # r.append(("python26_coverage",
         #           self._make_test_step(self._in_repo, python_version=(2, 6),
-        #                                easy_install_test=False,
         #                                coverage=True)))
-        r.append(self._make_test_step(self._in_repo, python_version=(2, 6)))
-        r.append(self._make_test_step(self._in_repo, python_version=(2, 5)))
+        r.append(("python26_easy_install_test",
+                  self._make_source_dist_easy_install_test_step(
+                    self._in_repo, python_version=(2, 6))))
+        r.append(("python25_easy_install_test",
+                  self._make_source_dist_easy_install_test_step(
+                    self._in_repo, python_version=(2, 5))))
         # the functional tests rely on a local web server implemented using
         # twisted.web2, which depends on zope.interface, but ubuntu karmic
         # doesn't have a Python 2.4 package for zope.interface, so run them
         # against external website
-        r.append(self._make_test_step(self._in_repo, python_version=(2, 4),
-                                      local_server=False, uri=self._test_uri))
+        r.append(("python24_easy_install_test_internet",
+                  self._make_source_dist_easy_install_test_step(
+                    self._in_repo, python_version=(2, 4),
+                    local_server=False, uri=self._test_uri)))
         r.append(self.performance_test)
         return r
 
@@ -549,6 +577,9 @@ class Releaser(object):
             self._env.cmd(["rsync", "-a", styles,
                            os.path.join(self._docs_dir, "styles")])
 
+    def clean_dist(self, log):
+        self._in_repo.cmd(release.rm_rf_cmd("dist"))
+
     def write_setup_cfg(self, log):
         # write empty setup.cfg so source distribution is built using a version
         # number without ".dev" and today's date appended
@@ -566,6 +597,7 @@ class Releaser(object):
         return [
             self.clean_docs,
             self.make_docs,
+            self.clean_dist,
             self.write_setup_cfg,
             self.setup_py_sdist,
             ]
@@ -856,6 +888,9 @@ John
             self.make_coverage_html,
             self.tag,
             self.build_sdist,
+            ("easy_install_test ", self._make_tarball_easy_install_test_step(
+                    self._in_repo, python_version=(2, 6),
+                    local_server=False, uri=self._test_uri)),
             self.write_email,
             ]
 
@@ -904,8 +939,10 @@ __version__ = %(tuple)s
         return [
             self.push_tag,
             self.upload,
-            self._make_test_step(self._in_repo, python_version=(2, 6),
-                                 local_server=False, uri=self._test_uri),
+            ("easy_install_test_internet",
+             self._make_pypi_easy_install_test_step(
+                    self._in_repo, python_version=(2, 6),
+                    local_server=False, uri=self._test_uri)),
             self.send_email,
             ]
 
