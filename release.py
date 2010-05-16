@@ -118,6 +118,7 @@ def send_email(from_address, to_address, subject, body):
     # print "to_address %r" % to_address
     # print "msg.as_string():\n%s" % msg.as_string()
     s = smtplib.SMTP()
+    s.connect()
     s.sendmail(from_address, [to_address], msg.as_string())
     s.quit()
 
@@ -661,7 +662,7 @@ class Releaser(object):
                     os.path.realpath(link_path) != target:
                 self._env.cmd(["ln", "-f", "-s", "-t", link_dir, target])
 
-    def collate(self):
+    def collate(self, log):
         html_dir = os.path.join(self._docs_dir, "html")
         self._stage_flat_dir(html_dir, "htdocs/mechanize/docs")
         self._symlink_flat_dir(
