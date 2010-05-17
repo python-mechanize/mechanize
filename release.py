@@ -157,7 +157,7 @@ def clean_dir(env, path):
 class EasyInstallTester(object):
 
     def __init__(self, env, install_dir, project_name,
-                 test_cmd, expected_version=None,
+                 test_cmd, expected_version,
                  easy_install_cmd=("easy_install",)):
         self._env = env
         self._install_dir = install_dir
@@ -167,9 +167,6 @@ class EasyInstallTester(object):
         self._easy_install_cmd = list(easy_install_cmd)
         self._install_dir_on_pythonpath = cmd_env.set_environ_vars_env(
             [("PYTHONPATH", self._install_dir)], env)
-
-    def clean_install_dir(self, log):
-        clean_dir(self._env, self._install_dir)
 
     def _check_version_equals(self, version):
         try:
@@ -187,7 +184,7 @@ class EasyInstallTester(object):
                    version_tuple_string == str(version.tuple[:-1])):
                 raise WrongVersionError(version_tuple_string)
 
-    def check_not_installed(self, log):
+    def _check_not_installed(self):
         try:
             self._check_version_equals(self._expected_version)
         except WrongVersionError:
@@ -197,6 +194,8 @@ class EasyInstallTester(object):
                                     self._expected_version)
 
     def easy_install(self, log):
+        clean_dir(self._env, self._install_dir)
+        self._check_not_installed()
         output = release.get_cmd_stdout(
             self._install_dir_on_pythonpath,
             self._easy_install_cmd + ["-d", self._install_dir,
@@ -204,8 +203,6 @@ class EasyInstallTester(object):
         # easy_install doesn't fail properly :-(
         if "SyntaxError" in output:
             raise Exception(output)
-
-    def check_installed_version(self, log):
         self._check_version_equals(self._expected_version)
 
     def test(self, log):
@@ -214,10 +211,7 @@ class EasyInstallTester(object):
     @action_tree.action_node
     def easy_install_test(self):
         return [
-            self.clean_install_dir,
-            self.check_not_installed,
             self.easy_install,
-            self.check_installed_version,
             self.test,
             ]
 
@@ -264,12 +258,11 @@ class Releaser(object):
     def __init__(self, env, git_repository_path, release_dir, mirror_path,
                  build_tools_repo_path=None, run_in_repository=False,
                  tag_name=None, test_uri=None):
-        env = release.GitPagerWrapper(env)
         self._release_dir = release_dir
         self._opt_dir = os.path.join(release_dir, "opt")
         self._bin_dir = os.path.join(self._opt_dir, "bin")
         AddToPathEnv = release.make_env_maker(add_to_path_cmd)
-        self._env = AddToPathEnv(env, self._bin_dir)
+        self._env = AddToPathEnv(release.GitPagerWrapper(env), self._bin_dir)
         self._source_repo_path = git_repository_path
         self._in_source_repo = release.CwdEnv(self._env,
                                               self._source_repo_path)
@@ -586,15 +579,11 @@ class Releaser(object):
             self._env.cmd(["rsync", "-a", styles,
                            os.path.join(self._docs_dir, "styles")])
 
-    def clean_dist(self, log):
+    def setup_py_sdist(self, log):
         self._in_repo.cmd(release.rm_rf_cmd("dist"))
-
-    def write_setup_cfg(self, log):
         # write empty setup.cfg so source distribution is built using a version
         # number without ".dev" and today's date appended
         self._in_repo.cmd(cmd_env.write_file_cmd("setup.cfg", ""))
-
-    def setup_py_sdist(self, log):
         self._in_repo.cmd(["python", "setup.py", "sdist",
                            "--formats=gztar,zip"])
         archives = set(os.listdir(os.path.join(self._repo_path, "dist")))
@@ -606,8 +595,6 @@ class Releaser(object):
         return [
             self.clean_docs,
             self.make_docs,
-            self.clean_dist,
-            self.write_setup_cfg,
             self.setup_py_sdist,
             ]
 
