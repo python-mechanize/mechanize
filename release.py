@@ -255,10 +255,11 @@ def make_tarball_easy_install_test_step(env, install_dir,
 
 class Releaser(object):
 
-    def __init__(self, env, git_repository_path, release_dir, mirror_path,
+    def __init__(self, env, git_repository_path, release_area, mirror_path,
                  build_tools_repo_path=None, run_in_repository=False,
                  tag_name=None, test_uri=None):
-        self._release_dir = release_dir
+        self._release_area = release_area
+        self._release_dir = release_dir = os.path.join(release_area, "release")
         self._opt_dir = os.path.join(release_dir, "opt")
         self._bin_dir = os.path.join(self._opt_dir, "bin")
         AddToPathEnv = release.make_env_maker(add_to_path_cmd)
@@ -289,7 +290,7 @@ class Releaser(object):
                                                      "website")
         self._mirror_path = mirror_path
         self._in_mirror = release.CwdEnv(self._env, self._mirror_path)
-        self._css_validator_path = "css-validator"
+        self._css_validator_path = "css_validator"
         self._test_uri = test_uri
         self._functional_test_deps_dir = os.path.join(release_dir,
                                                       "functional_test_deps")
@@ -346,8 +347,8 @@ class Releaser(object):
                                  package_name,
                                  ppa=ppa)
 
-    def install_css_validator_in_release_dir(self, log):
-        jar_dir = os.path.join(self._release_dir, self._css_validator_path)
+    def install_css_validator_in_release_area(self, log):
+        jar_dir = os.path.join(self._release_area, self._css_validator_path)
         clean_dir(self._env, jar_dir)
         in_jar_dir = release.CwdEnv(self._env, jar_dir)
         in_jar_dir.cmd([
@@ -358,16 +359,17 @@ class Releaser(object):
         in_jar_dir.cmd(["sh", "-c", "tar xf jigsaw_*.tar.bz2"])
         in_jar_dir.cmd(["ln", "-s", "Jigsaw/classes/jigsaw.jar"])
 
-    def install_haskell_platform_in_release_dir(self, log):
+    def install_haskell_platform_in_release_area(self, log):
         # TODO: test
         version = "haskell-platform-2009.2.0.2"
         tarball = "%s.tar.gz" % version
-        self._in_release_dir.cmd([
+        self._env.cmd(cmd_env.in_dir(self._release_area) + [
                 "wget",
                 "http://hackage.haskell.org/platform/2009.2.0.2/" + tarball])
-        self._in_release_dir.cmd(["tar", "xf", tarball])
+        self._env.cmd(cmd_env.in_dir(self._release_area) +
+                      ["tar", "xf", tarball])
         in_src_dir = release.CwdEnv(self._env,
-                                    os.path.join(self._release_dir, version))
+                                    os.path.join(self._release_area, version))
         in_src_dir.cmd(["sh", "-c", "./configure --prefix=%s" % self._opt_dir])
         in_src_dir.cmd(["make"])
         #self._env.cmd(["mkdir", "-p", self._opt_dir])
@@ -376,7 +378,7 @@ class Releaser(object):
         self._env.cmd(["cabal", "upgrade", "--prefix", self._opt_dir,
                        "cabal-install"])
 
-    def install_pandoc_in_release_dir(self, log):
+    def install_pandoc_in_release_area(self, log):
         self._env.cmd(["cabal", "install", "--prefix", self._opt_dir,
                        "-fhighlighting",
                        "pandoc"])
@@ -384,8 +386,13 @@ class Releaser(object):
     @action_tree.action_node
     def install_deps(self):
         dependency_actions = []
+        standard_dependency_actions = []
         def add_dependency(package_name, ppa=None):
-            dependency_actions.append(
+            if ppa is None:
+                actions = standard_dependency_actions
+            else:
+                actions = dependency_actions
+            actions.append(
                 (package_name.replace(".", ""),
                  lambda log: self._ensure_installed(package_name, ppa)))
         add_dependency("python2.4"),
@@ -416,7 +423,7 @@ class Releaser(object):
         # OMG, it depends on piles of java web server stuff, even for local
         # command-line validation.  You're doing it wrong!
         add_dependency("velocity")
-        dependency_actions.append(self.install_css_validator_in_release_dir)
+        dependency_actions.append(self.install_css_validator_in_release_area)
 
         # for generating .html docs from .txt markdown files
         # dependencies of haskell platform
@@ -424,9 +431,12 @@ class Releaser(object):
         for pkg in ("ghc6 ghc6-prof ghc6-doc haddock libglut-dev happy alex "
                     "libedit-dev zlib1g-dev checkinstall".split()):
             add_dependency(pkg)
-        dependency_actions.append(self.install_haskell_platform_in_release_dir)
-        dependency_actions.append(self.install_pandoc_in_release_dir)
+        dependency_actions.append(
+            self.install_haskell_platform_in_release_area)
+        dependency_actions.append(self.install_pandoc_in_release_area)
 
+        dependency_actions.insert(0, action_tree.make_node(
+                standard_dependency_actions, "standard_dependencies"))
         return dependency_actions
 
     def copy_functional_test_dependencies(self, log):
@@ -624,13 +634,9 @@ class Releaser(object):
         else:
             print "not staging (unchanged): %s -> %s" % (full_path, dest)
 
-    def ensure_website_repo_unmodified(self, log):
-        ensure_unmodified(self._env, self._website_source_path)
-
-    def make_website(self, log):
-        pass
-
-    def ensure_staging_website_unmodified(self, log):
+    def ensure_unmodified(self, log):
+        if self._build_tools_path:
+            ensure_unmodified(self._env, self._website_source_path)
         ensure_unmodified(self._env, self._mirror_path)
 
     def _stage_flat_dir(self, path, dest):
@@ -649,7 +655,7 @@ class Releaser(object):
                     os.path.realpath(link_path) != target:
                 self._env.cmd(["ln", "-f", "-s", "-t", link_dir, target])
 
-    def collate(self, log):
+    def collate_from_mechanize(self, log):
         html_dir = os.path.join(self._docs_dir, "html")
         self._stage_flat_dir(html_dir, "htdocs/mechanize/docs")
         self._symlink_flat_dir(
@@ -658,16 +664,22 @@ class Releaser(object):
         self._stage("test-tools/cookietest.cgi", "cgi-bin")
         self._stage("examples/forms/echo.cgi", "cgi-bin")
         self._stage("examples/forms/example.html", "htdocs/mechanize")
-        if self._build_tools_path is not None:
-            self._stage(
-                os.path.join(self._website_source_path, "frontpage.html"),
-                "htdocs", "index.html")
-            self._stage_flat_dir(
-                os.path.join(self._website_source_path, "styles"),
-                "htdocs/styles")
         for archive in self._source_distributions:
             placeholder = os.path.join("htdocs/mechanize/src", archive)
             self._in_mirror.cmd(["touch", placeholder])
+
+    def collate_from_build_tools(self, log):
+        self._stage(os.path.join(self._website_source_path, "frontpage.html"),
+                    "htdocs", "index.html")
+        self._stage_flat_dir(
+            os.path.join(self._website_source_path, "styles"), "htdocs/styles")
+
+    @action_tree.action_node
+    def collate(self):
+        r = [self.collate_from_mechanize]
+        if self._build_tools_path is not None:
+            r.append(self.collate_from_build_tools)
+        return r
 
     def collate_pypi_upload_built_items(self, log):
         for archive in self._source_distributions:
@@ -837,7 +849,12 @@ URL
         return r
 
     def clean(self, log):
-        self._env.cmd(release.rm_rf_cmd(self._release_dir))
+        clean_dir(self._env, self._release_area)
+
+    def clean_most(self, log):
+        # not big dependencies installed in release area -- css validator,
+        # haskell platform, pandoc
+        clean_dir(self._env, self._release_dir)
 
     def write_email(self, log):
         log = release.get_cmd_stdout(self._in_repo,
@@ -921,6 +938,7 @@ John
     def build(self):
         return [
             self.clean,
+            self.clean_most,
             self.install_deps,
             self.print_next_tag,
             self.clone,
@@ -962,21 +980,16 @@ __version__ = %(tuple)s
 
     @action_tree.action_node
     def update_staging_website(self):
-        r = []
-        if self._build_tools_path is not None:
-            r.extend([
-                    self.ensure_website_repo_unmodified,
-                    self.make_website,
-                    ])
-        if self._mirror_path is not None:
-            r.extend([
-                    self.ensure_staging_website_unmodified,
-                    self.collate,
-                    self.validate_html,
-                    self.validate_css,
-                    self.commit_staging_website,
-                    ])
-        return r
+        if self._mirror_path is None:
+            return []
+
+        return [
+            self.ensure_unmodified,
+            self.collate,
+            self.validate_html,
+            self.validate_css,
+            self.commit_staging_website,
+            ]
 
     @action_tree.action_node
     def tell_the_world(self):
@@ -1035,7 +1048,8 @@ def parse_options(args):
         options.git_repository_path = os.getcwd()
     if not is_git_repository(options.git_repository_path):
         parser.error("incorrect git repository path")
-    if not is_git_repository(options.build_tools_repository):
+    if options.build_tools_repository is not None and \
+            not is_git_repository(options.build_tools_repository):
         parser.error("incorrect mechanize-build-tools repository path")
     mirror_path = options.mirror_path
     if mirror_path is not None:
