@@ -6,15 +6,16 @@ RELEASE_AREA.
 If no actions are given, print the tree of actions and do nothing.
 
 This is only intended to work on Unix (unlike mechanize itself).  Some of it
-only works on Ubuntu karmic.
+only works on Ubuntu 10.04 (lucid).
 
 Warning:
 
- * Some ("clean*") actions do rm -rf on RELEASE_AREA or subdirectories of
-RELEASE_AREA.
+ * Many actions do rm -rf on RELEASE_AREA or subdirectories of RELEASE_AREA.
 
  * The install_deps action installs some debian packages system-wide.  The
 clean action doesn't uninstall them.
+
+ * The install_deps action adds a PPA.
 
  * The install_deps action downloads and installs software to RELEASE_AREA.
 The clean action uninstalls (by rm -rf).
@@ -292,8 +293,7 @@ class Releaser(object):
         self._in_mirror = release.CwdEnv(self._env, self._mirror_path)
         self._css_validator_path = "css_validator"
         self._test_uri = test_uri
-        self._functional_test_deps_dir = os.path.join(release_dir,
-                                                      "functional_test_deps")
+        self._test_deps_dir = os.path.join(release_dir, "test_deps")
         self._easy_install_test_dir = os.path.join(release_dir,
                                                    "easy_install_test")
         self._in_easy_install_dir = release.CwdEnv(self._env,
@@ -301,20 +301,24 @@ class Releaser(object):
         # prevent anything other than functional test dependencies being on
         # sys.path due to cwd or PYTHONPATH
         self._easy_install_env = cmd_env.clean_environ_except_home_env(
-            release.CwdEnv(env, self._functional_test_deps_dir))
+            release.CwdEnv(env, self._test_deps_dir))
         self._zope_testbrowser_dir = os.path.join(release_dir,
                                                   "zope_testbrowser_test")
 
     def _get_next_release_version(self):
-        tags = release.get_cmd_stdout(self._in_source_repo,
-                                      ["git", "tag", "-l"]).split()
-        versions = [release.parse_version(tag) for tag in tags]
-        if versions:
-            most_recent = max(versions)
-            return most_recent, most_recent.next_version()
+        # --pretend / git not installed
+        most_recent, next = "dummy version", "dummy version"
+        try:
+            tags = release.get_cmd_stdout(self._in_source_repo,
+                                          ["git", "tag", "-l"]).split()
+        except cmd_env.CommandFailedError:
+            pass
         else:
-            # --pretend
-            return "dummy version", "dummy version"
+            versions = [release.parse_version(tag) for tag in tags]
+            if versions:
+                most_recent = max(versions)
+                next = most_recent.next_version()
+        return most_recent, next
 
     def _get_source_distributions(self, version):
         def dist_basename(version, format):
@@ -359,30 +363,6 @@ class Releaser(object):
         in_jar_dir.cmd(["sh", "-c", "tar xf jigsaw_*.tar.bz2"])
         in_jar_dir.cmd(["ln", "-s", "Jigsaw/classes/jigsaw.jar"])
 
-    def install_haskell_platform_in_release_area(self, log):
-        # TODO: test
-        version = "haskell-platform-2009.2.0.2"
-        tarball = "%s.tar.gz" % version
-        self._env.cmd(cmd_env.in_dir(self._release_area) + [
-                "wget",
-                "http://hackage.haskell.org/platform/2009.2.0.2/" + tarball])
-        self._env.cmd(cmd_env.in_dir(self._release_area) +
-                      ["tar", "xf", tarball])
-        in_src_dir = release.CwdEnv(self._env,
-                                    os.path.join(self._release_area, version))
-        in_src_dir.cmd(["sh", "-c", "./configure --prefix=%s" % self._opt_dir])
-        in_src_dir.cmd(["make"])
-        #self._env.cmd(["mkdir", "-p", self._opt_dir])
-        in_src_dir.cmd(["make", "install"])
-        self._env.cmd(["cabal", "update"])
-        self._env.cmd(["cabal", "upgrade", "--prefix", self._opt_dir,
-                       "cabal-install"])
-
-    def install_pandoc_in_release_area(self, log):
-        self._env.cmd(["cabal", "install", "--prefix", self._opt_dir,
-                       "-fhighlighting",
-                       "pandoc"])
-
     @action_tree.action_node
     def install_deps(self):
         dependency_actions = []
@@ -395,27 +375,33 @@ class Releaser(object):
             actions.append(
                 (package_name.replace(".", ""),
                  lambda log: self._ensure_installed(package_name, ppa)))
-        add_dependency("python2.4"),
-        add_dependency("python2.5")
+        # required, but ubuntu doesn't have them any more :-( I installed these
+        # by hand
+        # add_dependency("python2.4"),
+        # add_dependency("python2.5")
         add_dependency("python2.6")
         add_dependency("python-setuptools")
+        add_dependency("git-core")
         # for running zope_testbrowser tests
         add_dependency("python-virtualenv")
+        add_dependency("python2.6-dev")
         # for deployment to SF and local collation of files for release
         add_dependency("rsync")
         # for running functional tests against local web server
         add_dependency("python-twisted-web2")
+        # for generating .html docs from .txt markdown files
+        add_dependency("pandoc")
         # for generating docs from .in templates
         add_dependency("python-empy")
-        # for generating .txt docs from .html
-        add_dependency("lynx-cur-wrapper")
+        # for post-processing generated HTML
+        add_dependency("python-lxml")
         # for the validate command
         add_dependency("wdg-html-validator")
         # for collecting code coverage data and generating coverage reports
         add_dependency("python-figleaf", ppa="jjl/figleaf")
 
         # for css validator
-        add_dependency("sun-java6-jre")
+        add_dependency("default-jre")
         add_dependency("libcommons-collections3-java")
         add_dependency("libcommons-lang-java")
         add_dependency("libxerces2-java")
@@ -425,28 +411,18 @@ class Releaser(object):
         add_dependency("velocity")
         dependency_actions.append(self.install_css_validator_in_release_area)
 
-        # for generating .html docs from .txt markdown files
-        # dependencies of haskell platform
-        # http://davidsiegel.org/haskell-platform-in-karmic-koala/
-        for pkg in ("ghc6 ghc6-prof ghc6-doc haddock libglut-dev happy alex "
-                    "libedit-dev zlib1g-dev checkinstall".split()):
-            add_dependency(pkg)
-        dependency_actions.append(
-            self.install_haskell_platform_in_release_area)
-        dependency_actions.append(self.install_pandoc_in_release_area)
-
         dependency_actions.insert(0, action_tree.make_node(
                 standard_dependency_actions, "standard_dependencies"))
         return dependency_actions
 
-    def copy_functional_test_dependencies(self, log):
+    def copy_test_dependencies(self, log):
         # so test.py can be run without the mechanize alongside it being on
         # sys.path
         # TODO: move mechanize package into a top-level directory, so it's not
         # automatically on sys.path
         def copy_in(src):
-            self._env.cmd(["cp", "-r", src, self._functional_test_deps_dir])
-        clean_dir(self._env, self._functional_test_deps_dir)
+            self._env.cmd(["cp", "-r", src, self._test_deps_dir])
+        clean_dir(self._env, self._test_deps_dir)
         copy_in(os.path.join(self._repo_path, "test.py"))
         copy_in(os.path.join(self._repo_path, "test"))
         copy_in(os.path.join(self._repo_path, "test-tools"))
@@ -491,9 +467,7 @@ class Releaser(object):
 
     def _make_easy_install_test_cmd(self, *args, **kwds):
         test_cmd = self._make_test_cmd(*args, **kwds)
-        test_cmd.extend(
-            ["discover",
-             "--start-directory", self._functional_test_deps_dir])
+        test_cmd.extend(["discover", "--start-directory", self._test_deps_dir])
         return test_cmd
 
     def _make_source_dist_easy_install_test_step(self, env, *args, **kwds):
@@ -811,7 +785,9 @@ URL
     def test_zope_testbrowser(self, log):
         project_dir = os.path.join(self._zope_testbrowser_dir,
                                    "zope.testbrowser")
-        self._env.cmd(cmd_env.in_dir(project_dir) + ["bin/test"])
+        env = cmd_env.clean_environ_except_home_env(
+            release.CwdEnv(self._env, project_dir))
+        env.cmd(["bin/test"])
 
     @action_tree.action_node
     def zope_testbrowser(self):
@@ -838,9 +814,9 @@ URL
         # sdist comment insists on rebuilding source distributions, so it's not
         # possible to use the upload command to upload the already-built zip
         # file.  Work around that by copying the rebuilt source distributions
-        # into website repository again so don't end up with two different sets
-        # of source distributions with different md5 sums due to timestamps in
-        # the archives.
+        # into website repository only now (rather than at build/test time), so
+        # don't end up with two different sets of source distributions with
+        # different md5 sums due to timestamps in the archives.
         r.append(self.collate_pypi_upload_built_items)
         r.append(self.commit_staging_website)
 
@@ -852,8 +828,7 @@ URL
         clean_dir(self._env, self._release_area)
 
     def clean_most(self, log):
-        # not big dependencies installed in release area -- css validator,
-        # haskell platform, pandoc
+        # not dependencies installed in release area (css validator)
         clean_dir(self._env, self._release_dir)
 
     def write_email(self, log):
@@ -944,7 +919,7 @@ John
             self.clone,
             self.checks,
             # self.clean_coverage,
-            self.copy_functional_test_dependencies,
+            self.copy_test_dependencies,
             self.test,
             # self.make_coverage_html,
             self.tag,
@@ -1000,6 +975,7 @@ __version__ = %(tuple)s
              self._make_pypi_easy_install_test_step(
                     self._in_repo, python_version=(2, 6),
                     local_server=False,
+                    # XXX seems to be ignoring this
                     uri="http://wwwsearch.sourceforge.net/")),
             self.send_email,
             ]
