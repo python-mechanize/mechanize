@@ -100,6 +100,21 @@ def read_file(filename):
         fh.close()
 
 
+class FtpTestCase(TestCase):
+
+    def test_ftp(self):
+        server = self.get_cached_fixture("ftp_server")
+        browser = self.make_browser()
+        path = self.make_temp_dir(dir_=server.root_path)
+        file_path = os.path.join(path, "stuff")
+        data = "data\nmore data"
+        write_file(file_path, data)
+        relative_path = os.path.join(os.path.basename(path), "stuff")
+        r = browser.open("ftp://anon@localhost:%s/%s" %
+                         (server.port, relative_path))
+        self.assertEqual(r.read(), data)
+
+
 class SocketTimeoutTest(TestCase):
 
     # the timeout tests in this module aren't full functional tests: in order

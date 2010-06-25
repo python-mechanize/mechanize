@@ -242,6 +242,7 @@ def parse_options(args):
     parser = optparse.OptionParser()
     parser.add_option("--log", action="store_true")
     options, remaining_args = parser.parse_args(args)
+    options.port = int(remaining_args[0])
     return options
 
 
@@ -285,7 +286,9 @@ def main(argv):
               wrapper=require_digest_auth)
 
     site = server.Site(root)
-    reactor.listenTCP(int(sys.argv[1]), channel.HTTPFactory(site))
+    reactor.listenTCP(options.port, channel.HTTPFactory(site))
     reactor.run()
 
-main(sys.argv)
+
+if __name__ == "__main__":
+    main(sys.argv)

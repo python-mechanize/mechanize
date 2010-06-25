@@ -34,8 +34,9 @@ class TearDownConvenience(object):
 
 class TempDirMaker(TearDownConvenience):
 
-    def make_temp_dir(self):
-        temp_dir = tempfile.mkdtemp(prefix="tmp-%s-" % self.__class__.__name__)
+    def make_temp_dir(self, dir_=None):
+        temp_dir = tempfile.mkdtemp(prefix="tmp-%s-" % self.__class__.__name__,
+                                    dir=dir_)
         def tear_down():
             shutil.rmtree(temp_dir)
         self._setup_stack.add_teardown(tear_down)

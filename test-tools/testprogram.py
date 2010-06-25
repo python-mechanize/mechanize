@@ -184,6 +184,31 @@ class TwistedServerProcess(ServerProcess):
         return args
 
 
+class TwistedFtpServerProcess(ServerProcess):
+
+    def __init__(self, name, port=2121, log=False):
+        this_dir = os.path.dirname(__file__)
+        path = os.path.join(this_dir, "twisted-ftpserver.py")
+        ServerProcess.__init__(self, path, name)
+        self._temp_maker = mechanize._testcase.TempDirMaker()
+        self.root_path = self._temp_maker.make_temp_dir()
+        self.port = port
+        report = lambda msg: None
+        self.report_hook = report
+        self._log = log
+        self._start()
+
+    def _get_args(self):
+        args = ["--port", str(self.port), self.root_path]
+        # if self._log:
+        #     args.append("--log")
+        return args
+
+    def stop(self):
+        ServerProcess.stop(self)
+        self._temp_maker.tear_down()
+
+
 class ServerCM(object):
 
     def __init__(self, make_server):
@@ -410,6 +435,16 @@ class TestProgram(unittest.TestProgram):
         else:
             cm = TrivialCM(NullServer(options.uri))
         fixture_factory.register_context_manager("server", cm)
+        try:
+            import twisted.protocols.ftp
+        except ImportError:
+            pass
+        else:
+            fixture_factory.register_context_manager(
+                "ftp_server", 
+                ServerCM(lambda: TwistedFtpServerProcess(
+                        "local twisted server", 2121,
+                        options.log_server)))
         test_attributes = dict(uri=options.uri, no_proxies=options.no_proxies,
                                fixture_factory=fixture_factory)
         if options.meld:
