@@ -1359,7 +1359,11 @@ class FTPHandler(BaseHandler):
             raise URLError, ('ftp error: %s' % msg), sys.exc_info()[2]
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
-        fw = ftpwrapper(user, passwd, host, port, dirs, timeout)
+        try:
+            fw = ftpwrapper(user, passwd, host, port, dirs, timeout)
+        except TypeError:
+            # Python < 2.6, no per-connection timeout support
+            fw = ftpwrapper(user, passwd, host, port, dirs)
 ##        fw.ftp.set_debuglevel(1)
         return fw
 
