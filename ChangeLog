@@ -1,6 +1,13 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2010-07-17 John J Lee <jjl@pobox.com>
+	* 0.2.2 release.
+	* Officially support Python 2.7 (no changes were required)
+	* Fix TypeError on .open()ing ftp: URL (only affects Python 2.4
+	  and 2.5)
+	* Don't include HTTPSHandler in __all__ if it's not available
+
 2010-05-16 John J Lee <jjl@pobox.com>
 	* 0.2.1 release.
 	* API change: Change argument order of
