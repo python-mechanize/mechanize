@@ -54,7 +54,7 @@ ClientForm, `cookielib` and `urllib2`, and which to use when.  If you're just
 using mechanize, and not any of those other libraries, you can ignore this
 section.
 
- #. mechanize works with Python 2.4, Python 2.5, and Python 2.6.
+ #. mechanize works with Python 2.4, Python 2.5, Python 2.6, and Python 2.7.
 
  #. When using mechanize, anything you would normally import from `urllib2`
     should be imported from `mechanize` instead.

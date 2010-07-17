@@ -9,11 +9,11 @@ To install the package, run the following command:
 
 
 Alternatively, just copy the whole mechanize directory into a directory on
-your Python path (e.g. unix: /usr/local/lib/python2.6/site-packages,
-Windows: C:\Python26\Lib\site-packages).  Only copy the mechanize directory
+your Python path (e.g. unix: /usr/local/lib/python2.7/site-packages,
+Windows: C:\Python27\Lib\site-packages).  Only copy the mechanize directory
 that's inside the distributed tarball / zip archive, not the entire
 mechanize-x.x.x directory!
 
 
 John J. Lee <jjl@pobox.com>
-May 2010
+July 2010

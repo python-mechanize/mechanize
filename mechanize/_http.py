@@ -373,7 +373,7 @@ def parse_refresh_header(refresh):
     (1.0, 'http://example.com/')
     >>> parse_refresh_header("1")
     (1.0, None)
-    >>> parse_refresh_header("blah")
+    >>> parse_refresh_header("blah")  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
     ValueError: invalid literal for float(): blah
 

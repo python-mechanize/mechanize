@@ -380,6 +380,7 @@ class Releaser(object):
         # add_dependency("python2.4"),
         # add_dependency("python2.5")
         add_dependency("python2.6")
+        #add_dependency("python2.7")
         add_dependency("python-setuptools")
         add_dependency("git-core")
         # for running zope_testbrowser tests
@@ -398,7 +399,8 @@ class Releaser(object):
         # for the validate command
         add_dependency("wdg-html-validator")
         # for collecting code coverage data and generating coverage reports
-        add_dependency("python-figleaf", ppa="jjl/figleaf")
+        # no 64 bit .deb ATM
+        #add_dependency("python-figleaf", ppa="jjl/figleaf")
 
         # for css validator
         add_dependency("default-jre")
@@ -494,6 +496,11 @@ class Releaser(object):
     @action_tree.action_node
     def test(self):
         r = []
+        r.append(("python27_test",
+                  self._make_test_step(self._in_repo, python_version=(2, 7))))
+        r.append(("python27_easy_install_test",
+                  self._make_source_dist_easy_install_test_step(
+                    self._in_repo, python_version=(2, 7))))
         r.append(("python26_test",
                   self._make_test_step(self._in_repo, python_version=(2, 6))))
         # disabled for the moment -- think I probably built the launchpad .deb
@@ -501,9 +508,6 @@ class Releaser(object):
         # r.append(("python26_coverage",
         #           self._make_test_step(self._in_repo, python_version=(2, 6),
         #                                coverage=True)))
-        r.append(("python26_easy_install_test",
-                  self._make_source_dist_easy_install_test_step(
-                    self._in_repo, python_version=(2, 6))))
         r.append(("python25_easy_install_test",
                   self._make_source_dist_easy_install_test_step(
                     self._in_repo, python_version=(2, 5))))
@@ -772,6 +776,9 @@ URL
         project_dir = os.path.join(self._zope_testbrowser_dir,
                                    "zope.testbrowser")
         in_project_dir = release.CwdEnv(self._env, project_dir)
+        # TODO: If anything else depends on a specific version of mechanize
+        # this won't work.  Assert that importing mechanize yields expected
+        # version.
         in_project_dir.cmd(
             ["sed", "-i", "-e", "s/mechanize[^\"']*/mechanize/", "setup.py"])
         in_project_dir.cmd(["bin/easy_install", "zc.buildout"])
@@ -854,7 +861,7 @@ Changes since {previous_version}:
 About mechanize
 =============================================
 
-Requires Python 2.4, 2.5, or 2.6.
+Requires Python 2.4, 2.5, 2.6, or 2.7.
 
 
 Stateful programmatic web browsing, after Andy Lester's Perl module

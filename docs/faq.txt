@@ -5,7 +5,7 @@
 
   * <span class="q">Which version of Python do I need?</span>
 
-    Python 2.4, 2.5 or 2.6.  Python 3 is not yet supported.
+    Python 2.4, 2.5, 2.6, or 2.7.  Python 3 is not yet supported.
 
   * <span class="q">Does mechanize depend on BeautifulSoup?</span>
 
