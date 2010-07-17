@@ -32,6 +32,7 @@ class UserAgentTests(TestCase):
         BlahHandler = BlahHandlerClass([("blah_open", None)])
         BlahProcessor = BlahProcessorClass([("blah_request", None)])
         class TestUserAgent(mechanize.UserAgent):
+            default_schemes = ["http"]
             default_others = []
             default_features = []
             handler_classes = mechanize.UserAgent.handler_classes.copy()
@@ -39,9 +40,11 @@ class UserAgentTests(TestCase):
                 {"blah": BlahHandler, "_blah": BlahProcessor})
         ua = TestUserAgent()
 
-        self.assertEqual(len(ua.handlers), 4)
-        ua.set_handled_schemes(["http", "https"])
-        self.assertEqual(len(ua.handlers), 2)
+        self.assertEqual(list(h.__class__.__name__ for h in ua.handlers),
+                         ["HTTPHandler"])
+        ua.set_handled_schemes(["http", "file"])
+        self.assertEqual(sorted(h.__class__.__name__ for h in ua.handlers),
+                         ["FileHandler", "HTTPHandler"])
         self.assertRaises(ValueError,
             ua.set_handled_schemes, ["blah", "non-existent"])
         self.assertRaises(ValueError,
