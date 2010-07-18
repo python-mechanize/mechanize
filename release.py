@@ -212,7 +212,7 @@ class EasyInstallTester(object):
 
     def easy_install(self, log):
         clean_dir(self._env, self._install_dir)
-        check_not_installed(self._install_dir_on_pythonpath)
+        check_not_installed(self._install_dir_on_pythonpath, self._python)
         output = release.get_cmd_stdout(
             self._install_dir_on_pythonpath,
             self._easy_install_cmd + ["-d", self._install_dir,
@@ -804,7 +804,7 @@ URL
                                    "zope.testbrowser")
         in_project_dir = clean_environ_env(
             release.CwdEnv(self._env, project_dir))
-        check_not_installed(in_project_dir)
+        check_not_installed(in_project_dir, "bin/python")
         in_project_dir.cmd(
             ["sed", "-i", "-e", "s/mechanize[^\"']*/mechanize/", "setup.py"])
         in_project_dir.cmd(["bin/easy_install", "zc.buildout"])
