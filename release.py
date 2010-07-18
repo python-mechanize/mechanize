@@ -64,7 +64,12 @@ except (ImportError, AttributeError):
 
 class WrongVersionError(Exception):
 
-    pass
+    def __init__(self, version):
+        Exception.__init__(self, version)
+        self.version = version
+
+    def __str__(self):
+        return str(self.version)
 
 
 class MissingVersionError(Exception):
@@ -161,11 +166,11 @@ def clean_dir(env, path):
     env.cmd(["mkdir", "-p", path])
 
 
-def check_version_equals(env, version):
+def check_version_equals(env, version, python):
     try:
         output = release.get_cmd_stdout(
             env,
-            ["python", "-c",
+            [python, "-c",
              "import mechanize; print mechanize.__version__"],
             stderr=subprocess.PIPE)
     except cmd_env.CommandFailedError:
@@ -178,34 +183,36 @@ def check_version_equals(env, version):
             raise WrongVersionError(version_tuple_string)
 
 
-def check_not_installed(env, version):
+def check_not_installed(env, python):
+    bogus_version = release.Version(release.parse_version("0.0.0"))
     try:
-        check_version_equals(env, version)
-    except WrongVersionError:
-        pass
+        check_version_equals(env, bogus_version, python)
+    except WrongVersionError, exc:
+        if exc.version is not None:
+            raise
     else:
-        raise WrongVersionError("Expected version != %s" % version)
-
+        raise WrongVersionError(bogus_version)
 
 
 class EasyInstallTester(object):
 
     def __init__(self, env, install_dir, project_name,
                  test_cmd, expected_version,
-                 easy_install_cmd=("easy_install",)):
+                 easy_install_cmd=("easy_install",),
+                 python="python"):
         self._env = env
         self._install_dir = install_dir
         self._project_name = project_name
         self._test_cmd = test_cmd
         self._expected_version = expected_version
         self._easy_install_cmd = list(easy_install_cmd)
+        self._python = python
         self._install_dir_on_pythonpath = cmd_env.set_environ_vars_env(
             [("PYTHONPATH", self._install_dir)], env)
 
     def easy_install(self, log):
         clean_dir(self._env, self._install_dir)
-        check_not_installed(self._install_dir_on_pythonpath,
-                            self._expected_version)
+        check_not_installed(self._install_dir_on_pythonpath)
         output = release.get_cmd_stdout(
             self._install_dir_on_pythonpath,
             self._easy_install_cmd + ["-d", self._install_dir,
@@ -214,7 +221,8 @@ class EasyInstallTester(object):
         if "SyntaxError" in output:
             raise Exception(output)
         check_version_equals(self._install_dir_on_pythonpath,
-                             self._expected_version)
+                             self._expected_version,
+                             self._python)
 
     def test(self, log):
         self._install_dir_on_pythonpath.cmd(self._test_cmd)
@@ -239,7 +247,8 @@ def make_source_dist_easy_install_test_step(env, install_dir,
         test_cmd=test_cmd,
         expected_version=expected_version,
         easy_install_cmd=(cmd_env.in_dir(source_dir) +
-                          [python, "setup.py", "easy_install"]))
+                          [python, "setup.py", "easy_install"]),
+        python=python)
     return tester.easy_install_test
 
 
@@ -247,13 +256,15 @@ def make_pypi_easy_install_test_step(env, install_dir,
                                      test_cmd, expected_version,
                                      python_version):
     easy_install = "easy_install-%d.%d" % python_version
+    python = "python%d.%d" % python_version
     tester = EasyInstallTester(
         env,
         install_dir,
         project_name="mechanize",
         test_cmd=test_cmd,
         expected_version=expected_version,
-        easy_install_cmd=[easy_install])
+        easy_install_cmd=[easy_install],
+        python=python)
     return tester.easy_install_test
 
 
@@ -262,13 +273,15 @@ def make_tarball_easy_install_test_step(env, install_dir,
                                         test_cmd, expected_version,
                                         python_version):
     easy_install = "easy_install-%d.%d" % python_version
+    python = "python%d.%d" % python_version
     tester = EasyInstallTester(
         env,
         install_dir,
         project_name=tarball_path,
         test_cmd=test_cmd,
         expected_version=expected_version,
-        easy_install_cmd=[easy_install])
+        easy_install_cmd=[easy_install],
+        python=python)
     return tester.easy_install_test
 
 
@@ -789,8 +802,9 @@ URL
             ["virtualenv", "--no-site-packages", "zope.testbrowser"])
         project_dir = os.path.join(self._zope_testbrowser_dir,
                                    "zope.testbrowser")
-        in_project_dir = release.CwdEnv(self._env, project_dir)
-        check_not_installed(in_project_dir, self._release_version)
+        in_project_dir = clean_environ_env(
+            release.CwdEnv(self._env, project_dir))
+        check_not_installed(in_project_dir)
         in_project_dir.cmd(
             ["sed", "-i", "-e", "s/mechanize[^\"']*/mechanize/", "setup.py"])
         in_project_dir.cmd(["bin/easy_install", "zc.buildout"])
@@ -804,10 +818,9 @@ URL
     def test_zope_testbrowser(self, log):
         project_dir = os.path.join(self._zope_testbrowser_dir,
                                    "zope.testbrowser")
-        env = cmd_env.clean_environ_except_home_env(
+        env = clean_environ_env(
             release.CwdEnv(self._env, project_dir))
-        check_version_equals(self._install_dir_on_pythonpath,
-                             self._expected_version)
+        check_version_equals(env, self._release_version, "bin/python")
         env.cmd(["bin/test"])
 
     @action_tree.action_node
