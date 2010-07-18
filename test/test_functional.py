@@ -298,7 +298,7 @@ class SimpleTests(SocketTimeoutTest):
 
     def test_file_url(self):
         url = "file://%s" % sanepathname2url(
-            os.path.abspath(os.path.join("test", "functional_tests.py")))
+            os.path.abspath(os.path.join("test", "test_functional.py")))
         r = self.browser.open(url)
         self.assert_("this string appears in this file ;-)" in r.read())
 
