@@ -146,6 +146,12 @@ exec "$@"
     return ["sh", "-c", set_path_script, "inline_script"]
 
 
+def clean_environ_env(env):
+    return cmd_env.PrefixCmdEnv(
+        ["sh", "-c", 'env -i HOME="$HOME" PATH="$PATH" "$@"',
+         "clean_environ_env"], env)
+
+
 def ensure_trailing_slash(path):
     return path.rstrip("/") + "/"
 
@@ -153,6 +159,33 @@ def ensure_trailing_slash(path):
 def clean_dir(env, path):
     env.cmd(release.rm_rf_cmd(path))
     env.cmd(["mkdir", "-p", path])
+
+
+def check_version_equals(env, version):
+    try:
+        output = release.get_cmd_stdout(
+            env,
+            ["python", "-c",
+             "import mechanize; print mechanize.__version__"],
+            stderr=subprocess.PIPE)
+    except cmd_env.CommandFailedError:
+        raise WrongVersionError(None)
+    else:
+        version_tuple_string = output.strip()
+        assert len(version.tuple) == 6, len(version.tuple)
+        if not(version_tuple_string == str(version.tuple) or
+               version_tuple_string == str(version.tuple[:-1])):
+            raise WrongVersionError(version_tuple_string)
+
+
+def check_not_installed(env, version):
+    try:
+        check_version_equals(env, version)
+    except WrongVersionError:
+        pass
+    else:
+        raise WrongVersionError("Expected version != %s" % version)
+
 
 
 class EasyInstallTester(object):
@@ -169,34 +202,10 @@ class EasyInstallTester(object):
         self._install_dir_on_pythonpath = cmd_env.set_environ_vars_env(
             [("PYTHONPATH", self._install_dir)], env)
 
-    def _check_version_equals(self, version):
-        try:
-            output = release.get_cmd_stdout(
-                self._install_dir_on_pythonpath,
-                ["python", "-c",
-                 "import mechanize; print mechanize.__version__"],
-                stderr=subprocess.PIPE)
-        except cmd_env.CommandFailedError:
-            raise WrongVersionError(None)
-        else:
-            version_tuple_string = output.strip()
-            assert len(version.tuple) == 6, len(version.tuple)
-            if not(version_tuple_string == str(version.tuple) or
-                   version_tuple_string == str(version.tuple[:-1])):
-                raise WrongVersionError(version_tuple_string)
-
-    def _check_not_installed(self):
-        try:
-            self._check_version_equals(self._expected_version)
-        except WrongVersionError:
-            pass
-        else:
-            raise WrongVersionError("Expected version != %s" %
-                                    self._expected_version)
-
     def easy_install(self, log):
         clean_dir(self._env, self._install_dir)
-        self._check_not_installed()
+        check_not_installed(self._install_dir_on_pythonpath,
+                            self._expected_version)
         output = release.get_cmd_stdout(
             self._install_dir_on_pythonpath,
             self._easy_install_cmd + ["-d", self._install_dir,
@@ -204,7 +213,8 @@ class EasyInstallTester(object):
         # easy_install doesn't fail properly :-(
         if "SyntaxError" in output:
             raise Exception(output)
-        self._check_version_equals(self._expected_version)
+        check_version_equals(self._install_dir_on_pythonpath,
+                             self._expected_version)
 
     def test(self, log):
         self._install_dir_on_pythonpath.cmd(self._test_cmd)
@@ -219,7 +229,9 @@ class EasyInstallTester(object):
 
 def make_source_dist_easy_install_test_step(env, install_dir,
                                             source_dir,
-                                            test_cmd, expected_version):
+                                            test_cmd, expected_version,
+                                            python_version):
+    python = "python%d.%d" % python_version
     tester = EasyInstallTester(
         env,
         install_dir,
@@ -227,30 +239,36 @@ def make_source_dist_easy_install_test_step(env, install_dir,
         test_cmd=test_cmd,
         expected_version=expected_version,
         easy_install_cmd=(cmd_env.in_dir(source_dir) +
-                          ["python", "setup.py", "easy_install"]))
+                          [python, "setup.py", "easy_install"]))
     return tester.easy_install_test
 
 
 def make_pypi_easy_install_test_step(env, install_dir,
-                                     test_cmd, expected_version):
+                                     test_cmd, expected_version,
+                                     python_version):
+    easy_install = "easy_install-%d.%d" % python_version
     tester = EasyInstallTester(
         env,
         install_dir,
         project_name="mechanize",
         test_cmd=test_cmd,
-        expected_version=expected_version)
+        expected_version=expected_version,
+        easy_install_cmd=[easy_install])
     return tester.easy_install_test
 
 
 def make_tarball_easy_install_test_step(env, install_dir,
                                         tarball_path,
-                                        test_cmd, expected_version):
+                                        test_cmd, expected_version,
+                                        python_version):
+    easy_install = "easy_install-%d.%d" % python_version
     tester = EasyInstallTester(
         env,
         install_dir,
         project_name=tarball_path,
         test_cmd=test_cmd,
-        expected_version=expected_version)
+        expected_version=expected_version,
+        easy_install_cmd=[easy_install])
     return tester.easy_install_test
 
 
@@ -300,7 +318,7 @@ class Releaser(object):
                                                    self._easy_install_test_dir)
         # prevent anything other than functional test dependencies being on
         # sys.path due to cwd or PYTHONPATH
-        self._easy_install_env = cmd_env.clean_environ_except_home_env(
+        self._easy_install_env = clean_environ_env(
             release.CwdEnv(env, self._test_deps_dir))
         self._zope_testbrowser_dir = os.path.join(release_dir,
                                                   "zope_testbrowser_test")
@@ -375,12 +393,12 @@ class Releaser(object):
             actions.append(
                 (package_name.replace(".", ""),
                  lambda log: self._ensure_installed(package_name, ppa)))
+        add_dependency("python2.6")
         # required, but ubuntu doesn't have them any more :-( I installed these
-        # by hand
+        # (and zope.interface and twisted SVN trunk) by hand
         # add_dependency("python2.4"),
         # add_dependency("python2.5")
-        add_dependency("python2.6")
-        #add_dependency("python2.7")
+        # add_dependency("python2.7")
         add_dependency("python-setuptools")
         add_dependency("git-core")
         # for running zope_testbrowser tests
@@ -400,7 +418,7 @@ class Releaser(object):
         add_dependency("wdg-html-validator")
         # for collecting code coverage data and generating coverage reports
         # no 64 bit .deb ATM
-        #add_dependency("python-figleaf", ppa="jjl/figleaf")
+        # add_dependency("python-figleaf", ppa="jjl/figleaf")
 
         # for css validator
         add_dependency("default-jre")
@@ -461,37 +479,38 @@ class Releaser(object):
         self._in_repo.cmd(["rm", "-f", ".figleaf"])
         self._in_repo.cmd(release.rm_rf_cmd("html"))
 
-    def _make_test_step(self, env, *args, **kwds):
-        test_cmd = self._make_test_cmd(*args, **kwds)
+    def _make_test_step(self, env, **kwds):
+        test_cmd = self._make_test_cmd(**kwds)
         def test_step(log):
             env.cmd(test_cmd)
         return test_step
 
-    def _make_easy_install_test_cmd(self, *args, **kwds):
-        test_cmd = self._make_test_cmd(*args, **kwds)
+    def _make_easy_install_test_cmd(self, **kwds):
+        test_cmd = self._make_test_cmd(**kwds)
         test_cmd.extend(["discover", "--start-directory", self._test_deps_dir])
         return test_cmd
 
-    def _make_source_dist_easy_install_test_step(self, env, *args, **kwds):
-        test_cmd = self._make_easy_install_test_cmd(*args, **kwds)
+    def _make_source_dist_easy_install_test_step(self, env, **kwds):
+        test_cmd = self._make_easy_install_test_cmd(**kwds)
         return make_source_dist_easy_install_test_step(
             self._easy_install_env, self._easy_install_test_dir,
-            self._repo_path, test_cmd, self._release_version)
+            self._repo_path, test_cmd, self._release_version,
+            kwds["python_version"])
 
-    def _make_pypi_easy_install_test_step(self, env, *args, **kwds):
-        test_cmd = self._make_easy_install_test_cmd(*args, **kwds)
+    def _make_pypi_easy_install_test_step(self, env, **kwds):
+        test_cmd = self._make_easy_install_test_cmd(**kwds)
         return make_pypi_easy_install_test_step(
             self._easy_install_env, self._easy_install_test_dir,
-            test_cmd, self._release_version)
+            test_cmd, self._release_version, kwds["python_version"])
 
-    def _make_tarball_easy_install_test_step(self, env, *args, **kwds):
-        test_cmd = self._make_easy_install_test_cmd(*args, **kwds)
+    def _make_tarball_easy_install_test_step(self, env, **kwds):
+        test_cmd = self._make_easy_install_test_cmd(**kwds)
         [tarball] = list(d for d in self._source_distributions if
                          d.endswith(".tar.gz"))
         return make_tarball_easy_install_test_step(
             self._easy_install_env, self._easy_install_test_dir,
-            os.path.abspath(os.path.join("dist", tarball)),
-            test_cmd, self._release_version)
+            os.path.abspath(os.path.join(self._repo_path, "dist", tarball)),
+            test_cmd, self._release_version, kwds["python_version"])
 
     @action_tree.action_node
     def test(self):
@@ -511,14 +530,9 @@ class Releaser(object):
         r.append(("python25_easy_install_test",
                   self._make_source_dist_easy_install_test_step(
                     self._in_repo, python_version=(2, 5))))
-        # the functional tests rely on a local web server implemented using
-        # twisted.web2, which depends on zope.interface, but ubuntu karmic
-        # doesn't have a Python 2.4 package for zope.interface, so run them
-        # against external website
-        r.append(("python24_easy_install_test_internet",
+        r.append(("python24_easy_install_test",
                   self._make_source_dist_easy_install_test_step(
-                    self._in_repo, python_version=(2, 4),
-                    local_server=False, uri=self._test_uri)))
+                    self._in_repo, python_version=(2, 4))))
         r.append(self.performance_test)
         return r
 
@@ -776,9 +790,7 @@ URL
         project_dir = os.path.join(self._zope_testbrowser_dir,
                                    "zope.testbrowser")
         in_project_dir = release.CwdEnv(self._env, project_dir)
-        # TODO: If anything else depends on a specific version of mechanize
-        # this won't work.  Assert that importing mechanize yields expected
-        # version.
+        check_not_installed(in_project_dir, self._release_version)
         in_project_dir.cmd(
             ["sed", "-i", "-e", "s/mechanize[^\"']*/mechanize/", "setup.py"])
         in_project_dir.cmd(["bin/easy_install", "zc.buildout"])
@@ -794,6 +806,8 @@ URL
                                    "zope.testbrowser")
         env = cmd_env.clean_environ_except_home_env(
             release.CwdEnv(self._env, project_dir))
+        check_version_equals(self._install_dir_on_pythonpath,
+                             self._expected_version)
         env.cmd(["bin/test"])
 
     @action_tree.action_node
