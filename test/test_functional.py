@@ -305,9 +305,10 @@ class SimpleTests(SocketTimeoutTest):
     def test_open_local_file(self):
         # Since the file: URL scheme is not well standardised, Browser has a
         # special method to open files by name, for convenience:
-        response = self.browser.open_local_file("mechanize/_mechanize.py")
-        self.assert_("def open_local_file(self, filename):" in
-                     response.get_data())
+        path = os.path.join("test", "test_functional.py")
+        response = self.browser.open_local_file(path)
+        self.assertIn("this string appears in this file ;-)",
+                      response.get_data())
 
     def test_open_novisit(self):
         def test_state(br):
