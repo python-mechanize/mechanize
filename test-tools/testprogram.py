@@ -275,6 +275,48 @@ def toplevel_test(suite, test_attributes):
     return suite
 
 
+def make_http_server_cm(uri, log):
+    import warnings
+    # http://code.google.com/p/rdflib/issues/detail?id=101
+    warnings.filterwarnings(
+        action="ignore",
+        message=(".*Module test was already imported from "
+                 ".*test/__init__.pyc?, but .* is being added to "
+                 "sys.path"),
+        category=UserWarning,
+        module="zope")
+    try:
+        import twisted.web2
+        import zope.interface
+    except ImportError:
+        warnings.warn("Skipping functional tests: Failed to import "
+                      "twisted.web2 and/or zope.interface")
+        def skip():
+            raise unittest.SkipTest
+        cm = ServerCM(skip)
+    else:
+        cm = ServerCM(lambda: TwistedServerProcess(
+                uri, "local twisted server", log))
+    return cm
+
+
+def make_ftp_server_cm(log):
+    import warnings
+    try:
+        import twisted.protocols.ftp
+        import zope.interface
+    except ImportError:
+        warnings.warn("Skipping functional tests: Failed to import "
+                      "twisted.protocols.ftp and/or zope.interface")
+        def skip():
+            raise unittest.SkipTest
+        cm = ServerCM(skip)
+    else:
+        cm = ServerCM(lambda: TwistedFtpServerProcess(
+                "local twisted server", 2121, log))
+    return cm
+
+
 class TestProgram(unittest.TestProgram):
 
     def __init__(self, default_discovery_args=None,
@@ -410,41 +452,12 @@ class TestProgram(unittest.TestProgram):
 
         fixture_factory = _testcase.FixtureFactory()
         if options.run_local_server:
-            import warnings
-            # http://code.google.com/p/rdflib/issues/detail?id=101
-            warnings.filterwarnings(
-                action="ignore",
-                message=(".*Module test was already imported from "
-                         ".*test/__init__.pyc?, but .* is being added to "
-                         "sys.path"),
-                category=UserWarning,
-                module="zope")
-            try:
-                import twisted.web2
-                import zope.interface
-            except ImportError:
-                warnings.warn("Skipping functional tests: Failed to import "
-                              "twisted.web2 and/or zope.interface")
-                def skip():
-                    raise unittest.SkipTest
-                cm = ServerCM(skip)
-            else:
-                cm = ServerCM(lambda: TwistedServerProcess(
-                        options.uri, "local twisted server",
-                        options.log_server))
+            cm = make_http_server_cm(options.uri, options.log_server)
         else:
             cm = TrivialCM(NullServer(options.uri))
         fixture_factory.register_context_manager("server", cm)
-        try:
-            import twisted.protocols.ftp
-        except ImportError:
-            pass
-        else:
-            fixture_factory.register_context_manager(
-                "ftp_server", 
-                ServerCM(lambda: TwistedFtpServerProcess(
-                        "local twisted server", 2121,
-                        options.log_server)))
+        fixture_factory.register_context_manager(
+            "ftp_server", make_ftp_server_cm(options.log_server))
         test_attributes = dict(uri=options.uri, no_proxies=options.no_proxies,
                                fixture_factory=fixture_factory)
         if options.meld:
