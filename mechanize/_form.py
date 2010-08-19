@@ -355,7 +355,12 @@ class ItemCountError(ValueError): pass
 # TODO: move to _html
 class ParseError(sgmllib.SGMLParseError,
                  HTMLParser.HTMLParseError):
-    pass
+
+    def __init__(self, *args, **kwds):
+        Exception.__init__(self, *args, **kwds)
+
+    def __str__(self):
+        return Exception.__str__(self)
 
 
 class _AbstractFormParser:
