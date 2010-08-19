@@ -6,10 +6,10 @@
 # Copyright 2005 Zope Corporation
 # Copyright 1998-2000 Gisle Aas.
 
+from cStringIO import StringIO
 import os
 import string
 import unittest
-from cStringIO import StringIO
 
 import mechanize
 import mechanize._form as _form
@@ -243,6 +243,14 @@ class MockResponse:
         return self._url
     def __getattr__(self, name):
         return getattr(self._file, name)
+
+
+class ParseErrorTests(_testcase.TestCase):
+
+    def test_parseerror_str(self):
+        e = mechanize.ParseError("spam")
+        self.assertEqual(str(e), "spam")
+
 
 class ParseTests(unittest.TestCase):
 
