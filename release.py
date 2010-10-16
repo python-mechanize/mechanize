@@ -184,7 +184,7 @@ def check_version_equals(env, version, python):
 
 
 def check_not_installed(env, python):
-    bogus_version = release.Version(release.parse_version("0.0.0"))
+    bogus_version = release.parse_version("0.0.0")
     try:
         check_version_equals(env, bogus_version, python)
     except WrongVersionError, exc:
@@ -820,8 +820,7 @@ URL
     def test_zope_testbrowser(self, log):
         project_dir = os.path.join(self._zope_testbrowser_dir,
                                    "zope.testbrowser")
-        env = clean_environ_env(
-            release.CwdEnv(self._env, project_dir))
+        env = clean_environ_env(release.CwdEnv(self._env, project_dir))
         check_version_equals(env, self._release_version, "bin/python")
         env.cmd(["bin/test"])
 
@@ -949,8 +948,8 @@ John
     def build(self):
         return [
             self.clean,
-            self.clean_most,
             self.install_deps,
+            self.clean_most,
             self.print_next_tag,
             self.clone,
             self.checks,
@@ -1029,6 +1028,7 @@ __version__ = %(tuple)s
 def parse_options(args):
     parser = optparse.OptionParser(usage=__doc__.strip())
     release.add_basic_env_options(parser)
+    action_tree.add_options(parser)
     parser.add_option("--mechanize-repository", metavar="DIRECTORY",
                       dest="git_repository_path",
                       help="path to mechanize git repository (default is cwd)")
@@ -1083,7 +1083,7 @@ def main(argv):
     releaser = Releaser(env, options.git_repository_path, options.release_area,
                         options.mirror_path, options.build_tools_repository,
                         options.in_repository, options.tag_name, options.uri)
-    action_tree.action_main(releaser.all, action_tree_args)
+    action_tree.action_main_(releaser.all, options, action_tree_args)
 
 
 if __name__ == "__main__":
