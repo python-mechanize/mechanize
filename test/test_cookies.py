@@ -1,4 +1,4 @@
-"""Tests for _ClientCookie."""
+"""Tests for _clientcookie."""
 
 import StringIO
 import errno
