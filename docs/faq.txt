@@ -9,11 +9,11 @@
 
   * <span class="q">Does mechanize depend on BeautifulSoup?</span>
 
-    No.  mechanize offers a few (still rather experimental) classes that make
-use of BeautifulSoup, but these classes are not required to use mechanize.
-mechanize bundles BeautifulSoup version 2, so that module is no longer
-required.  A future version of mechanize will support BeautifulSoup version 3,
-at which point mechanize will likely no longer bundle the module.
+    No.  mechanize offers a few classes that make use of BeautifulSoup, but
+these classes are not required to use mechanize.  mechanize bundles
+BeautifulSoup version 2, so that module is no longer required.  A future
+version of mechanize will support BeautifulSoup version 3, at which point
+mechanize will likely no longer bundle the module.
 
   * <span class="q">Does mechanize depend on ClientForm?</span>
 
@@ -339,10 +339,10 @@ General
     The request / response processing extensions to `urllib2` from mechanize
     have been merged into `urllib2` for Python 2.4.  The cookie processing has
     been added, as module `cookielib`.  There are other features that would be
-    appropriate additions to urllib2, but since Python 2 is heading into
+    appropriate additions to `urllib2`, but since Python 2 is heading into
     bugfix-only mode, and I'm not using Python 3, they're unlikely to be added.
 
-  * <span class="q">Where can I find out the relevant standards?</span>
+  * <span class="q">Where can I find out about the relevant standards?</span>
 
       * [HTML 4.01 Specification](http://www.w3.org/TR/html401/)
 
