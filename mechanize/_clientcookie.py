@@ -327,6 +327,14 @@ class Cookie:
 
     """
 
+
+    _attrs = ("version", "name", "value",
+              "port", "port_specified",
+              "domain", "domain_specified", "domain_initial_dot",
+              "path", "path_specified",
+              "secure", "expires", "discard", "comment", "comment_url",
+              "rfc2109", "_rest")
+
     def __init__(self, version, name, value,
                  port, port_specified,
                  domain, domain_specified, domain_initial_dot,
@@ -381,6 +389,12 @@ class Cookie:
     def is_expired(self, now=None):
         if now is None: now = time.time()
         return (self.expires is not None) and (self.expires <= now)
+
+    def __eq__(self, other):
+        return all(getattr(self, a) == getattr(other, a) for a in self._attrs)
+
+    def __ne__(self, other):
+        return not (self == other)
 
     def __str__(self):
         if self.port is None: p = ""
