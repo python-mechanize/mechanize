@@ -284,6 +284,17 @@ def is_third_party(request):
     return not domain_match(req_host, reach(request.origin_req_host))
 
 
+try:
+    all
+except NameError:
+    # python 2.4
+    def all(iterable):
+        for x in iterable:
+            if not x:
+                return False
+        return True
+
+
 class Cookie:
     """HTTP Cookie.
 
