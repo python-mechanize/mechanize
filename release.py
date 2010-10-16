@@ -567,6 +567,8 @@ class Releaser(object):
         def pandoc(filename, source_filename):
             last_modified = release.last_modified(source_filename,
                                                   self._in_docs_dir)
+            if filename == "download.txt":
+                last_modified = time.gmtime()
             variables = [
                 ("last_modified_iso",
                  time.strftime("%Y-%m-%d", last_modified)),
