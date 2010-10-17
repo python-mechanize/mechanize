@@ -928,6 +928,9 @@ John
            version=self._release_version,
            previous_version=self._previous_version)))
 
+    def edit_email(self, log):
+        self._in_release_dir.cmd(["sensible-editor", "announce_email.txt"])
+
     def push_tag(self, log):
         self._in_repo.cmd(["git", "push", "git@github.com:jjlee/mechanize.git",
                            "tag", str(self._release_version)])
@@ -935,11 +938,10 @@ John
     def send_email(self, log):
         text = release.read_file_from_env(self._in_release_dir,
                                           "announce_email.txt")
-        print "text %r" % text
         subject, sep, body = text.partition("\n")
         body = body.lstrip()
         assert len(body) > 0, body
-        send_email(from_address="jjl@pobox.com",
+        send_email(from_address="John J Lee <jjl@pobox.com>",
                    to_address="wwwsearch-general@lists.sourceforge.net",
                    subject=subject,
                    body=body)
@@ -964,6 +966,7 @@ John
                     local_server=False, uri=self._test_uri)),
             self.zope_testbrowser,
             self.write_email,
+            self.edit_email,
             ]
 
     def update_version(self, log):
