@@ -737,7 +737,7 @@ htdocs/test_fixtures/referertest.html
                          "/usr/share/java/tagsoup.jar",
                          "/usr/share/java/velocity.jar",
                          ]
-        jar_dir = os.path.join(self._release_dir, self._css_validator_path)
+        jar_dir = os.path.join(self._release_area, self._css_validator_path)
         local = glob.glob(os.path.join(jar_dir, "*.jar"))
         path = ":".join(local + from_packages)
         return ["env", "CLASSPATH=%s" % path]
