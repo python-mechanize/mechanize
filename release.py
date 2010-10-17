@@ -299,12 +299,8 @@ class Releaser(object):
         self._source_repo_path = git_repository_path
         self._in_source_repo = release.CwdEnv(self._env,
                                               self._source_repo_path)
-        self._previous_version, self._release_version = \
-            self._get_next_release_version()
-        if tag_name is not None:
-            self._release_version = release.parse_version(tag_name)
-        self._source_distributions = self._get_source_distributions(
-            self._release_version)
+        self._tag_name = tag_name
+        self._set_next_release_version()
         self._clone_path = os.path.join(release_dir, "clone")
         self._in_clone = release.CwdEnv(self._env, self._clone_path)
         if run_in_repository:
@@ -351,11 +347,24 @@ class Releaser(object):
                 next = most_recent.next_version()
         return most_recent, next
 
+    def _set_next_release_version(self):
+        self._previous_version, self._release_version = \
+            self._get_next_release_version()
+        if self._tag_name is not None:
+            self._release_version = release.parse_version(self._tag_name)
+        self._source_distributions = self._get_source_distributions(
+            self._release_version)
+
     def _get_source_distributions(self, version):
         def dist_basename(version, format):
             return "mechanize-%s.%s" % (version, format)
         return set([dist_basename(version, "zip"),
                     dist_basename(version, "tar.gz")])
+
+    def git_fetch(self, log):
+        # for tags
+        self._in_source_repo.cmd(["git", "fetch"])
+        self._set_next_release_version()
 
     def print_next_tag(self, log):
         print self._release_version
@@ -952,6 +961,7 @@ John
             self.clean,
             self.install_deps,
             self.clean_most,
+            self.git_fetch,
             self.print_next_tag,
             self.clone,
             self.checks,
