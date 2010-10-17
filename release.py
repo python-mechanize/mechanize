@@ -1023,7 +1023,6 @@ __version__ = %(tuple)s
              self._make_pypi_easy_install_test_step(
                     self._in_repo, python_version=(2, 6),
                     local_server=False,
-                    # XXX seems to be ignoring this
                     uri="http://wwwsearch.sourceforge.net/")),
             self.send_email,
             ]
