@@ -1,29 +1,34 @@
 """Tests for ClientCookie._HeadersUtil."""
 
-from unittest import TestCase
+import mechanize._headersutil
+from mechanize._testcase import TestCase
+
 
 class IsHtmlTests(TestCase):
+
     def test_is_html(self):
-        from mechanize._headersutil import is_html
+        def check(headers, extension, is_html):
+            url = "http://example.com/foo" + extension
+            self.assertEqual(
+                mechanize._headersutil.is_html(headers, url, allow_xhtml),
+                is_html)
         for allow_xhtml in False, True:
-            for cths, ext, expect in [
-                (["text/html"], ".html", True),
-                (["text/html", "text/plain"], ".html", True),
-                # Content-type takes priority over file extension from URL
-                (["text/html"], ".txt", True),
-                (["text/plain"], ".html", False),
-                # use extension if no Content-Type
-                ([], ".html", True),
-                ([], ".gif", False),
-                # don't regard XHTML as HTML (unless user explicitly asks for it),
-                # since we don't yet handle XML properly
-                ([], ".xhtml", allow_xhtml),
-                (["text/xhtml"], ".xhtml", allow_xhtml),
-                ]:
-                url = "http://example.com/foo"+ext
-                self.assertEqual(expect, is_html(cths, url, allow_xhtml))
+            check(["text/html"], ".html", True),
+            check(["text/html", "text/plain"], ".html", True)
+            # Content-type takes priority over file extension from URL
+            check(["text/html"], ".txt", True)
+            check(["text/plain"], ".html", False)
+            # use extension if no Content-Type
+            check([], ".html", True)
+            check([], ".gif", False)
+            # don't regard XHTML as HTML (unless user explicitly asks for it),
+            # since we don't yet handle XML properly
+            check([], ".xhtml", allow_xhtml)
+            check(["text/xhtml"], ".xhtml", allow_xhtml)
+
 
 class HeaderTests(TestCase):
+
     def test_parse_ns_headers_expires(self):
         from mechanize._headersutil import parse_ns_headers
 
