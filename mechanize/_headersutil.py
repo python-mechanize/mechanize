@@ -17,6 +17,15 @@ STRING_TYPES = StringType, UnicodeType
 from _util import http2time
 import _rfc3986
 
+
+def is_html_file_extension(url, allow_xhtml):
+    ext = os.path.splitext(_rfc3986.urlsplit(url)[2])[1]
+    html_exts = [".htm", ".html"]
+    if allow_xhtml:
+        html_exts += [".xhtml"]
+    return ext in html_exts
+
+
 def is_html(ct_headers, url, allow_xhtml=False):
     """
     ct_headers: Sequence of Content-Type headers
@@ -24,14 +33,13 @@ def is_html(ct_headers, url, allow_xhtml=False):
 
     """
     if not ct_headers:
-        # guess
-        ext = os.path.splitext(_rfc3986.urlsplit(url)[2])[1]
-        html_exts = [".htm", ".html"]
-        if allow_xhtml:
-            html_exts += [".xhtml"]
-        return ext in html_exts
-    # use first header
-    ct = split_header_words(ct_headers)[0][0][0]
+        return is_html_file_extension(url, allow_xhtml)
+    headers = split_header_words(ct_headers)
+    if len(headers) < 1:
+        return is_html_file_extension(url, allow_xhtml)
+    first_header = headers[0]
+    first_parameter = first_header[0]
+    ct = first_parameter[0]
     html_types = ["text/html"]
     if allow_xhtml:
         html_types += [
@@ -39,6 +47,7 @@ def is_html(ct_headers, url, allow_xhtml=False):
             "application/xml", "application/xhtml+xml",
             ]
     return ct in html_types
+
 
 def unmatched(match):
     """Return unmatched part of re.Match object."""

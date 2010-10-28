@@ -25,6 +25,8 @@ class IsHtmlTests(TestCase):
             # since we don't yet handle XML properly
             check([], ".xhtml", allow_xhtml)
             check(["text/xhtml"], ".xhtml", allow_xhtml)
+            # header with empty value
+            check([""], ".txt", False)
 
 
 class HeaderTests(TestCase):
