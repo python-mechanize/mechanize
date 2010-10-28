@@ -8,6 +8,7 @@ included with the distribution).
 
 """
 
+import codecs
 import copy
 import htmlentitydefs
 import re
@@ -53,8 +54,15 @@ class EncodingFinder:
         for ct in response.info().getheaders("content-type"):
             for k, v in split_header_words([ct])[0]:
                 if k == "charset":
-                    return v
+                    encoding = v
+                    try:
+                        codecs.lookup(v)
+                    except LookupError:
+                        continue
+                    else:
+                        return encoding
         return self._default_encoding
+
 
 class ResponseTypeFinder:
     def __init__(self, allow_xhtml):

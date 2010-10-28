@@ -118,6 +118,34 @@ class UnescapeTests(TestCase):
             self.assertEqual(got, expect)
 
 
+class EncodingFinderTests(TestCase):
+
+    def make_response(self, encodings):
+        return mechanize._response.test_response(
+            headers=[("Content-type", "text/html; charset=\"%s\"" % encoding)
+                     for encoding in encodings])
+
+    def test_known_encoding(self):
+        encoding_finder = mechanize._html.EncodingFinder("default")
+        response = self.make_response(["utf-8"])
+        self.assertEqual(encoding_finder.encoding(response), "utf-8")
+
+    def test_unknown_encoding(self):
+        encoding_finder = mechanize._html.EncodingFinder("default")
+        response = self.make_response(["bogus"])
+        self.assertEqual(encoding_finder.encoding(response), "default")
+
+    def test_precedence(self):
+        encoding_finder = mechanize._html.EncodingFinder("default")
+        response = self.make_response(["latin-1", "utf-8"])
+        self.assertEqual(encoding_finder.encoding(response), "latin-1")
+
+    def test_fallback(self):
+        encoding_finder = mechanize._html.EncodingFinder("default")
+        response = self.make_response(["bogus", "utf-8"])
+        self.assertEqual(encoding_finder.encoding(response), "utf-8")
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()
