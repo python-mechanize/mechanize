@@ -796,12 +796,12 @@ URL
                         page_url = "file://" + temp_path
                         output = release.get_cmd_stdout(
                             env, validate_cmd + [page_url])
-                        # the validator doesn't fail properly: it exits
-                        # successfully on validation failure
-                        if "Sorry! We found the following errors" in output:
-                            raise CSSValidationError(path, output)
                     finally:
                         tear_down()
+                    # the validator doesn't fail properly: it exits
+                    # successfully on validation failure
+                    if "Sorry! We found the following errors" in output:
+                        raise CSSValidationError(path, output)
 
     def fetch_zope_testbrowser(self, log):
         clean_dir(self._env, self._zope_testbrowser_dir)
