@@ -332,6 +332,12 @@ class Releaser(object):
         self._zope_testbrowser_dir = os.path.join(release_dir,
                                                   "zope_testbrowser_test")
 
+    def _mkdtemp(self):
+        temp_dir = tempfile.mkdtemp(prefix="tmp-%s-" % self.__class__.__name__)
+        def tear_down():
+            shutil.rmtree(temp_dir)
+        return temp_dir, tear_down
+
     def _get_next_release_version(self):
         # --pretend / git not installed
         most_recent, next = "dummy version", "dummy version"
@@ -533,6 +539,27 @@ class Releaser(object):
             self._easy_install_env, self._easy_install_test_dir,
             os.path.abspath(os.path.join(self._repo_path, "dist", tarball)),
             test_cmd, self._release_version, kwds["python_version"])
+
+    def _make_unpacked_tarball_test_step(self, env, **kwds):
+        # This catches mistakes in listing test files in MANIFEST.in (the tests
+        # don't get installed, so these don't get caught by testing installed
+        # code).
+        test_cmd = self._make_test_cmd(**kwds)
+        [tarball] = list(d for d in self._source_distributions if
+                         d.endswith(".tar.gz"))
+        tarball_path = os.path.abspath(
+            os.path.join(self._repo_path, "dist", tarball))
+        def test_step(log):
+            target_dir, tear_down = self._mkdtemp()
+            try:
+                env.cmd(["tar", "-C", target_dir, "-xf", tarball_path])
+                [source_dir] = glob.glob(
+                    os.path.join(target_dir, "mechanize-*"))
+                test_env = clean_environ_env(release.CwdEnv(env, source_dir))
+                test_env.cmd(test_cmd)
+            finally:
+                tear_down()
+        return test_step
 
     @action_tree.action_node
     def test(self):
@@ -743,9 +770,7 @@ htdocs/test_fixtures/referertest.html
         return ["env", "CLASSPATH=%s" % path]
 
     def _sanitise_css(self, path):
-        temp_dir = tempfile.mkdtemp(prefix="tmp-%s-" % self.__class__.__name__)
-        def tear_down():
-            shutil.rmtree(temp_dir)
+        temp_dir, tear_down = self._mkdtemp()
         temp_path = os.path.join(temp_dir, os.path.basename(path))
         temp = open(temp_path, "w")
         try:
@@ -971,6 +996,8 @@ John
             # self.make_coverage_html,
             self.tag,
             self.build_sdist,
+            ("unpacked_tarball_test", self._make_unpacked_tarball_test_step(
+                    self._env, python_version=(2,6))),
             ("easy_install_test", self._make_tarball_easy_install_test_step(
                     self._in_repo, python_version=(2, 6),
                     local_server=False, uri=self._test_uri)),
