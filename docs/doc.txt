@@ -513,6 +513,11 @@ holes where required for Netscape protocol-compatibility.  RFC 2965 cookies are
 There is more information about the history of HTTP cookies in [this paper by
 David Kristol](http://arxiv.org/abs/cs.SE/0105018).
 
+Recently (2011), [an IETF effort has
+started](http://tools.ietf.org/html/draft-ietf-httpstate-cookie) to specify the
+syntax and semantics of the `Cookie` and `Set-Cookie` headers as they are
+actually used on the internet.
+
 
 <!-- Local Variables: -->
 <!-- fill-column:79 -->
