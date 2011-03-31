@@ -48,6 +48,7 @@ try:
     import email.mime.text
 
     import action_tree
+    import build_log
     import cmd_env
 
     import buildtools.release as release
@@ -1122,7 +1123,9 @@ def main(argv):
     releaser = Releaser(env, options.git_repository_path, options.release_area,
                         options.mirror_path, options.build_tools_repository,
                         options.in_repository, options.tag_name, options.uri)
-    action_tree.action_main_(releaser.all, options, action_tree_args)
+    log = build_log.PrintTitlesLogWriter(sys.stdout,
+                                         build_log.DummyLogWriter())
+    action_tree.action_main_(releaser.all, options, action_tree_args, log=log)
 
 
 if __name__ == "__main__":
