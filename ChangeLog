@@ -1,6 +1,15 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2011-03-31 John J Lee <jjl@pobox.com>
+	* 0.2.5 release.
+	* This is essentially a no-changes release to fix easy_install
+	  breakage caused by a SourceForge issue
+	* Sourceforge is returning invalid HTTP responses, make download
+	  links point to PyPI instead
+	* Include cookietest.cgi in source distribution
+	* Note new IETF cookie standardisation effort
+
 2010-10-28 John J Lee <jjl@pobox.com>
 	* 0.2.4 release.
 	* Fix IndexError on empty Content-type header value. (GH-18)
