@@ -3,7 +3,7 @@
 There is more than one way to obtain mechanize:
 
 _Note re Windows and Mac support: currently the tests are only routinely run on
-[Ubuntu](http://www.ubuntu.com/) 9.10 ("karmic").  However, as far as I know,
+[Ubuntu](http://www.ubuntu.com/) 10.10 ("maverick").  However, as far as I know,
 mechanize works fine on Windows and Mac platforms._
 
 
