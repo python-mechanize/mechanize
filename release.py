@@ -25,7 +25,8 @@ The clean action uninstalls (by rm -rf).
 # git://github.com/jjlee/mechanize-build-tools.git
 
 # TODO
-
+#  * Tag mechanize-build-tools repository when releasing so that builds are
+#    reproducible
 #  * 0install package?
 #  * test in a Windows VM
 
@@ -34,7 +35,6 @@ import optparse
 import os
 import re
 import shutil
-import smtplib
 import subprocess
 import sys
 import tempfile
@@ -45,8 +45,6 @@ import unittest
 # available or not running under Python >= 2.6.  AttributeError occurs if run
 # with Python < 2.6, due to lack of collections.namedtuple
 try:
-    import email.mime.text
-
     import action_tree
     import build_log
     import cmd_env
@@ -116,55 +114,10 @@ def run_performance_tests(path):
     return result
 
 
-def send_email(from_address, to_address, subject, body):
-    msg = email.mime.text.MIMEText(body)
-    msg['Subject'] = subject
-    msg['From'] = from_address
-    msg['To'] = to_address
-    # print "from_address %r" % from_address
-    # print "to_address %r" % to_address
-    # print "msg.as_string():\n%s" % msg.as_string()
-    s = smtplib.SMTP()
-    s.connect()
-    s.sendmail(from_address, [to_address], msg.as_string())
-    s.quit()
-
-
-def is_git_repository(path):
-    return os.path.exists(os.path.join(path, ".git"))
-
-
-def ensure_unmodified(env, path):
-    # raise if working tree differs from HEAD
-    release.CwdEnv(env, path).cmd(["git", "diff", "--exit-code", "HEAD"])
-
-
-def add_to_path_cmd(value):
-    set_path_script = """\
-if [ -n "$PATH" ]
-  then
-    export PATH="$PATH":%(value)s
-  else
-    export PATH=%(value)s
-fi
-exec "$@"
-""" % dict(value=value)
-    return ["sh", "-c", set_path_script, "inline_script"]
-
-
 def clean_environ_env(env):
     return cmd_env.PrefixCmdEnv(
         ["sh", "-c", 'env -i HOME="$HOME" PATH="$PATH" "$@"',
          "clean_environ_env"], env)
-
-
-def ensure_trailing_slash(path):
-    return path.rstrip("/") + "/"
-
-
-def clean_dir(env, path):
-    env.cmd(release.rm_rf_cmd(path))
-    env.cmd(["mkdir", "-p", path])
 
 
 def check_version_equals(env, version, python):
@@ -212,7 +165,7 @@ class EasyInstallTester(object):
             [("PYTHONPATH", self._install_dir)], env)
 
     def easy_install(self, log):
-        clean_dir(self._env, self._install_dir)
+        release.clean_dir(self._env, self._install_dir)
         check_not_installed(self._install_dir_on_pythonpath, self._python)
         output = release.get_cmd_stdout(
             self._install_dir_on_pythonpath,
@@ -295,7 +248,7 @@ class Releaser(object):
         self._release_dir = release_dir = os.path.join(release_area, "release")
         self._opt_dir = os.path.join(release_dir, "opt")
         self._bin_dir = os.path.join(self._opt_dir, "bin")
-        AddToPathEnv = release.make_env_maker(add_to_path_cmd)
+        AddToPathEnv = release.make_env_maker(release.add_to_path_cmd)
         self._env = AddToPathEnv(release.GitPagerWrapper(env), self._bin_dir)
         self._source_repo_path = git_repository_path
         self._in_source_repo = release.CwdEnv(self._env,
@@ -400,7 +353,7 @@ class Releaser(object):
 
     def install_css_validator_in_release_area(self, log):
         jar_dir = os.path.join(self._release_area, self._css_validator_path)
-        clean_dir(self._env, jar_dir)
+        release.clean_dir(self._env, jar_dir)
         in_jar_dir = release.CwdEnv(self._env, jar_dir)
         in_jar_dir.cmd([
                 "wget",
@@ -471,7 +424,7 @@ class Releaser(object):
         # automatically on sys.path
         def copy_in(src):
             self._env.cmd(["cp", "-r", src, self._test_deps_dir])
-        clean_dir(self._env, self._test_deps_dir)
+        release.clean_dir(self._env, self._test_deps_dir)
         copy_in(os.path.join(self._repo_path, "test.py"))
         copy_in(os.path.join(self._repo_path, "test"))
         copy_in(os.path.join(self._repo_path, "test-tools"))
@@ -628,7 +581,7 @@ class Releaser(object):
             pandoc(filename, source_filename)
         self._in_repo.cmd(["cp", "-r", "ChangeLog", "docs/html/ChangeLog.txt"])
         if self._build_tools_path is not None:
-            styles = ensure_trailing_slash(
+            styles = release.ensure_trailing_slash(
                 os.path.join(self._website_source_path, "styles"))
             self._env.cmd(["rsync", "-a", styles,
                            os.path.join(self._docs_dir, "styles")])
@@ -680,8 +633,8 @@ class Releaser(object):
 
     def ensure_unmodified(self, log):
         if self._build_tools_path:
-            ensure_unmodified(self._env, self._website_source_path)
-        ensure_unmodified(self._env, self._mirror_path)
+            release.ensure_unmodified(self._env, self._website_source_path)
+        release.ensure_unmodified(self._env, self._mirror_path)
 
     def _stage_flat_dir(self, path, dest):
         self._env.cmd(["mkdir", "-p", os.path.join(self._mirror_path, dest)])
@@ -830,7 +783,7 @@ URL
                         raise CSSValidationError(path, output)
 
     def fetch_zope_testbrowser(self, log):
-        clean_dir(self._env, self._zope_testbrowser_dir)
+        release.clean_dir(self._env, self._zope_testbrowser_dir)
         in_testbrowser = release.CwdEnv(self._env, self._zope_testbrowser_dir)
         in_testbrowser.cmd(["easy_install", "--editable",
                             "--build-directory", ".",
@@ -873,7 +826,7 @@ URL
         assert os.path.isdir(
             os.path.join(self._mirror_path, "htdocs/mechanize"))
         self._env.cmd(["rsync", "-rlptvuz", "--exclude", "*~", "--delete",
-                       ensure_trailing_slash(self._mirror_path),
+                       release.ensure_trailing_slash(self._mirror_path),
                        "jjlee,wwwsearch@web.sourceforge.net:"])
 
     @action_tree.action_node
@@ -895,11 +848,11 @@ URL
         return r
 
     def clean(self, log):
-        clean_dir(self._env, self._release_area)
+        release.clean_dir(self._env, self._release_area)
 
     def clean_most(self, log):
         # not dependencies installed in release area (css validator)
-        clean_dir(self._env, self._release_dir)
+        release.clean_dir(self._env, self._release_dir)
 
     def write_email(self, log):
         log = release.get_cmd_stdout(self._in_repo,
@@ -976,10 +929,11 @@ John
         subject, sep, body = text.partition("\n")
         body = body.lstrip()
         assert len(body) > 0, body
-        send_email(from_address="John J Lee <jjl@pobox.com>",
-                   to_address="wwwsearch-general@lists.sourceforge.net",
-                   subject=subject,
-                   body=body)
+        release.send_email(
+            from_address="John J Lee <jjl@pobox.com>",
+            to_address="wwwsearch-general@lists.sourceforge.net",
+            subject=subject,
+            body=body)
 
     @action_tree.action_node
     def build(self):
@@ -1098,14 +1052,14 @@ def parse_options(args):
         parser.error("Expected at least 1 argument, got %d" % nr_args)
     if options.git_repository_path is None:
         options.git_repository_path = os.getcwd()
-    if not is_git_repository(options.git_repository_path):
+    if not release.is_git_repository(options.git_repository_path):
         parser.error("incorrect git repository path")
     if options.build_tools_repository is not None and \
-            not is_git_repository(options.build_tools_repository):
+            not release.is_git_repository(options.build_tools_repository):
         parser.error("incorrect mechanize-build-tools repository path")
     mirror_path = options.mirror_path
     if mirror_path is not None:
-        if not is_git_repository(options.mirror_path):
+        if not release.is_git_repository(options.mirror_path):
             parser.error("mirror path is not a git reporsitory")
         mirror_path = os.path.join(mirror_path, "mirror")
         if not os.path.isdir(mirror_path):
