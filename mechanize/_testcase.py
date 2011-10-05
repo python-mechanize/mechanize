@@ -4,6 +4,8 @@ import subprocess
 import tempfile
 import unittest
 
+print unittest.__file__
+
 
 class SetupStack(object):
 

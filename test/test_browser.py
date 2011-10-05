@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 """Tests for mechanize.Browser."""
 
-import StringIO
 from unittest import TestCase
+import StringIO
+import httplib
+import mimetools
 import re
 
-import mechanize
 from mechanize._response import test_html_response
+import mechanize
+import mechanize._response
+import mechanize._testcase
+
+
 FACTORY_CLASSES = [mechanize.DefaultFactory, mechanize.RobustFactory]
 
 
@@ -158,7 +164,7 @@ class BrowserTests(TestCase):
     def test_encoding(self):
         import mechanize
         from StringIO import StringIO
-        import urllib, mimetools
+        import urllib
         # always take first encoding, since that's the one from the real HTTP
         # headers, rather than from HTTP-EQUIV
         b = mechanize.Browser()
@@ -737,7 +743,6 @@ class ResponseTests(TestCase):
         self.assertEqual(list(br.links())[0].url, "eggs")
 
     def test_str(self):
-        import mimetools
         from mechanize import _response
 
         br = TestBrowser()
@@ -767,6 +772,43 @@ class ResponseTests(TestCase):
  <f GET http://example.com/ application/x-www-form-urlencoded
   <TextControl(<None>=)>>
 >""")
+
+
+class HttplibTests(mechanize._testcase.TestCase):
+
+    def make_browser(self):
+        class TestBrowser(mechanize.Browser):
+            default_features = []
+            default_schemes = ["http"]
+        return TestBrowser()
+
+    def monkey_patch_httplib(self, putheader):
+        def do_nothing(*args, **kwds):
+            return
+        def getresponse(self_):
+            class Response(object):
+                msg = mimetools.Message(StringIO.StringIO(""))
+                status = 200
+                reason = "OK"
+                def read(self__):
+                    return ""
+            return Response()
+        self.monkey_patch(httplib.HTTPConnection, "putheader", putheader)
+        self.monkey_patch(httplib.HTTPConnection, "connect", do_nothing)
+        self.monkey_patch(httplib.HTTPConnection, "send", do_nothing)
+        self.monkey_patch(httplib.HTTPConnection, "close", do_nothing)
+        self.monkey_patch(httplib.HTTPConnection, "getresponse", getresponse)
+
+    def test_add_host_header(self):
+        headers = []
+        def putheader(self_, header, value):
+            headers.append((header, value))
+        self.monkey_patch_httplib(putheader)
+        browser = self.make_browser()
+        request = mechanize.Request("http://example.com/")
+        request.add_header("Host", "myway.example.com")
+        browser.open(request)
+        self.assertIn(("Host", "myway.example.com"), headers)
 
 
 if __name__ == "__main__":
