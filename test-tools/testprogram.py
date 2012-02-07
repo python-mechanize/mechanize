@@ -11,15 +11,15 @@ Examples:
 
 python test.py  # all tests
 python test.py test_api  # run test/test_api.py
-python test.py functional_tests  # run test/functional_tests.py
+python test.py test_functional # run test/test_functional.py
 python test.py mechanize/_headersutil  # run the doctests from this module
-python test.py functional_tests.CookieJarTests  # just this class
+python test.py test_functional.CookieJarTests  # just this class
 # just this test method
-python test.py functional_tests.CookieJarTests.test_mozilla_cookiejar
+python test.py test_functional.CookieJarTests.test_mozilla_cookiejar
 
 python test.py discover --pattern test_browser.doctest  # doctest file
-# run test/functional_tests.py
-python test.py discover --pattern functional_tests.py
+# run test/test_functional.py
+python test.py discover --pattern test_functional.py
 
 python test.py --tag internet  # include tests that use the internet
 """
