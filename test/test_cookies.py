@@ -229,7 +229,6 @@ class CookieTests(unittest.TestCase):
 ##   that...
 
     def test_policy(self):
-        import mechanize
         policy = mechanize.DefaultCookiePolicy()
         jar = mechanize.CookieJar()
         jar.set_policy(policy)
@@ -444,7 +443,7 @@ class CookieTests(unittest.TestCase):
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/blah", 'eggs="bar"; Version="1"')
         assert c._cookies["www.acme.com"].has_key("/")
-  
+
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/blah/rhubarb",
                       'eggs="bar"; Version="1"')
@@ -464,7 +463,7 @@ class CookieTests(unittest.TestCase):
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/blah", 'eggs="bar"')
         assert c._cookies["www.acme.com"].has_key("/")
-  
+
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/blah/rhubarb", 'eggs="bar"')
         assert c._cookies["www.acme.com"].has_key("/blah")
@@ -1058,6 +1057,13 @@ class CookieTests(unittest.TestCase):
         cookie = c._cookies["www.example.com"]["/"]["c"]
         assert cookie.expires is None
 
+        # cookie with unset path should have path=/
+        headers = ["Set-Cookie: c=foo; path; expires=Foo Bar 12 33:22:11 2000"]
+        c = cookiejar_from_cookie_headers(headers)
+        assert ('www.example.com' in c._cookies and
+                '/' in c._cookies['www.example.com'])
+
+
     def test_cookies_for_request(self):
         from mechanize import CookieJar, Request
 
@@ -1288,33 +1294,33 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
         # http://www.netscape.com/newsref/std/cookie_spec.html
 
         # Client requests a document, and receives in the response:
-        # 
+        #
         #       Set-Cookie: CUSTOMER=WILE_E_COYOTE; path=/; expires=Wednesday, 09-Nov-99 23:12:40 GMT
-        # 
+        #
         # When client requests a URL in path "/" on this server, it sends:
-        # 
+        #
         #       Cookie: CUSTOMER=WILE_E_COYOTE
-        # 
+        #
         # Client requests a document, and receives in the response:
-        # 
+        #
         #       Set-Cookie: PART_NUMBER=ROCKET_LAUNCHER_0001; path=/
-        # 
+        #
         # When client requests a URL in path "/" on this server, it sends:
-        # 
+        #
         #       Cookie: CUSTOMER=WILE_E_COYOTE; PART_NUMBER=ROCKET_LAUNCHER_0001
-        # 
+        #
         # Client receives:
-        # 
+        #
         #       Set-Cookie: SHIPPING=FEDEX; path=/fo
-        # 
+        #
         # When client requests a URL in path "/" on this server, it sends:
-        # 
+        #
         #       Cookie: CUSTOMER=WILE_E_COYOTE; PART_NUMBER=ROCKET_LAUNCHER_0001
-        # 
+        #
         # When client requests a URL in path "/foo" on this server, it sends:
-        # 
+        #
         #       Cookie: CUSTOMER=WILE_E_COYOTE; PART_NUMBER=ROCKET_LAUNCHER_0001; SHIPPING=FEDEX
-        # 
+        #
         # The last Cookie is buggy, because both specifications say that the
         # most specific cookie must be sent first.  SHIPPING=FEDEX is the
         # most specific and should thus be first.
@@ -1379,27 +1385,27 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
         from mechanize import CookieJar, Request
 
         # Second Example transaction sequence:
-        # 
+        #
         # Assume all mappings from above have been cleared.
-        # 
+        #
         # Client receives:
-        # 
+        #
         #       Set-Cookie: PART_NUMBER=ROCKET_LAUNCHER_0001; path=/
-        # 
+        #
         # When client requests a URL in path "/" on this server, it sends:
-        # 
+        #
         #       Cookie: PART_NUMBER=ROCKET_LAUNCHER_0001
-        # 
+        #
         # Client receives:
-        # 
+        #
         #       Set-Cookie: PART_NUMBER=RIDING_ROCKET_0023; path=/ammo
-        # 
+        #
         # When client requests a URL in path "/ammo" on this server, it sends:
-        # 
+        #
         #       Cookie: PART_NUMBER=RIDING_ROCKET_0023; PART_NUMBER=ROCKET_LAUNCHER_0001
-        # 
+        #
         #       NOTE: There are two name/value pairs named "PART_NUMBER" due to
-        #       the inheritance of the "/" mapping in addition to the "/ammo" mapping. 
+        #       the inheritance of the "/" mapping in addition to the "/ammo" mapping.
 
         c = CookieJar()
         headers = []
@@ -1436,24 +1442,24 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
 
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
 
-        # 
+        #
         # 5.1  Example 1
-        # 
+        #
         # Most detail of request and response headers has been omitted.  Assume
         # the user agent has no stored cookies.
-        # 
+        #
         #   1.  User Agent -> Server
-        # 
+        #
         #       POST /acme/login HTTP/1.1
         #       [form data]
-        # 
+        #
         #       User identifies self via a form.
-        # 
+        #
         #   2.  Server -> User Agent
-        # 
+        #
         #       HTTP/1.1 200 OK
         #       Set-Cookie2: Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"
-        # 
+        #
         #       Cookie reflects user's identity.
 
         cookie = interact_2965(
@@ -1461,21 +1467,21 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
             'Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"')
         assert not cookie
 
-        # 
+        #
         #   3.  User Agent -> Server
-        # 
+        #
         #       POST /acme/pickitem HTTP/1.1
         #       Cookie: $Version="1"; Customer="WILE_E_COYOTE"; $Path="/acme"
         #       [form data]
-        # 
+        #
         #       User selects an item for ``shopping basket.''
-        # 
+        #
         #   4.  Server -> User Agent
-        # 
+        #
         #       HTTP/1.1 200 OK
         #       Set-Cookie2: Part_Number="Rocket_Launcher_0001"; Version="1";
         #               Path="/acme"
-        # 
+        #
         #       Shopping basket contains an item.
 
         cookie = interact_2965(c, 'http://www.acme.com/acme/pickitem',
@@ -1485,22 +1491,22 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
             r'^\$Version="?1"?; Customer="?WILE_E_COYOTE"?; \$Path="/acme"$',
             cookie)
 
-        # 
+        #
         #   5.  User Agent -> Server
-        # 
+        #
         #       POST /acme/shipping HTTP/1.1
         #       Cookie: $Version="1";
         #               Customer="WILE_E_COYOTE"; $Path="/acme";
         #               Part_Number="Rocket_Launcher_0001"; $Path="/acme"
         #       [form data]
-        # 
+        #
         #       User selects shipping method from form.
-        # 
+        #
         #   6.  Server -> User Agent
-        # 
+        #
         #       HTTP/1.1 200 OK
         #       Set-Cookie2: Shipping="FedEx"; Version="1"; Path="/acme"
-        # 
+        #
         #       New cookie reflects shipping method.
 
         cookie = interact_2965(c, "http://www.acme.com/acme/shipping",
@@ -1512,29 +1518,29 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
                 re.search(r'Customer="?WILE_E_COYOTE"?;\s*\$Path="\/acme"',
                           cookie))
 
-        # 
+        #
         #   7.  User Agent -> Server
-        # 
+        #
         #       POST /acme/process HTTP/1.1
         #       Cookie: $Version="1";
         #               Customer="WILE_E_COYOTE"; $Path="/acme";
         #               Part_Number="Rocket_Launcher_0001"; $Path="/acme";
         #               Shipping="FedEx"; $Path="/acme"
         #       [form data]
-        # 
+        #
         #       User chooses to process order.
-        # 
+        #
         #   8.  Server -> User Agent
-        # 
+        #
         #       HTTP/1.1 200 OK
-        # 
+        #
         #       Transaction is complete.
 
         cookie = interact_2965(c, "http://www.acme.com/acme/process")
         assert (re.search(r'Shipping="?FedEx"?;\s*\$Path="\/acme"', cookie) and
                 cookie.find("WILE_E_COYOTE") != -1)
 
-        # 
+        #
         # The user agent makes a series of requests on the origin server, after
         # each of which it receives a new cookie.  All the cookies have the same
         # Path attribute and (default) domain.  Because the request URLs all have
@@ -1545,7 +1551,7 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
         from mechanize import CookieJar, DefaultCookiePolicy
 
         # 5.2  Example 2
-        # 
+        #
         # This example illustrates the effect of the Path attribute.  All detail
         # of request and response headers has been omitted.  Assume the user agent
         # has no stored cookies.
@@ -1554,12 +1560,12 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
 
         # Imagine the user agent has received, in response to earlier requests,
         # the response headers
-        # 
+        #
         # Set-Cookie2: Part_Number="Rocket_Launcher_0001"; Version="1";
         #         Path="/acme"
-        # 
+        #
         # and
-        # 
+        #
         # Set-Cookie2: Part_Number="Riding_Rocket_0023"; Version="1";
         #         Path="/acme/ammo"
 
@@ -1570,11 +1576,11 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
 
         # A subsequent request by the user agent to the (same) server for URLs of
         # the form /acme/ammo/...  would include the following request header:
-        # 
+        #
         # Cookie: $Version="1";
         #         Part_Number="Riding_Rocket_0023"; $Path="/acme/ammo";
         #         Part_Number="Rocket_Launcher_0001"; $Path="/acme"
-        # 
+        #
         # Note that the NAME=VALUE pair for the cookie with the more specific Path
         # attribute, /acme/ammo, comes before the one with the less specific Path
         # attribute, /acme.  Further note that the same cookie name appears more
@@ -1585,9 +1591,9 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
 
         # A subsequent request by the user agent to the (same) server for a URL of
         # the form /acme/parts/ would include the following request header:
-        # 
+        #
         # Cookie: $Version="1"; Part_Number="Rocket_Launcher_0001"; $Path="/acme"
-        # 
+        #
         # Here, the second cookie's Path attribute /acme/ammo is not a prefix of
         # the request URL, /acme/parts/, so the cookie does not get forwarded to
         # the server.
@@ -1659,6 +1665,7 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
         cookie = interact_2965(c, "http://www.sol.no",
                                'foo9=bar; version=1; domain=".sol.no"; port; '
                                'max-age=100;')
+        cookie
         assert len(c) == 5
 
         # encoded path
