@@ -201,7 +201,7 @@ look that way.
 	* Add some tests for upgrade_response().
 	* Add a functional test for 302 + 404 case.
 	* Add an -l option to run the functional tests against a local
-	  twisted.web2-based server (you need Twisted installed for this
+	  twisted.web-based server (you need Twisted installed for this
 	  to work).  This is much faster than running against
 	  wwwsearch.sourceforge.net
 	* Add -u switch to skip unittests (and only run the doctests).

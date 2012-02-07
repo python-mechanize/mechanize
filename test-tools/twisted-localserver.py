@@ -9,9 +9,7 @@ Runs a local server to point the mechanize functional tests at.  Example:
 python test-tools/twisted-localserver.py 8042
 python functional_tests.py --uri=http://localhost:8042/
 
-You need twisted.web2 to run it.  On ubuntu feisty, you can install it like so:
-
-sudo apt-get install python-twisted-web2
+You need twisted.web to run it.
 """
 
 import optparse
@@ -22,11 +20,11 @@ import sys
 from twisted.cred import portal, checkers
 from twisted.internet import reactor
 from twisted.python import log
-from twisted.python.hashlib import md5
-from twisted.web2 import server, http, resource, channel, \
-     http_headers, responsecode, twcgi
-from twisted.web2.auth import basic, digest, wrapper
-from twisted.web2.auth.interfaces import IHTTPUser
+from twisted.web import (server, http, resource, twcgi)
+from twisted.web.resource import IResource
+from twisted.web.guard import (DigestCredentialFactory, BasicCredentialFactory,
+        HTTPAuthSessionWrapper)
+from twisted.web.util import Redirect
 
 from zope.interface import implements
 
@@ -106,22 +104,19 @@ DIGEST_AUTH_PAGE = """
 </html>
 """
 
-
 class TestHTTPUser(object):
     """
     Test avatar implementation for http auth with cred
     """
-    implements(IHTTPUser)
+    implements(IResource)
+    isLeaf = True
 
-    username = None
+    def render(self, request):
+        return self.template
 
-    def __init__(self, username):
-        """
-        @param username: The str username sent as part of the HTTP auth
-            response.
-        """
+    def __init__(self, template, username):
+        self.template = template
         self.username = username
-
 
 class TestAuthRealm(object):
     """
@@ -130,39 +125,50 @@ class TestAuthRealm(object):
 
     implements(portal.IRealm)
 
+    def __init__(self, template=BASIC_AUTH_PAGE):
+        self.template = template
+
     def requestAvatar(self, avatarId, mind, *interfaces):
-        if IHTTPUser in interfaces:
+        if IResource in interfaces:
             if avatarId == checkers.ANONYMOUS:
-                return IHTTPUser, TestHTTPUser('anonymous')
+                return (IResource, TestHTTPUser(self.template, 'anonymous'),
+                        lambda: None)
 
-            return IHTTPUser, TestHTTPUser(avatarId)
+            return (IResource, TestHTTPUser(self.template, avatarId),
+                    lambda:None)
 
-        raise NotImplementedError("Only IHTTPUser interface is supported")
+        raise NotImplementedError("Only IResource interface is supported")
 
 
 class Page(resource.Resource):
 
-    addSlash = True
-    content_type = http_headers.MimeType("text", "html")
+    def __init__(self, text='', leaf=False, content_type='text/html'):
+        self.isLeaf = leaf
+        self.content_type = content_type
+        self.text = text
+        resource.Resource.__init__(self)
 
-    def render(self, ctx):
-        return http.Response(
-            responsecode.OK,
-            {"content-type": self.content_type},
-            self.text)
+    def getChild(self, path, request):
+        if path == '':
+            return self
+        return resource.Resource.getChild(self, path, request)
 
+    def render(self, request):
+        request.setResponseCode(http.OK)
+        request.setHeader('content-type', self.content_type)
+        return bytes(self.text)
 
 class Dir(resource.Resource):
 
-    addSlash = True
+    isLeaf = False
 
     def locateChild(self, request, segments):
         #import pdb; pdb.set_trace()
         return resource.Resource.locateChild(self, request, segments)
 
-    def render(self, ctx):
-        print "render"
-        return http.Response(responsecode.FORBIDDEN)
+    def render(self, request):
+        request.setResponseCode(http.FORBIDDEN)
+        return 'You are not allowed to list directories'
 
 
 def make_dir(parent, name):
@@ -173,11 +179,7 @@ def make_dir(parent, name):
 
 def _make_page(parent, name, text, content_type, wrapper,
                leaf=False):
-    page = Page()
-    page.text = text
-    base_type, specific_type = content_type.split("/")
-    page.content_type = http_headers.MimeType(base_type, specific_type)
-    page.addSlash = not leaf
+    page = Page(text=text, leaf=leaf, content_type=content_type)
     parent.putChild(name, wrapper(page))
     return page
 
@@ -190,18 +192,14 @@ def make_leaf_page(parent, name, text,
     return _make_page(parent, name, text, content_type, wrapper, leaf=True)
 
 def make_redirect(parent, name, location_relative_ref):
-    redirect = resource.RedirectResource(path=location_relative_ref)
-    setattr(parent, "child_"+name, redirect)
+    redirect = Redirect(location_relative_ref)
+    parent.putChild(name, redirect)
     return redirect
 
-def make_cgi_bin(parent, name, dir_name):
-    cgi_bin = twcgi.CGIDirectory(dir_name)
-    setattr(parent, "child_"+name, cgi_bin)
-    return cgi_bin
-
-def make_cgi_script(parent, name, path):
-    cgi_script = twcgi.CGIScript(path)
-    setattr(parent, "child_"+name, cgi_script)
+def make_cgi_script(parent, name, path, interpreter=sys.executable):
+    cgi_script = twcgi.FilteredScript(path)
+    cgi_script.filter = interpreter
+    parent.putChild(name, cgi_script)
     return cgi_script
 
 def require_basic_auth(resource):
@@ -209,34 +207,16 @@ def require_basic_auth(resource):
     c = checkers.InMemoryUsernamePasswordDatabaseDontUse()
     c.addUser("john", "john")
     p.registerChecker(c)
-    cred_factory = basic.BasicCredentialFactory("Basic Auth protected area")
-    return wrapper.HTTPAuthResource(resource,
-                                    [cred_factory],
-                                    p,
-                                    interfaces=(IHTTPUser,))
-
-
-class DigestCredFactory(digest.DigestCredentialFactory):
-
-    def generateOpaque(self, nonce, clientip):
-        # http://twistedmatrix.com/trac/ticket/3693
-        key = "%s,%s,%s" % (nonce, clientip, str(int(self._getTime())))
-        digest = md5(key + self.privateKey).hexdigest()
-        ekey = key.encode('base64')
-        return "%s-%s" % (digest, ekey.replace('\n', ''))
-
+    cred_factory = BasicCredentialFactory("Basic Auth protected area")
+    return HTTPAuthSessionWrapper(p, [cred_factory])
 
 def require_digest_auth(resource):
-    p = portal.Portal(TestAuthRealm())
+    p = portal.Portal(TestAuthRealm(DIGEST_AUTH_PAGE))
     c = checkers.InMemoryUsernamePasswordDatabaseDontUse()
     c.addUser("digestuser", "digestuser")
     p.registerChecker(c)
-    cred_factory = DigestCredFactory("MD5", "Digest Auth protected area")
-    return wrapper.HTTPAuthResource(resource,
-                                    [cred_factory],
-                                    p,
-                                    interfaces=(IHTTPUser,))
-
+    cred_factory = DigestCredentialFactory("md5", "Digest Auth protected area")
+    return HTTPAuthSessionWrapper(p, [cred_factory])
 
 def parse_options(args):
     parser = optparse.OptionParser()
@@ -254,8 +234,7 @@ def main(argv):
     # This is supposed to match the SF site so it's easy to run a functional
     # test over the internet and against Apache.
     # TODO: Remove bizarre structure and strings expected by functional tests.
-    root = Page()
-    root.text = ROOT_HTML
+    root = Page(text=ROOT_HTML)
     mechanize = make_page(root, "mechanize", MECHANIZE_HTML)
     make_leaf_page(root, "robots.txt",
                    "User-Agent: *\nDisallow: /norobots",
@@ -273,6 +252,7 @@ def main(argv):
     make_leaf_page(test_fixtures, "mechanize_reload_test.html",
                    RELOAD_TEST_HTML)
     make_redirect(root, "redirected", "/doesnotexist")
+    make_redirect(root, "redirected_good", "/test_fixtures")
     cgi_bin = make_dir(root, "cgi-bin")
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     make_cgi_script(cgi_bin, "cookietest.cgi",
@@ -286,7 +266,7 @@ def main(argv):
               wrapper=require_digest_auth)
 
     site = server.Site(root)
-    reactor.listenTCP(options.port, channel.HTTPFactory(site))
+    reactor.listenTCP(options.port, site)
     reactor.run()
 
 

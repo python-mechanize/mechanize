@@ -91,7 +91,7 @@ class CSSValidationError(Exception):
         self.details = details
 
     def __str__(self):
-        return ("CSS validation of %s failed:\n%s" % 
+        return ("CSS validation of %s failed:\n%s" %
                 (self.path, self.details))
 
 
@@ -389,7 +389,7 @@ class Releaser(object):
         # for deployment to SF and local collation of files for release
         add_dependency("rsync")
         # for running functional tests against local web server
-        add_dependency("python-twisted-web2")
+        add_dependency("python-twisted-web")
         # for generating .html docs from .txt markdown files
         add_dependency("pandoc")
         # for generating docs from .in templates

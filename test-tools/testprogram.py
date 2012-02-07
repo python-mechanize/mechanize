@@ -286,11 +286,12 @@ def make_http_server_cm(uri, log):
         category=UserWarning,
         module="zope")
     try:
-        import twisted.web2
+        import twisted.web
         import zope.interface
+        twisted.web, zope.interface
     except ImportError:
         warnings.warn("Skipping functional tests: Failed to import "
-                      "twisted.web2 and/or zope.interface")
+                      "twisted.web and/or zope.interface")
         def skip():
             raise unittest.SkipTest
         cm = ServerCM(skip)
@@ -305,6 +306,7 @@ def make_ftp_server_cm(log):
     try:
         import twisted.protocols.ftp
         import zope.interface
+        twisted.protocols.ftp, zope.interface
     except ImportError:
         warnings.warn("Skipping functional tests: Failed to import "
                       "twisted.protocols.ftp and/or zope.interface")
@@ -362,7 +364,7 @@ class TestProgram(unittest.TestProgram):
                           help=('Turn on logging for logger "mechanize" at '
                                 'level logging.DEBUG'))
         parser.add_option("--log-server", action="store_true",
-                          help=("Turn on logging for twisted.web2 local HTTP "
+                          help=("Turn on logging for twisted.web local HTTP "
                                 " server"))
         parser.add_option("--skip-doctests", action="store_true",
                           help="Don't discover doctests.")

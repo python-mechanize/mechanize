@@ -17,9 +17,8 @@ import urllib2
 
 import mechanize
 from mechanize import CookieJar, HTTPCookieProcessor, \
-     HTTPHandler, HTTPRefreshProcessor, \
-     HTTPEquivProcessor, HTTPRedirectHandler, \
-     HTTPRedirectDebugProcessor, HTTPResponseDebugProcessor
+     HTTPRefreshProcessor, \
+     HTTPEquivProcessor, HTTPRedirectHandler
 from mechanize._rfc3986 import urljoin
 from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings, read_file, write_file
@@ -262,9 +261,9 @@ class SimpleTests(SocketTimeoutTest):
                 codes.append(response.code)
                 return response
         self.browser.add_handler(ObservingHandler())
-        r = self.browser.open(urljoin(self.uri, "test_fixtures"))
+        r = self.browser.open(urljoin(self.uri, "redirected_good"))
         self.assertEqual(r.code, 200)
-        self.assertTrue(301 in codes)
+        self.assertIn(302, codes)
         self.assert_("GeneralFAQ.html" in r.read(2048))
 
     def test_refresh(self):
@@ -576,7 +575,7 @@ class FunctionalTests(SocketTimeoutTest):
                                   "test_fixtures/mechanize_reload_test.html"))
         # if we don't do anything and go straight to another page, most of the
         # last page's response won't be .read()...
-        r2 = browser.open(urljoin(self.uri, "mechanize"))
+        browser.open(urljoin(self.uri, "mechanize"))
         self.assert_(len(r1.get_data()) < 4097)  # we only .read() a little bit
         # ...so if we then go back, .follow_link() for a link near the end (a
         # few kb in, past the point that always gets read in HTML files because
