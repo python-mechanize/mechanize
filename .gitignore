@@ -5,3 +5,4 @@
 /docs/html
 /docs/styles
 *.egg-info/
+*.py[co]
