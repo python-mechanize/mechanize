@@ -452,6 +452,24 @@ class Releaser(object):
             test_cmd.extend(["--uri", uri])
         return test_cmd
 
+    def update_opera_test_uris(self, log):
+        import test.test_opera
+        test.test_opera.OperaCookieTests.write_test_uris()
+        uris_path = os.path.join(
+            "test",
+            test.test_opera.OperaCookieTests.OPERA_COOKIE_TEST_URIS_FILENAME)
+        self._in_repo.cmd(["git", "add", uris_path])
+        try:
+            release.ensure_unmodified(self._env, self._repo_path)
+        except cmd_env.CommandFailedError:
+            self._in_repo.cmd(
+                ["git", "commit", "-m",
+                 "Automated update of Opera cookie test URIs for release %s" %
+                 self._release_version])
+
+    def opera_tests(self, log):
+        self._in_repo.cmd(["python", "test.py", "skiptest_opera"])
+
     def performance_test(self, log):
         result = run_performance_tests(self._repo_path)
         if not result.wasSuccessful():
@@ -537,6 +555,7 @@ class Releaser(object):
                   self._make_source_dist_easy_install_test_step(
                     self._in_repo, python_version=(2, 4))))
         r.append(self.performance_test)
+        r.append(self.opera_tests)
         return r
 
     def make_coverage_html(self, log):
@@ -945,6 +964,7 @@ John
             self.print_next_tag,
             self.clone,
             self.checks,
+            self.update_opera_test_uris,
             # self.clean_coverage,
             self.copy_test_dependencies,
             self.test,
@@ -999,6 +1019,7 @@ __version__ = %(tuple)s
     @action_tree.action_node
     def tell_the_world(self):
         return [
+            # TODO: push master too
             self.push_tag,
             self.upload,
             ("easy_install_test_internet",

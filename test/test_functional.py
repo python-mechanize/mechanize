@@ -22,7 +22,7 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
      HTTPRedirectDebugProcessor, HTTPResponseDebugProcessor
 from mechanize._rfc3986 import urljoin
 from mechanize._util import hide_experimental_warnings, \
-    reset_experimental_warnings, write_file
+    reset_experimental_warnings, read_file, write_file
 import mechanize._opener
 import mechanize._rfc3986
 import mechanize._sockettimeout
@@ -90,14 +90,6 @@ def sanepathname2url(path):
         urlpath = urlpath[2:]
     # XXX don't ask me about the mac...
     return urlpath
-
-
-def read_file(filename):
-    fh = open(filename)
-    try:
-        return fh.read()
-    finally:
-        fh.close()
 
 
 class FtpTestCase(TestCase):

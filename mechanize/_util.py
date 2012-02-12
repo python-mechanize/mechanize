@@ -30,6 +30,14 @@ def reset_deprecations():
     warnings.filterwarnings("default", category=DeprecationWarning)
 
 
+def read_file(filename):
+    fh = open(filename)
+    try:
+        return fh.read()
+    finally:
+        fh.close()
+
+
 def write_file(filename, data):
     f = open(filename, "wb")
     try:
