@@ -23,6 +23,7 @@ Johnny Lee (MSIE Cookie support) and last but not least Andy Lester
 """
 
 import os
+import setuptools
 
 VERSION = open(os.path.join("mechanize", "_version.py")).\
     readlines()[0].strip(' "\n')
@@ -61,31 +62,25 @@ Topic :: Text Processing :: Markup :: HTML
 Topic :: Text Processing :: Markup :: XML
 """
 
+
 def main():
-    try:
-        import setuptools
-    except ImportError:
-        import ez_setup
-        ez_setup.use_setuptools()
-    import setuptools
     setuptools.setup(
-        name = "mechanize",
-        version = VERSION,
-        license = "BSD",  # or ZPL 2.1
-        platforms = ["any"],
-        classifiers = [c for c in CLASSIFIERS.split("\n") if c],
-        install_requires = [],
-        zip_safe = True,
-        test_suite = "test",
-        author = "John J. Lee",
-        author_email = "jjl@pobox.com",
-        description = __doc__.split("\n", 1)[0],
-        long_description = __doc__.split("\n", 2)[-1],
-        url = "http://wwwsearch.sourceforge.net/mechanize/",
-        download_url = ("http://pypi.python.org/packages/source/m/mechanize/"
-                        "mechanize-%s.tar.gz" % VERSION),
-        packages = ["mechanize"],
-        )
+        name="mechanize",
+        version=VERSION,
+        license="BSD",  # or ZPL 2.1
+        platforms=["any"],
+        classifiers=[c for c in CLASSIFIERS.split("\n") if c],
+        install_requires=[],
+        zip_safe=True,
+        test_suite="test",
+        author="Kovid Goyal",
+        description=__doc__.split("\n", 1)[0],
+        long_description=__doc__.split("\n", 2)[-1],
+        url="https://github.com/python-mechanize/mechanize",
+        download_url=("http://pypi.python.org/packages/source/m/mechanize/"
+                      "mechanize-%s.tar.gz" % VERSION),
+        packages=["mechanize"],
+    )
 
 
 if __name__ == "__main__":
