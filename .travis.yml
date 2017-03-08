@@ -7,6 +7,6 @@ env:
     - PYTHONHASHSEED=random
 
 install:
-    - pip install python-twisted
+    - pip install twisted
 
 script: ./test.py
