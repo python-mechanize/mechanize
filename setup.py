@@ -67,12 +67,11 @@ def main():
     setuptools.setup(
         name="mechanize",
         version=VERSION,
-        license="BSD",  # or ZPL 2.1
+        license="BSD",
         platforms=["any"],
         classifiers=[c for c in CLASSIFIERS.split("\n") if c],
         install_requires=[],
         zip_safe=True,
-        test_suite="test",
         author="Kovid Goyal",
         description=__doc__.split("\n", 1)[0],
         long_description=__doc__.split("\n", 2)[-1],
