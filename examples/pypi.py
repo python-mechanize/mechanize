@@ -17,7 +17,6 @@ def download_mechanize():
     browser.set_handle_robots(False)
 
     browser.open("http://pypi.python.org/pypi")
-    browser.follow_link(text="Package Index", nr=0)
     browser.select_form(name="searchform")
     browser.form["term"] = "mechanize"
     browser.submit()
