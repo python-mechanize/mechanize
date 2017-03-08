@@ -680,6 +680,7 @@ class FormsExamplesTests(mechanize._testcase.GoldenTestCase):
         self.assert_golden(output_dir,
                            os.path.join(this_dir, golden_path))
 
+    @unittest.skip('Golden files do not work with randomized hashes')
     def test_simple(self):
         def fixup(output):
             return output.replace("POST %s" % self.uri.rstrip("/"),
@@ -690,6 +691,7 @@ class FormsExamplesTests(mechanize._testcase.GoldenTestCase):
                          "FormsExamplesTests.test_simple"),
             fixup)
 
+    @unittest.skip('Golden files do not work with randomized hashes')
     def test_example(self):
         def fixup(output):
             lines = [l for l in output.splitlines(True) if
