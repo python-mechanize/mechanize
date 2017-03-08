@@ -1,3 +1,21 @@
+import doctest
+import errno
+import glob
+import logging
+import optparse
+import os
+import socket
+import subprocess
+import sys
+import time
+import unittest
+import urllib
+
+import mechanize
+import mechanize._rfc3986
+import mechanize._testcase as _testcase
+
+
 """Test runner.
 
 Local test HTTP server support and a few other bits and pieces.
@@ -25,21 +43,6 @@ python test.py --tag internet  # include tests that use the internet
 """
 
 # TODO: resurrect cgitb support
-
-import errno
-import logging
-import os
-import optparse
-import socket
-import subprocess
-import sys
-import time
-import unittest
-import urllib
-
-import mechanize
-import mechanize._rfc3986
-import mechanize._testcase as _testcase
 
 
 class ServerStartupError(Exception):
@@ -366,8 +369,6 @@ class TestProgram(unittest.TestProgram):
         parser.add_option("--log-server", action="store_true",
                           help=("Turn on logging for twisted.web local HTTP "
                                 " server"))
-        parser.add_option("--skip-doctests", action="store_true",
-                          help="Don't discover doctests.")
         parser.add_option("--meld", action="store_true",
                           help=("On golden test failure, run meld to view & "
                                 "edit differences"))
@@ -402,8 +403,15 @@ class TestProgram(unittest.TestProgram):
         pattern = options.pattern
         top_level_dir = options.top
         loader = unittest.TestLoader()
-        self.test = loader.discover(start_dir, pattern, top_level_dir,
-                                    skip_doctests=options.skip_doctests)
+        self.test = loader.discover(start_dir, pattern, top_level_dir)
+
+        finder = doctest.DocTestFinder(exclude_empty=False)
+        for name in glob.glob('mechanize/*.py'):
+            name = os.path.basename(name).rpartition('.')[0]
+            self.test.addTest(
+                doctest.DocTestSuite('mechanize.' + name, test_finder=finder))
+        self.test.addTest(doctest.DocFileSuite(
+            *glob.glob('test/*.doctest'), module_relative=False))
 
     def _vanilla_unittest_main(self, options):
         if len(options.test_names) == 0 and self.defaultTest is None:
