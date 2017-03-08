@@ -1,7 +1,7 @@
 include COPYING.txt
 include INSTALL.txt
 include MANIFEST.in
-include README.txt
+include README.md
 include *.py
 recursive-include examples *.py
 recursive-include examples/forms *.dat *.txt *.html *.cgi *.py
