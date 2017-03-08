@@ -1,4 +1,5 @@
-include COPYING.txt
+include LICENSE
+include COPYRIGHT
 include INSTALL.txt
 include MANIFEST.in
 include README.md
