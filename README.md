@@ -1,6 +1,8 @@
 mechanize - Automate interaction with HTTP web servers
 ==========================================================
 
+[![Build Status](https://api.travis-ci.org/python-mechanize/mechanize.svg)](https://travis-ci.org/python-mechanize/mechanize)
+
 Major features
 -----------------
 
