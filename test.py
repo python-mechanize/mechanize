@@ -14,6 +14,7 @@ def mutate_sys_path():
     this_dir = os.path.dirname(__file__)
     sys.path.insert(0, os.path.join(this_dir, "test"))
     sys.path.insert(0, os.path.join(this_dir, "test-tools"))
+    sys.path.insert(0, os.path.join(this_dir, "mechanize"))
 
 
 def main(argv):
