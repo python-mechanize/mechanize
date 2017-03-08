@@ -12,4 +12,4 @@ env:
 install:
     - pip install twisted
 
-script: ./test.py
+script: ./run_tests.py
