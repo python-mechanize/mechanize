@@ -50,7 +50,7 @@ To install manually, simply add the `mechanize` sub-directory somwhere on your
 `PYTHONPATH`.
 
 Examples
-==========
+----------
 
 The examples below are written for a website that does not exist
 (`example.com`), so cannot be run.  
