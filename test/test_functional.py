@@ -17,8 +17,8 @@ import urllib2
 
 import mechanize
 from mechanize import CookieJar, HTTPCookieProcessor, \
-     HTTPRefreshProcessor, \
-     HTTPEquivProcessor, HTTPRedirectHandler
+    HTTPRefreshProcessor, \
+    HTTPEquivProcessor, HTTPRedirectHandler
 from mechanize._rfc3986 import urljoin
 from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings, read_file, write_file
@@ -28,17 +28,17 @@ import mechanize._sockettimeout
 import mechanize._testcase
 
 
-#from cookielib import CookieJar
-#from urllib2 import build_opener, install_opener, urlopen
-#from urllib2 import HTTPCookieProcessor, HTTPHandler
+# from cookielib import CookieJar
+# from urllib2 import build_opener, install_opener, urlopen
+# from urllib2 import HTTPCookieProcessor, HTTPHandler
 
-#from mechanize import CreateBSDDBCookieJar
+# from mechanize import CreateBSDDBCookieJar
 
-## import logging
-## logger = logging.getLogger("mechanize")
-## logger.addHandler(logging.StreamHandler(sys.stdout))
-## #logger.setLevel(logging.DEBUG)
-## logger.setLevel(logging.INFO)
+# import logging
+# logger = logging.getLogger("mechanize")
+# logger.addHandler(logging.StreamHandler(sys.stdout))
+# logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.INFO)
 
 
 class TestCase(mechanize._testcase.TestCase):
@@ -74,9 +74,10 @@ class TestCase(mechanize._testcase.TestCase):
             old_opener_m = mechanize._opener._opener
             old_opener_u = urllib2._opener
             mechanize.install_opener(mechanize.build_opener(
-                    mechanize.ProxyHandler(proxies={})))
+                mechanize.ProxyHandler(proxies={})))
             urllib2.install_opener(urllib2.build_opener(
-                    urllib2.ProxyHandler(proxies={})))
+                urllib2.ProxyHandler(proxies={})))
+
             def revert_install():
                 mechanize.install_opener(old_opener_m)
                 urllib2.install_opener(old_opener_u)
@@ -114,8 +115,10 @@ class SocketTimeoutTest(TestCase):
 
     def _monkey_patch_socket(self):
         class Delegator(object):
+
             def __init__(self, delegate):
                 self._delegate = delegate
+
             def __getattr__(self, name):
                 return getattr(self._delegate, name)
 
@@ -123,20 +126,26 @@ class SocketTimeoutTest(TestCase):
 
         class TimeoutLog(object):
             AnyValue = object()
+
             def __init__(self):
                 self._nr_sockets = 0
                 self._timeouts = []
                 self.start()
+
             def start(self):
                 self._monitoring = True
+
             def stop(self):
                 self._monitoring = False
+
             def socket_created(self):
                 if self._monitoring:
                     self._nr_sockets += 1
+
             def settimeout_called(self, timeout):
                 if self._monitoring:
                     self._timeouts.append(timeout)
+
             def verify(self, value=AnyValue):
                 if sys.version_info[:2] < (2, 6):
                     # per-connection timeout not supported in Python 2.5
@@ -146,13 +155,16 @@ class SocketTimeoutTest(TestCase):
                     if value is not self.AnyValue:
                         for timeout in self._timeouts:
                             assertEquals(timeout, value)
+
             def verify_default(self):
                 assertEquals(len(self._timeouts), 0)
 
         log = TimeoutLog()
+
         def settimeout(timeout):
             log.settimeout_called(timeout)
         orig_socket = socket.socket
+
         def make_socket(*args, **kwds):
             sock = Delegator(orig_socket(*args, **kwds))
             log.socket_created()
@@ -233,7 +245,7 @@ class SimpleTests(SocketTimeoutTest):
         self.assertRaises(
             mechanize.HTTPError,
             self.browser.open, urljoin(self.uri, "/redirected"),
-            )
+        )
 
     def test_reread(self):
         # closing response shouldn't stop methods working (this happens also to
@@ -256,7 +268,9 @@ class SimpleTests(SocketTimeoutTest):
     def test_redirect(self):
         # 301 redirect due to missing final '/'
         codes = []
+
         class ObservingHandler(mechanize.BaseHandler):
+
             def http_response(self, request, response):
                 codes.append(response.code)
                 return response
@@ -488,7 +502,7 @@ class FunctionalTests(SocketTimeoutTest):
 
     def test_cookies(self):
         # this test page depends on cookies, and an http-equiv refresh
-        #cj = CreateBSDDBCookieJar("/home/john/db.db")
+        # cj = CreateBSDDBCookieJar("/home/john/db.db")
         cj = CookieJar()
         handlers = [
             HTTPCookieProcessor(cj),
@@ -496,10 +510,10 @@ class FunctionalTests(SocketTimeoutTest):
             HTTPEquivProcessor(),
 
             HTTPRedirectHandler(),  # needed for Refresh handling in 2.4.0
-#            HTTPHandler(True),
-#            HTTPRedirectDebugProcessor(),
-#            HTTPResponseDebugProcessor(),
-            ]
+            #            HTTPHandler(True),
+            #            HTTPRedirectDebugProcessor(),
+            #            HTTPResponseDebugProcessor(),
+        ]
 
         opener = self.build_opener(handlers)
         r = opener.open(urljoin(self.uri, "/cgi-bin/cookietest.cgi"))
@@ -586,16 +600,17 @@ class FunctionalTests(SocketTimeoutTest):
         # we have .read() the whole file
         self.assertEqual(len(r3._seek_wrapper__cache.getvalue()), 4202)
 
-##     def test_cacheftp(self):
-##         from mechanize import CacheFTPHandler, build_opener
-##         o = build_opener(CacheFTPHandler())
-##         r = o.open("ftp://ftp.python.org/pub/www.python.org/robots.txt")
-##         data1 = r.read()
-##         r.close()
-##         r = o.open("ftp://ftp.python.org/pub/www.python.org/2.3.2/announce.txt")
-##         data2 = r.read()
-##         r.close()
-##         self.assert_(data1 != data2)
+# def test_cacheftp(self):
+#         from mechanize import CacheFTPHandler, build_opener
+#         o = build_opener(CacheFTPHandler())
+#         r = o.open("ftp://ftp.python.org/pub/www.python.org/robots.txt")
+#         data1 = r.read()
+# r.close()
+#         r = o.open(
+#         "ftp://ftp.python.org/pub/www.python.org/2.3.2/announce.txt")
+#         data2 = r.read()
+# r.close()
+#         self.assert_(data1 != data2)
 
 
 class CommandFailedError(Exception):
@@ -624,7 +639,7 @@ class ExamplesTests(TestCase):
     def check_download_script(self, name):
         python = sys.executable
         parent_dir = os.path.dirname(os.path.dirname(
-                os.path.abspath(__file__)))
+            os.path.abspath(__file__)))
         temp_dir = self.make_temp_dir()
         get_cmd_stdout(
             [python, os.path.join(parent_dir, "examples", name)],
@@ -697,7 +712,7 @@ class CookieJarTests(TestCase):
     def _test_cookiejar(self, make_cookiejar, commit):
         cookiejar = make_cookiejar()
         br = self.make_browser()
-        #br.set_debug_http(True)
+        # br.set_debug_http(True)
         br.set_cookiejar(cookiejar)
         br.set_handle_refresh(False)
         url = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
@@ -720,6 +735,7 @@ class CookieJarTests(TestCase):
 
     def test_mozilla_cookiejar(self):
         filename = os.path.join(self.make_temp_dir(), "cookies.txt")
+
         def make_cookiejar():
             cj = mechanize.MozillaCookieJar(filename=filename)
             try:
@@ -728,6 +744,7 @@ class CookieJarTests(TestCase):
                 if exc.errno != errno.ENOENT:
                     raise
             return cj
+
         def commit(cj):
             cj.save()
         self._test_cookiejar(make_cookiejar, commit)
@@ -741,12 +758,14 @@ class CookieJarTests(TestCase):
             raise unittest.SkipTest()
 
         filename = os.path.join(self.make_temp_dir(), "cookies.sqlite")
+
         def make_cookiejar():
             hide_experimental_warnings()
             try:
                 return mechanize.Firefox3CookieJar(filename=filename)
             finally:
                 reset_experimental_warnings()
+
         def commit(cj):
             pass
         self._test_cookiejar(make_cookiejar, commit)
@@ -754,9 +773,11 @@ class CookieJarTests(TestCase):
 
 class CallbackVerifier:
     # for .test_urlretrieve()
+
     def __init__(self, testcase):
         self._count = 0
         self._testcase = testcase
+
     def callback(self, block_nr, block_size, total_size):
         self._testcase.assertEqual(block_nr, self._count)
         self._count = self._count + 1
