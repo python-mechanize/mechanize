@@ -24,6 +24,10 @@ Johnny Lee (MSIE Cookie support) and last but not least Andy Lester
 
 import os
 import setuptools
+import sys
+
+if sys.version_info < (2, 7):
+    raise SystemExit('mechanize requires python >= 2.7')
 
 VERSION = open(os.path.join("mechanize", "_version.py")).\
     readlines()[0].strip(' "\n')
