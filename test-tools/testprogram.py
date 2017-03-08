@@ -368,12 +368,6 @@ class TestProgram(unittest.TestProgram):
                                 " server"))
         parser.add_option("--skip-doctests", action="store_true",
                           help="Don't discover doctests.")
-        allowed_tags = set(["internet"])
-        parser.add_option("--tag", action="append", dest="tags", metavar="TAG",
-                          help=("Discover tests tagged with TAG.  Tagged "
-                                "tests are not discovered by default.  Pass "
-                                "option more than once to specify more than "
-                                "one tag.  Current tags: %r" % allowed_tags))
         parser.add_option("--meld", action="store_true",
                           help=("On golden test failure, run meld to view & "
                                 "edit differences"))
@@ -382,13 +376,6 @@ class TestProgram(unittest.TestProgram):
         if len(remaining_args) > 3:
             self.usageExit()
 
-        options.skip_tags = allowed_tags.copy()
-        if options.tags is not None:
-            unknown_tags = set(options.tags) - allowed_tags
-            if unknown_tags:
-                self.usageExit("Unknown tag(s) %r" % unknown_tags)
-            options.skip_tags -= set(options.tags)
-        options.allowed_tags = allowed_tags
         options.do_discovery = ((len(remaining_args) == 0 and
                                  self._default_discovery_args is not None) or
                                 (len(remaining_args) >= 1 and
@@ -416,8 +403,6 @@ class TestProgram(unittest.TestProgram):
         top_level_dir = options.top
         loader = unittest.TestLoader()
         self.test = loader.discover(start_dir, pattern, top_level_dir,
-                                    skip_tags=options.skip_tags,
-                                    allowed_tags=options.allowed_tags,
                                     skip_doctests=options.skip_doctests)
 
     def _vanilla_unittest_main(self, options):

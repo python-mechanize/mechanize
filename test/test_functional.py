@@ -632,28 +632,6 @@ def get_cmd_stdout(args, **kwargs):
         return stdout
 
 
-class ExamplesTests(TestCase):
-
-    tags = "internet"
-
-    def check_download_script(self, name):
-        python = sys.executable
-        parent_dir = os.path.dirname(os.path.dirname(
-            os.path.abspath(__file__)))
-        temp_dir = self.make_temp_dir()
-        get_cmd_stdout(
-            [python, os.path.join(parent_dir, "examples", name)],
-            cwd=temp_dir)
-        [tarball] = os.listdir(temp_dir)
-        self.assertTrue(tarball.endswith(".tar.gz"))
-
-    def test_hack21(self):
-        self.check_download_script("hack21.py")
-
-    def test_pypi(self):
-        self.check_download_script("pypi.py")
-
-
 def add_to_path(env, name, value):
     old = env.get(name)
     if old is not None and old != "":
