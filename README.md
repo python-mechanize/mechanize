@@ -1,8 +1,8 @@
 mechanize - Automate interaction with HTTP web servers
-----------------------------------------------------------
+==========================================================
 
 Major features
-================
+-----------------
 
 Stateful programmatic web browsing in Python, after Andy Lester's Perl
 module [`WWW::Mechanize`](http://search.cpan.org/dist/WWW-Mechanize/).
@@ -32,7 +32,7 @@ module [`WWW::Mechanize`](http://search.cpan.org/dist/WWW-Mechanize/).
 
 
 Installation
-==============
+-----------------
 
 To install for normal usage:
 ```
@@ -157,7 +157,7 @@ be imported from mechanize instead.
 
 
 Credits
-=========
+-----------------
 
 python-mechanize was the creation of John J. Lee. Maintenance was taken over by
 Kovid Goyal in 2017.
