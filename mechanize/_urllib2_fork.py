@@ -1073,11 +1073,7 @@ class AbstractHTTPHandler(BaseHandler):
         if not host_port:
             raise URLError('no host given')
 
-        try:
-            h = http_class(host_port, timeout=req.timeout)
-        except TypeError:
-            # Python < 2.6, no per-connection timeout support
-            h = http_class(host_port)
+        h = http_class(host_port, timeout=req.timeout)
         h.set_debuglevel(self._debuglevel)
 
         headers = dict(req.headers)
@@ -1093,15 +1089,8 @@ class AbstractHTTPHandler(BaseHandler):
             (name.title(), val) for name, val in headers.items())
 
         if req._tunnel_host:
-            if not hasattr(h, "set_tunnel"):
-                if not hasattr(h, "_set_tunnel"):
-                    raise URLError("HTTPS through proxy not supported "
-                                   "(Python >= 2.6.4 required)")
-                else:
-                    # python 2.6
-                    set_tunnel = h._set_tunnel
-            else:
-                set_tunnel = h.set_tunnel
+            set_tunnel = h.set_tunnel if hasattr(
+                h, "set_tunnel") else h._set_tunnel
             set_tunnel(req._tunnel_host)
 
         try:
