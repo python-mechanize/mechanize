@@ -44,15 +44,6 @@ import _rfc3986
 from _headersutil import parse_ns_headers, split_header_words
 from _util import isstringlike
 
-try:
-    import threading
-    _threading = threading
-    del threading
-except ImportError:
-    import dummy_threading
-    _threading = dummy_threading
-    del dummy_threading
-
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
 DEFAULT_HTTP_PORT = "80"
