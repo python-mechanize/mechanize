@@ -13,6 +13,7 @@ import unittest
 
 import mechanize
 import mechanize._form as _form
+import mechanize._form_controls as _form_controls
 from mechanize import ControlNotFoundError,  ItemNotFoundError, \
      ItemCountError, AmbiguityError
 import mechanize._testcase as _testcase
@@ -470,7 +471,7 @@ Rhubarb.
         entity_ctl = form.find_control(type="select")
         self.assert_(entity_ctl.name == "foo")
         self.assertEqual(entity_ctl.value[0], "Hello testers & &blah; users!")
-        
+
         hide_deprecations()
         opt = entity_ctl.get_item_attrs("Hello testers & &blah; users!")
         reset_deprecations()
@@ -1143,7 +1144,7 @@ class DisabledTests(unittest.TestCase):
 </select>
 
 </form>
-""")    
+""")
         hide_deprecations()
         forms = mechanize.ParseFile(file, "http://localhost/",
                                     backwards_compat=compat)
@@ -1292,13 +1293,13 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.name == "ath_Uname")
         c.value = "2"
         self.assert_(c.value == "2")
-        
+
         c.readonly = True
         self.assertRaises(AttributeError, c.clear)
         c.readonly = False
         c.clear()
         self.assert_(c.value is None)
-        
+
         self.assert_(c.pairs() == [])
         c.value = "2"                   # reset value...
         self.assert_(str(c) == "<TextControl(ath_Uname=2)>")
@@ -1398,7 +1399,7 @@ class ControlTests(unittest.TestCase):
         c.value = "foo 1 bar 2"
         class FakeForm: action = "http://localhost/"
         form = FakeForm()
-        self.assert_(c._click(form, (1,1), "request_data") == 
+        self.assert_(c._click(form, (1,1), "request_data") ==
                      ("http://localhost/?foo+1+bar+2", None, []))
 
         c.value = "foo 1 bar 2"
@@ -1441,7 +1442,7 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value is None)
         c.value = "value_value"
         c.readonly = True
-        
+
         def set_value(value, c=c): c.value = value
         self.assertRaises(TypeError, set_value, ["foo"])
         c.disabled = True
@@ -1594,7 +1595,7 @@ class ControlTests(unittest.TestCase):
         c.readonly = False
         c.clear()
         self.assert_(c.value == [])
-        
+
         # set
         hide_deprecations()
         c.set(True, "value_value")
@@ -1724,7 +1725,7 @@ class ControlTests(unittest.TestCase):
         c.readonly = False
         c.clear()
         self.assert_(c.value == [])
-        
+
         # test ordering of items
         c.value = ["value_value2", "value_value"]
         self.assert_(c.value == ["value_value", "value_value2"])
@@ -2005,7 +2006,7 @@ class ControlTests(unittest.TestCase):
         c.readonly = False
         c.clear()
         self.assert_(c.value == [])
-        
+
         # set
         c.set(True, "value_value")
         self.assert_(c.value == ["value_value"])
@@ -2095,7 +2096,7 @@ class ControlTests(unittest.TestCase):
         c.readonly = False
         c.clear()
         self.assertEqual(c.value, [])
-        
+
         # set
         hide_deprecations()
         c.set(True, "value_value")
@@ -2193,7 +2194,7 @@ class ControlTests(unittest.TestCase):
 
 
 class FormTests(unittest.TestCase):
-    
+
     base_uri = "http://auth.athensams.net/"
 
     def _get_test_file(self, filename):
@@ -2642,7 +2643,7 @@ class FormTests(unittest.TestCase):
             f.seek(0)
             c = form.find_control("form.grocery")
             #for item in c.items:
-            #    print [label.text for label in item.get_labels()] 
+            #    print [label.text for label in item.get_labels()]
             c.set_value_by_label(
                 ["Loaf of Bread", "Loaf of Bread", "Loaf of Challah"])
             if backwards_compat:
@@ -3504,7 +3505,7 @@ class UploadTests(_testcase.TestCase):
 
     def test_no_files(self):
         # no files uploaded
-        self.monkey_patch(_form, "choose_boundary", lambda: "123")
+        self.monkey_patch(_form_controls, "choose_boundary", lambda: "123")
         forms = mechanize.ParseFileEx(StringIO("""<html>
 <form method="POST" action="spam" enctype="multipart/form-data">
 <INPUT type="file" name="spam" />
