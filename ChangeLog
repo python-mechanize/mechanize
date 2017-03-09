@@ -1,6 +1,10 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+Future Kovid Goyal
+   * When processing cookies that have a blank (unset) path, assume the path
+	 is /. Mimics modern browser behavior.
+
 2011-03-31 John J Lee <jjl@pobox.com>
 	* 0.2.5 release.
 	* This is essentially a no-changes release to fix easy_install
@@ -14,7 +18,7 @@ look that way.
 	* 0.2.4 release.
 	* Fix IndexError on empty Content-type header value. (GH-18)
 	* Fall back to another encoding if an unknown one is declared.
-	  Fixes traceback on unknoqn encoding in Content-type header.
+	  Fixes traceback on unknown encoding in Content-type header.
 	  (GH-30)
 
 2010-10-16 John J Lee <jjl@pobox.com>
