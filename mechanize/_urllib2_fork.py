@@ -31,6 +31,7 @@ COPYING.txt included with the distribution).
 import base64
 import bisect
 import copy
+import hashlib
 import httplib
 import logging
 import mimetools
@@ -43,6 +44,7 @@ import sys
 import time
 import urllib
 import urlparse
+from cStringIO import StringIO
 # support for FileHandler, proxies via environment variables
 from urllib import (addinfourl, ftpwrapper, getproxies, splitattr, splitpasswd,
                     splitport, splittype, splituser, splitvalue, unquote,
@@ -55,56 +57,20 @@ import _sockettimeout
 from _clientcookie import CookieJar
 from _response import closeable_response
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 
-try:
-    import hashlib
-except ImportError:
-    # python 2.4
-    import md5
-    import sha
-
-    def sha1_digest(bytes):
-        return sha.new(bytes).hexdigest()
-
-    def md5_digest(bytes):
-        return md5.new(bytes).hexdigest()
-else:
-    def sha1_digest(bytes):
-        return hashlib.sha1(bytes).hexdigest()
-
-    def md5_digest(bytes):
-        return hashlib.md5(bytes).hexdigest()
+def sha1_digest(bytes):
+    return hashlib.sha1(bytes).hexdigest()
 
 
-try:
-    socket._fileobject("fake socket", close=True)
-except TypeError:
-    # python <= 2.4
-    create_readline_wrapper = socket._fileobject
-else:
-    def create_readline_wrapper(fh):
-        return socket._fileobject(fh, close=True)
+def md5_digest(bytes):
+    return hashlib.md5(bytes).hexdigest()
 
 
-# python 2.4 splithost has a bug in empty path component case
-_hostprog = None
+def create_readline_wrapper(fh):
+    return socket._fileobject(fh, close=True)
 
 
-def splithost(url):
-    """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
-    global _hostprog
-    if _hostprog is None:
-        import re
-        _hostprog = re.compile('^//([^/?]*)(.*)$')
-
-    match = _hostprog.match(url)
-    if match:
-        return match.group(1, 2)
-    return None, url
+splithost = urllib.splithost
 
 
 # used in User-Agent header sent
