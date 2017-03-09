@@ -14,7 +14,7 @@ def cookie_args(
     comment_url=None,
     rest={},
     rfc2109=False,
-    ):
+):
     return locals()
 
 
@@ -23,7 +23,6 @@ def make_cookie(*args, **kwds):
 
 
 class Test(mechanize._testcase.TestCase):
-
 
     def test_equality(self):
         # not using assertNotEqual here since operator used varies across
