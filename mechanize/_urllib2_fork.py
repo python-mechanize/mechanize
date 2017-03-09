@@ -90,7 +90,7 @@ def urlopen(url, data=None):
     global _opener
     if _opener is None:
         _opener = build_opener()
-    return _opener.open(url, data)
+    return _opener._open(url, data)
 
 
 def install_opener(opener):
