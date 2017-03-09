@@ -12,6 +12,7 @@ import bisect
 import httplib
 import os
 import tempfile
+import threading
 import types
 import urllib2
 
@@ -21,16 +22,6 @@ import _sockettimeout
 import _urllib2_fork
 from _request import Request
 from _util import isstringlike
-
-try:
-    import threading as _threading
-except ImportError:
-    import dummy_threading as _threading
-try:
-    set
-except NameError:
-    import sets
-    set = sets.Set
 
 
 open_file = open
@@ -425,35 +416,26 @@ class OpenerFactory:
 
 build_opener = OpenerFactory().build_opener
 
-_opener = None
-urlopen_lock = _threading.Lock()
+thread_local = threading.local()
+thread_local.opener = None
+
+
+def get_thread_local_opener():
+    ans = thread_local.opener
+    if ans is None:
+        ans = thread_local.opener = build_opener()
+    return ans
 
 
 def urlopen(url, data=None, timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
-    global _opener
-    if _opener is None:
-        urlopen_lock.acquire()
-        try:
-            if _opener is None:
-                _opener = build_opener()
-        finally:
-            urlopen_lock.release()
-    return _opener.open(url, data, timeout)
+    return get_thread_local_opener().open(url, data, timeout)
 
 
 def urlretrieve(url, filename=None, reporthook=None, data=None,
                 timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
-    global _opener
-    if _opener is None:
-        urlopen_lock.acquire()
-        try:
-            if _opener is None:
-                _opener = build_opener()
-        finally:
-            urlopen_lock.release()
-    return _opener.retrieve(url, filename, reporthook, data, timeout)
+    return get_thread_local_opener().retrieve(
+        url, filename, reporthook, data, timeout)
 
 
 def install_opener(opener):
-    global _opener
-    _opener = opener
+    thread_local.opener = opener
