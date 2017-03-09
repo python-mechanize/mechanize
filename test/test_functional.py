@@ -20,8 +20,7 @@ from mechanize import CookieJar, HTTPCookieProcessor, \
     HTTPRefreshProcessor, \
     HTTPEquivProcessor, HTTPRedirectHandler
 from mechanize._rfc3986 import urljoin
-from mechanize._util import hide_experimental_warnings, \
-    reset_experimental_warnings, read_file, write_file
+from mechanize._util import read_file, write_file
 import mechanize._opener
 import mechanize._rfc3986
 import mechanize._sockettimeout
@@ -727,27 +726,6 @@ class CookieJarTests(TestCase):
 
         def commit(cj):
             cj.save()
-        self._test_cookiejar(make_cookiejar, commit)
-
-    def test_firefox3_cookiejar(self):
-        try:
-            mechanize.Firefox3CookieJar
-        except AttributeError:
-            # firefox 3 cookiejar is only supported in Python 2.5 and later;
-            # also, sqlite3 must be available
-            raise unittest.SkipTest()
-
-        filename = os.path.join(self.make_temp_dir(), "cookies.sqlite")
-
-        def make_cookiejar():
-            hide_experimental_warnings()
-            try:
-                return mechanize.Firefox3CookieJar(filename=filename)
-            finally:
-                reset_experimental_warnings()
-
-        def commit(cj):
-            pass
         self._test_cookiejar(make_cookiejar, commit)
 
 

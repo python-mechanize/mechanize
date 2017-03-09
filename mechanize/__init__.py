@@ -42,7 +42,6 @@ __all__ = [
     'LinkNotFoundError',
     'LinksFactory',
     'LoadError',
-    'MSIECookieJar',
     'MozillaCookieJar',
     'OpenerDirector',
     'OpenerFactory',
@@ -114,7 +113,6 @@ __all__ = [
     ]
 
 import logging
-import sys
 
 from _version import __version__
 
@@ -150,18 +148,7 @@ from _util import http2time as str2time
 # cookies
 from _clientcookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
      CookieJar, FileCookieJar, LoadError, request_host_lc as request_host, \
-     effective_request_host
-from _lwpcookiejar import LWPCookieJar, lwp_cookie_str
-# 2.4 raises SyntaxError due to generator / try/finally use
-if sys.version_info[:2] > (2,4):
-    try:
-        import sqlite3
-    except ImportError:
-        pass
-    else:
-        from _firefox3cookiejar import Firefox3CookieJar
-from _mozillacookiejar import MozillaCookieJar
-from _msiecookiejar import MSIECookieJar
+     LWPCookieJar, lwp_cookie_str, MozillaCookieJar, effective_request_host
 
 # forms
 from _form import (
