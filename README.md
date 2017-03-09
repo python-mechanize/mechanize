@@ -66,10 +66,10 @@ br.open("http://www.example.com/")
 # follow second link with element text matching regular expression
 response1 = br.follow_link(text_regex=r"cheese\s*shop", nr=1)
 assert br.viewing_html()
-print br.title()
-print response1.geturl()
-print response1.info()  # headers
-print response1.read()  # body
+print(br.title())
+print(response1.geturl())
+print(response1.info())  # headers
+print(response1.read())  # body
 
 br.select_form(name="order")
 # Browser passes through unknown attributes (including methods)
@@ -80,7 +80,7 @@ br["cheeses"] = ["mozzarella", "caerphilly"]  # (the method here is __setitem__)
 response2 = br.submit()
 
 # print currently selected form (don't call .submit() on this, use br.submit())
-print br.form
+print(br.form)
 
 response3 = br.back()  # back to cheese shop (same data as response1)
 # the history mechanism returns cached response objects
@@ -89,10 +89,10 @@ response3.get_data()  # like .seek(0) followed by .read()
 response4 = br.reload()  # fetches from server
 
 for form in br.forms():
-    print form
+    print(form)
 # .links() optionally accepts the keyword args of .follow_/.find_link()
 for link in br.links(url_regex="python.org"):
-    print link
+    print(link)
     br.follow_link(link)  # takes EITHER Link instance OR keyword args
     br.back()
 ```
@@ -156,6 +156,18 @@ print response.read()
 
 When using mechanize, anything you would normally import from `urllib2` should
 be imported from mechanize instead.
+
+Using custom CA certificates
+-------------------------------
+
+mechanize supports the same mechanism for using custom CA certificates as
+python >= 2.7.9. To change the certificates a mechanize browser instance uses,
+call the `set_ca_data()` method on it. This method accepts the same arguments
+as the
+[`SSLContext.load_verify_locations()`](https://docs.python.org/2/library/ssl.html#ssl.SSLContext.load_verify_locations)
+method from the python standard library. You can also pass a pre-built context
+via the `context` keyword argument. Note that to use this feature, you
+must be using python >= 2.7.9.
 
 
 Credits

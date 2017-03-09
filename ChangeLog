@@ -2,10 +2,11 @@ This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
 Future Kovid Goyal
-   * When processing cookies that have a blank (unset) path, assume the path
+	* When processing cookies that have a blank (unset) path, assume the path
 	 is /. Mimics modern browser behavior.
-   * Support PyPy (added to continuous integration testing)
-   * Make the global urlopen/urlretrieve methods threadsafe
+	* Support PyPy (added to continuous integration testing)
+	* Make the global urlopen/urlretrieve methods threadsafe
+	* Add support for user supplied CA certificates
 
 2011-03-31 John J Lee <jjl@pobox.com>
 	* 0.2.5 release.

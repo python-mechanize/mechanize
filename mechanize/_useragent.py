@@ -238,9 +238,20 @@ class UserAgentBase(_opener.OpenerDirector):
 
     def set_client_cert_manager(self, cert_manager):
         """Set a mechanize.HTTPClientCertMgr, or None."""
-        self._client_cert_manager = cert_manager
         handler = self._ua_handlers["https"]
-        handler.client_cert_manager = cert_manager
+        self._client_cert_manager = handler.client_cert_manager = cert_manager
+
+    def set_ca_data(self, cafile=None, capath=None, cadata=None, context=None):
+        ''' Set the SSL Context used for connecting to SSL servers. '''
+        import ssl
+        if context is None:
+            try:
+                context = ssl.create_default_context(
+                    cafile=cafile, capath=capath, cadata=cadata)
+            except AttributeError:
+                raise RuntimeError('python >= 2.7.9 required')
+        handler = self._ua_handlers["https"]
+        handler.ssl_context = context
 
     # these methods all take a boolean parameter
     def set_handle_robots(self, handle):
