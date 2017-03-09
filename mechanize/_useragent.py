@@ -74,7 +74,7 @@ class UserAgentBase(_opener.OpenerDirector):
         # debug handlers
         "_debug_redirect": _urllib2.HTTPRedirectDebugProcessor,
         "_debug_response_body": _urllib2.HTTPResponseDebugProcessor,
-        }
+    }
 
     default_schemes = ["http", "ftp", "file"]
     default_others = ["_unknown", "_http_error", "_http_default_error"]
@@ -92,8 +92,8 @@ class UserAgentBase(_opener.OpenerDirector):
         _opener.OpenerDirector.__init__(self)
 
         ua_handlers = self._ua_handlers = {}
-        for scheme in (self.default_schemes+
-                       self.default_others+
+        for scheme in (self.default_schemes +
+                       self.default_others +
                        self.default_features):
             klass = self.handler_classes[scheme]
             ua_handlers[scheme] = klass()
@@ -112,7 +112,7 @@ class UserAgentBase(_opener.OpenerDirector):
         if "_basicauth" in ua_handlers or "_digestauth" in ua_handlers:
             pm = _urllib2.HTTPPasswordMgrWithDefaultRealm()
         if ("_proxy_basicauth" in ua_handlers or
-            "_proxy_digestauth" in ua_handlers):
+                "_proxy_digestauth" in ua_handlers):
             ppm = _auth.HTTPProxyPasswordMgr()
         self.set_password_manager(pm)
         self.set_proxy_password_manager(ppm)
@@ -125,14 +125,14 @@ class UserAgentBase(_opener.OpenerDirector):
         _opener.OpenerDirector.close(self)
         self._ua_handlers = None
 
-    # XXX
-##     def set_timeout(self, timeout):
-##         self._timeout = timeout
-##     def set_http_connection_cache(self, conn_cache):
-##         self._http_conn_cache = conn_cache
-##     def set_ftp_connection_cache(self, conn_cache):
-##         # XXX ATM, FTP has cache as part of handler; should it be separate?
-##         self._ftp_conn_cache = conn_cache
+# XXX
+# def set_timeout(self, timeout):
+#         self._timeout = timeout
+# def set_http_connection_cache(self, conn_cache):
+#         self._http_conn_cache = conn_cache
+# def set_ftp_connection_cache(self, conn_cache):
+# XXX ATM, FTP has cache as part of handler; should it be separate?
+#         self._ftp_conn_cache = conn_cache
 
     def set_handled_schemes(self, schemes):
         """Set sequence of URL scheme (protocol) strings.
@@ -153,7 +153,8 @@ class UserAgentBase(_opener.OpenerDirector):
 
         # get rid of scheme handlers we don't want
         for scheme, oldhandler in self._ua_handlers.items():
-            if scheme.startswith("_"): continue  # not a scheme handler
+            if scheme.startswith("_"):
+                continue  # not a scheme handler
             if scheme not in want:
                 self._replace_handler(scheme, None)
             else:
@@ -197,6 +198,7 @@ class UserAgentBase(_opener.OpenerDirector):
 
     def add_password(self, url, user, password, realm=None):
         self._password_manager.add_password(realm, url, user, password)
+
     def add_proxy_password(self, user, password, hostport=None, realm=None):
         self._proxy_password_manager.add_password(
             realm, hostport, user, password)
@@ -227,11 +229,13 @@ class UserAgentBase(_opener.OpenerDirector):
         self._password_manager = password_manager
         self._set_handler("_basicauth", obj=password_manager)
         self._set_handler("_digestauth", obj=password_manager)
+
     def set_proxy_password_manager(self, password_manager):
         """Set a mechanize.HTTPProxyPasswordMgr, or None."""
         self._proxy_password_manager = password_manager
         self._set_handler("_proxy_basicauth", obj=password_manager)
         self._set_handler("_proxy_digestauth", obj=password_manager)
+
     def set_client_cert_manager(self, cert_manager):
         """Set a mechanize.HTTPClientCertMgr, or None."""
         self._client_cert_manager = cert_manager
@@ -242,13 +246,16 @@ class UserAgentBase(_opener.OpenerDirector):
     def set_handle_robots(self, handle):
         """Set whether to observe rules from robots.txt."""
         self._set_handler("_robots", handle)
+
     def set_handle_redirect(self, handle):
         """Set whether to handle HTTP 30x redirections."""
         self._set_handler("_redirect", handle)
+
     def set_handle_refresh(self, handle, max_time=None, honor_time=True):
         """Set whether to handle HTTP Refresh headers."""
-        self._set_handler("_refresh", handle, constructor_kwds=
-                          {"max_time": max_time, "honor_time": honor_time})
+        self._set_handler("_refresh", handle, constructor_kwds={
+                          "max_time": max_time, "honor_time": honor_time})
+
     def set_handle_equiv(self, handle, head_parser_class=None):
         """Set whether to treat HTML http-equiv headers like HTTP headers.
 
@@ -259,8 +266,9 @@ class UserAgentBase(_opener.OpenerDirector):
         if head_parser_class is not None:
             constructor_kwds = {"head_parser_class": head_parser_class}
         else:
-            constructor_kwds={}
+            constructor_kwds = {}
         self._set_handler("_equiv", handle, constructor_kwds=constructor_kwds)
+
     def set_handle_gzip(self, handle):
         """Handle gzip transfer encoding.
 
@@ -269,6 +277,7 @@ class UserAgentBase(_opener.OpenerDirector):
             warnings.warn(
                 "gzip transfer encoding is experimental!", stacklevel=2)
         self._set_handler("_gzip", handle)
+
     def set_debug_redirects(self, handle):
         """Log information about HTTP redirects (including refreshes).
 
@@ -295,6 +304,7 @@ class UserAgentBase(_opener.OpenerDirector):
 
         """
         self._set_handler("_debug_redirect", handle)
+
     def set_debug_responses(self, handle):
         """Log HTTP response bodies.
 
@@ -305,6 +315,7 @@ class UserAgentBase(_opener.OpenerDirector):
 
         """
         self._set_handler("_debug_response_body", handle)
+
     def set_debug_http(self, handle):
         """Print HTTP headers to sys.stdout."""
         level = int(bool(handle))
