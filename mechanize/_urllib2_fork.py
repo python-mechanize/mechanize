@@ -36,6 +36,7 @@ import httplib
 import logging
 import mimetools
 import os
+import platform
 import posixpath
 import random
 import re
@@ -66,8 +67,15 @@ def md5_digest(bytes):
     return hashlib.md5(bytes).hexdigest()
 
 
-def create_readline_wrapper(fh):
-    return socket._fileobject(fh, close=True)
+if platform.python_implementation() == 'PyPy':
+    def create_readline_wrapper(fh):
+        if not hasattr(fh, '_drop'):
+            fh._drop = lambda: None
+            fh._reuse = lambda: None
+        return socket._fileobject(fh, close=True)
+else:
+    def create_readline_wrapper(fh):
+        return socket._fileobject(fh, close=True)
 
 
 splithost = urllib.splithost
