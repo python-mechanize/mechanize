@@ -8,7 +8,20 @@ COPYING.txt included with the distribution).
 
 """
 
-import os, urllib2, bisect, httplib, types, tempfile
+import bisect
+import httplib
+import os
+import tempfile
+import types
+import urllib2
+
+import _response
+import _rfc3986
+import _sockettimeout
+import _urllib2_fork
+from _request import Request
+from _util import isstringlike
+
 try:
     import threading as _threading
 except ImportError:
@@ -19,17 +32,12 @@ except NameError:
     import sets
     set = sets.Set
 
-from _request import Request
-import _response
-import _rfc3986
-import _sockettimeout
-import _urllib2_fork
-from _util import isstringlike
 
 open_file = open
 
 
 class ContentTooShortError(urllib2.URLError):
+
     def __init__(self, reason, result):
         urllib2.URLError.__init__(self, reason)
         self.result = result
@@ -45,6 +53,7 @@ def set_request_attr(req, name, value, default):
 
 
 class OpenerDirector(_urllib2_fork.OpenerDirector):
+
     def __init__(self):
         _urllib2_fork.OpenerDirector.__init__(self)
         # really none of these are (sanely) public -- the lack of initial
@@ -98,11 +107,11 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
 
                 ii = meth.find("_")
                 scheme = meth[:ii]
-                condition = meth[ii+1:]
+                condition = meth[ii + 1:]
 
                 if condition.startswith("error"):
-                    jj = meth[ii+1:].find("_") + ii + 1
-                    kind = meth[jj+1:]
+                    jj = meth[ii + 1:].find("_") + ii + 1
+                    kind = meth[jj + 1:]
                     try:
                         kind = int(kind)
                     except ValueError:
@@ -182,7 +191,7 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
         request_processors = list(request_processors)
         request_processors.sort()
         for processor in request_processors:
-            for meth_name in ["any_request", req_scheme+"_request"]:
+            for meth_name in ["any_request", req_scheme + "_request"]:
                 meth = getattr(processor, meth_name, None)
                 if meth:
                     req = meth(req)
@@ -198,7 +207,7 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
         response_processors = list(response_processors)
         response_processors.sort()
         for processor in response_processors:
-            for meth_name in ["any_response", req_scheme+"_response"]:
+            for meth_name in ["any_response", req_scheme + "_response"]:
                 meth = getattr(processor, meth_name, None)
                 if meth:
                     response = meth(req, response)
@@ -208,7 +217,8 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
     def error(self, proto, *args):
         if proto in ['http', 'https']:
             # XXX http[s] protocols are special-cased
-            dict = self.handle_error['http'] # https is not different than http
+            # https is not different than http
+            dict = self.handle_error['http']
             proto = args[2]  # YUCK!
             meth_name = 'http_error_%s' % proto
             http_err = 1
@@ -226,7 +236,8 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
             args = (dict, 'default', 'http_error_default') + orig_args
             return apply(self._call_chain, args)
 
-    BLOCK_SIZE = 1024*8
+    BLOCK_SIZE = 1024 * 8
+
     def retrieve(self, fullurl, filename=None, reporthook=None, data=None,
                  timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT,
                  open=open_file):
@@ -254,7 +265,7 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
                 # XXX req.get_selector() seems broken here, return None,
                 #   pending sanity :-/
                 return None, headers
-                #return urllib.url2pathname(req.get_selector()), headers
+                # return urllib.url2pathname(req.get_selector()), headers
             if filename:
                 tfp = open(filename, 'wb')
             else:
@@ -293,7 +304,7 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
                 "retrieval incomplete: "
                 "got only %i out of %i bytes" % (read, size),
                 result
-                )
+            )
 
         return result
 
@@ -330,6 +341,7 @@ def wrapped_open(urlopen, process_response_object, fullurl, data=None,
         raise response
     return response
 
+
 class ResponseProcessingOpener(OpenerDirector):
 
     def open(self, fullurl, data=None,
@@ -345,6 +357,7 @@ class ResponseProcessingOpener(OpenerDirector):
 
 
 class SeekableResponseOpener(ResponseProcessingOpener):
+
     def process_response_object(self, response):
         return _response.seek_wrapped_response(response)
 
@@ -368,7 +381,7 @@ class OpenerFactory:
         # processors
         _urllib2_fork.HTTPCookieProcessor,
         _urllib2_fork.HTTPErrorProcessor,
-        ]
+    ]
     if hasattr(httplib, 'HTTPS'):
         default_classes.append(_urllib2_fork.HTTPSHandler)
     handlers = []
@@ -414,6 +427,8 @@ build_opener = OpenerFactory().build_opener
 
 _opener = None
 urlopen_lock = _threading.Lock()
+
+
 def urlopen(url, data=None, timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
     global _opener
     if _opener is None:
@@ -424,6 +439,7 @@ def urlopen(url, data=None, timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         finally:
             urlopen_lock.release()
     return _opener.open(url, data, timeout)
+
 
 def urlretrieve(url, filename=None, reporthook=None, data=None,
                 timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
@@ -436,6 +452,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None,
         finally:
             urlopen_lock.release()
     return _opener.retrieve(url, filename, reporthook, data, timeout)
+
 
 def install_opener(opener):
     global _opener
