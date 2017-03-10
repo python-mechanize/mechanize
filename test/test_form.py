@@ -26,42 +26,26 @@ from mechanize._util import get1
 # HTMLForm.enctype
 # XHTML
 
-try: True
-except NameError:
-    True = 1
-    False = 0
+import warnings
 
-try: bool
-except NameError:
-    def bool(expr):
-        if expr: return True
-        else: return False
 
-try:
-    import warnings
-except ImportError:
-    warnings_imported = False
-    def hide_deprecations():
+def hide_deprecations():
+    warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+
+def reset_deprecations():
+    warnings.filterwarnings('default', category=DeprecationWarning)
+
+
+def raise_deprecations():
+    try:
+        registry = _form.__warningregistry__
+    except AttributeError:
         pass
-    def reset_deprecations():
-        pass
-    def raise_deprecations():
-        pass
-else:
-    warnings_imported = True
-    def hide_deprecations():
-        warnings.filterwarnings('ignore', category=DeprecationWarning)
-    def reset_deprecations():
-        warnings.filterwarnings('default', category=DeprecationWarning)
-        #warnings.resetwarnings()  # XXX probably safer
-    def raise_deprecations():
-        try:
-            registry = _form.__warningregistry__
-        except AttributeError:
-            pass
-        else:
-            registry.clear()
-        warnings.filterwarnings('error', category=DeprecationWarning)
+    else:
+        registry.clear()
+    warnings.filterwarnings('error', category=DeprecationWarning)
+
 
 class DummyForm:
     def __init__(self):
@@ -76,7 +60,6 @@ class DummyForm:
 
 
 class UnescapeTests(unittest.TestCase):
-
     def test_unescape_charref(self):
         unescape_charref = _form.unescape_charref
         mdash_utf8 = u"\u2014".encode("utf-8")
@@ -84,7 +67,7 @@ class UnescapeTests(unittest.TestCase):
             ("38", 38, u"&".encode("utf-8"), "&"),
             ("x2014", 0x2014, mdash_utf8, "&#x2014;"),
             ("8212", 8212, mdash_utf8, "&#8212;"),
-            ]:
+        ]:
             self.assertEqual(unescape_charref(ref, None), unichr(codepoint))
             self.assertEqual(unescape_charref(ref, 'latin-1'), latin1)
             self.assertEqual(unescape_charref(ref, 'utf-8'), utf8)
@@ -98,7 +81,7 @@ class UnescapeTests(unittest.TestCase):
             ("&gt;", u">"),
             ("&mdash;", u"\u2014"),
             ("&spades;", u"\u2660"),
-            ]:
+        ]:
             self.assertEqual(ed[name], char)
 
     def test_unescape1(self):
@@ -107,82 +90,90 @@ class UnescapeTests(unittest.TestCase):
         data = "&amp; &lt; &mdash; &#8212; &#x2014;"
         mdash_utf8 = u"\u2014".encode("utf-8")
         ue = unescape(data, get_entitydefs(), "utf-8")
-        self.assertEqual("& < %s %s %s" % ((mdash_utf8,)*3), ue)
+        self.assertEqual("& < %s %s %s" % ((mdash_utf8, ) * 3), ue)
 
         for text, expect in [
             ("&a&amp;", "&a&"),
             ("a&amp;", "a&"),
-            ]:
+        ]:
             got = unescape(text, get_entitydefs(), "latin-1")
             self.assertEqual(got, expect)
 
     def test_unescape2(self):
         unescape = _form.unescape
         get_entitydefs = _form.get_entitydefs
-        self.assertEqual(unescape("Donald Duck &amp; Co",
-                                  {"&amp;": "&"}), "Donald Duck & Co")
+        self.assertEqual(
+            unescape("Donald Duck &amp; Co", {"&amp;": "&"}),
+            "Donald Duck & Co")
         self.assertEqual(
             unescape("&lt;Donald Duck &amp; Co&gt;",
-                     {"&amp;": "&", "&lt;": "<", "&gt;": ">"}),
-            "<Donald Duck & Co>")
-        self.assertEqual(unescape("Hei p&aring; deg", {"&aring;" : "å"}),
-                         "Hei på deg")
+                     {"&amp;": "&",
+                      "&lt;": "<",
+                      "&gt;": ">"}), "<Donald Duck & Co>")
         self.assertEqual(
-            unescape("&amp;foo;",
-                     {"&amp;": "&", "&foo;": "splat"}), "&foo;")
+            unescape("Hei p&aring; deg", {"&aring;": "å"}), "Hei på deg")
+        self.assertEqual(
+            unescape("&amp;foo;", {"&amp;": "&",
+                                   "&foo;": "splat"}), "&foo;")
         self.assertEqual(unescape("&amp;", {}), "&amp;")
 
         for encoding, expected in [
             ("utf-8", u"&\u06aa\u2014\u2014".encode("utf-8")),
-            ("latin-1", "&&#x06aa;&#x2014;&mdash;")]:
-            self.assertEqual(
-                expected,
-                unescape("&amp;&#x06aa;&#x2014;&mdash;", get_entitydefs(), encoding))
+            ("latin-1", "&&#x06aa;&#x2014;&mdash;")
+        ]:
+            self.assertEqual(expected,
+                             unescape("&amp;&#x06aa;&#x2014;&mdash;",
+                                      get_entitydefs(), encoding))
 
     def test_unescape_parsing(self):
-        file = StringIO(
-"""<form action="&amp;amp;&mdash;&#x2014;&#8212;">
-<textarea name="name&amp;amp;&mdash;&#x2014;&#8212;">val&amp;amp;&mdash;&#x2014;&#8212;</textarea>
+        file = StringIO("""<form action="&amp;amp;&mdash;&#x2014;&#8212;">
+<textarea name="name&amp;amp;&mdash;&#x2014;&#8212;">val&amp;amp;&mdash;\
+&#x2014;&#8212;</textarea>
 </form>
-""")  #"
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False, encoding="utf-8")
+""")
+        forms = mechanize.ParseFile(
+            file,
+            "http://localhost/",
+            backwards_compat=False,
+            encoding="utf-8")
         form = forms[0]
-        test_string = "&amp;"+(u"\u2014".encode('utf8')*3)
-        self.assertEqual(form.action, "http://localhost/"+test_string)
+        test_string = "&amp;" + (u"\u2014".encode('utf8') * 3)
+        self.assertEqual(form.action, "http://localhost/" + test_string)
         control = form.find_control(type="textarea", nr=0)
-        self.assertEqual(control.value, "val"+test_string)
-        self.assertEqual(control.name, "name"+test_string)
+        self.assertEqual(control.value, "val" + test_string)
+        self.assertEqual(control.name, "name" + test_string)
 
     def test_unescape_parsing_select(self):
         f = StringIO("""\
 <form>
 <select name="a">
     <option>1&amp;amp;&mdash;&#x2014;&#8212;</option>
-    <option value="2&amp;amp;&mdash;&#x2014;&#8212;">2&amp;amp;&mdash;&#x2014;&#8212;</option>
+    <option value="2&amp;amp;&mdash;&#x2014;&#8212;">2&amp;amp;&mdash;&#x2014;\
+&#8212;</option>
 </select>
 </form>
-""")  #"
+""")
         forms = mechanize.ParseFileEx(f, "http://localhost/", encoding="utf-8")
         form = forms[1]
-        test_string = "&amp;"+(u"\u2014".encode('utf8')*3)
+        test_string = "&amp;" + (u"\u2014".encode('utf8') * 3)
         control = form.find_control(nr=0)
         for ii in range(len(control.items)):
             item = control.items[ii]
-            self.assertEqual(item.name, str(ii+1)+test_string)
+            self.assertEqual(item.name, str(ii + 1) + test_string)
             # XXX label
 
     def test_unescape_parsing_data(self):
-        file = StringIO(
-"""\
+        file = StringIO("""\
 <form>
     <label for="foo">Blah &#x201d; &rdquo; blah</label>
     <input type="text" id="foo" name="foo">
 </form>
-""")  #"
+""")
         # don't crash if we can't encode -- rather, leave entity ref intact
         forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False,
+            file,
+            "http://localhost/",
+            backwards_compat=False,
             encoding="latin-1")
         label = forms[0].find_control(nr=0).get_labels()[0]
         self.assertEqual(label.text, "Blah &#x201d; &rdquo; blah")
@@ -190,9 +181,10 @@ class UnescapeTests(unittest.TestCase):
 
 class LWPFormTests(unittest.TestCase):
     """The original tests from libwww-perl 5.64."""
+
     def testEmptyParse(self):
-        forms = mechanize.ParseFile(StringIO(""), "http://localhost",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            StringIO(""), "http://localhost", backwards_compat=False)
         self.assert_(len(forms) == 0)
 
     def _forms(self):
@@ -203,8 +195,8 @@ class LWPFormTests(unittest.TestCase):
         </form>
 
         """)
-        return mechanize.ParseFile(file, "http://localhost/",
-                                   backwards_compat=False)
+        return mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
 
     def testParse(self):
         forms = self._forms()
@@ -216,13 +208,17 @@ class LWPFormTests(unittest.TestCase):
         form = forms[0]
         form["firstname"] = "Gisle Aas"
         req = form.click()
+
         def request_method(req):
             if req.has_data():
                 return "POST"
             else:
                 return "GET"
+
         self.assert_(request_method(req) == "GET")
-        self.assert_(req.get_full_url() == "http://localhost/abc?firstname=Gisle+Aas")
+        self.assert_(
+            req.get_full_url() == "http://localhost/abc?firstname=Gisle+Aas")
+
 
 def get_header(req, name):
     try:
@@ -230,31 +226,33 @@ def get_header(req, name):
     except AttributeError:
         return req.headers[name]
 
+
 def header_items(req):
     try:
         return req.header_items()
     except AttributeError:
         return req.headers.items()
 
+
 class MockResponse:
     def __init__(self, f, url):
         self._file = f
         self._url = url
+
     def geturl(self):
         return self._url
+
     def __getattr__(self, name):
         return getattr(self._file, name)
 
 
 class ParseErrorTests(_testcase.TestCase):
-
     def test_parseerror_str(self):
         e = mechanize.ParseError("spam")
         self.assertEqual(str(e), "spam")
 
 
 class ParseTests(unittest.TestCase):
-
     def test_failing_parse(self):
         # XXX couldn't provoke an error from BeautifulSoup (!), so this has not
         # been tested with RobustFormParser
@@ -267,14 +265,15 @@ class ParseTests(unittest.TestCase):
             base_uri = "http://localhost/"
             self.assertRaises(
                 mechanize.ParseError,
-                mechanize.ParseFile, f, base_uri, backwards_compat=False,
-                )
-            self.assert_(issubclass(mechanize.ParseError,
-                                    sgmllib.SGMLParseError))
+                mechanize.ParseFile,
+                f,
+                base_uri,
+                backwards_compat=False, )
+            self.assert_(
+                issubclass(mechanize.ParseError, sgmllib.SGMLParseError))
 
     def test_unknown_control(self):
-        f = StringIO(
-"""<form action="abc">
+        f = StringIO("""<form action="abc">
 <input type="bogus">
 <input>
 </form>
@@ -288,8 +287,7 @@ class ParseTests(unittest.TestCase):
     def test_ParseFileEx(self):
         # empty "outer form" (where the "outer form" is the form consisting of
         # all controls outside of any form)
-        f = StringIO(
-"""<form action="abc">
+        f = StringIO("""<form action="abc">
 <input type="text"></input>
 </form>
 """)
@@ -305,8 +303,7 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(outer.attrs, {})
 
         # non-empty outer form
-        f = StringIO(
-"""
+        f = StringIO("""
 <input type="text" name="a"></input>
 <form action="abc">
   <input type="text" name="b"></input>
@@ -335,15 +332,14 @@ class ParseTests(unittest.TestCase):
 <input type="text" name="outer"></input>
 <form action="abc"><input type="text" name="inner"></input></form>
 """),
-            url,
-            )
+            url, )
 
         hide_deprecations()
         forms = mechanize.ParseResponse(r)
         reset_deprecations()
         self.assertEqual(len(forms), 1)
         form = forms[0]
-        self.assertEqual(form.action, url+"abc")
+        self.assertEqual(form.action, url + "abc")
         self.assertEqual(form.controls[0].name, "inner")
 
     def test_ParseResponseEx(self):
@@ -353,14 +349,13 @@ class ParseTests(unittest.TestCase):
 <input type="text" name="outer"></input>
 <form action="abc"><input type="text" name="inner"></input></form>
 """),
-            url,
-            )
+            url, )
 
         forms = mechanize.ParseResponseEx(r)
         self.assertEqual(len(forms), 2)
         outer = forms[0]
         inner = forms[1]
-        self.assertEqual(inner.action, url+"abc")
+        self.assertEqual(inner.action, url + "abc")
         self.assertEqual(outer.action, url)
         self.assertEqual(outer.controls[0].name, "outer")
         self.assertEqual(inner.controls[0].name, "inner")
@@ -368,17 +363,18 @@ class ParseTests(unittest.TestCase):
     def test_ParseString(self):
         class DerivedRequest(mechanize.Request):
             pass
-        forms = mechanize.ParseString('<input name="a" />',
-                                  "http://example.com/",
-                                  request_class=DerivedRequest)
+
+        forms = mechanize.ParseString(
+            '<input name="a" />',
+            "http://example.com/",
+            request_class=DerivedRequest)
         self.assertEqual(len(forms), 1)
         self.assertEqual(forms[0].controls[0].name, "a")
         # arguments were passed through
         self.assertTrue(isinstance(forms[0].click(), DerivedRequest))
 
     def test_parse_error(self):
-        f = StringIO(
-"""<form action="abc">
+        f = StringIO("""<form action="abc">
 <option>
 </form>
 """)
@@ -392,30 +388,27 @@ class ParseTests(unittest.TestCase):
 
     def test_base_uri(self):
         # BASE element takes priority over document URI
-        file = StringIO(
-"""<base HREF="http://example.com">
+        file = StringIO("""<base HREF="http://example.com">
 <form action="abc">
 <input type="submit"></input>
 </form>
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         self.assert_(form.action == "http://example.com/abc")
 
-        file = StringIO(
-"""<form action="abc">
+        file = StringIO("""<form action="abc">
 <input type="submit"></input>
 </form>
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         self.assert_(form.action == "http://localhost/abc")
 
     def testTextarea(self):
-        file = StringIO(
-"""<form action="abc&amp;amp;&mdash;d">
+        file = StringIO("""<form action="abc&amp;amp;&mdash;d">
 
 <input name="firstname" value="Gisle">
 <textarea>blah, blah,
@@ -425,19 +418,23 @@ Rhubarb.
 
 <textarea></textarea>
 
-<textarea name="&quot;ta&quot;" id="foo&amp;amp;bar">Hello testers &amp;amp; users!</textarea>
+<textarea name="&quot;ta&quot;" id="foo&amp;amp;bar">Hello testers &amp;amp; \
+users!</textarea>
 
 </form>
 
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False, encoding="utf-8")
+        forms = mechanize.ParseFile(
+            file,
+            "http://localhost/",
+            backwards_compat=False,
+            encoding="utf-8")
         self.assert_(len(forms) == 1)
         form = forms[0]
         self.assert_(form.name is None)
         self.assertEqual(
             form.action,
-            "http://localhost/abc&amp;"+u"\u2014".encode('utf8')+"d")
+            "http://localhost/abc&amp;" + u"\u2014".encode('utf8') + "d")
         control = form.find_control(type="textarea", nr=0)
         self.assert_(control.name is None)
         self.assert_(control.value == "blah, blah,\r\nRhubarb.\r\n\r\n")
@@ -452,8 +449,7 @@ Rhubarb.
         self.assertEqual(entity_ctl.value, "Hello testers &amp; users!")
 
     def testSelect(self):
-        file = StringIO(
-"""<form action="abc">
+        file = StringIO("""<form action="abc">
 
 <select name="foo">
  <option>Hello testers &amp; &blah; users!</option>
@@ -463,8 +459,8 @@ Rhubarb.
 </form>
 
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
@@ -480,8 +476,7 @@ Rhubarb.
         self.assertEqual(opt["contents"], "Hello testers & &blah; users!")
 
     def testButton(self):
-        file = StringIO(
-"""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <input type="text" value="cow" name="moo">
 
@@ -494,8 +489,8 @@ Rhubarb.</button>
 </form>
 
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         self.assert_(form.name == "myform")
         control = form.find_control(name="b")
@@ -507,16 +502,15 @@ Rhubarb.</button>
         self.assert_(pairs == [("moo", "cow"), ("b", "")])
 
     def testIsindex(self):
-        file = StringIO(
-"""<form action="abc">
+        file = StringIO("""<form action="abc">
 
 <isindex prompt=">>>">
 
 </form>
 
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         control = form.find_control(type="isindex")
         self.assert_(control.type == "isindex")
@@ -524,22 +518,21 @@ Rhubarb.</button>
         self.assert_(control.value == "")
         control.value = "some stuff"
         self.assert_(form.click_pairs() == [])
-        self.assert_(form.click_request_data() ==
-                     ("http://localhost/abc?some+stuff", None, []))
-        self.assert_(form.click().get_full_url() ==
-                     "http://localhost/abc?some+stuff")
+        self.assert_(form.click_request_data() == (
+            "http://localhost/abc?some+stuff", None, []))
+        self.assert_(
+            form.click().get_full_url() == "http://localhost/abc?some+stuff")
 
     def testEmptySelect(self):
-        file = StringIO(
-"""<form action="abc">
+        file = StringIO("""<form action="abc">
 <select name="foo"></select>
 
 <select name="bar" multiple></select>
 
 </form>
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         control0 = form.find_control(type="select", nr=0)
         control1 = form.find_control(type="select", nr=1)
@@ -550,90 +543,90 @@ Rhubarb.</button>
         self.assert_(form.click_pairs() == [])
 
 # XXX figure out what to do in these sorts of cases
-##     def badSelect(self):
-##         # what objects should these generate, if any?
-##         # what should happen on submission of these?
-##         # what about similar checkboxes and radios?
-## """<form action="abc" name="myform">
+#     def badSelect(self):
+#         # what objects should these generate, if any?
+#         # what should happen on submission of these?
+#         # what about similar checkboxes and radios?
+# """<form action="abc" name="myform">
 
-## <select multiple>
-##  <option>1</option>
-##  <option>2</option>
-##  <option>3</option>
-## </select>
+# <select multiple>
+#  <option>1</option>
+#  <option>2</option>
+#  <option>3</option>
+# </select>
 
-## <select multiple>
-##  <option>1</option>
-##  <option>2</option>
-##  <option>3</option>
-## </select>
+# <select multiple>
+#  <option>1</option>
+#  <option>2</option>
+#  <option>3</option>
+# </select>
 
-## </form>
-## """
+# </form>
+# """
 
-## """<form action="abc" name="myform">
+# """<form action="abc" name="myform">
 
-## <select multiple>
-##  <option>1</option>
-##  <option>2</option>
-##  <option>3</option>
-##  <option>1</option>
-##  <option>2</option>
-##  <option>3</option>
-## </select>
+# <select multiple>
+#  <option>1</option>
+#  <option>2</option>
+#  <option>3</option>
+#  <option>1</option>
+#  <option>2</option>
+#  <option>3</option>
+# </select>
 
-## </form>
-## """
-## <select name="foo">
-##  <option>1</option>
-##  <option>2</option>
-##  <option>3</option>
-## </select>
+# </form>
+# """
+# <select name="foo">
+#  <option>1</option>
+#  <option>2</option>
+#  <option>3</option>
+# </select>
 
-## <select name="foo" multiple>
-##  <option>4</option>
-##  <option>5</option>
-##  <option>6</option>
-## </select>
-## """
+# <select name="foo" multiple>
+#  <option>4</option>
+#  <option>5</option>
+#  <option>6</option>
+# </select>
+# """
 
-## """<form action="abc" name="myform">
+# """<form action="abc" name="myform">
 
-## <select>
-##  <option>1</option>
-##  <option>2</option>
-##  <option>3</option>
-## </select>
+# <select>
+#  <option>1</option>
+#  <option>2</option>
+#  <option>3</option>
+# </select>
 
-## <select>
-##  <option>1</option>
-##  <option>2</option>
-##  <option>3</option>
-## </select>
+# <select>
+#  <option>1</option>
+#  <option>2</option>
+#  <option>3</option>
+# </select>
 
-## </form>
-## """
+# </form>
+# """
 
-##     def testBadCheckbox(self):
-##         # see comments above
-##         # split checkbox -- is it one control, or two?
+#     def testBadCheckbox(self):
+#         # see comments above
+#         # split checkbox -- is it one control, or two?
 
-## """
-## <html>
+# """
+# <html>
 
-## <input type=checkbox name=foo value=bar>
-## <input type=checkbox name=foo value=bar>
+# <input type=checkbox name=foo value=bar>
+# <input type=checkbox name=foo value=bar>
 
-## <select>
-##  <option>1</option>
-##  <option>2</option>
-## </select>
+# <select>
+#  <option>1</option>
+#  <option>2</option>
+# </select>
 
-## <input type=checkbox name=foo value=baz>
-## <input type=checkbox name=foo value=bar>
+# <input type=checkbox name=foo value=baz>
+# <input type=checkbox name=foo value=bar>
 
-## </html>
-## """
+# </html>
+# """
 
     def testUnnamedControl(self):
         file = StringIO("""
@@ -643,8 +636,8 @@ Rhubarb.</button>
 
 </form>
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         self.assert_(form.controls[0].name is None)
 
@@ -670,17 +663,17 @@ Rhubarb.</button>
 <input type="submit" name="submit">
 </form>
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         hide_deprecations()
         self.assert_(form.possible_items("foo") == ["on"])
         self.assert_(form.possible_items("bar") == ["on"])
         reset_deprecations()
-        #self.assert_(form.possible_items("baz") == [])
+        # self.assert_(form.possible_items("baz") == [])
         self.assert_(form["foo"] == [])
         self.assert_(form["bar"] == [])
-        #self.assert_(form["baz"] == [])
+        # self.assert_(form["baz"] == [])
         form["foo"] = ["on"]
         form["bar"] = ["on"]
         pairs = form.click_pairs()
@@ -717,8 +710,8 @@ Rhubarb.</button>
 
 </form>
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         # deselect all but last item if more than one were selected...
         spam = form.find_control("spam")
@@ -734,8 +727,7 @@ Rhubarb.</button>
         self.assertEqual([ii.name for ii in moo.items if ii.selected], ["2"])
 
     def testSelectDefault(self):
-        file = StringIO(
-"""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <select name="a" multiple>
  <option>1</option>
@@ -752,8 +744,8 @@ Rhubarb.</button>
 </form>
 
 """)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         control = form.find_control("a")
         self.assert_(control.value == [])
@@ -761,8 +753,11 @@ Rhubarb.</button>
         self.assert_(single_control.value == ["1"])
 
         file.seek(0)
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    select_default=1, backwards_compat=False)
+        forms = mechanize.ParseFile(
+            file,
+            "http://localhost/",
+            select_default=1,
+            backwards_compat=False)
         form = forms[0]
         # select_default only affects *multiple* selection select controls
         control = form.find_control(type="select", nr=0)
@@ -777,8 +772,7 @@ Rhubarb.</button>
         forms = mechanize.ParseFile(
             StringIO("<form><textarea>\n\nblah\n</textarea></form>"),
             "http://example.com/",
-            backwards_compat=False,
-            )
+            backwards_compat=False, )
         ctl = forms[0].find_control(type="textarea")
         self.assertEqual(ctl.value, "\r\nblah\r\n")
 
@@ -787,10 +781,10 @@ Rhubarb.</button>
         # parser's .handle_data() method must not be trimmed unless they also
         # follow immediately after a start tag
         forms = mechanize.ParseFile(
-            StringIO("<form><textarea>\n\nspam&amp;\neggs\n</textarea></form>"),
+            StringIO(
+                "<form><textarea>\n\nspam&amp;\neggs\n</textarea></form>"),
             "http://example.com/",
-            backwards_compat=False,
-            )
+            backwards_compat=False, )
         ctl = forms[0].find_control(type="textarea")
         self.assertEqual(ctl.value, "\r\nspam&\r\neggs\r\n")
 
@@ -812,8 +806,7 @@ Rhubarb.</button>
 </form>
 """),
             "http://example.com/",
-            backwards_compat=False,
-            )
+            backwards_compat=False, )
         form = forms[0]
         self.assertEquals(len(form.controls), 2)
         ctl = form.find_control(name="a", nr=0)
@@ -836,8 +829,7 @@ Rhubarb.</button>
     <option>e</option>
 </select>
 """),
-            "http://example.com/",
-            )
+            "http://example.com/", )
 
         mechanize.ParseFile(
             StringIO("""\
@@ -845,8 +837,7 @@ Rhubarb.</button>
 <textarea></textarea>
 """),
             "http://example.com/",
-            backwards_compat=False,
-            )
+            backwards_compat=False, )
 
     def test_empty_document(self):
         forms = mechanize.ParseFileEx(StringIO(""), "http://example.com/")
@@ -857,8 +848,7 @@ Rhubarb.</button>
         # page should be returned.
         forms = mechanize.ParseFileEx(
             StringIO('<form name="spam">'),
-            "http://example.com/",
-            )
+            "http://example.com/", )
         self.assertEquals(len(forms), 2)
         self.assertEquals(forms[1].name, "spam")
 
@@ -869,8 +859,7 @@ class DisabledTests(unittest.TestCase):
             self._testOptgroup(compat)
 
     def _testOptgroup(self, compat):
-        file = StringIO(
-"""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <select name="foo" multiple>
  <option>1</option>
@@ -918,8 +907,8 @@ class DisabledTests(unittest.TestCase):
 
         def get_control(name, file=file, compat=compat):
             file.seek(0)
-            forms = mechanize.ParseFile(file, "http://localhost/",
-                                        backwards_compat=False)
+            forms = mechanize.ParseFile(
+                file, "http://localhost/", backwards_compat=False)
             form = forms[0]
             form.backwards_compat = compat
             return form.find_control(name)
@@ -948,19 +937,20 @@ class DisabledTests(unittest.TestCase):
         # included (they are not "successful":
         # http://www.w3.org/TR/REC-html40/interact/forms.html#successful-controls
         # ).  This behavior was confirmed in Firefox 1.0.4 at least.
-        self.assertEqual(control.value, []+extra)
+        self.assertEqual(control.value, [] + extra)
         control.value = ["1"]
         self.assertEqual(control.value, ["1"])
         control = get_control("foo")
         self.assertRaises(AttributeError, setattr, control, 'value', ['8'])
-        self.assertEqual(control.value, []+extra)
+        self.assertEqual(control.value, [] + extra)
         # even though 7 is set already, attempt to set it fails
         self.assertRaises(AttributeError, setattr, control, 'value', ['7'])
         control.value = ["1", "3"]
         self.assertEqual(control.value, ["1", "3"])
         control = get_control("foo")
-        self.assertRaises(AttributeError, setattr, control, 'value', ['1', '7'])
-        self.assertEqual(control.value, []+extra)
+        self.assertRaises(AttributeError, setattr, control, 'value',
+                          ['1', '7'])
+        self.assertEqual(control.value, [] + extra)
         # enable all items
         control.set_all_items_disabled(False)
         control.value = ['1', '7']
@@ -977,7 +967,8 @@ class DisabledTests(unittest.TestCase):
                 # a disabled option always is always upset if you try to set it
                 self.assertRaises(AttributeError, control.set, True, str(name))
                 self.assert_(str(name) not in control.value)
-                self.assertRaises(AttributeError, control.set, False, str(name))
+                self.assertRaises(AttributeError, control.set, False,
+                                  str(name))
                 self.assert_(str(name) not in control.value)
                 self.assertRaises(AttributeError, control.toggle, str(name))
                 self.assert_(str(name) not in control.value)
@@ -1025,15 +1016,21 @@ class DisabledTests(unittest.TestCase):
         else:
             value = []
         self.assertEqual(control.value, value)
-        self.assertEqual(
-            [ii.name for ii in control.items if ii.selected], ["7"])
+        self.assertEqual([ii.name for ii in control.items if ii.selected],
+                         ["7"])
         control.value = ["2"]
 
         control = get_control("bar")
-        def assign_8(control=control): control.value = ["8"]
+
+        def assign_8(control=control):
+            control.value = ["8"]
+
         self.assertRaises(AttributeError, assign_8)
         self.assertEqual(control.value, value)
-        def assign_7(control=control): control.value = ["7"]
+
+        def assign_7(control=control):
+            control.value = ["7"]
+
         self.assertRaises(AttributeError, assign_7)
         # enable all items
         control.set_all_items_disabled(False)
@@ -1045,13 +1042,14 @@ class DisabledTests(unittest.TestCase):
         for name in 7, 8, 10:
             self.assert_(control.get_item_disabled(str(name)))
             if not compat:
-                # a disabled option is never "successful" (see above) so never in
-                # value
+                # a disabled option is never "successful" (see above) so never
+                # in value
                 self.assert_(str(name) not in control.value)
                 # a disabled option always is always upset if you try to set it
                 self.assertRaises(AttributeError, control.set, True, str(name))
                 self.assert_(str(name) not in control.value)
-                self.assertRaises(AttributeError, control.set, False, str(name))
+                self.assertRaises(AttributeError, control.set, False,
+                                  str(name))
                 self.assert_(str(name) not in control.value)
                 self.assertRaises(AttributeError, control.toggle, str(name))
                 self.assert_(str(name) not in control.value)
@@ -1104,12 +1102,13 @@ class DisabledTests(unittest.TestCase):
         reset_deprecations()
 
 # XXX single select
+
     def testDisabledSelect(self):
         for compat in [False, True]:
-           self._testDisabledSelect(compat)
+            self._testDisabledSelect(compat)
+
     def _testDisabledSelect(self, compat):
-        file = StringIO(
-"""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <select name="foo" multiple>
  <option label="a">1</option>
@@ -1146,23 +1145,24 @@ class DisabledTests(unittest.TestCase):
 </form>
 """)
         hide_deprecations()
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=compat)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=compat)
         reset_deprecations()
         form = forms[0]
         for name, control_disabled, item_disabled in [
-            ("foo", False, False),
-            ("bar", False, True),
-            ("baz", True, False),
-            ("spam", True, True)]:
+            ("foo", False, False), ("bar", False, True), ("baz", True, False),
+            ("spam", True, True)
+        ]:
             control = form.find_control(name)
             self.assertEqual(bool(control.disabled), control_disabled)
             hide_deprecations()
             item = control.get_item_attrs("2")
             reset_deprecations()
-            self.assertEqual(bool(item.has_key("disabled")), item_disabled)
+            self.assertEqual(bool('disabled' in item), item_disabled)
 
-            def bad_assign(value, control=control): control.value = value
+            def bad_assign(value, control=control):
+                control.value = value
+
             hide_deprecations()
             if control_disabled:
                 for name in "1", "2", "3":
@@ -1190,16 +1190,16 @@ class DisabledTests(unittest.TestCase):
     def testDisabledRadio(self):
         for compat in False, True:
             self._testDisabledRadio(compat)
+
     def _testDisabledRadio(self, compat):
-        file = StringIO(
-"""<form>
+        file = StringIO("""<form>
 <input type="checkbox" name="foo" value="1" disabled></input>
 <input type="checkbox" name="foo" value="2" disabled></input>
 <input type="checkbox" name="foo" value="3" disabled></input>
 </form>""")
         hide_deprecations()
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=compat)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=compat)
         form = forms[0]
         control = form.find_control('foo')
 
@@ -1207,16 +1207,15 @@ class DisabledTests(unittest.TestCase):
         # anything
         self.assertEquals(
             [item.name for item in control.items if item.selected],
-            [],
-            )
+            [], )
         reset_deprecations()
 
     def testDisabledCheckbox(self):
         for compat in False, True:
             self._testDisabledCheckbox(compat)
+
     def _testDisabledCheckbox(self, compat):
-        file = StringIO(
-"""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <label><input type="checkbox" name="foo" value="1"></input> a</label>
 <input type="checkbox" name="foo" value="2"></input>
@@ -1232,22 +1231,23 @@ class DisabledTests(unittest.TestCase):
 
 </form>""")
         hide_deprecations()
-        forms = mechanize.ParseFile(file, "http://localhost/",
-                                    backwards_compat=compat)
+        forms = mechanize.ParseFile(
+            file, "http://localhost/", backwards_compat=compat)
         reset_deprecations()
         form = forms[0]
-        for name, control_disabled, item_disabled in [
-            ("foo", False, False),
-            ("bar", False, True),
-            ("baz", False, True)]:
+        for name, control_disabled, item_disabled in [("foo", False, False),
+                                                      ("bar", False, True),
+                                                      ("baz", False, True)]:
             control = form.find_control(name)
             self.assert_(bool(control.disabled) == control_disabled)
             hide_deprecations()
             item = control.get_item_attrs("2")
-            self.assert_(bool(item.has_key("disabled")) == item_disabled)
+            self.assert_(bool('disabled' in item) == item_disabled)
             self.assert_(control.get_item_disabled("2") == item_disabled)
 
-            def bad_assign(value, control=control): control.value = value
+            def bad_assign(value, control=control):
+                control.value = value
+
             if item_disabled:
                 self.assertRaises(AttributeError, control.set, True, "2")
                 self.assertRaises(AttributeError, bad_assign, ["2"])
@@ -1272,11 +1272,13 @@ class DisabledTests(unittest.TestCase):
 
 class ControlTests(unittest.TestCase):
     def testTextControl(self):
-        attrs = {"type": "this is ignored",
-                 "name": "ath_Uname",
-                 "value": "",
-                 "maxlength": "20",
-                 "id": "foo"}
+        attrs = {
+            "type": "this is ignored",
+            "name": "ath_Uname",
+            "value": "",
+            "maxlength": "20",
+            "id": "foo"
+        }
         c = _form.TextControl("texT", "ath_Uname", attrs)
         c.fixup()
         self.assert_(c.type == "text")
@@ -1285,10 +1287,16 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value == "")
         self.assert_(str(c) == "<TextControl(ath_Uname=)>")
         self.assert_(c.pairs() == [("ath_Uname", "")])
-        def bad_assign(c=c): c.type = "sometype"
+
+        def bad_assign(c=c):
+            c.type = "sometype"
+
         self.assertRaises(AttributeError, bad_assign)
         self.assert_(c.type == "text")
-        def bad_assign(c=c): c.name = "somename"
+
+        def bad_assign(c=c):
+            c.name = "somename"
+
         self.assertRaises(AttributeError, bad_assign)
         self.assert_(c.name == "ath_Uname")
         c.value = "2"
@@ -1301,19 +1309,25 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value is None)
 
         self.assert_(c.pairs() == [])
-        c.value = "2"                   # reset value...
+        c.value = "2"  # reset value...
         self.assert_(str(c) == "<TextControl(ath_Uname=2)>")
-        def bad_assign(c=c): c.value = ["foo"]
+
+        def bad_assign(c=c):
+            c.value = ["foo"]
+
         self.assertRaises(TypeError, bad_assign)
         self.assert_(c.value == "2")
         self.assert_(not c.readonly)
         c.readonly = True
-        def bad_assign(c=c): c.value = "foo"
+
+        def bad_assign(c=c):
+            c.value = "foo"
+
         self.assertRaises(AttributeError, bad_assign)
         self.assert_(c.value == "2")
         c.disabled = True
-        self.assert_(str(c) ==
-                     "<TextControl(ath_Uname=2) (disabled, readonly)>")
+        self.assert_(
+            str(c) == "<TextControl(ath_Uname=2) (disabled, readonly)>")
         c.readonly = False
         self.assert_(str(c) == "<TextControl(ath_Uname=2) (disabled)>")
         self.assertRaises(AttributeError, bad_assign)
@@ -1322,24 +1336,33 @@ class ControlTests(unittest.TestCase):
         c.disabled = False
         self.assert_(str(c) == "<TextControl(ath_Uname=2)>")
 
-        self.assert_(c.attrs.has_key("maxlength"))
+        self.assert_('maxlength' in c.attrs)
         for key in "name", "type", "value":
-            self.assert_(c.attrs.has_key(key))
+            self.assertIn(key, c.attrs)
 
         # initialisation of readonly and disabled attributes
         attrs["readonly"] = True
         c = _form.TextControl("text", "ath_Uname", attrs)
-        def bad_assign(c=c): c.value = "foo"
+
+        def bad_assign(c=c):
+            c.value = "foo"
+
         self.assertRaises(AttributeError, bad_assign)
         del attrs["readonly"]
         attrs["disabled"] = True
         c = _form.TextControl("text", "ath_Uname", attrs)
-        def bad_assign(c=c): c.value = "foo"
+
+        def bad_assign(c=c):
+            c.value = "foo"
+
         self.assertRaises(AttributeError, bad_assign)
         del attrs["disabled"]
         c = _form.TextControl("hidden", "ath_Uname", attrs)
         self.assert_(c.readonly)
-        def bad_assign(c=c): c.value = "foo"
+
+        def bad_assign(c=c):
+            c.value = "foo"
+
         self.assertRaises(AttributeError, bad_assign)
 
     def testFileControl(self):
@@ -1348,7 +1371,8 @@ class ControlTests(unittest.TestCase):
         c.add_file(fp)
         fp2 = StringIO()
         c.add_file(fp2, None, "fp2 file test")
-        self.assert_(str(c) == '<FileControl(test_file=<Unnamed file>, fp2 file test)>')
+        self.assert_(
+            str(c) == '<FileControl(test_file=<Unnamed file>, fp2 file test)>')
         c.readonly = True
         self.assertRaises(AttributeError, c.clear)
         c.readonly = False
@@ -1356,8 +1380,7 @@ class ControlTests(unittest.TestCase):
         self.assert_(str(c) == '<FileControl(test_file=<No files added>)>')
 
     def testIsindexControl(self):
-        attrs = {"type": "this is ignored",
-                 "prompt": ">>>"}
+        attrs = {"type": "this is ignored", "prompt": ">>>"}
         c = _form.IsindexControl("isIndex", None, attrs)
         c.fixup()
         self.assert_(c.type == "isindex")
@@ -1365,12 +1388,21 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value == "")
         self.assert_(str(c) == "<IsindexControl()>")
         self.assert_(c.pairs() == [])
-        def set_type(c=c): c.type = "sometype"
+
+        def set_type(c=c):
+            c.type = "sometype"
+
         self.assertRaises(AttributeError, set_type)
         self.assert_(c.type == "isindex")
-        def set_name(c=c): c.name = "somename"
+
+        def set_name(c=c):
+            c.name = "somename"
+
         self.assertRaises(AttributeError, set_name)
-        def set_value(value, c=c): c.value = value
+
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(TypeError, set_value, [None])
         self.assert_(c.name is None)
         c.value = "2"
@@ -1390,17 +1422,21 @@ class ControlTests(unittest.TestCase):
         c.readonly = False
         self.assert_(str(c) == "<IsindexControl(2)>")
 
-        self.assert_(c.attrs.has_key("type"))
-        self.assert_(c.attrs.has_key("prompt"))
+        self.assertIn('type', c.attrs)
+        self.assertIn('prompt', c.attrs)
         self.assert_(c.attrs["prompt"] == ">>>")
         for key in "name", "value":
-            self.assert_(not c.attrs.has_key(key))
+            self.assertNotIn(key, c.attrs)
 
         c.value = "foo 1 bar 2"
-        class FakeForm: action = "http://localhost/"
+
+        class FakeForm:
+            action = "http://localhost/"
+
         form = FakeForm()
-        self.assert_(c._click(form, (1,1), "request_data") ==
-                     ("http://localhost/?foo+1+bar+2", None, []))
+        self.assert_(
+            c._click(form, (1, 1), "request_data") == (
+                "http://localhost/?foo+1+bar+2", None, []))
 
         c.value = "foo 1 bar 2"
         c.readonly = True
@@ -1416,7 +1452,9 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value is None)
         self.assert_(str(c) == "<IgnoreControl(<None>=<None>)>")
 
-        def set_value(value, c=c): c.value = value
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(AttributeError, set_value, "foo")
         self.assert_(c.value is None)
 
@@ -1425,15 +1463,18 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value is None)
 
     def testSubmitControl(self):
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "value": "value_value",
-                 "img": "foo.gif"}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "value": "value_value",
+            "img": "foo.gif"
+        }
         c = _form.SubmitControl("submit", "name_value", attrs)
         self.assert_(c.type == "submit")
         self.assert_(c.name == "name_value")
         self.assert_(c.value == "value_value")
-        self.assert_(str(c) == "<SubmitControl(name_value=value_value) (readonly)>")
+        self.assert_(
+            str(c) == "<SubmitControl(name_value=value_value) (readonly)>")
 
         c.readonly = True
         self.assertRaises(AttributeError, c.clear)
@@ -1443,12 +1484,15 @@ class ControlTests(unittest.TestCase):
         c.value = "value_value"
         c.readonly = True
 
-        def set_value(value, c=c): c.value = value
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(TypeError, set_value, ["foo"])
         c.disabled = True
         self.assertRaises(AttributeError, set_value, "value_value")
-        self.assert_(str(c) == "<SubmitControl(name_value=value_value) "
-                     "(disabled, readonly)>")
+        self.assert_(
+            str(c) == "<SubmitControl(name_value=value_value) "
+            "(disabled, readonly)>")
         c.disabled = False
         c.readonly = False
         set_value("value_value")
@@ -1459,28 +1503,31 @@ class ControlTests(unittest.TestCase):
         form = _form.HTMLForm("http://foo.bar.com/")
         c.add_to_form(form)
         self.assert_(c.pairs() == [])
-        pairs = c._click(form, (1,1), "pairs")
-        request = c._click(form, (1,1), "request")
-        data = c._click(form, (1,1), "request_data")
+        pairs = c._click(form, (1, 1), "pairs")
+        request = c._click(form, (1, 1), "request")
+        data = c._click(form, (1, 1), "request_data")
         self.assert_(c.pairs() == [])
         self.assert_(pairs == [("name_value", "value_value")])
         self.assert_(request.get_full_url() ==
                      "http://foo.bar.com/?name_value=value_value")
-        self.assert_(data ==
-                     ("http://foo.bar.com/?name_value=value_value", None, []))
+        self.assert_(
+            data == ("http://foo.bar.com/?name_value=value_value", None, []))
         c.disabled = True
-        pairs = c._click(form, (1,1), "pairs")
-        request = c._click(form, (1,1), "request")
-        data = c._click(form, (1,1), "request_data")
+        pairs = c._click(form, (1, 1), "pairs")
+        request = c._click(form, (1, 1), "request")
+        data = c._click(form, (1, 1), "request_data")
         self.assert_(pairs == [])
-        # XXX not sure if should have '?' on end of this URL, or if it really matters...
+        # XXX not sure if should have '?' on end of this URL, or if it really
+        # matters...
         self.assert_(request.get_full_url() == "http://foo.bar.com/")
         self.assert_(data == ("http://foo.bar.com/", None, []))
 
     def testImageControl(self):
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "img": "foo.gif"}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "img": "foo.gif"
+        }
         c = _form.ImageControl("image", "name_value", attrs, index=0)
         self.assert_(c.type == "image")
         self.assert_(c.name == "name_value")
@@ -1502,9 +1549,10 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.pairs() == [])
         self.assert_(request.get_full_url() ==
                      "http://foo.bar.com/?name_value.x=0&name_value.y=55")
-        self.assert_(c._click(form, (0,55), return_type="request_data") ==
-                     ("http://foo.bar.com/?name_value.x=0&name_value.y=55",
-                      None, []))
+        self.assert_(
+            c._click(form, (0, 55), return_type="request_data") == (
+                "http://foo.bar.com/?name_value.x=0&name_value.y=55", None,
+                []))
         c.value = "blah"
         request = c._click(form, (0, 55), "request")
         self.assertEqual(request.get_full_url(), "http://foo.bar.com/?"
@@ -1513,25 +1561,32 @@ class ControlTests(unittest.TestCase):
         c.disabled = True
         self.assertEqual(c.value, "blah")
         self.assert_(str(c) == "<ImageControl(name_value=blah) (disabled)>")
-        def set_value(value, c=c): c.value = value
+
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(AttributeError, set_value, "blah")
-        self.assert_(c._click(form, (1,1), return_type="pairs") == [])
+        self.assert_(c._click(form, (1, 1), return_type="pairs") == [])
         c.readonly = True
-        self.assert_(str(c) == "<ImageControl(name_value=blah) "
-                     "(disabled, readonly)>")
+        self.assert_(
+            str(c) == "<ImageControl(name_value=blah) "
+            "(disabled, readonly)>")
         self.assertRaises(AttributeError, set_value, "blah")
-        self.assert_(c._click(form, (1,1), return_type="pairs") == [])
+        self.assert_(c._click(form, (1, 1), return_type="pairs") == [])
         c.disabled = c.readonly = False
-        self.assert_(c._click(form, (1,1), return_type="pairs") ==
-                     [("name_value.x", "1"),
-                      ("name_value.y", "1"),
-                      ('name_value', 'blah')])
+        self.assert_(
+            c._click(form, (1, 1),
+                     return_type="pairs") == [("name_value.x", "1"),
+                                              ("name_value.y", "1"),
+                                              ('name_value', 'blah')])
 
     def testCheckboxControl(self):
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "value": "value_value",
-                 "alt": "some string"}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "value": "value_value",
+            "alt": "some string"
+        }
         form = DummyForm()
         c = _form.CheckboxControl("checkbox", "name_value", attrs)
         c.add_to_form(form)
@@ -1542,10 +1597,16 @@ class ControlTests(unittest.TestCase):
         hide_deprecations()
         self.assert_(c.possible_items() == ["value_value"])
         reset_deprecations()
-        def set_type(c=c): c.type = "sometype"
+
+        def set_type(c=c):
+            c.type = "sometype"
+
         self.assertRaises(AttributeError, set_type)
         self.assert_(c.type == "checkbox")
-        def set_name(c=c): c.name = "somename"
+
+        def set_name(c=c):
+            c.name = "somename"
+
         self.assertRaises(AttributeError, set_name)
         self.assert_(c.name == "name_value")
 
@@ -1558,18 +1619,20 @@ class ControlTests(unittest.TestCase):
         c.merge_control(c2)
         c.add_to_form(form)
         c.fixup()
-        self.assert_(str(c) == "<CheckboxControl("
-                     "name_value=[value_value, value_value2])>")
+        self.assert_(
+            str(c) == "<CheckboxControl("
+            "name_value=[value_value, value_value2])>")
         hide_deprecations()
         self.assert_(c.possible_items() == ["value_value", "value_value2"])
 
         attrs = c.get_item_attrs("value_value")
         for key in "alt", "name", "value", "type":
-            self.assert_(attrs.has_key(key))
+            self.assertIn(key, attrs)
         self.assertRaises(ItemNotFoundError, c.get_item_attrs, "oops")
         reset_deprecations()
 
-        def set_value(value, c=c): c.value = value
+        def set_value(value, c=c):
+            c.value = value
 
         c.value = ["value_value", "value_value2"]
         self.assert_(c.value == ["value_value", "value_value2"])
@@ -1614,26 +1677,30 @@ class ControlTests(unittest.TestCase):
         self.assertRaises(TypeError, c.set, False, ["value_value"])
         reset_deprecations()
 
-        self.assert_(str(c) == "<CheckboxControl("
-                     "name_value=[*value_value, value_value2])>")
+        self.assert_(
+            str(c) == "<CheckboxControl("
+            "name_value=[*value_value, value_value2])>")
         c.disabled = True
         self.assertRaises(AttributeError, set_value, ["value_value"])
-        self.assert_(str(c) == "<CheckboxControl("
-                     "name_value=[*value_value, value_value2]) "
-                     "(disabled)>")
+        self.assert_(
+            str(c) == "<CheckboxControl("
+            "name_value=[*value_value, value_value2]) "
+            "(disabled)>")
         self.assert_(c.value == ["value_value"])
         self.assert_(c.pairs() == [])
         c.readonly = True
         self.assertRaises(AttributeError, set_value, ["value_value"])
-        self.assert_(str(c) == "<CheckboxControl("
-                     "name_value=[*value_value, value_value2]) "
-                     "(disabled, readonly)>")
+        self.assert_(
+            str(c) == "<CheckboxControl("
+            "name_value=[*value_value, value_value2]) "
+            "(disabled, readonly)>")
         self.assert_(c.value == ["value_value"])
         self.assert_(c.pairs() == [])
         c.disabled = False
-        self.assert_(str(c) == "<CheckboxControl("
-                     "name_value=[*value_value, value_value2]) "
-                     "(readonly)>")
+        self.assert_(
+            str(c) == "<CheckboxControl("
+            "name_value=[*value_value, value_value2]) "
+            "(readonly)>")
         self.assertRaises(AttributeError, set_value, ["value_value"])
         self.assert_(c.value == ["value_value"])
         self.assert_(c.pairs() == [("name_value", "value_value")])
@@ -1642,16 +1709,20 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value == [])
 
     def testSelectControlMultiple(self):
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "value": "value_value",
-                 "alt": "some string",
-                 "label": "contents_value",
-                 "contents": "contents_value",
-                 "__select": {"type": "this is ignored",
-                              "name": "select_name",
-                              "multiple": "",
-                              "alt": "alt_text"}}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "value": "value_value",
+            "alt": "some string",
+            "label": "contents_value",
+            "contents": "contents_value",
+            "__select": {
+                "type": "this is ignored",
+                "name": "select_name",
+                "multiple": "",
+                "alt": "alt_text"
+            }
+        }
         form = DummyForm()
         # with Netscape / IE default selection...
         c = _form.SelectControl("select", "select_name", attrs)
@@ -1663,11 +1734,12 @@ class ControlTests(unittest.TestCase):
         hide_deprecations()
         self.assert_(c.possible_items() == ["value_value"])
         reset_deprecations()
-        self.assert_(c.attrs.has_key("name"))
-        self.assert_(c.attrs.has_key("type"))
+        self.assertIn('name', c.attrs)
+        self.assertIn('type', c.attrs)
         self.assert_(c.attrs["alt"] == "alt_text")
         # ... and with RFC 1866 default selection
-        c = _form.SelectControl("select", "select_name", attrs, select_default=True)
+        c = _form.SelectControl(
+            "select", "select_name", attrs, select_default=True)
         c.add_to_form(form)
         c.fixup()
         self.assert_(c.value == ["value_value"])
@@ -1681,22 +1753,23 @@ class ControlTests(unittest.TestCase):
         c.merge_control(c2)
         c.add_to_form(form)
         c.fixup()
-        self.assert_(str(c) == "<SelectControl("
-                     "select_name=[value_value, value_value2])>")
+        self.assert_(
+            str(c) == "<SelectControl("
+            "select_name=[value_value, value_value2])>")
         hide_deprecations()
         self.assert_(c.possible_items() == ["value_value", "value_value2"])
 
         # get_item_attrs
         attrs3 = c.get_item_attrs("value_value")
         reset_deprecations()
-        self.assert_(attrs3.has_key("alt"))
-        self.assert_(not attrs3.has_key("multiple"))
+        self.assertIn('alt', attrs3)
+        self.assertNotIn('multiple', attrs3)
         # HTML attributes dictionary should have been copied by ListControl
         # constructor.
         attrs["new_attr"] = "new"
         attrs2["new_attr2"] = "new2"
         for key in ("new_attr", "new_attr2"):
-            self.assert_(not attrs3.has_key(key))
+            self.assertNotIn(key, attrs3)
         hide_deprecations()
         self.assertRaises(ItemNotFoundError, c.get_item_attrs, "oops")
         reset_deprecations()
@@ -1705,7 +1778,10 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value == ["value_value", "value_value2"])
         c.value = ["value_value"]
         self.assertEqual(c.value, ["value_value"])
-        def set_value(value, c=c): c.value = value
+
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(ItemNotFoundError, set_value, ["oops"])
         self.assertRaises(TypeError, set_value, "value_value")
         self.assertRaises(TypeError, set_value, None)
@@ -1748,35 +1824,47 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value == [])
 
     def testSelectControlMultiple_label(self):
-##         <SELECT name=year>
-##          <OPTION value=0 label="2002">current year</OPTION>
-##          <OPTION value=1>2001</OPTION>
-##          <OPTION>2000</OPTION>
-##         </SELECT>
-        attrs = {"type": "ignored",
-                 "name": "year",
-                 "value": "0",
-                 "label": "2002",
-                 "contents": "current year",
-                 "__select": {"type": "this is ignored",
-                              "name": "select_name",
-                              "multiple": ""}}
-        attrs2 = {"type": "ignored",
-                  "name": "year",
-                  "value": "1",
-                  "label": "2001",  # label defaults to contents
-                  "contents": "2001",
-                 "__select": {"type": "this is ignored",
-                              "name": "select_name",
-                              "multiple": ""}}
-        attrs3 = {"type": "ignored",
-                  "name": "year",
-                  "value": "2000",  # value defaults to contents
-                  "label": "2000",  # label defaults to contents
-                  "contents": "2000",
-                 "__select": {"type": "this is ignored",
-                              "name": "select_name",
-                              "multiple": ""}}
+        #         <SELECT name=year>
+        #          <OPTION value=0 label="2002">current year</OPTION>
+        #          <OPTION value=1>2001</OPTION>
+        #          <OPTION>2000</OPTION>
+        #         </SELECT>
+        attrs = {
+            "type": "ignored",
+            "name": "year",
+            "value": "0",
+            "label": "2002",
+            "contents": "current year",
+            "__select": {
+                "type": "this is ignored",
+                "name": "select_name",
+                "multiple": ""
+            }
+        }
+        attrs2 = {
+            "type": "ignored",
+            "name": "year",
+            "value": "1",
+            "label": "2001",  # label defaults to contents
+            "contents": "2001",
+            "__select": {
+                "type": "this is ignored",
+                "name": "select_name",
+                "multiple": ""
+            }
+        }
+        attrs3 = {
+            "type": "ignored",
+            "name": "year",
+            "value": "2000",  # value defaults to contents
+            "label": "2000",  # label defaults to contents
+            "contents": "2000",
+            "__select": {
+                "type": "this is ignored",
+                "name": "select_name",
+                "multiple": ""
+            }
+        }
         c = _form.SelectControl("select", "select_name", attrs)
         c2 = _form.SelectControl("select", "select_name", attrs2)
         c3 = _form.SelectControl("select", "select_name", attrs3)
@@ -1788,8 +1876,8 @@ class ControlTests(unittest.TestCase):
 
         hide_deprecations()
         self.assert_(c.possible_items() == ["0", "1", "2000"])
-        self.assert_(c.possible_items(by_label=True) ==
-                     ["2002", "2001", "2000"])
+        self.assert_(
+            c.possible_items(by_label=True) == ["2002", "2001", "2000"])
 
         self.assert_(c.value == [])
         c.toggle("2002", by_label=True)
@@ -1807,7 +1895,9 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value == ["2000"])
         self.assert_(c.get_value_by_label() == ["2000"])
 
-        def set_value(value, c=c): c.value = value
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(ItemNotFoundError, set_value, ["2002"])
         self.assertRaises(TypeError, set_value, "1")
         self.assertRaises(TypeError, set_value, None)
@@ -1847,39 +1937,51 @@ class ControlTests(unittest.TestCase):
         c.set(True, "2001", by_label=True)
         self.assert_(c.get_value_by_label() == ["2002", "2001"])
         self.assert_(c.value == ["0", "1"])
-        self.assertRaises(ItemNotFoundError, c.set, True, "blah",
-                          by_label=True)
-        self.assertRaises(ItemNotFoundError, c.set,
-                          False, "blah", by_label=True)
+        self.assertRaises(
+            ItemNotFoundError, c.set, True, "blah", by_label=True)
+        self.assertRaises(
+            ItemNotFoundError, c.set, False, "blah", by_label=True)
         reset_deprecations()
 
     def testSelectControlSingle_label(self):
-##         <SELECT name=year>
-##          <OPTION value=0 label="2002">current year</OPTION>
-##          <OPTION value=1>2001</OPTION>
-##          <OPTION>2000</OPTION>
-##         </SELECT>
-        attrs = {"type": "ignored",
-                 "name": "year",
-                 "value": "0",
-                 "label": "2002",
-                 "contents": "current year",
-                 "__select": {"type": "this is ignored",
-                              "name": "select_name"}}
-        attrs2 = {"type": "ignored",
-                  "name": "year",
-                  "value": "1",
-                  "label": "2001",  # label defaults to contents
-                  "contents": "2001",
-                 "__select": {"type": "this is ignored",
-                              "name": "select_name"}}
-        attrs3 = {"type": "ignored",
-                  "name": "year",
-                  "value": "2000",  # value defaults to contents
-                  "label": "2000",  # label defaults to contents
-                  "contents": "2000",
-                 "__select": {"type": "this is ignored",
-                              "name": "select_name"}}
+        #         <SELECT name=year>
+        #          <OPTION value=0 label="2002">current year</OPTION>
+        #          <OPTION value=1>2001</OPTION>
+        #          <OPTION>2000</OPTION>
+        #         </SELECT>
+        attrs = {
+            "type": "ignored",
+            "name": "year",
+            "value": "0",
+            "label": "2002",
+            "contents": "current year",
+            "__select": {
+                "type": "this is ignored",
+                "name": "select_name"
+            }
+        }
+        attrs2 = {
+            "type": "ignored",
+            "name": "year",
+            "value": "1",
+            "label": "2001",  # label defaults to contents
+            "contents": "2001",
+            "__select": {
+                "type": "this is ignored",
+                "name": "select_name"
+            }
+        }
+        attrs3 = {
+            "type": "ignored",
+            "name": "year",
+            "value": "2000",  # value defaults to contents
+            "label": "2000",  # label defaults to contents
+            "contents": "2000",
+            "__select": {
+                "type": "this is ignored",
+                "name": "select_name"
+            }
+        }
         c = _form.SelectControl("select", "select_name", attrs)
         c2 = _form.SelectControl("select", "select_name", attrs2)
         c3 = _form.SelectControl("select", "select_name", attrs3)
@@ -1891,11 +1993,13 @@ class ControlTests(unittest.TestCase):
 
         hide_deprecations()
         self.assert_(c.possible_items() == ["0", "1", "2000"])
-        self.assert_(c.possible_items(by_label=True) ==
-                     ["2002", "2001", "2000"])
+        self.assert_(
+            c.possible_items(by_label=True) == ["2002", "2001", "2000"])
         reset_deprecations()
 
-        def set_value(value, c=c): c.value = value
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(ItemNotFoundError, set_value, ["2002"])
         self.assertRaises(TypeError, set_value, "1")
         self.assertRaises(TypeError, set_value, None)
@@ -1924,14 +2028,18 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.value == [])
 
     def testSelectControlSingle(self):
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "value": "value_value",
-                 "label": "contents_value",
-                 "contents": "contents_value",
-                 "__select": {"type": "this is ignored",
-                              "name": "select_name",
-                              "alt": "alt_text"}}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "value": "value_value",
+            "label": "contents_value",
+            "contents": "contents_value",
+            "__select": {
+                "type": "this is ignored",
+                "name": "select_name",
+                "alt": "alt_text"
+            }
+        }
         # Netscape and IE behaviour...
         c = _form.SelectControl("select", "select_name", attrs)
         form = DummyForm()
@@ -1943,12 +2051,12 @@ class ControlTests(unittest.TestCase):
         hide_deprecations()
         self.assert_(c.possible_items() == ["value_value"])
         reset_deprecations()
-        self.assert_(c.attrs.has_key("name"))
-        self.assert_(c.attrs.has_key("type"))
+        self.assertIn('name', c.attrs)
+        self.assertIn('type', c.attrs)
         self.assert_(c.attrs["alt"] == "alt_text")
         # ...and RFC 1866 behaviour are identical (unlike multiple SELECT).
-        c = _form.SelectControl("select", "select_name", attrs,
-                                select_default=1)
+        c = _form.SelectControl(
+            "select", "select_name", attrs, select_default=1)
         c.add_to_form(form)
         c.fixup()
         self.assert_(c.value == ["value_value"])
@@ -1961,21 +2069,26 @@ class ControlTests(unittest.TestCase):
         c.merge_control(c2)
         c.add_to_form(form)
         c.fixup()
-        self.assert_(str(c) == "<SelectControl("
-                     "select_name=[*value_value, value_value2])>")
+        self.assert_(
+            str(c) == "<SelectControl("
+            "select_name=[*value_value, value_value2])>")
         c.value = []
         self.assert_(c.value == [])
-        self.assert_(str(c) == "<SelectControl("
-                     "select_name=[value_value, value_value2])>")
+        self.assert_(
+            str(c) == "<SelectControl("
+            "select_name=[value_value, value_value2])>")
         c.value = ["value_value"]
         self.assert_(c.value == ["value_value"])
-        self.assert_(str(c) == "<SelectControl("
-                     "select_name=[*value_value, value_value2])>")
+        self.assert_(
+            str(c) == "<SelectControl("
+            "select_name=[*value_value, value_value2])>")
         hide_deprecations()
         self.assert_(c.possible_items() == ["value_value", "value_value2"])
         reset_deprecations()
 
-        def set_value(value, c=c): c.value = value
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(ItemCountError, set_value,
                           ["value_value", "value_value2"])
         self.assertRaises(TypeError, set_value, "value_value")
@@ -2027,10 +2140,12 @@ class ControlTests(unittest.TestCase):
         reset_deprecations()
 
     def testRadioControl(self):
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "value": "value_value",
-                 "id": "blah"}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "value": "value_value",
+            "id": "blah"
+        }
         # Netscape and IE behaviour...
         c = _form.RadioControl("radio", "name_value", attrs)
         form = DummyForm()
@@ -2044,29 +2159,32 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.possible_items() == ["value_value"])
         reset_deprecations()
         # ...and RFC 1866 behaviour
-        c = _form.RadioControl("radio", "name_value", attrs,
-                               select_default=True)
+        c = _form.RadioControl(
+            "radio", "name_value", attrs, select_default=True)
         c.add_to_form(form)
         c.fixup()
         self.assert_(c.value == ["value_value"])
 
         # construct larger list from length-1 lists
-        c = _form.RadioControl("radio", "name_value", attrs,
-                               select_default=True)
+        c = _form.RadioControl(
+            "radio", "name_value", attrs, select_default=True)
         attrs2 = attrs.copy()
         attrs2["value"] = "value_value2"
-        c2 = _form.RadioControl("radio", "name_value", attrs2,
-                                select_default=True)
+        c2 = _form.RadioControl(
+            "radio", "name_value", attrs2, select_default=True)
         c.merge_control(c2)
         c.add_to_form(form)
         c.fixup()
-        self.assert_(str(c) == "<RadioControl("
-                     "name_value=[*value_value, value_value2])>")
+        self.assert_(
+            str(c) == "<RadioControl("
+            "name_value=[*value_value, value_value2])>")
         hide_deprecations()
         self.assert_(c.possible_items() == ["value_value", "value_value2"])
         reset_deprecations()
 
-        def set_value(value, c=c): c.value = value
+        def set_value(value, c=c):
+            c.value = value
+
         self.assertRaises(ItemCountError, set_value,
                           ["value_value", "value_value2"])
         self.assertRaises(TypeError, set_value, "value_value")
@@ -2119,22 +2237,30 @@ class ControlTests(unittest.TestCase):
 
         # tests for multiple identical values
 
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "value": "value_value",
-                 "id": "name_value_1"}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "value": "value_value",
+            "id": "name_value_1"
+        }
         c1 = _form.RadioControl("radio", "name_value", attrs)
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "value": "value_value",
-                 "id": "name_value_2",
-                 "checked": "checked"}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "value": "value_value",
+            "id": "name_value_2",
+            "checked": "checked"
+        }
         c2 = _form.RadioControl("radio", "name_value", attrs)
-        attrs = {"type": "this is ignored",
-                 "name": "name_value",
-                 "value": "another_value",
-                 "id": "name_value_3",
-                 "__label": {"__text": "Third Option"}}
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            "value": "another_value",
+            "id": "name_value_3",
+            "__label": {
+                "__text": "Third Option"
+            }
+        }
         c3 = _form.RadioControl("radio", "name_value", attrs)
         form = DummyForm()
         c1.merge_control(c2)
@@ -2143,9 +2269,8 @@ class ControlTests(unittest.TestCase):
         c1.fixup()
         self.assertEqual(c1.value, ['value_value'])
         hide_deprecations()
-        self.assertEqual(
-            c1.possible_items(),
-            ['value_value', 'value_value', 'another_value'])
+        self.assertEqual(c1.possible_items(),
+                         ['value_value', 'value_value', 'another_value'])
         reset_deprecations()
         self.assertEqual(c1.value, ['value_value'])
         self.failIf(c1.items[0].selected)
@@ -2163,13 +2288,23 @@ class ControlTests(unittest.TestCase):
 
         # id labels
         form._id_to_labels['name_value_1'] = [
-            _form.Label({'for': 'name_value_1', '__text':'First Option'})]
+            _form.Label({
+                'for': 'name_value_1',
+                '__text': 'First Option'
+            })
+        ]
         form._id_to_labels['name_value_2'] = [
-            _form.Label({'for': 'name_value_2',
-                         '__text':'Second Option'})]
+            _form.Label({
+                'for': 'name_value_2',
+                '__text': 'Second Option'
+            })
+        ]
         form._id_to_labels['name_value_3'] = [
-            _form.Label({'for': 'name_value_3',
-                         '__text':'Last Option'})]  # notice __label above
+            _form.Label({
+                'for': 'name_value_3',
+                '__text': 'Last Option'
+            })
+        ]  # notice __label above
         self.assertEqual([l.text for l in c1.items[0].get_labels()],
                          ['First Option'])
         self.assertEqual([l.text for l in c1.items[1].get_labels()],
@@ -2226,8 +2361,8 @@ class FormTests(unittest.TestCase):
     <input type="password" id="pswd2" name="password" value="123" />
 </form>
 """)
-        form = mechanize.ParseFile(f, "http://example.com/",
-                                   backwards_compat=False)[0]
+        form = mechanize.ParseFile(
+            f, "http://example.com/", backwards_compat=False)[0]
         for compat in True, False:
             form.backwards_compat = compat
             fc = form.find_control
@@ -2267,19 +2402,21 @@ class FormTests(unittest.TestCase):
 </form>
 """
         f = StringIO(data)
-        form = mechanize.ParseFile(f, "http://example.com/",
-                                   backwards_compat=False)[0]
+        form = mechanize.ParseFile(
+            f, "http://example.com/", backwards_compat=False)[0]
         self.assertRaises(
             AmbiguityError,
-            form.find_control, type="checkbox", name=mechanize.Missing)
+            form.find_control,
+            type="checkbox",
+            name=mechanize.Missing)
         ctl = form.find_control(type="checkbox", name=mechanize.Missing, nr=1)
         self.assertEqual(ctl.id, "a")
 
     def test_deselect_disabled(self):
         def get_new_form(f, compat):
             f.seek(0)
-            form = mechanize.ParseFile(f, "http://example.com/",
-                                       backwards_compat=False)[0]
+            form = mechanize.ParseFile(
+                f, "http://example.com/", backwards_compat=False)[0]
             form.backwards_compat = compat
             return form
 
@@ -2290,12 +2427,14 @@ class FormTests(unittest.TestCase):
     <input type="checkbox" name="p" value="c"></input>
 </form>
 """)
-        for compat in [False]:#True, False:
+        for compat in [False]:  # True, False:
+
             def new_form(compat=compat, f=f, get_new_form=get_new_form):
                 form = get_new_form(f, compat)
                 ctl = form.find_control("p")
                 a = ctl.get("a")
                 return ctl, a
+
             ctl, a = new_form()
             ctl.value = ["b"]
 
@@ -2312,8 +2451,8 @@ class FormTests(unittest.TestCase):
                 self.assertEqual(a.selected, False)
                 self.assertEqual(ctl.value, ["b"])
                 ctl, a = new_form()
-                self.assertRaises(AttributeError,
-                                  setattr, ctl, "value", ["a", "b"])
+                self.assertRaises(AttributeError, setattr, ctl, "value",
+                                  ["a", "b"])
             else:
 
                 # rationale: Setting an individual item's selected state to its
@@ -2330,14 +2469,14 @@ class FormTests(unittest.TestCase):
                 ctl, a = new_form()
                 self.assertRaises(AttributeError, setattr, ctl, "value", ["a"])
                 ctl, a = new_form()
-                self.assertRaises(AttributeError,
-                                  setattr, a, "selected", False)
+                self.assertRaises(AttributeError, setattr, a, "selected",
+                                  False)
                 ctl.value = ["b"]
                 self.assertEqual(a.selected, True)
                 self.assertEqual(ctl.value, ["b"])
                 ctl, a = new_form()
-                self.assertRaises(AttributeError,
-                                  setattr, ctl, "value", ["a", "b"])
+                self.assertRaises(AttributeError, setattr, ctl, "value",
+                                  ["a", "b"])
 
         f = StringIO("""\
 <form>
@@ -2347,12 +2486,14 @@ class FormTests(unittest.TestCase):
 </form>
 """)
 
-        for compat in [False]:#True, False:
+        for compat in [False]:  # True, False:
+
             def new_form(compat=compat, f=f, get_new_form=get_new_form):
                 form = get_new_form(f, compat)
                 ctl = form.find_control("p")
                 a = ctl.get("a")
                 return ctl, a
+
             ctl, a = new_form()
             ctl.value = ["b"]
 
@@ -2366,46 +2507,47 @@ class FormTests(unittest.TestCase):
                 self.assertEqual(a.selected, False)
                 self.assertEqual(ctl.value, ["b"])
                 ctl, a = new_form()
-                self.assertRaises(ItemCountError,
-                                  setattr, ctl, "value", ["a", "b"])
+                self.assertRaises(ItemCountError, setattr, ctl, "value",
+                                  ["a", "b"])
             else:
                 ctl, a = new_form()
                 self.assertRaises(AttributeError, setattr, a, "selected", True)
                 ctl, a = new_form()
                 self.assertRaises(AttributeError, setattr, ctl, "value", ["a"])
                 ctl, a = new_form()
-                self.assertRaises(AttributeError, setattr, a, "selected", False)
+                self.assertRaises(AttributeError, setattr, a, "selected",
+                                  False)
                 ctl.value = ["b"]
                 self.assertEqual(a.selected, False)
                 self.assertEqual(ctl.value, ["b"])
                 ctl, a = new_form()
-                self.assertRaises(ItemCountError,
-                                  setattr, ctl, "value", ["a", "b"])
+                self.assertRaises(ItemCountError, setattr, ctl, "value",
+                                  ["a", "b"])
 
     def test_click(self):
-        file = StringIO(
-"""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <input type="submit" name="foo"></input>
 <input type="submit" name="bar"></input>
 </form>
 """)
-        form = mechanize.ParseFile(file, "http://blah/",
-                                   backwards_compat=False)[0]
+        form = mechanize.ParseFile(
+            file, "http://blah/", backwards_compat=False)[0]
         self.assertRaises(ControlNotFoundError, form.click, nr=2)
         self.assert_(form.click().get_full_url() == "http://blah/abc?foo=")
-        self.assert_(form.click(name="bar").get_full_url() == "http://blah/abc?bar=")
+        self.assert_(
+            form.click(name="bar").get_full_url() == "http://blah/abc?bar=")
 
         for method in ["GET", "POST"]:
             file = StringIO(
-"""<form method="%s" action="abc?bang=whizz#doh" name="myform">
+                """<form method="%s" action="abc?bang=whizz#doh" name="myform">
 
 <input type="submit" name="foo"></input>
 </form>
 """ % method)
             # " (this line is here for emacs)
-            form = mechanize.ParseFile(file, "http://blah/",
-                                       backwards_compat=False)[0]
+            form = mechanize.ParseFile(
+                file, "http://blah/", backwards_compat=False)[0]
             if method == "GET":
                 url = "http://blah/abc?foo="
             else:
@@ -2414,19 +2556,21 @@ class FormTests(unittest.TestCase):
 
     def testAuth(self):
         fh = self._get_test_file("Auth.html")
-        forms = mechanize.ParseFile(fh, self.base_uri,
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
-        self.assert_(form.action ==
-                     "http://auth.athensams.net/"
+        self.assert_(form.action == "http://auth.athensams.net/"
                      "?ath_returl=%22http%3A%2F%2Ftame.mimas.ac.uk%2Fisicgi"
                      "%2FWOS-login.cgi%22&ath_dspid=MIMAS.WOS")
 
-        self.assertRaises(ControlNotFoundError,
-                          lambda form=form: form.toggle("d'oh", "oops"))
+        self.assertRaises(
+            ControlNotFoundError,
+            lambda form=form: form.toggle("d'oh", "oops"))
         self.assertRaises(ControlNotFoundError, lambda form=form: form["oops"])
-        def bad_assign(form=form): form["oops"] = ["d'oh"]
+
+        def bad_assign(form=form):
+            form["oops"] = ["d'oh"]
+
         self.assertRaises(ControlNotFoundError, bad_assign)
 
         self.assertRaises(ValueError, form.find_control)
@@ -2447,23 +2591,27 @@ class FormTests(unittest.TestCase):
         form["ath_uname"] = "jbloggs"
         form["ath_passwd"] = "foobar"
 
-        self.assert_(form.click_pairs() ==
-                     [("ath_uname", "jbloggs"),
-                      ("ath_passwd", "foobar")])
+        self.assert_(form.click_pairs() == [("ath_uname", "jbloggs"),
+                                            ("ath_passwd", "foobar")])
 
     def testSearchType(self):
         fh = self._get_test_file("SearchType.html")
-        forms = mechanize.ParseFile(fh, self.base_uri,
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
-        keys = ["SID", "SESSION_DIR", "Full Search", "Easy Search",
-                "New Session", "Log off", "Form", "JavaScript"]
-        values = ["PMrU0IJYy4MAAELSXic_E2011300_PMrU0IJYy4MAAELSXic-0",
-                  "", "", "", "", "", "Welcome", "No"]
-        types = ["hidden", "hidden", "image", "image", "image", "image",
-                 "hidden", "hidden"]
+        keys = [
+            "SID", "SESSION_DIR", "Full Search", "Easy Search", "New Session",
+            "Log off", "Form", "JavaScript"
+        ]
+        values = [
+            "PMrU0IJYy4MAAELSXic_E2011300_PMrU0IJYy4MAAELSXic-0", "", "", "",
+            "", "", "Welcome", "No"
+        ]
+        types = [
+            "hidden", "hidden", "image", "image", "image", "image", "hidden",
+            "hidden"
+        ]
         for i in range(len(keys)):
             key = keys[i]
             self.assert_(form.find_control(key).value == values[i])
@@ -2472,38 +2620,35 @@ class FormTests(unittest.TestCase):
         pairs = form.click_pairs("Full Search")
         self.assert_(pairs == [
             ("SID", "PMrU0IJYy4MAAELSXic_E2011300_PMrU0IJYy4MAAELSXic-0"),
-            ("SESSION_DIR", ""), ("Full Search.x", "1"), ("Full Search.y", "1"),
-            ("Form", "Welcome"), ("JavaScript", "No")])
+            ("SESSION_DIR", ""), ("Full Search.x", "1"),
+            ("Full Search.y", "1"), ("Form", "Welcome"), ("JavaScript", "No")
+        ])
 
     def testFullSearch(self):
         pass  # XXX
 
     def testGeneralSearch(self):
         fh = self._get_test_file("GeneralSearch.html")
-        forms = mechanize.ParseFile(fh, self.base_uri,
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
-        keys = ["SID", "SESSION_DIR",
-                "Home", "Date & Database Limits", "Cited Ref Search",
-                "Log off", "Search",
-                "topic", "titleonly", "author", "journal", "address",
-                "Search", "Save query", "Clear",
-                "languagetype", "doctype", "Sort",
-                "Form", "Func"]
-        values = ["PMrU0IJYy4MAAELSXic_E2011300_PMrU0IJYy4MAAELSXic-0", "",
-                  "", "", "", "", "",
-                  "", [], "", "", "",
-                  "", "", "",
-                  ["All languages"], ["All document types"], ["Latest date"],
-                  "General", "Search"]
-        types = ["hidden", "hidden",
-                 "image", "image", "image", "image", "image",
-                 "text", "checkbox", "text", "text", "text",
-                 "image", "image", "image",
-                 "select", "select", "select",
-                 "hidden", "hidden"]
+        keys = [
+            "SID", "SESSION_DIR", "Home", "Date & Database Limits",
+            "Cited Ref Search", "Log off", "Search", "topic", "titleonly",
+            "author", "journal", "address", "Search", "Save query", "Clear",
+            "languagetype", "doctype", "Sort", "Form", "Func"
+        ]
+        values = [
+            "PMrU0IJYy4MAAELSXic_E2011300_PMrU0IJYy4MAAELSXic-0", "", "", "",
+            "", "", "", "", [], "", "", "", "", "", "", ["All languages"],
+            ["All document types"], ["Latest date"], "General", "Search"
+        ]
+        types = [
+            "hidden", "hidden", "image", "image", "image", "image", "image",
+            "text", "checkbox", "text", "text", "text", "image", "image",
+            "image", "select", "select", "select", "hidden", "hidden"
+        ]
         fc = form.find_control
         for i in range(len(keys)):
             name = keys[i]
@@ -2541,15 +2686,12 @@ class FormTests(unittest.TestCase):
         pairs = form.click_pairs("Search")
         self.assert_(pairs == [
             ("SID", "PMrU0IJYy4MAAELSXic_E2011300_PMrU0IJYy4MAAELSXic-0"),
-            ("SESSION_DIR", ""),
-            ("Search.x", "1"), ("Search.y", "1"),
-            ("topic", "foo"),
-            ("titleonly", "on"),
-            ("author", "bar"),
-            ("journal", ""), ("address", "baz"),
-            ("languagetype", "English"), ("languagetype", "Catalan"),
-            ("doctype", "All document types"), ("Sort", "Latest date"),
-            ("Form", "General"), ("Func", "Search")])
+            ("SESSION_DIR", ""), ("Search.x", "1"), ("Search.y", "1"),
+            ("topic", "foo"), ("titleonly", "on"), ("author", "bar"),
+            ("journal", ""), ("address", "baz"), ("languagetype", "English"),
+            ("languagetype", "Catalan"), ("doctype", "All document types"),
+            ("Sort", "Latest date"), ("Form", "General"), ("Func", "Search")
+        ])
 
         hide_deprecations()
         pvs = form.possible_items("languagetype")
@@ -2579,19 +2721,26 @@ class FormTests(unittest.TestCase):
         self.assert_(form["languagetype"] == ["Catalan"])
         form.set(False, "Catalan", "languagetype")
         self.assert_(form["languagetype"] == [])
-        self.assertRaises(ItemNotFoundError, form.set, True, "doh", "languagetype")
-        self.assertRaises(ItemNotFoundError, form.set, False, "doh", "languagetype")
+        self.assertRaises(ItemNotFoundError, form.set, True, "doh",
+                          "languagetype")
+        self.assertRaises(ItemNotFoundError, form.set, False, "doh",
+                          "languagetype")
         self.assertRaises(ControlNotFoundError, form.set, True, "blah", "oops")
-        self.assertRaises(TypeError, form.set, True, ["Catalan"], "languagetype")
-        self.assertRaises(TypeError, form.set, False, ["Catalan"], "languagetype")
-        self.assertRaises(TypeError, form.set, True, "Catalan", ["languagetype"])
-        self.assertRaises(TypeError, form.set, False, "Catalan", ["languagetype"])
+        self.assertRaises(TypeError, form.set, True, ["Catalan"],
+                          "languagetype")
+        self.assertRaises(TypeError, form.set, False, ["Catalan"],
+                          "languagetype")
+        self.assertRaises(TypeError, form.set, True, "Catalan",
+                          ["languagetype"])
+        self.assertRaises(TypeError, form.set, False, "Catalan",
+                          ["languagetype"])
 
-        def setitem(name, value, form=form): form[name] = value
+        def setitem(name, value, form=form):
+            form[name] = value
+
         form["languagetype"] = ["Catalan"]
         self.assert_(form["languagetype"] == ["Catalan"])
-        self.assertRaises(ItemNotFoundError,
-                          setitem, "languagetype", ["doh"])
+        self.assertRaises(ItemNotFoundError, setitem, "languagetype", ["doh"])
         self.assertRaises(ControlNotFoundError, setitem, "oops", ["blah"])
         self.assertRaises(TypeError, setitem, ["languagetype"], "Catalan")
 
@@ -2615,8 +2764,7 @@ class FormTests(unittest.TestCase):
 
         form["Sort"] = ["Relevance"]
         self.assert_(form["Sort"] == ["Relevance"])
-        self.assertRaises(ItemNotFoundError,
-                          setitem, "Sort", ["doh"])
+        self.assertRaises(ItemNotFoundError, setitem, "Sort", ["doh"])
         self.assertRaises(ControlNotFoundError, setitem, "oops", ["blah"])
         self.assertRaises(TypeError, setitem, ["Sort"], ["Relevance"])
 
@@ -2633,32 +2781,35 @@ class FormTests(unittest.TestCase):
     <input type="submit" value="Submit" />
 </form>
 """)
-        for kwds, backwards_compat in [({}, True),
-                     ({"backwards_compat": True}, True),
-                     ({"backwards_compat": False}, False),
-                     ]:
+        for kwds, backwards_compat in [
+            ({}, True),
+            ({
+                "backwards_compat": True
+            }, True),
+            ({
+                "backwards_compat": False
+            }, False),
+        ]:
             hide_deprecations()
             form = mechanize.ParseFile(f, "http://localhost/", **kwds)[0]
             reset_deprecations()
             f.seek(0)
             c = form.find_control("form.grocery")
-            #for item in c.items:
+            # for item in c.items:
             #    print [label.text for label in item.get_labels()]
             c.set_value_by_label(
                 ["Loaf of Bread", "Loaf of Bread", "Loaf of Challah"])
             if backwards_compat:
                 # select first item of ambiguous set
-                self.assertEqual(
-                    c.get_value_by_label(),
-                    ["Loaf of Bread", "Loaf of Challah"])
+                self.assertEqual(c.get_value_by_label(),
+                                 ["Loaf of Bread", "Loaf of Challah"])
                 self.assertEqual(
                     [item.id for item in c.items if item.selected],
                     ["1", None])
                 # disabled items still part of 'value by label'
                 c.get(label="Loaf of Challah").disabled = True
-                self.assertEqual(
-                    c.get_value_by_label(),
-                    ["Loaf of Bread", "Loaf of Challah"])
+                self.assertEqual(c.get_value_by_label(),
+                                 ["Loaf of Bread", "Loaf of Challah"])
             else:
                 self.assertEqual(
                     c.get_value_by_label(),
@@ -2668,9 +2819,8 @@ class FormTests(unittest.TestCase):
                     ["1", "2", None])
                 # disabled items NOT part of 'value by label'
                 c.get(label="Challah").disabled = True
-                self.assertEqual(
-                    c.get_value_by_label(),
-                    ["Loaf of Bread", "Loaf of Bread"])
+                self.assertEqual(c.get_value_by_label(),
+                                 ["Loaf of Bread", "Loaf of Bread"])
 
     def testClearValue(self):
         # regression test: follow ClientForm 0.1 behaviour
@@ -2684,10 +2834,14 @@ class FormTests(unittest.TestCase):
 </form>
 """)
         for kwds, backwards_compat in [
-                ({}, True),
-                ({"backwards_compat": True}, True),
-                ({"backwards_compat": False}, False),
-                ]:
+            ({}, True),
+            ({
+                "backwards_compat": True
+            }, True),
+            ({
+                "backwards_compat": False
+            }, False),
+        ]:
             hide_deprecations()
             form = mechanize.ParseFile(f, "http://localhost/", **kwds)[0]
             reset_deprecations()
@@ -2696,14 +2850,14 @@ class FormTests(unittest.TestCase):
             if backwards_compat:
                 self.assertEqual(cc.value, ["a", "b"])
                 cc.value = []
-                self.assertEqual(
-                    [ii.name for ii in cc.items if ii.selected], [])
+                self.assertEqual([ii.name for ii in cc.items if ii.selected],
+                                 [])
             else:
                 self.assertEqual(cc.value, ["b"])
                 cc.value = []
                 # first is disabled, so no need to deselect
-                self.assertEqual(
-                    [ii.name for ii in cc.items if ii.selected], ["a"])
+                self.assertEqual([ii.name for ii in cc.items if ii.selected],
+                                 ["a"])
 
     def testSearchByLabel(self):
         f = StringIO("""\
@@ -2796,24 +2950,22 @@ class FormTests(unittest.TestCase):
 <input type="submit" value="Submit" />
 </form>
 """)
-        form = mechanize.ParseFile(f, "http://localhost/",
-                                   backwards_compat=False)[0]
+        form = mechanize.ParseFile(
+            f, "http://localhost/", backwards_compat=False)[0]
 
         # basic tests
-        self.assertEqual(form.find_control(label="Title").value,
-                         "The Grapes of Wrath")
-        self.assertEqual(form.find_control(label="Submit").value,
-                         "Submit")
         self.assertEqual(
-            form.find_control(label="Country").get(
-                label="Britain").name, "EU: Great Britain")
+            form.find_control(label="Title").value, "The Grapes of Wrath")
+        self.assertEqual(form.find_control(label="Submit").value, "Submit")
         self.assertEqual(
-            form.find_control(label="Origin").get(
-                label="GB").name, "EU: Great Britain")
-        self.assertEqual(form.find_control(label="Password").value,
-                         "123")
-        self.assertEqual(form.find_control(label="Title").value,
-                         "The Grapes of Wrath")
+            form.find_control(label="Country").get(label="Britain").name,
+            "EU: Great Britain")
+        self.assertEqual(
+            form.find_control(label="Origin").get(label="GB").name,
+            "EU: Great Britain")
+        self.assertEqual(form.find_control(label="Password").value, "123")
+        self.assertEqual(
+            form.find_control(label="Title").value, "The Grapes of Wrath")
 
         # Test item ambiguity, get, get_items, and set_value_by_label.
         # A form can be in two states: either ignoring ambiguity or being
@@ -2834,17 +2986,16 @@ class FormTests(unittest.TestCase):
         # not backwards compatible.
         form.backwards_compat = False
         self.assertRaises(mechanize.AmbiguityError, c.get, label="Loaf")
-        self.assertRaises(
-            mechanize.AmbiguityError, c.set_value_by_label, ["Loaf"])
+        self.assertRaises(mechanize.AmbiguityError, c.set_value_by_label,
+                          ["Loaf"])
         # If items have the same name (value), set_value_by_label will
         # be happy (since it is just setting the value anyway).
         c.set_value_by_label(["Loaf of Bread"])
         self.assertEqual(c.get_value_by_label(), ["Loaf of Bread"])
         c.set_value_by_label(
             ["Loaf of Bread", "Loaf of Bread", "Loaf of Challah"])
-        self.assertEqual(
-            c.get_value_by_label(),
-            ["Loaf of Bread", "Loaf of Bread", "Loaf of Challah"])
+        self.assertEqual(c.get_value_by_label(),
+                         ["Loaf of Bread", "Loaf of Bread", "Loaf of Challah"])
         # "get" will still raise an exception, though.
         self.assertRaises(
             mechanize.AmbiguityError, c.get, label="Loaf of Bread")
@@ -2858,8 +3009,7 @@ class FormTests(unittest.TestCase):
             [i.selected for i in c.get_items(label="Loaf of Bread")],
             [True, True, False])
         self.assertEqual(
-            [i.selected for i in c.get_items(label="Loaf of Challah")],
-            [True])
+            [i.selected for i in c.get_items(label="Loaf of Challah")], [True])
         self.assertEqual(
             [i.name for i in c.get_items(label="Loaf")],
             ["bread", "bread", "bread", "challah"])
@@ -2868,63 +3018,60 @@ class FormTests(unittest.TestCase):
             ["Loaf of Bread", "Loaf of Bread", "Loaf of Bread"])
 
         # test deprecation
-        if warnings_imported:
-            try:
-                for c, f in (
-                    (form.find_control("form.genre"), "western"),
-                    (form.find_control("form.country"), "zimbabwe"),
-                    (form.find_control("form.quality"), "good")):
-                    # warnings are nasty. :-(
-                    raise_deprecations()  # clear onceregistry
-                    try:
-                        c.possible_items()
-                    except DeprecationWarning:
-                        pass
-                    else:
-                        self.fail("deprecation failed")
-                    try:
-                        c.toggle_single()
-                    except DeprecationWarning:
-                        pass
-                    else:
-                        self.fail("deprecation failed")
-                    try:
-                        c.set_single(True)
-                    except DeprecationWarning:
-                        pass
-                    else:
-                        self.fail("deprecation failed")
-                    try:
-                        c.toggle(f)
-                    except DeprecationWarning:
-                        pass
-                    else:
-                        self.fail("deprecation failed")
-                    try:
-                        c.get_item_disabled(f)
-                    except DeprecationWarning:
-                        pass
-                    else:
-                        self.fail("deprecation failed")
-                    try:
-                        c.set_item_disabled(True, f)
-                    except DeprecationWarning:
-                        pass
-                    else:
-                        self.fail("deprecation failed")
-                    try:
-                        c.get_item_attrs(True, f)
-                    except DeprecationWarning:
-                        pass
-                    else:
-                        self.fail("deprecation failed")
-            finally:
-                reset_deprecations()
+        try:
+            for c, f in ((form.find_control("form.genre"), "western"),
+                         (form.find_control("form.country"), "zimbabwe"),
+                         (form.find_control("form.quality"), "good")):
+                # warnings are nasty. :-(
+                raise_deprecations()  # clear onceregistry
+                try:
+                    c.possible_items()
+                except DeprecationWarning:
+                    pass
+                else:
+                    self.fail("deprecation failed")
+                try:
+                    c.toggle_single()
+                except DeprecationWarning:
+                    pass
+                else:
+                    self.fail("deprecation failed")
+                try:
+                    c.set_single(True)
+                except DeprecationWarning:
+                    pass
+                else:
+                    self.fail("deprecation failed")
+                try:
+                    c.toggle(f)
+                except DeprecationWarning:
+                    pass
+                else:
+                    self.fail("deprecation failed")
+                try:
+                    c.get_item_disabled(f)
+                except DeprecationWarning:
+                    pass
+                else:
+                    self.fail("deprecation failed")
+                try:
+                    c.set_item_disabled(True, f)
+                except DeprecationWarning:
+                    pass
+                else:
+                    self.fail("deprecation failed")
+                try:
+                    c.get_item_attrs(True, f)
+                except DeprecationWarning:
+                    pass
+                else:
+                    self.fail("deprecation failed")
+        finally:
+            reset_deprecations()
 
     def testResults(self):
         fh = self._get_test_file("Results.html")
-        forms = mechanize.ParseFile(fh, self.base_uri,
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
@@ -2932,29 +3079,35 @@ class FormTests(unittest.TestCase):
         pvs = form.possible_items("marked_list_candidates")
         reset_deprecations()
         self.assert_(pvs == [
-            "000174872000059/1", "000174858300003/2", "000174827900006/3"])
+            "000174872000059/1", "000174858300003/2", "000174827900006/3"
+        ])
+
         def bad_setitem(form=form):
             form["marked_list_candidates"] = ["blah"]
+
         self.assertRaises(ItemNotFoundError, bad_setitem)
         form["marked_list_candidates"] = [pvs[0]]
 
         # I've removed most of the INPUT elements from this page, and
         # corrected an HTML error
-        keys = ["Add marked records to list",
-                "Add records on page to list",
-                "Add all records retrieved to list",
-                "marked_list_candidates",
-                "Add marked records to list",
-                "Add records on page to list",
-                "Add all records retrieved to list"
-                ]
-        types = ["image", "image", "image",
-                 "checkbox",
-                 "image", "image", "image"]
-        values = ["", "", "",
-                  [pvs[0]],
-                  "", "", "",
-                 ]
+        keys = [
+            "Add marked records to list", "Add records on page to list",
+            "Add all records retrieved to list", "marked_list_candidates",
+            "Add marked records to list", "Add records on page to list",
+            "Add all records retrieved to list"
+        ]
+        types = [
+            "image", "image", "image", "checkbox", "image", "image", "image"
+        ]
+        values = [
+            "",
+            "",
+            "",
+            [pvs[0]],
+            "",
+            "",
+            "",
+        ]
 
         for i in range(len(keys)):
             key = keys[i]
@@ -2963,36 +3116,33 @@ class FormTests(unittest.TestCase):
             self.assert_(control.type == types[i])
 
         pairs = form.click_pairs("Add all records retrieved to list")
-        self.assert_(pairs == [
-            ("Add all records retrieved to list.x", "1"),
-            ("Add all records retrieved to list.y", "1"),
-            ("marked_list_candidates", pvs[0])])
+        self.assert_(pairs == [("Add all records retrieved to list.x", "1"),
+                               ("Add all records retrieved to list.y", "1"),
+                               ("marked_list_candidates", pvs[0])])
 
     def testMarkedResults(self):
         fh = self._get_test_file("MarkedResults.html")
-        forms = mechanize.ParseFile(fh, self.base_uri,
-                                    backwards_compat=False)
+        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
         pairs = form.click_pairs()
         # I've removed most of the INPUT elements from this page, and
         # corrected an HTML error
-        self.assert_(pairs == [
-            ("Add marked records to list.x", "1"),
-            ("Add marked records to list.y", "1"),
-            ("marked_list_candidates", "000174872000059/1"),
-            ("marked_list_candidates", "000174858300003/2"),
-            ("marked_list_candidates", "000174827900006/3")
-            ])
+        self.assert_(
+            pairs == [("Add marked records to list.x", "1"),
+                      ("Add marked records to list.y", "1"),
+                      ("marked_list_candidates", "000174872000059/1"),
+                      ("marked_list_candidates", "000174858300003/2"),
+                      ("marked_list_candidates", "000174827900006/3")])
 
     def testMarkedRecords(self):
         pass  # XXX
 
 
 def make_form(html):
-    global_form, form = mechanize.ParseFileEx(StringIO(html),
-                                              "http://example.com/")
+    global_form, form = mechanize.ParseFileEx(
+        StringIO(html), "http://example.com/")
     assert len(global_form.controls) == 0
     return form
 
@@ -3002,7 +3152,6 @@ def make_form_global(html):
 
 
 class MoreFormTests(unittest.TestCase):
-
     def test_interspersed_controls(self):
         # must preserve item ordering even across controls
         f = StringIO("""\
@@ -3014,29 +3163,33 @@ class MoreFormTests(unittest.TestCase):
     <input type="submit"></input>
 </form>
 """)
-        form = mechanize.ParseFile(f, "http://blah/",
-                                   backwards_compat=False)[0]
+        form = mechanize.ParseFile(
+            f, "http://blah/", backwards_compat=False)[0]
         form["murphy"] = ["a", "b", "c"]
         form["woof"] = ["d"]
         self.assertEqual(form.click_pairs(), [
-                ("murphy", "a"),
-                ("woof", "d"),
-                ("murphy", "b"),
-                ("murphy", "c"),
-                ])
+            ("murphy", "a"),
+            ("woof", "d"),
+            ("murphy", "b"),
+            ("murphy", "c"),
+        ])
 
         form.method = "POST"
         form.enctype = "multipart/form-data"
-        lines = [line for line in form.click_request_data()[1].split("\r\n") if
-                 line != '' and not line.startswith("--")]
-        self.assertEqual(
-            lines,
-            ['Content-Disposition: form-data; name="murphy"', 'a',
-             'Content-Disposition: form-data; name="woof"', 'd',
-             'Content-Disposition: form-data; name="murphy"', 'b',
-             'Content-Disposition: form-data; name="murphy"', 'c',
-             ]
-            )
+        lines = [
+            line for line in form.click_request_data()[1].split("\r\n")
+            if line != '' and not line.startswith("--")
+        ]
+        self.assertEqual(lines, [
+            'Content-Disposition: form-data; name="murphy"',
+            'a',
+            'Content-Disposition: form-data; name="woof"',
+            'd',
+            'Content-Disposition: form-data; name="murphy"',
+            'b',
+            'Content-Disposition: form-data; name="murphy"',
+            'c',
+        ])
 
     def make_form(self):
         f = StringIO("""\
@@ -3070,8 +3223,8 @@ class MoreFormTests(unittest.TestCase):
   <input type="checkbox" name="e" value="1"></input>
 </form>
 """)
-        return mechanize.ParseFile(f, "http://blah/",
-                                   backwards_compat=False)[0]
+        return mechanize.ParseFile(
+            f, "http://blah/", backwards_compat=False)[0]
 
     def test_value(self):
         form = self.make_form()
@@ -3082,17 +3235,15 @@ class MoreFormTests(unittest.TestCase):
         form.set_value(["l2"], type="select", kind="multilist", by_label=True)
         self.assert_(form.get_value("d", by_label=True) == ["l2"])
 
-        self.assert_(form.get_value(
-            "b", "radio", "singlelist", None, 0, False) == [])
+        self.assert_(
+            form.get_value("b", "radio", "singlelist", None, 0, False) == [])
         form.set_value(["One"], "b", by_label=True)
         self.assertEqual(
-            form.get_value("b", "radio", "singlelist", None, 0, False),
-            ["1"])
+            form.get_value("b", "radio", "singlelist", None, 0, False), ["1"])
         form.set_value(["Three"], "b", by_label=True)
         reset_deprecations()
         self.assertEqual(
-            form.get_value("b", "radio", "singlelist", None, 0, False),
-            ["3"])
+            form.get_value("b", "radio", "singlelist", None, 0, False), ["3"])
 
     def test_id(self):
         form = self.make_form()
@@ -3102,8 +3253,8 @@ class MoreFormTests(unittest.TestCase):
         self.assert_(form.find_control("b").id is None)
 
         self.assert_(form.find_control(id="cselect").id == "cselect")
-        self.assertRaises(ControlNotFoundError, form.find_control,
-                          id="coption1")
+        self.assertRaises(
+            ControlNotFoundError, form.find_control, id="coption1")
         self.assert_(form.find_control(id="1a").id == "1a")
         self.assertRaises(ControlNotFoundError, form.find_control, id="1")
 
@@ -3128,16 +3279,16 @@ class MoreFormTests(unittest.TestCase):
         form = self.make_form()
         hide_deprecations()
         self.assert_(form.possible_items("c") == ["1", "2", "3"])
-        self.assert_(form.possible_items("d", by_label=True) ==
-                     ["l1", "l2", "l3"])
+        self.assert_(
+            form.possible_items("d", by_label=True) == ["l1", "l2", "l3"])
 
         self.assert_(form.possible_items("a") == ["1", "2", "3"])
-        self.assertEqual(form.possible_items('e', by_label=True),
-                         [None])
-        self.assertEqual(form.possible_items('a', by_label=True),
-                         ['One', 'Two', 'Three'])
-        self.assertEqual(form.possible_items('b', by_label=True),
-                         ['One', 'Two', 'Three', 'Four'])
+        self.assertEqual(form.possible_items('e', by_label=True), [None])
+        self.assertEqual(
+            form.possible_items('a', by_label=True), ['One', 'Two', 'Three'])
+        self.assertEqual(
+            form.possible_items('b', by_label=True),
+            ['One', 'Two', 'Three', 'Four'])
         reset_deprecations()
 
     def test_set_all_readonly(self):
@@ -3180,18 +3331,19 @@ class MoreFormTests(unittest.TestCase):
         hide_deprecations()
         self.assert_(a.get_item_attrs("1")["blah"] == "spam")
         self.assert_(a.get_item_attrs("2")["blah"] == "eggs")
-        self.assert_(not a.get_item_attrs("3").has_key("blah"))
+        self.assertNotIn('blah', a.get_item_attrs("3"))
 
         c = form.find_control("c")
         self.assert_(c.attrs["blah"] == "foo")
         self.assert_(c.get_item_attrs("1")["blah"] == "bar")
         self.assert_(c.get_item_attrs("2")["blah"] == "baz")
-        self.assert_(not c.get_item_attrs("3").has_key("blah"))
+        self.assertNotIn('blah', c.get_item_attrs("3"))
         reset_deprecations()
 
     def test_select_control_nr_and_label(self):
         for compat in [False, True]:
             self._test_select_control_nr_and_label(compat)
+
     def _test_select_control_nr_and_label(self, compat):
         f = StringIO("""\
 <form>
@@ -3202,10 +3354,12 @@ class MoreFormTests(unittest.TestCase):
     </select>
 </form>
 """)
-        if compat: hide_deprecations()
-        form = mechanize.ParseFile(f, "http://example.com/",
-                                   backwards_compat=compat)[0]
-        if compat: reset_deprecations()
+        if compat:
+            hide_deprecations()
+        form = mechanize.ParseFile(
+            f, "http://example.com/", backwards_compat=compat)[0]
+        if compat:
+            reset_deprecations()
         ctl = form.find_control("form.grocery")
         # ordinary case
         self.assertEqual(ctl.get("p", nr=1).id, "3")
@@ -3241,8 +3395,8 @@ class MoreFormTests(unittest.TestCase):
 """)
             if compat:
                 hide_deprecations()
-            form = mechanize.ParseFile(f, "http://example.com/",
-                                       backwards_compat=compat)[0]
+            form = mechanize.ParseFile(
+                f, "http://example.com/", backwards_compat=compat)[0]
             ctl = form.find_control("eg")
             p = ctl.get("p")
             q = ctl.get("q")
@@ -3257,30 +3411,30 @@ class MoreFormTests(unittest.TestCase):
         # attributes.  Nameless controls cause some tricky cases.  We should
         # get a new control for nameless controls.
         for data in [
-            """\
+                """\
 <form>
   <input type="checkbox" name="foo"/>
   <input type="checkbox" name="bar"/>
   <input type="checkbox" id="a" onclick="bar()" checked />
 </form>
 """,
-"""\
+                """\
 <form>
   <input type="checkbox" name="foo"/>
   <input type="checkbox" id="a" onclick="bar()" checked />
 </form>
 """,
-"""\
+                """\
 <form>
   <input type="checkbox"/>
   <input type="checkbox"/>
   <input type="checkbox" id="a" onclick="bar()" checked />
 </form>
 """,
-            ]:
+        ]:
             f = StringIO(data)
-            form = mechanize.ParseFile(f, "http://example.com/",
-                                       backwards_compat=False)[0]
+            form = mechanize.ParseFile(
+                f, "http://example.com/", backwards_compat=False)[0]
             bar = form.find_control(type="checkbox", id="a")
             # should have value "on", but not be successful
             self.assertEqual([item.name for item in bar.items], ["on"])
@@ -3290,53 +3444,58 @@ class MoreFormTests(unittest.TestCase):
     def test_action_with_fragment(self):
         for method in ["GET", "POST"]:
             data = ('<form action="" method="%s">'
-                    '<input type="submit" name="s"/></form>' % method
-                    )
+                    '<input type="submit" name="s"/></form>' % method)
             f = StringIO(data)
-            form = mechanize.ParseFile(f, "http://example.com/",
-                                       backwards_compat=False)[0]
+            form = mechanize.ParseFile(
+                f, "http://example.com/", backwards_compat=False)[0]
             self.assertEqual(
                 form.click().get_full_url(),
-                "http://example.com/"+(method=="GET" and "?s=" or ""),
-                )
+                "http://example.com/" + (method == "GET" and "?s=" or ""), )
         data = '<form action=""><isindex /></form>'
         f = StringIO(data)
-        form = mechanize.ParseFile(f, "http://example.com/",
-                                   backwards_compat=False)[0]
+        form = mechanize.ParseFile(
+            f, "http://example.com/", backwards_compat=False)[0]
         form.find_control(type="isindex").value = "blah"
-        self.assertEqual(form.click(type="isindex").get_full_url(),
-                         "http://example.com/?blah")
+        self.assertEqual(
+            form.click(type="isindex").get_full_url(),
+            "http://example.com/?blah")
 
     def test_click_empty_form_by_label(self):
         # http://github.com/jjlee/mechanize/issues#issue/16
         form = make_form_global("")
         assert len(form.controls) == 0
-        self.assertRaises(mechanize.ControlNotFoundError,
-                          form.click, label="no control has this label")
+        self.assertRaises(
+            mechanize.ControlNotFoundError,
+            form.click,
+            label="no control has this label")
 
 
 class ContentTypeTests(unittest.TestCase):
-
     def test_content_type(self):
         class OldStyleRequest:
             def __init__(self, url, data=None, hdrs=None):
                 self.ah = self.auh = False
+
             def add_header(self, key, val):
                 self.ah = True
+
         class NewStyleRequest(OldStyleRequest):
             def add_unredirected_header(self, key, val):
                 self.auh = True
+
         class FakeForm(_form.HTMLForm):
             def __init__(self, hdr):
                 self.hdr = hdr
+
             def _request_data(self):
                 return "http://example.com", "", [(self.hdr, "spam")]
+
         for request_class, hdr, auh in [
             (OldStyleRequest, "Foo", False),
             (NewStyleRequest, "Foo", False),
             (OldStyleRequest, "Content-type", False),
             (NewStyleRequest, "Content-type", True),
-            ]:
+        ]:
             form = FakeForm(hdr)
             req = form._switch_click("request", request_class)
             self.assertEqual(req.auh, auh)
@@ -3344,7 +3503,6 @@ class ContentTypeTests(unittest.TestCase):
 
 
 class FunctionTests(unittest.TestCase):
-
     def test_normalize_line_endings(self):
         def check(text, expected, self=self):
             got = _form.normalize_line_endings(text)
@@ -3366,23 +3524,23 @@ class FunctionTests(unittest.TestCase):
         check("foo\r\nbar\nbaz\rblah\r\n", "foo\r\nbar\r\nbaz\r\nblah\r\n")
 
         # pathological ;-O
-        check("\r\n\n\r\r\r\n", "\r\n"*5)
+        check("\r\n\n\r\r\r\n", "\r\n" * 5)
 
 
 class CaseInsensitiveDict:
-
     def __init__(self, items):
         self._dict = {}
         for key, val in items:
             self._dict[string.lower(key)] = val
 
-    def __getitem__(self, key): return self._dict[key]
+    def __getitem__(self, key):
+        return self._dict[key]
 
-    def __getattr__(self, name): return getattr(self._dict, name)
+    def __getattr__(self, name):
+        return getattr(self._dict, name)
 
 
 class UploadTests(_testcase.TestCase):
-
     def test_choose_boundary(self):
         bndy = _form.choose_boundary()
         ii = string.find(bndy, '.')
@@ -3398,9 +3556,10 @@ class UploadTests(_testcase.TestCase):
 </form>
 """
 
-        return mechanize.ParseFile(StringIO(html),
-                                   "http://localhost/cgi-bin/upload.cgi",
-                                   backwards_compat=False)[0]
+        return mechanize.ParseFile(
+            StringIO(html),
+            "http://localhost/cgi-bin/upload.cgi",
+            backwards_compat=False)[0]
 
     def test_file_request(self):
         import cgi
@@ -3411,17 +3570,19 @@ class UploadTests(_testcase.TestCase):
         data_control = form.find_control("data")
         data = "blah\nbaz\n"
         data_control.add_file(StringIO(data))
-        #print "data_control._upload_data", data_control._upload_data
+        # print "data_control._upload_data", data_control._upload_data
         req = form.click()
-        self.assertTrue(get_header(req, "Content-type").startswith(
+        self.assertTrue(
+            get_header(req, "Content-type").startswith(
                 "multipart/form-data; boundary="))
 
-        #print "req.get_data()\n>>%s<<" % req.get_data()
+        # print "req.get_data()\n>>%s<<" % req.get_data()
 
         # ...and check the resulting request is understood by cgi module
-        fs = cgi.FieldStorage(StringIO(req.get_data()),
-                              CaseInsensitiveDict(header_items(req)),
-                              environ={"REQUEST_METHOD": "POST"})
+        fs = cgi.FieldStorage(
+            StringIO(req.get_data()),
+            CaseInsensitiveDict(header_items(req)),
+            environ={"REQUEST_METHOD": "POST"})
         self.assert_(fs["user"].value == "john")
         self.assert_(fs["data"].value == data)
         self.assertEquals(fs["data"].filename, "")
@@ -3436,13 +3597,15 @@ class UploadTests(_testcase.TestCase):
         data = "blah\nbaz\n"
         data_control.add_file(StringIO(data), filename="afilename")
         req = form.click()
-        self.assert_(get_header(req, "Content-type").startswith(
+        self.assert_(
+            get_header(req, "Content-type").startswith(
                 "multipart/form-data; boundary="))
 
         # ...and check the resulting request is understood by cgi module
-        fs = cgi.FieldStorage(StringIO(req.get_data()),
-                              CaseInsensitiveDict(header_items(req)),
-                              environ={"REQUEST_METHOD": "POST"})
+        fs = cgi.FieldStorage(
+            StringIO(req.get_data()),
+            CaseInsensitiveDict(header_items(req)),
+            environ={"REQUEST_METHOD": "POST"})
         self.assert_(fs["user"].value == "john")
         self.assert_(fs["data"].value == data)
         self.assert_(fs["data"].filename == "afilename")
@@ -3461,15 +3624,17 @@ class UploadTests(_testcase.TestCase):
         yet_more_data = "rheum\nrhaponicum\n"
         data_control.add_file(StringIO(yet_more_data), filename="filenamec")
         req = form.click()
-        self.assertTrue(get_header(req, "Content-type").startswith(
+        self.assertTrue(
+            get_header(req, "Content-type").startswith(
                 "multipart/form-data; boundary="))
 
-        #print "req.get_data()\n>>%s<<" % req.get_data()
+        # print "req.get_data()\n>>%s<<" % req.get_data()
 
         # ...and check the resulting request is understood by cgi module
-        fs = cgi.FieldStorage(StringIO(req.get_data()),
-                              CaseInsensitiveDict(header_items(req)),
-                              environ={"REQUEST_METHOD": "POST"})
+        fs = cgi.FieldStorage(
+            StringIO(req.get_data()),
+            CaseInsensitiveDict(header_items(req)),
+            environ={"REQUEST_METHOD": "POST"})
         self.assert_(fs["user"].value == "john")
 
         fss = fs["data"][None]
@@ -3489,10 +3654,13 @@ class UploadTests(_testcase.TestCase):
 
     def test_empty_upload(self):
         # no controls except for INPUT/SUBMIT
-        forms = mechanize.ParseFile(StringIO("""<html>
+        forms = mechanize.ParseFile(
+            StringIO("""<html>
 <form method="POST" action="./weird.html" enctype="multipart/form-data">
 <input type="submit" name="submit"></input>
-</form></html>"""), ".", backwards_compat=False)
+</form></html>"""),
+            ".",
+            backwards_compat=False)
         form = forms[0]
         data = form.click().get_data()
         lines = string.split(data, "\r\n")
@@ -3506,7 +3674,8 @@ class UploadTests(_testcase.TestCase):
     def test_no_files(self):
         # no files uploaded
         self.monkey_patch(_form_controls, "choose_boundary", lambda: "123")
-        forms = mechanize.ParseFileEx(StringIO("""<html>
+        forms = mechanize.ParseFileEx(
+            StringIO("""<html>
 <form method="POST" action="spam" enctype="multipart/form-data">
 <INPUT type="file" name="spam" />
 </form></html>"""), ".")
