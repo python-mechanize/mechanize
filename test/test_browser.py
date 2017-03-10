@@ -18,6 +18,7 @@ FACTORY_CLASSES = [mechanize.DefaultFactory, mechanize.RobustFactory]
 # XXX these 'mock' classes are badly in need of simplification / removal
 # (note this stuff is also used by test_useragent.py and test_browser.doctest)
 class MockMethod:
+
     def __init__(self, meth_name, action, handle):
         self.meth_name = meth_name
         self.handle = handle
@@ -28,6 +29,7 @@ class MockMethod:
 
 
 class MockHeaders(dict):
+
     def getheaders(self, name):
         name = name.lower()
         return [v for k, v in self.iteritems() if name == k.lower()]
@@ -134,6 +136,7 @@ class TestBrowser2(mechanize.Browser):
 
 
 class BrowserTests(TestCase):
+
     def test_referer(self):
         b = TestBrowser()
         url = "http://www.example.com/"
@@ -213,6 +216,7 @@ class BrowserTests(TestCase):
             return ra.wrapped is rb.wrapped
 
         class Handler(mechanize.BaseHandler):
+
             def http_open(self, request):
                 r = _response.test_response(url=request.get_full_url())
                 # these tests aren't interested in auto-.reload() behaviour of
@@ -252,6 +256,7 @@ class BrowserTests(TestCase):
         # even if we get an HTTPError, history, .response() and .request should
         # still get updated
         class Handler2(mechanize.BaseHandler):
+
             def https_open(self, request):
                 r = mechanize.HTTPError("https://example.com/bad", 503, "Oops",
                                         MockHeaders(), StringIO.StringIO())
@@ -281,6 +286,7 @@ class BrowserTests(TestCase):
         from mechanize._response import test_response
 
         class Browser(TestBrowser):
+
             def __init__(self):
                 TestBrowser.__init__(self)
                 self.reloaded = False
@@ -294,6 +300,7 @@ class BrowserTests(TestCase):
         data = data % ("The quick brown fox jumps over the lazy dog." * 100)
 
         class Handler(mechanize.BaseHandler):
+
             def http_open(self, requst):
                 return test_response(data, [("content-type", "text/html")])
 
@@ -745,6 +752,7 @@ class BrowserTests(TestCase):
 
 
 class ResponseTests(TestCase):
+
     def test_set_response(self):
         import copy
         from mechanize import response_seek_wrapper
@@ -802,6 +810,7 @@ class ResponseTests(TestCase):
 
 
 class HttplibTests(mechanize._testcase.TestCase):
+
     def make_browser(self):
         class TestBrowser(mechanize.Browser):
             default_features = []

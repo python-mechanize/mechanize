@@ -23,7 +23,7 @@ from twisted.python import log
 from twisted.web import (server, http, resource, twcgi)
 from twisted.web.resource import IResource
 from twisted.web.guard import (DigestCredentialFactory, BasicCredentialFactory,
-        HTTPAuthSessionWrapper)
+                               HTTPAuthSessionWrapper)
 from twisted.web.util import Redirect
 
 from zope.interface import implements
@@ -66,7 +66,7 @@ the end.
 
 </body>
 
-</html>""" % (("0123456789ABCDEF"*4+"\n")*61)
+</html>""" % (("0123456789ABCDEF" * 4 + "\n") * 61)
 REFERER_TEST_HTML = """\
 <html>
 <head>
@@ -104,6 +104,7 @@ DIGEST_AUTH_PAGE = """
 </html>
 """
 
+
 class TestHTTPUser(object):
     """
     Test avatar implementation for http auth with cred
@@ -117,6 +118,7 @@ class TestHTTPUser(object):
     def __init__(self, template, username):
         self.template = template
         self.username = username
+
 
 class TestAuthRealm(object):
     """
@@ -135,7 +137,7 @@ class TestAuthRealm(object):
                         lambda: None)
 
             return (IResource, TestHTTPUser(self.template, avatarId),
-                    lambda:None)
+                    lambda: None)
 
         raise NotImplementedError("Only IResource interface is supported")
 
@@ -157,6 +159,7 @@ class Page(resource.Resource):
         request.setResponseCode(http.OK)
         request.setHeader('content-type', self.content_type)
         return bytes(self.text)
+
 
 class Dir(resource.Resource):
 
@@ -183,24 +186,29 @@ def _make_page(parent, name, text, content_type, wrapper,
     parent.putChild(name, wrapper(page))
     return page
 
+
 def make_page(parent, name, text,
               content_type="text/html", wrapper=lambda page: page):
     return _make_page(parent, name, text, content_type, wrapper, leaf=False)
 
+
 def make_leaf_page(parent, name, text,
                    content_type="text/html", wrapper=lambda page: page):
     return _make_page(parent, name, text, content_type, wrapper, leaf=True)
+
 
 def make_redirect(parent, name, location_relative_ref):
     redirect = Redirect(location_relative_ref)
     parent.putChild(name, redirect)
     return redirect
 
+
 def make_cgi_script(parent, name, path, interpreter=sys.executable):
     cgi_script = twcgi.FilteredScript(path)
     cgi_script.filter = interpreter
     parent.putChild(name, cgi_script)
     return cgi_script
+
 
 def require_basic_auth(resource):
     p = portal.Portal(TestAuthRealm())
@@ -210,6 +218,7 @@ def require_basic_auth(resource):
     cred_factory = BasicCredentialFactory("Basic Auth protected area")
     return HTTPAuthSessionWrapper(p, [cred_factory])
 
+
 def require_digest_auth(resource):
     p = portal.Portal(TestAuthRealm(DIGEST_AUTH_PAGE))
     c = checkers.InMemoryUsernamePasswordDatabaseDontUse()
@@ -217,6 +226,7 @@ def require_digest_auth(resource):
     p.registerChecker(c)
     cred_factory = DigestCredentialFactory("md5", "Digest Auth protected area")
     return HTTPAuthSessionWrapper(p, [cred_factory])
+
 
 def parse_options(args):
     parser = optparse.OptionParser()
@@ -257,7 +267,8 @@ def main(argv):
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     make_cgi_script(cgi_bin, "cookietest.cgi",
                     os.path.join(project_dir, "test-tools", "cookietest.cgi"))
-    example_html = open(os.path.join("examples", "forms", "example.html")).read()
+    example_html = open(os.path.join(
+        "examples", "forms", "example.html")).read()
     make_leaf_page(mechanize, "example.html", example_html)
     make_cgi_script(cgi_bin, "echo.cgi",
                     os.path.join(project_dir, "examples", "forms", "echo.cgi"))

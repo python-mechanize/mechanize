@@ -9,7 +9,8 @@ COPYING.txt included with the distribution).
 
 """
 
-import os, re
+import os
+import re
 from types import StringType
 from types import UnicodeType
 STRING_TYPES = StringType, UnicodeType
@@ -45,19 +46,21 @@ def is_html(ct_headers, url, allow_xhtml=False):
         html_types += [
             "text/xhtml", "text/xml",
             "application/xml", "application/xhtml+xml",
-            ]
+        ]
     return ct in html_types
 
 
 def unmatched(match):
     """Return unmatched part of re.Match object."""
     start, end = match.span(0)
-    return match.string[:start]+match.string[end:]
+    return match.string[:start] + match.string[end:]
 
-token_re =        re.compile(r"^\s*([^=\s;,]+)")
+token_re = re.compile(r"^\s*([^=\s;,]+)")
 quoted_value_re = re.compile(r"^\s*=\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"")
-value_re =        re.compile(r"^\s*=\s*([^\s;,]*)")
+value_re = re.compile(r"^\s*=\s*([^\s;,]*)")
 escape_re = re.compile(r"\\(.)")
+
+
 def split_header_words(header_values):
     r"""Parse header values into a list of lists containing key,value pairs.
 
@@ -131,7 +134,8 @@ def split_header_words(header_values):
             elif text.lstrip().startswith(","):
                 # concatenated headers, as per RFC 2616 section 4.2
                 text = text.lstrip()[1:]
-                if pairs: result.append(pairs)
+                if pairs:
+                    result.append(pairs)
                 pairs = []
             else:
                 # skip junk
@@ -140,10 +144,13 @@ def split_header_words(header_values):
                     "split_header_words bug: '%s', '%s', %s" %
                     (orig_text, text, pairs))
                 text = non_junk
-        if pairs: result.append(pairs)
+        if pairs:
+            result.append(pairs)
     return result
 
 join_escape_re = re.compile(r"([\"\\])")
+
+
 def join_header_words(lists):
     """Do the inverse of the conversion done by split_header_words.
 
@@ -169,8 +176,10 @@ def join_header_words(lists):
                 else:
                     k = "%s=%s" % (k, v)
             attr.append(k)
-        if attr: headers.append("; ".join(attr))
+        if attr:
+            headers.append("; ".join(attr))
     return ", ".join(headers)
+
 
 def strip_quotes(text):
     if text.startswith('"'):
@@ -178,6 +187,7 @@ def strip_quotes(text):
     if text.endswith('"'):
         text = text[:-1]
     return text
+
 
 def parse_ns_headers(ns_headers):
     """Ad-hoc parser for Netscape protocol cookie-attributes.
@@ -206,7 +216,8 @@ def parse_ns_headers(ns_headers):
         for ii in range(len(params)):
             param = params[ii]
             param = param.rstrip()
-            if param == "": continue
+            if param == "":
+                continue
             if "=" not in param:
                 k, v = param, None
             else:
@@ -234,8 +245,9 @@ def parse_ns_headers(ns_headers):
 
 
 def _test():
-   import doctest, _headersutil
-   return doctest.testmod(_headersutil)
+    import doctest
+    import _headersutil
+    return doctest.testmod(_headersutil)
 
 if __name__ == "__main__":
-   _test()
+    _test()

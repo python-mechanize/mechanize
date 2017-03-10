@@ -53,6 +53,7 @@ try:
 except (ImportError, AttributeError):
     # fake module
     class action_tree(object):
+
         @staticmethod
         def action_node(func):
             return func
@@ -186,7 +187,7 @@ class EasyInstallTester(object):
         return [
             self.easy_install,
             self.test,
-            ]
+        ]
 
 
 def make_source_dist_easy_install_test_step(env, install_dir,
@@ -356,8 +357,8 @@ class Releaser(object):
         release.clean_dir(self._env, jar_dir)
         in_jar_dir = release.CwdEnv(self._env, jar_dir)
         in_jar_dir.cmd([
-                "wget",
-                "http://www.w3.org/QA/Tools/css-validator/css-validator.jar"])
+            "wget",
+            "http://www.w3.org/QA/Tools/css-validator/css-validator.jar"])
         in_jar_dir.cmd(["wget",
                         "http://jigsaw.w3.org/Distrib/jigsaw_2.2.6.tar.bz2"])
         in_jar_dir.cmd(["sh", "-c", "tar xf jigsaw_*.tar.bz2"])
@@ -414,7 +415,7 @@ class Releaser(object):
         dependency_actions.append(self.install_css_validator_in_release_area)
 
         dependency_actions.insert(0, action_tree.make_node(
-                standard_dependency_actions, "standard_dependencies"))
+            standard_dependency_actions, "standard_dependencies"))
         return dependency_actions
 
     def copy_test_dependencies(self, log):
@@ -540,7 +541,7 @@ class Releaser(object):
                   self._make_test_step(self._in_repo, python_version=(2, 7))))
         r.append(("python27_easy_install_test",
                   self._make_source_dist_easy_install_test_step(
-                    self._in_repo, python_version=(2, 7))))
+                      self._in_repo, python_version=(2, 7))))
         r.append(("python26_test",
                   self._make_test_step(self._in_repo, python_version=(2, 6))))
         # disabled for the moment -- think I probably built the launchpad .deb
@@ -550,10 +551,10 @@ class Releaser(object):
         #                                coverage=True)))
         r.append(("python25_easy_install_test",
                   self._make_source_dist_easy_install_test_step(
-                    self._in_repo, python_version=(2, 5))))
+                      self._in_repo, python_version=(2, 5))))
         r.append(("python24_easy_install_test",
                   self._make_source_dist_easy_install_test_step(
-                    self._in_repo, python_version=(2, 4))))
+                      self._in_repo, python_version=(2, 4))))
         r.append(self.performance_test)
         r.append(self.opera_tests)
         return r
@@ -622,7 +623,7 @@ class Releaser(object):
             self.clean_docs,
             self.make_docs,
             self.setup_py_sdist,
-            ]
+        ]
 
     def _stage(self, path, dest_dir, dest_basename=None,
                source_base_path=None):
@@ -882,7 +883,7 @@ URL
                       re.match("^ \* Update (?:changelog|version)$", line,
                                re.I))
         self._in_release_dir.cmd(cmd_env.write_file_cmd(
-                "announce_email.txt", u"""\
+            "announce_email.txt", u"""\
 ANN: mechanize {version} released
 
 http://wwwsearch.sourceforge.net/mechanize/
@@ -932,8 +933,8 @@ for link in b.links(url_regex=re.compile("python.org")):
 
 John
 """.format(log=log,
-           version=self._release_version,
-           previous_version=self._previous_version)))
+                version=self._release_version,
+                previous_version=self._previous_version)))
 
     def edit_email(self, log):
         self._in_release_dir.cmd(["sensible-editor", "announce_email.txt"])
@@ -972,14 +973,14 @@ John
             self.tag,
             self.build_sdist,
             ("unpacked_tarball_test", self._make_unpacked_tarball_test_step(
-                    self._env, python_version=(2,6))),
+                self._env, python_version=(2, 6))),
             ("easy_install_test", self._make_tarball_easy_install_test_step(
-                    self._in_repo, python_version=(2, 6),
-                    local_server=False, uri=self._test_uri)),
+                self._in_repo, python_version=(2, 6),
+                local_server=False, uri=self._test_uri)),
             self.zope_testbrowser,
             self.write_email,
             self.edit_email,
-            ]
+        ]
 
     def update_version(self, log):
         version_path = "mechanize/_version.py"
@@ -992,14 +993,15 @@ __version__ = %(tuple)s
         old_version = old_text.splitlines()[0].strip(' "')
         assert old_version == str(self._release_version), \
             (old_version, str(self._release_version))
+
         def version_text(version):
             return template % {"text": str(version),
                                "tuple": repr(tuple(version.tuple[:-1]))}
         assert old_text == version_text(release.parse_version(old_version)), \
             (old_text, version_text(release.parse_version(old_version)))
         self._in_source_repo.cmd(cmd_env.write_file_cmd(
-                version_path,
-                version_text(self._release_version.next_version())))
+            version_path,
+            version_text(self._release_version.next_version())))
         self._in_source_repo.cmd(["git", "commit", "-m", "Update version",
                                   version_path])
 
@@ -1014,7 +1016,7 @@ __version__ = %(tuple)s
             self.validate_html,
             self.validate_css,
             self.commit_staging_website,
-            ]
+        ]
 
     @action_tree.action_node
     def tell_the_world(self):
@@ -1024,11 +1026,11 @@ __version__ = %(tuple)s
             self.upload,
             ("easy_install_test_internet",
              self._make_pypi_easy_install_test_step(
-                    self._in_repo, python_version=(2, 6),
-                    local_server=False,
-                    uri="http://wwwsearch.sourceforge.net/")),
+                 self._in_repo, python_version=(2, 6),
+                 local_server=False,
+                 uri="http://wwwsearch.sourceforge.net/")),
             self.send_email,
-            ]
+        ]
 
     @action_tree.action_node
     def all(self):
@@ -1037,7 +1039,7 @@ __version__ = %(tuple)s
             self.update_staging_website,
             self.update_version,
             self.tell_the_world,
-            ]
+        ]
 
 
 def parse_options(args):

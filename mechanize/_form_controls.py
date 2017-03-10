@@ -224,6 +224,7 @@ class MimeWriter:
 
 
 class Label:
+
     def __init__(self, attrs):
         self.id = attrs.get("for")
         self._text = attrs.get("__text").strip()
@@ -721,6 +722,7 @@ class IgnoreControl(ScalarControl):
 
 
 class Item:
+
     def __init__(self, control, attrs, index=None):
         label = _get_label(attrs)
         self.__dict__.update({

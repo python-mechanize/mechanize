@@ -5,7 +5,9 @@
 # catch exceptions in Python, unlike checking error return values in Perl,
 # but I've left those in for the sake of a direct port.
 
-import sys, os, re
+import sys
+import os
+import re
 from urllib2 import HTTPError
 
 import mechanize
@@ -16,7 +18,7 @@ mech = mechanize.Browser()
 # access /search now.  We're not madly searching for everything, so
 # I don't feel too guilty.
 mech.set_handle_robots(False)
-#mech.set_debug_http(True)
+# mech.set_debug_http(True)
 
 # Get the starting search page
 try:
@@ -54,7 +56,8 @@ for url in urls:
     r = mech.open(url)
     while 1:
         data = r.read(1024)
-        if not data: break
+        if not data:
+            break
         f.write(data)
     f.close()
     print os.stat(filename).st_size, "bytes"

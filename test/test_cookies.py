@@ -18,6 +18,7 @@ from mechanize import Request
 
 
 class FakeResponse:
+
     def __init__(self, headers=[], url=None):
         """
         headers: list of RFC822-style 'Key: value' strings
@@ -52,6 +53,7 @@ def _interact(cookiejar, url, set_cookie_hdrs, hdr_name):
 
 
 class TempfileTestMixin:
+
     def setUp(self):
         self._tempfiles = []
 
@@ -81,11 +83,13 @@ def attribute_names(obj):
 
 
 class CookieJarInterfaceTests(unittest.TestCase):
+
     def test_add_cookie_header(self):
         from mechanize import CookieJar
 
         # verify only these methods are used
         class MockRequest(object):
+
             def __init__(self):
                 self.added_headers = []
                 self.called = set()
@@ -141,14 +145,17 @@ class CookieJarInterfaceTests(unittest.TestCase):
         # verify only these methods are used
 
         class StubMessage(object):
+
             def getheaders(self, name):
                 return ["foo=bar; port=443"]
 
         class StubResponse(object):
+
             def info(self):
                 return StubMessage()
 
         class StubRequest(object):
+
             def __init__(self):
                 self.added_headers = []
                 self.called = set()
@@ -184,6 +191,7 @@ class CookieJarInterfaceTests(unittest.TestCase):
         # .unverifiable was added in mechanize, .is_unverifiable() later got
         # added in cookielib.  XXX deprecate .unverifiable
         class StubRequest(object):
+
             def __init__(self, attrs):
                 self._attrs = attrs
                 self.accessed = set()
@@ -1070,6 +1078,7 @@ class CookieTests(unittest.TestCase):
 
 
 class CookieJarPersistenceTests(TempfileTestMixin, unittest.TestCase):
+
     def _interact(self, cj):
         year_plus_one = time.localtime(time.time())[0] + 1
         interact_2965(cj, "http://www.acme.com/",

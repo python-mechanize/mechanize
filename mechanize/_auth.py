@@ -15,6 +15,7 @@ from _urllib2_fork import HTTPPasswordMgr
 # TODO: stop deriving from HTTPPasswordMgr
 class HTTPProxyPasswordMgr(HTTPPasswordMgr):
     # has default realm and host/port
+
     def add_password(self, realm, uri, user, passwd):
         # uri could be a single URI or a sequence
         if uri is None or isinstance(uri, basestring):
@@ -62,7 +63,9 @@ class HTTPProxyPasswordMgr(HTTPPasswordMgr):
 
 class HTTPSClientCertMgr(HTTPPasswordMgr):
     # implementation inheritance: this is not a proper subclass
+
     def add_key_cert(self, uri, key_file, cert_file):
         self.add_password(None, uri, key_file, cert_file)
+
     def find_key_cert(self, authuri):
         return HTTPPasswordMgr.find_user_password(self, None, authuri)

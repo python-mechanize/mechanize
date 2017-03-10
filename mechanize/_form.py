@@ -186,6 +186,7 @@ def issequence(x):
 # raised by versions of ClientForm <= 0.2.5
 # TODO: move to _html
 class ParseError(sgmllib.SGMLParseError, HTMLParser.HTMLParseError):
+
     def __init__(self, *args, **kwds):
         Exception.__init__(self, *args, **kwds)
 
@@ -566,6 +567,7 @@ class XHTMLCompatibleFormParser(_AbstractFormParser, HTMLParser.HTMLParser):
 
 
 class _AbstractSgmllibParser(_AbstractFormParser):
+
     def do_option(self, attrs):
         _AbstractFormParser._start_option(self, attrs)
 

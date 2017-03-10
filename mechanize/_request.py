@@ -18,6 +18,7 @@ warn = logging.getLogger("mechanize").warning
 
 
 class Request(_urllib2_fork.Request):
+
     def __init__(self, url, data=None, headers={},
                  origin_req_host=None, unverifiable=False, visit=None,
                  timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):

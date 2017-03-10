@@ -72,7 +72,7 @@ class ServerProcess:
         return []
 
     def _start(self):
-        self._args = [sys.executable, self._filename]+self._get_args()
+        self._args = [sys.executable, self._filename] + self._get_args()
         self.report_hook("starting (%s)" % (self._args,))
         self._process = subprocess.Popen(self._args)
         self.report_hook("waiting for startup")
@@ -300,7 +300,7 @@ def make_http_server_cm(uri, log):
         cm = ServerCM(skip)
     else:
         cm = ServerCM(lambda: TwistedServerProcess(
-                uri, "local twisted server", log))
+            uri, "local twisted server", log))
     return cm
 
 
@@ -318,7 +318,7 @@ def make_ftp_server_cm(log):
         cm = ServerCM(skip)
     else:
         cm = ServerCM(lambda: TwistedFtpServerProcess(
-                "local twisted server", 2121, log))
+            "local twisted server", 2121, log))
     return cm
 
 

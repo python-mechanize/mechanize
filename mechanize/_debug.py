@@ -20,7 +20,9 @@ class HTTPResponseDebugProcessor(BaseHandler):
 
     https_response = http_response
 
+
 class HTTPRedirectDebugProcessor(BaseHandler):
+
     def http_request(self, request):
         if hasattr(request, "redirect_dict"):
             info = logging.getLogger("mechanize.http_redirects").info

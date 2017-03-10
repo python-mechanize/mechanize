@@ -16,7 +16,9 @@ included with the distribution).
 
 """
 
-import copy, mimetools, urllib2
+import copy
+import mimetools
+import urllib2
 from cStringIO import StringIO
 
 
@@ -42,7 +44,7 @@ def len_of_seekable(file_):
 # ipdc, which is available here:
 # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/436834
 ## from ipdbc import ContractBase
-## class seek_wrapper(ContractBase):
+# class seek_wrapper(ContractBase):
 class seek_wrapper:
     """Adds a seek method to a file object.
 
@@ -110,17 +112,19 @@ class seek_wrapper:
             self.__dict__[name] = value
 
     def seek(self, offset, whence=0):
-        assert whence in [0,1,2]
+        assert whence in [0, 1, 2]
 
         # how much data, if any, do we need to read?
         if whence == 2:  # 2: relative to end of *wrapped* file
-            if offset < 0: raise ValueError("negative seek offset")
+            if offset < 0:
+                raise ValueError("negative seek offset")
             # since we don't know yet where the end of that file is, we must
             # read everything
             to_read = None
         else:
             if whence == 0:  # 0: absolute
-                if offset < 0: raise ValueError("negative seek offset")
+                if offset < 0:
+                    raise ValueError("negative seek offset")
                 dest = offset
             else:  # 1: relative to current position
                 pos = self.__pos
@@ -181,7 +185,7 @@ class seek_wrapper:
         # enough data already cached?
         if size <= available and size != -1:
             self.__cache.seek(pos)
-            self.__pos = pos+size
+            self.__pos = pos + size
             return self.__cache.read(size)
 
         # no, so read sufficient data from wrapped file and cache it
@@ -222,10 +226,10 @@ class seek_wrapper:
         data = self.__cache.readline()
         if size != -1:
             r = data[:size]
-            self.__pos = pos+size
+            self.__pos = pos + size
         else:
             r = data
-            self.__pos = pos+len(data)
+            self.__pos = pos + len(data)
         return r
 
     def readlines(self, sizehint=-1):
@@ -239,9 +243,11 @@ class seek_wrapper:
         return data
 
     def __iter__(self): return self
+
     def next(self):
         line = self.readline()
-        if line == "": raise StopIteration
+        if line == "":
+            raise StopIteration
         return line
 
     xreadlines = __iter__
@@ -291,19 +297,28 @@ class response_seek_wrapper(seek_wrapper):
 
 class eoffile:
     # file-like object that always claims to be at end-of-file...
+
     def read(self, size=-1): return ""
+
     def readline(self, size=-1): return ""
+
     def __iter__(self): return self
+
     def next(self): return ""
+
     def close(self): pass
 
+
 class eofresponse(eoffile):
+
     def __init__(self, url, headers, code, msg):
         self._url = url
         self._headers = headers
         self.code = code
         self.msg = msg
+
     def geturl(self): return self._url
+
     def info(self): return self._headers
 
 
@@ -345,7 +360,8 @@ class closeable_response:
         self.fp = fp
         self.read = self.fp.read
         self.readline = self.fp.readline
-        if hasattr(self.fp, "readlines"): self.readlines = self.fp.readlines
+        if hasattr(self.fp, "readlines"):
+            self.readlines = self.fp.readlines
         if hasattr(self.fp, "fileno"):
             self.fileno = self.fp.fileno
         else:
@@ -392,14 +408,17 @@ class closeable_response:
         state["wrapped"] = new_wrapped
         return state
 
+
 def test_response(data='test data', headers=[],
                   url="http://example.com/", code=200, msg="OK"):
     return make_response(data, headers, url, code, msg)
+
 
 def test_html_response(data='test data', headers=[],
                        url="http://example.com/", code=200, msg="OK"):
     headers += [("Content-type", "text/html")]
     return make_response(data, headers, url, code, msg)
+
 
 def make_response(data, headers, url, code, msg):
     """Convenient factory for objects implementing response interface.
@@ -433,7 +452,7 @@ def get_seek_wrapper_class(response):
     # in order to wrap response objects that are also exceptions, we must
     # dynamically subclass the exception :-(((
     if (isinstance(response, urllib2.HTTPError) and
-        not hasattr(response, "seek")):
+            not hasattr(response, "seek")):
         if response.__class__.__module__ == "__builtin__":
             exc_class_name = response.__class__.__name__
         else:
@@ -456,13 +475,14 @@ def get_seek_wrapper_class(response):
                 return (
                     "<%s (%s instance) at %s "
                     "whose wrapped object = %r>" % (
-                    self.__class__.__name__, self._exc_class_name,
-                    hex(abs(id(self))), self.wrapped)
-                    )
+                        self.__class__.__name__, self._exc_class_name,
+                        hex(abs(id(self))), self.wrapped)
+                )
         wrapper_class = httperror_seek_wrapper
     else:
         wrapper_class = response_seek_wrapper
     return wrapper_class
+
 
 def seek_wrapped_response(response):
     """Return a copy of response that supports seekable response interface.
@@ -478,6 +498,7 @@ def seek_wrapped_response(response):
         response = wrapper_class(response)
     assert hasattr(response, "get_data")
     return response
+
 
 def upgrade_response(response):
     """Return a copy of response that supports Browser response interface.

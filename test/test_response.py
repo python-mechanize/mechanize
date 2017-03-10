@@ -4,7 +4,9 @@ import copy
 import cStringIO
 from unittest import TestCase
 
+
 class TestUnSeekable:
+
     def __init__(self, text):
         self._file = cStringIO.StringIO(text)
         self.log = []
@@ -25,7 +27,9 @@ class TestUnSeekable:
         self.log.append(("readlines", sizehint))
         return self._file.readlines(sizehint)
 
+
 class TestUnSeekableResponse(TestUnSeekable):
+
     def __init__(self, text, headers):
         TestUnSeekable.__init__(self, text)
         self.code = 200
@@ -52,7 +56,7 @@ jumps over the lazy
 dog.
 
 """
-    text_lines = map(lambda l: l+"\n", text.split("\n")[:-1])
+    text_lines = map(lambda l: l + "\n", text.split("\n")[:-1])
 
     def testSeekable(self):
         from mechanize._response import seek_wrapper
@@ -98,15 +102,17 @@ dog.
         sfh.seek(-1, 1)
         while 1:
             l = sfh.readline()
-            if l == "": break
+            if l == "":
+                break
             lines.append(l)
-        assert lines == ["s over the lazy\n"]+text_lines[2:]
-        assert sfh.log[2:] == [("readline", -1)]*5
+        assert lines == ["s over the lazy\n"] + text_lines[2:]
+        assert sfh.log[2:] == [("readline", -1)] * 5
         sfh.seek(0)
         lines = []
         while 1:
             l = sfh.readline()
-            if l == "": break
+            if l == "":
+                break
             lines.append(l)
         assert lines == text_lines
 
@@ -129,7 +135,8 @@ dog.
         text_lines = self.text_lines
         sfh.read(25)
         sfh.seek(-1, 1)
-        self.assertEqual(sfh.readlines(), ["s over the lazy\n"]+text_lines[2:])
+        self.assertEqual(sfh.readlines(), [
+                         "s over the lazy\n"] + text_lines[2:])
         sfh.seek(0)
         assert sfh.readlines() == text_lines
 

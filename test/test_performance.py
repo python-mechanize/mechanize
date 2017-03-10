@@ -18,6 +18,7 @@ def time_it(operation):
     operation()
     return time.time() - t
 
+
 def write_data(filename, nr_bytes):
     block_size = 4096
     block = "01234567" * (block_size // 8)
@@ -27,6 +28,7 @@ def write_data(filename, nr_bytes):
             fh.write(block)
     finally:
         fh.close()
+
 
 def time_retrieve_local_file(temp_maker, size, retrieve_fn):
     temp_dir = temp_maker.make_temp_dir()
@@ -46,7 +48,7 @@ class PerformanceTests(TestCase):
             br.retrieve(url, filename)
         size = 100 * MB
 #         size = 1 * KB
-        desired_rate = 2*MB  # per second
+        desired_rate = 2 * MB  # per second
         desired_time = size / float(desired_rate)
         fudge_factor = 2.
         self.assert_less_than(
@@ -92,7 +94,7 @@ def performance_plot():
             elapsed = time_retrieve_local_file(temp_maker, size, retrieve)
         finally:
             temp_maker.tear_down()
-        rows.append((size//float(MB), elapsed))
+        rows.append((size // float(MB), elapsed))
     show_plot(rows)
 
 

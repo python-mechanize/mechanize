@@ -78,6 +78,7 @@ class History:
 
 
 class HTTPRefererProcessor(_urllib2_fork.BaseHandler):
+
     def http_request(self, request):
         # See RFC 2616 14.36.  The only times we know the source of the
         # request URI has a URI associated with it are redirect, and

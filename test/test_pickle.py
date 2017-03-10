@@ -16,6 +16,7 @@ def test_pickling(obj, check=lambda unpickled: None):
 
 
 class PickleTest(mechanize._testcase.TestCase):
+
     def test_pickle_cookie(self):
         from mechanize._clientcookie import cookies_equal
         cookiejar = mechanize.CookieJar()

@@ -191,6 +191,7 @@ class CookieJar(CJ):
 
 
 class MozillaCookieJar(MCJ):
+
     def _really_load(self, f, filename, ignore_discard, ignore_expires):
         now = time.time()
 

@@ -14,9 +14,9 @@ response = mechanize.urlopen(request)
 forms = mechanize.ParseResponse(response, backwards_compat=False)
 response.close()
 ## f = open("example.html")
-## forms = mechanize.ParseFile(f, "http://example.com/example.html",
-##                              backwards_compat=False)
-## f.close()
+# forms = mechanize.ParseFile(f, "http://example.com/example.html",
+# backwards_compat=False)
+# f.close()
 form = forms[0]
 print form  # very useful!
 
@@ -110,14 +110,18 @@ form.set_value("rhubarb rhubarb", kind="text", nr=0)
 form.set_value(["spam"], kind="singlelist", nr=0)
 
 # You can find controls with a general predicate function:
+
+
 def control_has_caerphilly(control):
     for item in control.items:
-        if item.name == "caerphilly": return True
+        if item.name == "caerphilly":
+            return True
 form.find_control(kind="list", predicate=control_has_caerphilly)
 
 # HTMLForm.controls is a list of all controls in the form
 for control in form.controls:
-    if control.value == "inquisition": sys.exit()
+    if control.value == "inquisition":
+        sys.exit()
 
 # Control.items is a list of all Item instances in the control
 for item in form.find_control("cheeses").items:

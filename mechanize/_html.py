@@ -45,6 +45,7 @@ class CachingGeneratorFunction(object):
 
 
 class EncodingFinder:
+
     def __init__(self, default_encoding):
         self._default_encoding = default_encoding
 
@@ -66,6 +67,7 @@ class EncodingFinder:
 
 
 class ResponseTypeFinder:
+
     def __init__(self, allow_xhtml):
         self._allow_xhtml = allow_xhtml
 
@@ -104,6 +106,7 @@ def form_parser_args(
 
 
 class Link:
+
     def __init__(self, base_url, url, text, tag, attrs):
         assert None not in [url, tag, attrs]
         self.base_url = base_url
@@ -125,6 +128,7 @@ class Link:
 
 
 class LinksFactory:
+
     def __init__(
             self,
             link_parser_class=None,
@@ -242,6 +246,7 @@ class FormsFactory:
 
 
 class TitleFactory:
+
     def __init__(self):
         self._response = self._encoding = None
 
@@ -424,6 +429,7 @@ class RobustLinksFactory:
 
 
 class RobustFormsFactory(FormsFactory):
+
     def __init__(self, *args, **kwds):
         args = form_parser_args(*args, **kwds)
         if args.form_parser_class is None:
@@ -436,6 +442,7 @@ class RobustFormsFactory(FormsFactory):
 
 
 class RobustTitleFactory:
+
     def __init__(self):
         self._bs = self._encoding = None
 

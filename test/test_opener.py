@@ -14,7 +14,7 @@ def killfile(filename):
     try:
         os.remove(filename)
     except OSError:
-        if os.name=='nt':
+        if os.name == 'nt':
             try:
                 os.chmod(filename, stat.S_IWRITE)
                 os.remove(filename)
@@ -131,12 +131,14 @@ class OpenerTests(unittest.TestCase):
         # with a filename and some headers.
 
         class Opener(mechanize.OpenerDirector):
+
             def __init__(self, content_length=None):
                 mechanize.OpenerDirector.__init__(self)
                 self.calls = []
                 self.block_size = mechanize.OpenerDirector.BLOCK_SIZE
                 self.nr_blocks = 2.5
-                self.data = int((self.block_size/8)*self.nr_blocks)*"01234567"
+                self.data = int((self.block_size / 8) *
+                                self.nr_blocks) * "01234567"
                 self.total_size = len(self.data)
                 self._content_length = content_length
             def open(self, fullurl, data=None,
@@ -152,6 +154,7 @@ class OpenerTests(unittest.TestCase):
                 return _response.test_response(self.data, headers)
 
         class CallbackVerifier:
+
             def __init__(self, testcase, total_size, block_size):
                 self.count = 0
                 self._testcase = testcase
@@ -207,7 +210,7 @@ class OpenerTests(unittest.TestCase):
         # we DON'T create a temporary file, since there's a file there already
         op = Opener()
         verif = CallbackVerifier(self, -1, op.block_size)
-        tifn = "input_for_"+tfn
+        tifn = "input_for_" + tfn
         try:
             f = open(tifn, 'wb')
             try:
@@ -232,7 +235,7 @@ class OpenerTests(unittest.TestCase):
         # we DO create a new file in this case
         op = Opener()
         verif = CallbackVerifier(self, -1, op.block_size)
-        tifn = "input_for_"+tfn
+        tifn = "input_for_" + tfn
         try:
             f = open(tifn, 'wb')
             try:
@@ -256,7 +259,7 @@ class OpenerTests(unittest.TestCase):
             killfile(tifn)
 
         # Content-Length mismatch with real file length gives URLError
-        big = 1024*32
+        big = 1024 * 32
         op = Opener(content_length=big)
         verif = CallbackVerifier(self, big, op.block_size)
         url = "http://example.com/"
@@ -280,4 +283,3 @@ class OpenerTests(unittest.TestCase):
                 self.fail()
         finally:
             killfile(filename)
-

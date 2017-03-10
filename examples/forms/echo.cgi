@@ -2,7 +2,10 @@
 # -*-python-*-
 
 print "Content-Type: text/html\n"
-import sys, os, string, cgi
+import sys
+import os
+import string
+import cgi
 
 from types import ListType
 

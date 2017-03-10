@@ -26,9 +26,12 @@ class UserAgentTests(TestCase):
 
     def test_set_handled_schemes(self):
         class MockHandlerClass(make_mock_handler()):
+
             def __call__(self): return self
-        class BlahHandlerClass(MockHandlerClass): pass
-        class BlahProcessorClass(MockHandlerClass): pass
+        class BlahHandlerClass(MockHandlerClass):
+            pass
+        class BlahProcessorClass(MockHandlerClass):
+            pass
         BlahHandler = BlahHandlerClass([("blah_open", None)])
         BlahProcessor = BlahProcessorClass([("blah_request", None)])
         class TestUserAgent(mechanize.UserAgent):
@@ -46,9 +49,9 @@ class UserAgentTests(TestCase):
         self.assertEqual(sorted(h.__class__.__name__ for h in ua.handlers),
                          ["FileHandler", "HTTPHandler"])
         self.assertRaises(ValueError,
-            ua.set_handled_schemes, ["blah", "non-existent"])
+                          ua.set_handled_schemes, ["blah", "non-existent"])
         self.assertRaises(ValueError,
-            ua.set_handled_schemes, ["blah", "_blah"])
+                          ua.set_handled_schemes, ["blah", "_blah"])
         ua.set_handled_schemes(["blah"])
 
         req = mechanize.Request("blah://example.com/")

@@ -21,9 +21,9 @@ import mechanize
 from mechanize._http import parse_head
 from mechanize._response import test_response
 from mechanize import HTTPRedirectHandler, \
-     HTTPEquivProcessor, HTTPRefreshProcessor, \
-     HTTPCookieProcessor, HTTPRefererProcessor, \
-     HTTPErrorProcessor, HTTPHandler
+    HTTPEquivProcessor, HTTPRefreshProcessor, \
+    HTTPCookieProcessor, HTTPRefererProcessor, \
+    HTTPErrorProcessor, HTTPHandler
 from mechanize import OpenerDirector, build_opener, Request
 from mechanize._urllib2_fork import AbstractHTTPHandler
 from mechanize._util import write_file
@@ -36,10 +36,11 @@ import mechanize._urllib2_fork
 
 ## from logging import getLogger, DEBUG
 ## l = getLogger("mechanize")
-## l.setLevel(DEBUG)
+# l.setLevel(DEBUG)
 
 
 class AlwaysEqual:
+
     def __cmp__(self, other):
         return 0
 
@@ -72,8 +73,10 @@ class TrivialTests(mechanize._testcase.TestCase):
 
     def test_parse_http_list(self):
         tests = [('a,b,c', ['a', 'b', 'c']),
-                 ('path"o,l"og"i"cal, example', ['path"o,l"og"i"cal', 'example']),
-                 ('a, b, "c", "d", "e,f", g, h', ['a', 'b', '"c"', '"d"', '"e,f"', 'g', 'h']),
+                 ('path"o,l"og"i"cal, example', [
+                  'path"o,l"og"i"cal', 'example']),
+                 ('a, b, "c", "d", "e,f", g, h', [
+                  'a', 'b', '"c"', '"d"', '"e,f"', 'g', 'h']),
                  ('a="b\\"c", d="e\\,f", g="h\\\\i"', ['a="b"c"', 'd="e,f"', 'g="h\\i"'])]
         for string, list in tests:
             self.assertEquals(mechanize._urllib2_fork.parse_http_list(string),
@@ -109,6 +112,7 @@ def test_request_headers_dict():
     but that could be changed in future.
 
     """
+
 
 def test_request_headers_methods():
     """
@@ -255,18 +259,26 @@ def test_password_manager_default_port(self):
 
     """
 
+
 class MockOpener:
     addheaders = []
+
     def open(self, req, data=None,
              timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
-        self.req, self.data, self.timeout  = req, data, timeout
+        self.req, self.data, self.timeout = req, data, timeout
+
     def error(self, proto, *args):
         self.proto, self.args = proto, args
 
+
 class MockFile:
+
     def read(self, count=None): pass
+
     def readline(self, count=None): pass
+
     def close(self): pass
+
 
 def http_message(mapping):
     """
@@ -281,41 +293,57 @@ def http_message(mapping):
     msg = httplib.HTTPMessage(StringIO.StringIO("\r\n".join(f)))
     return msg
 
+
 class MockResponse(StringIO.StringIO):
+
     def __init__(self, code, msg, headers, data, url=None):
         StringIO.StringIO.__init__(self, data)
         self.code, self.msg, self.headers, self.url = code, msg, headers, url
+
     def info(self):
         return self.headers
+
     def geturl(self):
         return self.url
 
+
 class MockCookieJar:
+
     def add_cookie_header(self, request, unverifiable=False):
         self.ach_req, self.ach_u = request, unverifiable
+
     def extract_cookies(self, response, request, unverifiable=False):
         self.ec_req, self.ec_r, self.ec_u = request, response, unverifiable
 
+
 class FakeMethod:
+
     def __init__(self, meth_name, action, handle):
         self.meth_name = meth_name
         self.handle = handle
         self.action = action
+
     def __call__(self, *args):
         return self.handle(self.meth_name, self.action, *args)
+
 
 class MockHandler:
     # useful for testing handler machinery
     # see add_ordered_mock_handlers() docstring
     handler_order = 500
+
     def __init__(self, methods):
         self._define_methods(methods)
+
     def _define_methods(self, methods):
         for spec in methods:
-            if len(spec) == 2: name, action = spec
-            else: name, action = spec, None
+            if len(spec) == 2:
+                name, action = spec
+            else:
+                name, action = spec, None
             meth = FakeMethod(name, action, self.handle)
             setattr(self.__class__, name, meth)
+
     def handle(self, fn_name, action, *args, **kwds):
         self.parent.calls.append((self, fn_name, args, kwds))
         if action is None:
@@ -328,7 +356,7 @@ class MockHandler:
         elif action == "return request":
             return Request("http://blah/")
         elif action.startswith("error"):
-            code = action[action.rfind(" ")+1:]
+            code = action[action.rfind(" ") + 1:]
             try:
                 code = int(code)
             except ValueError:
@@ -338,10 +366,13 @@ class MockHandler:
         elif action == "raise":
             raise mechanize.URLError("blah")
         assert False
+
     def close(self): pass
+
     def add_parent(self, parent):
         self.parent = parent
         self.parent.calls = []
+
     def __lt__(self, other):
         if not hasattr(other, "handler_order"):
             # Try to preserve the old behavior of having custom classes
@@ -349,6 +380,7 @@ class MockHandler:
             # classes which are not aware of handler_order).
             return True
         return self.handler_order < other.handler_order
+
 
 def add_ordered_mock_handlers(opener, meth_spec):
     """Create MockHandlers and add them to an OpenerDirector.
@@ -372,7 +404,8 @@ def add_ordered_mock_handlers(opener, meth_spec):
     handlers = []
     count = 0
     for meths in meth_spec:
-        class MockHandlerSubclass(MockHandler): pass
+        class MockHandlerSubclass(MockHandler):
+            pass
         h = MockHandlerSubclass(meths)
         h.handler_order += count
         h.add_parent(opener)
@@ -381,25 +414,31 @@ def add_ordered_mock_handlers(opener, meth_spec):
         opener.add_handler(h)
     return handlers
 
+
 def build_test_opener(*handler_instances):
     opener = OpenerDirector()
     for h in handler_instances:
         opener.add_handler(h)
     return opener
 
+
 class MockHTTPHandler(mechanize.BaseHandler):
     # useful for testing redirections and auth
     # sends supplied headers and code as first response
     # sends 200 OK as second response
+
     def __init__(self, code, headers):
         self.code = code
         self.headers = headers
         self.reset()
+
     def reset(self):
         self._count = 0
         self.requests = []
+
     def http_open(self, req):
-        import mimetools, copy
+        import mimetools
+        import copy
         from StringIO import StringIO
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
@@ -412,12 +451,15 @@ class MockHTTPHandler(mechanize.BaseHandler):
             self.req = req
             return test_response("", [], req.get_full_url())
 
+
 class MockPasswordManager:
+
     def add_password(self, realm, uri, user, password):
         self.realm = realm
         self.url = uri
         self.user = user
         self.password = password
+
     def find_user_password(self, realm, authuri):
         self.target_realm = realm
         self.target_url = authuri
@@ -447,11 +489,11 @@ class OpenerDirectorTests(unittest.TestCase):
         meth_spec = [
             [("do_open", "return self"), ("proxy_open", "return self")],
             [("redirect_request", "return self")],
-            ]
+        ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
         o.add_handler(mechanize.UnknownHandler())
         for scheme in "do", "proxy", "redirect":
-            self.assertRaises(URLError, o.open, scheme+"://example.com/")
+            self.assertRaises(URLError, o.open, scheme + "://example.com/")
 
     def test_handled(self):
         # handler returning non-None means no more handlers will be called
@@ -461,7 +503,7 @@ class OpenerDirectorTests(unittest.TestCase):
             ["ftp_open"],
             [("http_open", "return self")],
             [("http_open", "return self")],
-            ]
+        ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
 
         req = Request("http://example.com/")
@@ -479,12 +521,12 @@ class OpenerDirectorTests(unittest.TestCase):
             self.assertEqual((handler, name), expected)
             self.assertEqual(args, (req,))
 
-
     def test_reindex_handlers(self):
         o = OpenerDirector()
         class MockHandler:
+
             def add_parent(self, parent): pass
-            def close(self):pass
+            def close(self): pass
             def __lt__(self, other):
                 return self.handler_order < other.handler_order
         # this first class is here as an obscure regression test for bug
@@ -518,8 +560,9 @@ class OpenerDirectorTests(unittest.TestCase):
         for meths, handler_order in [
             ([("http_open", "return self")], 500),
             (["http_open"], 0),
-            ]:
-            class MockHandlerSubclass(MockHandler): pass
+        ]:
+            class MockHandlerSubclass(MockHandler):
+                pass
             h = MockHandlerSubclass(meths)
             h.handler_order = handler_order
             handlers.append(h)
@@ -536,16 +579,16 @@ class OpenerDirectorTests(unittest.TestCase):
         meth_spec = [
             [("http_open", "raise")],
             [("http_open", "return self")],
-            ]
+        ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
 
         req = Request("http://example.com/")
         self.assertRaises(mechanize.URLError, o.open, req)
         self.assertEqual(o.calls, [(handlers[0], "http_open", (req,), {})])
 
-##     def test_error(self):
-##         # XXX this doesn't actually seem to be used in standard library,
-##         #  but should really be tested anyway...
+# def test_error(self):
+# XXX this doesn't actually seem to be used in standard library,
+# but should really be tested anyway...
 
     def test_http_error(self):
         # XXX http_error_default
@@ -557,7 +600,7 @@ class OpenerDirectorTests(unittest.TestCase):
             [("http_error_302", "return response"), "http_error_303",
              "http_error"],
             [("http_error_302")],
-            ]
+        ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
 
         req = Request("http://example.com/")
@@ -580,6 +623,7 @@ class OpenerDirectorTests(unittest.TestCase):
         o.add_handler(mechanize.HTTPErrorProcessor())
         o.add_handler(mechanize.HTTPDefaultErrorHandler())
         class HTTPHandler(AbstractHTTPHandler):
+
             def http_open(self, req):
                 return _response.test_response(code=302)
         o.add_handler(HTTPHandler())
@@ -593,7 +637,7 @@ class OpenerDirectorTests(unittest.TestCase):
              ("http_response", "return response")],
             [("http_request", "return request"),
              ("http_response", "return response")],
-            ]
+        ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
 
         req = Request("http://example.com/")
@@ -619,7 +663,7 @@ class OpenerDirectorTests(unittest.TestCase):
                 # response from opener.open is None, because there's no
                 # handler that defines http_open to handle it
                 self.assertTrue(args[1] is None or
-                          	   isinstance(args[1], MockResponse))
+                                isinstance(args[1], MockResponse))
 
     def test_any(self):
         # XXXXX two handlers case: ordering
@@ -631,7 +675,7 @@ class OpenerDirectorTests(unittest.TestCase):
             ("ftp_response", "return response"),
             ("any_request", "return request"),
             ("any_response", "return response"),
-            ]]
+        ]]
         handlers = add_ordered_mock_handlers(o, meth_spec)
         handler = handlers[0]
 
@@ -647,7 +691,7 @@ class OpenerDirectorTests(unittest.TestCase):
                      ]
             self.assertEqual(len(o.calls), len(calls))
             for i, ((handler, name, args, kwds), calls) in (
-                enumerate(zip(o.calls, calls))):
+                    enumerate(zip(o.calls, calls))):
                 if i < 2:
                     # *_request
                     self.assert_((handler, name) == calls)
@@ -674,47 +718,61 @@ def sanepathname2url(path):
 
 
 class MockRobotFileParserClass:
+
     def __init__(self):
         self.calls = []
         self._can_fetch = True
+
     def clear(self):
         self.calls = []
+
     def __call__(self):
         self.calls.append("__call__")
         return self
+
     def set_url(self, url):
         self.calls.append(("set_url", url))
+
     def set_timeout(self, timeout):
         self.calls.append(("set_timeout", timeout))
+
     def set_opener(self, opener):
         self.calls.append(("set_opener", opener))
+
     def read(self):
         self.calls.append("read")
+
     def can_fetch(self, ua, url):
         self.calls.append(("can_fetch", ua, url))
         return self._can_fetch
 
+
 class MockPasswordManager:
+
     def add_password(self, realm, uri, user, password):
         self.realm = realm
         self.url = uri
         self.user = user
         self.password = password
+
     def find_user_password(self, realm, authuri):
         self.target_realm = realm
         self.target_url = authuri
         return self.user, self.password
 
+
 class HandlerTests(mechanize._testcase.TestCase):
 
     def test_ftp(self):
         class MockFTPWrapper:
+
             def __init__(self, data): self.data = data
             def retrfile(self, filename, filetype):
                 self.filename, self.filetype = filename, filetype
                 return StringIO.StringIO(self.data), len(self.data)
 
         class NullFTPHandler(mechanize.FTPHandler):
+
             def __init__(self, data): self.data = data
             def connect_ftp(self, user, passwd, host, port, dirs, timeout):
                 self.user, self.passwd = user, passwd
@@ -724,7 +782,8 @@ class HandlerTests(mechanize._testcase.TestCase):
                 self.ftpwrapper = MockFTPWrapper(self.data)
                 return self.ftpwrapper
 
-        import ftplib, socket
+        import ftplib
+        import socket
         data = "rheum rhaponicum"
         h = NullFTPHandler(data)
         o = h.parent = MockOpener()
@@ -742,7 +801,7 @@ class HandlerTests(mechanize._testcase.TestCase):
              "localhost", ftplib.FTP_PORT, "A",
              [], _sockettimeout._GLOBAL_DEFAULT_TIMEOUT,
              "baz.gif", None),  # TODO: really this should guess image/gif
-            ]:
+        ]:
             req = Request(url, timeout=timeout)
             r = h.ftp_open(req)
             # ftp authentication not yet implemented by FTPHandler
@@ -759,7 +818,8 @@ class HandlerTests(mechanize._testcase.TestCase):
             self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):
-        import rfc822, socket
+        import rfc822
+        import socket
         h = mechanize.FileHandler()
         o = h.parent = MockOpener()
 
@@ -775,7 +835,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             "file://%s" % urlpath,
             "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
             "file://%s%s" % (fqdn, urlpath)
-            ]:
+        ]:
             write_file(temp_file, towrite)
             r = h.file_open(Request(url))
             try:
@@ -798,7 +858,7 @@ class HandlerTests(mechanize._testcase.TestCase):
                                    os.getcwd(), temp_file),
             "file://somerandomhost.ontheinternet.com%s/%s" %
             (os.getcwd(), temp_file),
-            ]:
+        ]:
             write_file(temp_file, towrite)
             self.assertRaises(mechanize.URLError, h.file_open, Request(url))
 
@@ -814,9 +874,9 @@ class HandlerTests(mechanize._testcase.TestCase):
         for url, ftp in [
             ("file://ftp.example.com//foo.txt", True),
             ("file://ftp.example.com///foo.txt", False),
-# XXXX bug: fails with OSError, should be URLError
+            # XXXX bug: fails with OSError, should be URLError
             ("file://ftp.example.com/foo.txt", False),
-            ]:
+        ]:
             req = Request(url)
             try:
                 h.file_open(req)
@@ -829,6 +889,7 @@ class HandlerTests(mechanize._testcase.TestCase):
 
     def test_http(self):
         class MockHTTPResponse:
+
             def __init__(self, fp, msg, status, reason):
                 self.fp = fp
                 self.msg = msg
@@ -837,6 +898,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             def read(self):
                 return ''
         class MockHTTPClass:
+
             def __init__(self):
                 self.req_headers = []
                 self.data = None
@@ -872,11 +934,14 @@ class HandlerTests(mechanize._testcase.TestCase):
             r = h.do_open(http, req)
 
             # result attributes
-            r.read; r.readline  # wrapped MockFile methods
-            r.info; r.geturl  # addinfourl methods
+            r.read
+            r.readline  # wrapped MockFile methods
+            r.info
+            r.geturl  # addinfourl methods
             r.code, r.msg == 200, "OK"  # added from MockHTTPClass.getreply()
             hdrs = r.info()
-            hdrs.get; hdrs.has_key  # r.info() gives dict from .getreply()
+            hdrs.get
+            hdrs.has_key  # r.info() gives dict from .getreply()
             self.assertEqual(r.geturl(), url)
 
             self.assertEqual(http.host, "example.com")
@@ -904,7 +969,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             else:  # POST
                 self.assertEqual(req.unredirected_hdrs["Content-length"], "0")
                 self.assertEqual(req.unredirected_hdrs["Content-type"],
-                           	  	"application/x-www-form-urlencoded")
+                                 "application/x-www-form-urlencoded")
             # XXX the details of Host could be better tested
             self.assertEqual(req.unredirected_hdrs["Host"], "example.com")
             self.assertEqual(req.unredirected_hdrs["Spam"], "eggs")
@@ -940,12 +1005,13 @@ class HandlerTests(mechanize._testcase.TestCase):
 
             # Check whether host is determined correctly if there is no proxy
             np_ds_req = h.do_request_(ds_req)
-            self.assertEqual(np_ds_req.unredirected_hdrs["Host"],"example.com")
+            self.assertEqual(np_ds_req.unredirected_hdrs[
+                             "Host"], "example.com")
 
             # Check whether host is determined correctly if there is a proxy
-            ds_req.set_proxy("someproxy:3128",None)
+            ds_req.set_proxy("someproxy:3128", None)
             p_ds_req = h.do_request_(ds_req)
-            self.assertEqual(p_ds_req.unredirected_hdrs["Host"],"example.com")
+            self.assertEqual(p_ds_req.unredirected_hdrs["Host"], "example.com")
 
     def test_errors(self):
         h = HTTPErrorProcessor()
@@ -998,7 +1064,9 @@ class HandlerTests(mechanize._testcase.TestCase):
         from mechanize import _response
         h = mechanize.HTTPDefaultErrorHandler()
 
-        url = "http://example.com"; code = 500; msg = "Error"
+        url = "http://example.com"
+        code = 500
+        msg = "Error"
         request = mechanize.Request(url)
         response = _response.test_response(url=url, code=code, msg=msg)
 
@@ -1043,14 +1111,14 @@ class HandlerTests(mechanize._testcase.TestCase):
             ("set_timeout", _sockettimeout._GLOBAL_DEFAULT_TIMEOUT),
             "read",
             ("can_fetch", "", url),
-            ])
+        ])
         # second time: just use existing parser
         rfpc.clear()
         req = Request(url)
         h.http_request(req)
         self.assert_(rfpc.calls == [
             ("can_fetch", "", url),
-            ])
+        ])
         # different URL on same server: same again
         rfpc.clear()
         url = "http://example.com:80/blah.html"
@@ -1058,7 +1126,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         h.http_request(req)
         self.assert_(rfpc.calls == [
             ("can_fetch", "", url),
-            ])
+        ])
         # disallowed URL
         rfpc.clear()
         rfpc._can_fetch = False
@@ -1084,7 +1152,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             ("set_timeout", _sockettimeout._GLOBAL_DEFAULT_TIMEOUT),
             "read",
             ("can_fetch", "", url),
-            ])
+        ])
         # https url -> should fetch robots.txt from https url too
         rfpc.clear()
         url = "https://example.org/rhubarb.html"
@@ -1097,7 +1165,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             ("set_timeout", _sockettimeout._GLOBAL_DEFAULT_TIMEOUT),
             "read",
             ("can_fetch", "", url),
-            ])
+        ])
         # non-HTTP URL -> ignore robots.txt
         rfpc.clear()
         url = "ftp://example.com/"
@@ -1110,14 +1178,17 @@ class HandlerTests(mechanize._testcase.TestCase):
         # robots.txt fetch to check the redirection is allowed!
         import mechanize
         from mechanize import build_opener, HTTPHandler, \
-             HTTPDefaultErrorHandler, HTTPRedirectHandler, \
-             HTTPRobotRulesProcessor
+            HTTPDefaultErrorHandler, HTTPRedirectHandler, \
+            HTTPRobotRulesProcessor
 
         class MockHTTPHandler(mechanize.BaseHandler):
+
             def __init__(self):
                 self.requests = []
             def http_open(self, req):
-                import mimetools, httplib, copy
+                import mimetools
+                import httplib
+                import copy
                 from StringIO import StringIO
                 self.requests.append(copy.deepcopy(req))
                 if req.get_full_url() == "http://example.com/robots.txt":
@@ -1188,7 +1259,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             ("2", True),
             # in the past, this failed with UnboundLocalError
             ('0; "http://example.com/foo/"', False),
-            ]:
+        ]:
             o = h.parent = MockOpener()
             req = Request("http://example.com/")
             headers = http_message({"refresh": val})
@@ -1200,6 +1271,7 @@ class HandlerTests(mechanize._testcase.TestCase):
 
     def test_refresh_honor_time(self):
         class SleepTester:
+
             def __init__(self, test, seconds):
                 self._test = test
                 if seconds is 0:
@@ -1343,8 +1415,8 @@ class HandlerTests(mechanize._testcase.TestCase):
         # cookies shouldn't leak into redirected requests
         import mechanize
         from mechanize import CookieJar, build_opener, HTTPHandler, \
-             HTTPCookieProcessor, HTTPError, HTTPDefaultErrorHandler, \
-             HTTPRedirectHandler
+            HTTPCookieProcessor, HTTPError, HTTPDefaultErrorHandler, \
+            HTTPRedirectHandler
 
         from test_cookies import interact_netscape
 
@@ -1364,7 +1436,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         o.add_handler(ph)
         meth_spec = [
             [("http_open", "return response")]
-            ]
+        ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
 
         o._maybe_reindex_handlers()
@@ -1414,7 +1486,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         ph = mechanize.ProxyHandler(dict(https='proxy.example.com:3128'))
         o.add_handler(ph)
         meth_spec = [
-            [("https_open","return response")]
+            [("https_open", "return response")]
         ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
         req = Request("https://www.example.com/")
@@ -1431,7 +1503,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         realm = "ACME Widget Store"
         http_handler = MockHTTPHandler(
             401, 'WWW-Authenticate: Basic realm=%s%s%s\r\n\r\n' %
-            (quote_char, realm, quote_char) )
+            (quote_char, realm, quote_char))
         opener.add_handler(auth_handler)
         opener.add_handler(http_handler)
         self._test_basic_auth(opener, auth_handler, "Authorization",
@@ -1470,21 +1542,24 @@ class HandlerTests(mechanize._testcase.TestCase):
         # try digest first (since it's the strongest auth scheme), so we record
         # order of calls here to check digest comes first:
         class RecordingOpenerDirector(OpenerDirector):
+
             def __init__(self):
                 OpenerDirector.__init__(self)
                 self.recorded = []
             def record(self, info):
                 self.recorded.append(info)
         class TestDigestAuthHandler(mechanize.HTTPDigestAuthHandler):
+
             def http_error_401(self, *args, **kwds):
                 self.parent.record("digest")
                 mechanize.HTTPDigestAuthHandler.http_error_401(self,
-                                                             *args, **kwds)
+                                                               *args, **kwds)
         class TestBasicAuthHandler(mechanize.HTTPBasicAuthHandler):
+
             def http_error_401(self, *args, **kwds):
                 self.parent.record("basic")
                 mechanize.HTTPBasicAuthHandler.http_error_401(self,
-                                                            *args, **kwds)
+                                                              *args, **kwds)
 
         opener = RecordingOpenerDirector()
         password_manager = MockPasswordManager()
@@ -1506,7 +1581,7 @@ class HandlerTests(mechanize._testcase.TestCase):
                               )
         # check digest was tried before basic (twice, because
         # _test_basic_auth called .open() twice)
-        self.assertEqual(opener.recorded, ["digest", "basic"]*2)
+        self.assertEqual(opener.recorded, ["digest", "basic"] * 2)
 
     def _test_basic_auth(self, opener, auth_handler, auth_header,
                          realm, http_handler, password_manager,
@@ -1531,7 +1606,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         self.assertEqual(len(http_handler.requests), 2)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
         userpass = '%s:%s' % (user, password)
-        auth_hdr_value = 'Basic '+base64.encodestring(userpass).strip()
+        auth_hdr_value = 'Basic ' + base64.encodestring(userpass).strip()
         self.assertEqual(http_handler.requests[1].get_header(auth_header),
                          auth_hdr_value)
 
@@ -1552,8 +1627,8 @@ class HeadParserTests(unittest.TestCase):
         htmls = [
             ("""<meta http-equiv="refresh" content="1; http://example.com/">
             """,
-            [("refresh", "1; http://example.com/")]
-            ),
+             [("refresh", "1; http://example.com/")]
+             ),
             ("""
             <html><head>
             <meta http-equiv="refresh" content="1; http://example.com/">
@@ -1567,30 +1642,46 @@ class HeadParserTests(unittest.TestCase):
             ("""<meta http-equiv="refresh">
             """,
              [])
-            ]
+        ]
         for html, result in htmls:
-            self.assertEqual(parse_head(StringIO.StringIO(html), HeadParser()), result)
-
+            self.assertEqual(parse_head(
+                StringIO.StringIO(html), HeadParser()), result)
 
 
 class A:
+
     def a(self): pass
+
+
 class B(A):
+
     def a(self): pass
+
     def b(self): pass
+
+
 class C(A):
+
     def c(self): pass
+
+
 class D(C, B):
+
     def a(self): pass
+
     def d(self): pass
+
 
 class FunctionTests(unittest.TestCase):
 
     def test_build_opener(self):
-        class MyHTTPHandler(HTTPHandler): pass
+        class MyHTTPHandler(HTTPHandler):
+            pass
         class FooHandler(mechanize.BaseHandler):
+
             def foo_open(self): pass
         class BarHandler(mechanize.BaseHandler):
+
             def bar_open(self): pass
 
         o = build_opener(FooHandler, BarHandler)
@@ -1616,7 +1707,8 @@ class FunctionTests(unittest.TestCase):
         self.opener_has_handler(o, HTTPHandler)
 
         # Issue2670: multiple handlers sharing the same base class
-        class MyOtherHTTPHandler(HTTPHandler): pass
+        class MyOtherHTTPHandler(HTTPHandler):
+            pass
         o = build_opener(MyHTTPHandler, MyOtherHTTPHandler)
         self.opener_has_handler(o, MyHTTPHandler)
         self.opener_has_handler(o, MyOtherHTTPHandler)
@@ -1628,13 +1720,14 @@ class FunctionTests(unittest.TestCase):
         else:
             self.assertTrue(False)
 
+
 class RequestTests(unittest.TestCase):
 
     def setUp(self):
         self.get = Request("http://www.python.org/~jeremy/")
         self.post = Request("http://www.python.org/~jeremy/",
-                                    "data",
-                                    headers={"X-Test": "test"})
+                            "data",
+                            headers={"X-Test": "test"})
 
     def test_method(self):
         self.assertEqual("POST", self.post.get_method())

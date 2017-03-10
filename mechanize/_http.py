@@ -35,9 +35,9 @@ debug_robots = logging.getLogger("mechanize.robots").debug
 
 # monkeypatch urllib2.HTTPError to show URL
 ## import urllib2
-## def urllib2_str(self):
-##     return 'HTTP Error %s: %s (%s)' % (
-##         self.code, self.msg, self.geturl())
+# def urllib2_str(self):
+# return 'HTTP Error %s: %s (%s)' % (
+# self.code, self.msg, self.geturl())
 ## urllib2.HTTPError.__str__ = urllib2_str
 
 
@@ -45,7 +45,12 @@ CHUNK = 1024  # size of chunks fed to HTML HEAD parser, in bytes
 DEFAULT_ENCODING = 'latin-1'
 
 # XXX would self.reset() work, instead of raising this exception?
-class EndOfHeadError(Exception): pass
+
+
+class EndOfHeadError(Exception):
+    pass
+
+
 class AbstractHeadParser:
     # only these elements are allowed in or before HEAD of document
     head_elems = ("html", "head",
@@ -99,6 +104,7 @@ class AbstractHeadParser:
 
 class XHTMLCompatibleHeadParser(AbstractHeadParser,
                                 HTMLParser.HTMLParser):
+
     def __init__(self):
         HTMLParser.HTMLParser.__init__(self)
         AbstractHeadParser.__init__(self)
@@ -112,7 +118,7 @@ class XHTMLCompatibleHeadParser(AbstractHeadParser,
             try:
                 method = getattr(self, 'do_' + tag)
             except AttributeError:
-                pass # unknown tag
+                pass  # unknown tag
             else:
                 method(attrs)
         else:
@@ -124,7 +130,7 @@ class XHTMLCompatibleHeadParser(AbstractHeadParser,
         try:
             method = getattr(self, 'end_' + tag)
         except AttributeError:
-            pass # unknown tag
+            pass  # unknown tag
         else:
             method()
 
@@ -135,6 +141,7 @@ class XHTMLCompatibleHeadParser(AbstractHeadParser,
 
     def unescape_attr_if_required(self, name):
         return name  # HTMLParser.HTMLParser already did it
+
 
 class HeadParser(AbstractHeadParser, sgmllib.SGMLParser):
 
@@ -163,6 +170,7 @@ class HeadParser(AbstractHeadParser, sgmllib.SGMLParser):
     def unescape_attr_if_required(self, name):
         return self.unescape_attr(name)
 
+
 def parse_head(fileobj, parser):
     """Return a list of key, value pairs."""
     while 1:
@@ -176,6 +184,7 @@ def parse_head(fileobj, parser):
             # CHUNK is big
             break
     return parser.http_equiv
+
 
 class HTTPEquivProcessor(BaseHandler):
     """Append META HTTP-EQUIV headers to regular HTTP headers."""
@@ -244,7 +253,7 @@ class MechanizeRobotFileParser(robotparser.RobotFileParser):
             pass
         except (IOError, socket.error, OSError), exc:
             debug_robots("ignoring error opening %r: %s" %
-                               (self.url, exc))
+                         (self.url, exc))
             return
         lines = []
         line = f.readline()
@@ -262,10 +271,13 @@ class MechanizeRobotFileParser(robotparser.RobotFileParser):
             debug_robots("parse lines")
             self.parse(lines)
 
+
 class RobotExclusionError(HTTPError):
+
     def __init__(self, request, *args):
-        apply(HTTPError.__init__, (self,)+args)
+        apply(HTTPError.__init__, (self,) + args)
         self.request = request
+
 
 class HTTPRobotRulesProcessor(BaseHandler):
     # before redirections, after everything else
@@ -299,8 +311,8 @@ class HTTPRobotRulesProcessor(BaseHandler):
         # robots.txt requests don't need to be allowed by robots.txt :-)
         origin_req = getattr(request, "_origin_req", None)
         if (origin_req is not None and
-            origin_req.get_selector() == "/robots.txt" and
-            origin_req.get_host() == host
+                origin_req.get_selector() == "/robots.txt" and
+                origin_req.get_host() == host
             ):
             return request
 
@@ -311,7 +323,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
             except AttributeError:
                 debug("%r instance does not support set_opener" %
                       self.rfp.__class__)
-            self.rfp.set_url(scheme+"://"+host+"/robots.txt")
+            self.rfp.set_url(scheme + "://" + host + "/robots.txt")
             self.rfp.set_timeout(request.timeout)
             self.rfp.read()
             self._host = host
@@ -330,6 +342,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
 
     https_request = http_request
 
+
 class HTTPRefererProcessor(BaseHandler):
     """Add Referer header to requests.
 
@@ -341,12 +354,13 @@ class HTTPRefererProcessor(BaseHandler):
     There's a proper implementation of this in mechanize.Browser.
 
     """
+
     def __init__(self):
         self.referer = None
 
     def http_request(self, request):
         if ((self.referer is not None) and
-            not request.has_header("Referer")):
+                not request.has_header("Referer")):
             request.add_unredirected_header("Referer", self.referer)
         return request
 
@@ -361,9 +375,10 @@ class HTTPRefererProcessor(BaseHandler):
 def clean_refresh_url(url):
     # e.g. Firefox 1.5 does (something like) this
     if ((url.startswith('"') and url.endswith('"')) or
-        (url.startswith("'") and url.endswith("'"))):
+            (url.startswith("'") and url.endswith("'"))):
         url = url[1:-1]
     return _rfc3986.clean_url(url, "latin-1")  # XXX encoding
+
 
 def parse_refresh_header(refresh):
     """
@@ -381,17 +396,18 @@ def parse_refresh_header(refresh):
 
     ii = refresh.find(";")
     if ii != -1:
-        pause, newurl_spec = float(refresh[:ii]), refresh[ii+1:]
+        pause, newurl_spec = float(refresh[:ii]), refresh[ii + 1:]
         jj = newurl_spec.find("=")
         key = None
         if jj != -1:
-            key, newurl = newurl_spec[:jj], newurl_spec[jj+1:]
+            key, newurl = newurl_spec[:jj], newurl_spec[jj + 1:]
             newurl = clean_refresh_url(newurl)
         if key is None or key.strip().lower() != "url":
             raise ValueError()
     else:
         pause, newurl = float(refresh), None
     return pause, newurl
+
 
 class HTTPRefreshProcessor(BaseHandler):
     """Perform HTTP Refresh redirections.

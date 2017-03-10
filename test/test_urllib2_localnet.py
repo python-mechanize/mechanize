@@ -43,6 +43,7 @@ class LoopbackHttpServer(BaseHTTPServer.HTTPServer):
 
         return (request, client_address)
 
+
 class LoopbackHttpServerThread(threading.Thread):
     """Stoppable thread that runs a loopback http server."""
 
@@ -54,7 +55,7 @@ class LoopbackHttpServerThread(threading.Thread):
         if handle_request is None:
             handle_request = self._handle_request
         self.httpd = LoopbackHttpServer(('127.0.0.1', 0), handle_request)
-        #print "Serving HTTP on %s port %s" % (self.httpd.server_name,
+        # print "Serving HTTP on %s port %s" % (self.httpd.server_name,
         #                                      self.httpd.server_port)
         self.port = self.httpd.server_port
 
@@ -79,6 +80,7 @@ class LoopbackHttpServerThread(threading.Thread):
             self.httpd.handle_request()
 
 # Authentication infrastructure
+
 
 class DigestAuthHandler:
     """Handler for performing digest authentication."""
@@ -108,7 +110,7 @@ class DigestAuthHandler:
 
     def _create_auth_dict(self, auth_str):
         first_space_index = auth_str.find(" ")
-        auth_str = auth_str[first_space_index+1:]
+        auth_str = auth_str[first_space_index + 1:]
 
         parts = auth_str.split(",")
 
@@ -147,7 +149,7 @@ class DigestAuthHandler:
         request_handler.send_header(
             'Proxy-Authenticate', 'Digest realm="%s", '
             'qop="%s",'
-            'nonce="%s", ' % \
+            'nonce="%s", ' %
             (self._realm_name, self._qop, self._generate_nonce()))
         # XXX: Not sure if we're supposed to add this next header or
         # not.
@@ -173,9 +175,9 @@ class DigestAuthHandler:
         else:
             auth_dict = self._create_auth_dict(
                 request_handler.headers['Proxy-Authorization']
-                )
+            )
             if self._users.has_key(auth_dict["username"]):
-                password = self._users[ auth_dict["username"] ]
+                password = self._users[auth_dict["username"]]
             else:
                 return self._return_auth_challenge(request_handler)
             if not auth_dict.get("nonce") in self._nonces:
@@ -200,6 +202,7 @@ class DigestAuthHandler:
             return True
 
 # Proxy test infrastructure
+
 
 class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """This is a 'fake proxy' that makes it look like the entire
@@ -231,7 +234,7 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write("You've reached %s!<BR>" % self.path)
             self.wfile.write("Our apologies, but our server is down due to "
-                              "a sudden zombie invasion.")
+                             "a sudden zombie invasion.")
 
 
 def make_started_server(make_request_handler=None):
@@ -268,13 +271,14 @@ class ProxyAuthTests(TestCase):
         server = self.get_cached_fixture(fixture_name)
 
         proxy_url = "http://127.0.0.1:%d" % server.port
-        handler = mechanize.ProxyHandler({"http" : proxy_url})
+        handler = mechanize.ProxyHandler({"http": proxy_url})
         self.proxy_digest_handler = mechanize.ProxyDigestAuthHandler()
-        self.opener = mechanize.build_opener(handler, self.proxy_digest_handler)
+        self.opener = mechanize.build_opener(
+            handler, self.proxy_digest_handler)
 
     def test_proxy_with_bad_password_raises_httperror(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
-                                               self.USER, self.PASSWD+"bad")
+                                               self.USER, self.PASSWD + "bad")
         self.assertRaises(mechanize.HTTPError,
                           self.opener.open,
                           self.URL)
@@ -463,7 +467,7 @@ class TestUrlopen(TestCase):
         handler = self._make_request_handler([(200, [], "we don't care")])
 
         req = mechanize.Request("http://localhost:%s/" % handler.port,
-                              headers={'Range': 'bytes=20-39'})
+                                headers={'Range': 'bytes=20-39'})
         mechanize.urlopen(req)
         self.assertEqual(handler.received_headers['Range'], 'bytes=20-39')
 
@@ -473,7 +477,7 @@ class TestUrlopen(TestCase):
         open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
         for attr in ("read", "close", "info", "geturl"):
             self.assertTrue(hasattr(open_url, attr), "object returned from "
-                         "urlopen lacks the %s attribute" % attr)
+                            "urlopen lacks the %s attribute" % attr)
         try:
             self.assertTrue(open_url.read(), "calling 'read' failed")
         finally:
@@ -485,8 +489,8 @@ class TestUrlopen(TestCase):
         open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
         info_obj = open_url.info()
         self.assertTrue(isinstance(info_obj, mimetools.Message),
-                     "object returned by 'info' is not an instance of "
-                     "mimetools.Message")
+                        "object returned by 'info' is not an instance of "
+                        "mimetools.Message")
         self.assertEqual(info_obj.getsubtype(), "plain")
 
     def test_geturl(self):

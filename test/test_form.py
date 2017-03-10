@@ -15,7 +15,7 @@ import mechanize
 import mechanize._form as _form
 import mechanize._form_controls as _form_controls
 from mechanize import ControlNotFoundError,  ItemNotFoundError, \
-     ItemCountError, AmbiguityError
+    ItemCountError, AmbiguityError
 import mechanize._testcase as _testcase
 from mechanize._util import get1
 
@@ -48,6 +48,7 @@ def raise_deprecations():
 
 
 class DummyForm:
+
     def __init__(self):
         self._forms = []
         self._labels = []
@@ -60,6 +61,7 @@ class DummyForm:
 
 
 class UnescapeTests(unittest.TestCase):
+
     def test_unescape_charref(self):
         unescape_charref = _form.unescape_charref
         mdash_utf8 = u"\u2014".encode("utf-8")
@@ -235,6 +237,7 @@ def header_items(req):
 
 
 class MockResponse:
+
     def __init__(self, f, url):
         self._file = f
         self._url = url
@@ -247,12 +250,14 @@ class MockResponse:
 
 
 class ParseErrorTests(_testcase.TestCase):
+
     def test_parseerror_str(self):
         e = mechanize.ParseError("spam")
         self.assertEqual(str(e), "spam")
 
 
 class ParseTests(unittest.TestCase):
+
     def test_failing_parse(self):
         # XXX couldn't provoke an error from BeautifulSoup (!), so this has not
         # been tested with RobustFormParser
@@ -854,6 +859,7 @@ Rhubarb.</button>
 
 
 class DisabledTests(unittest.TestCase):
+
     def testOptgroup(self):
         for compat in [False, True]:
             self._testOptgroup(compat)
@@ -1271,6 +1277,7 @@ class DisabledTests(unittest.TestCase):
 
 
 class ControlTests(unittest.TestCase):
+
     def testTextControl(self):
         attrs = {
             "type": "this is ignored",
@@ -3152,6 +3159,7 @@ def make_form_global(html):
 
 
 class MoreFormTests(unittest.TestCase):
+
     def test_interspersed_controls(self):
         # must preserve item ordering even across controls
         f = StringIO("""\
@@ -3471,8 +3479,10 @@ class MoreFormTests(unittest.TestCase):
 
 
 class ContentTypeTests(unittest.TestCase):
+
     def test_content_type(self):
         class OldStyleRequest:
+
             def __init__(self, url, data=None, hdrs=None):
                 self.ah = self.auh = False
 
@@ -3480,10 +3490,12 @@ class ContentTypeTests(unittest.TestCase):
                 self.ah = True
 
         class NewStyleRequest(OldStyleRequest):
+
             def add_unredirected_header(self, key, val):
                 self.auh = True
 
         class FakeForm(_form.HTMLForm):
+
             def __init__(self, hdr):
                 self.hdr = hdr
 
@@ -3503,6 +3515,7 @@ class ContentTypeTests(unittest.TestCase):
 
 
 class FunctionTests(unittest.TestCase):
+
     def test_normalize_line_endings(self):
         def check(text, expected, self=self):
             got = _form.normalize_line_endings(text)
@@ -3528,6 +3541,7 @@ class FunctionTests(unittest.TestCase):
 
 
 class CaseInsensitiveDict:
+
     def __init__(self, items):
         self._dict = {}
         for key, val in items:
@@ -3541,6 +3555,7 @@ class CaseInsensitiveDict:
 
 
 class UploadTests(_testcase.TestCase):
+
     def test_choose_boundary(self):
         bndy = _form.choose_boundary()
         ii = string.find(bndy, '.')

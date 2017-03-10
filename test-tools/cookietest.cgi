@@ -12,7 +12,12 @@ year_plus_one = time.localtime(time.time())[0] + 1
 expires = "expires=09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
 print "Set-Cookie: foo=bar; %s" % expires
 print "Set-Cookie: sessioncookie=spam\n"
-import sys, os, string, cgi, Cookie, urllib
+import sys
+import os
+import string
+import cgi
+import Cookie
+import urllib
 from xml.sax import saxutils
 
 from types import ListType
