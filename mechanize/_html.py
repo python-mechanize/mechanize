@@ -21,7 +21,7 @@ from _headersutil import split_header_words, is_html as _is_html
 import _request
 import _rfc3986
 
-DEFAULT_ENCODING = "latin-1"
+DEFAULT_ENCODING = "utf-8"
 
 COMPRESS_RE = re.compile(r"\s+")
 
