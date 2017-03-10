@@ -9,19 +9,31 @@ included with the distribution).
 
 """
 
-import copy, re, os, urllib, urllib2
+import copy
+import os
+import re
+import urllib
+import urllib2
 
-from _html import DefaultFactory
-import _response
 import _request
+import _response
 import _rfc3986
 import _sockettimeout
 import _urllib2_fork
+from _html import DefaultFactory
 from _useragent import UserAgentBase
 
-class BrowserStateError(Exception): pass
-class LinkNotFoundError(Exception): pass
-class FormNotFoundError(Exception): pass
+
+class BrowserStateError(Exception):
+    pass
+
+
+class LinkNotFoundError(Exception):
+    pass
+
+
+class FormNotFoundError(Exception):
+    pass
 
 
 def sanepathname2url(path):
@@ -38,10 +50,13 @@ class History:
     Though this will become public, the implied interface is not yet stable.
 
     """
+
     def __init__(self):
         self._history = []  # LIFO
+
     def add(self, request, response):
         self._history.append((request, response))
+
     def back(self, n, _response):
         response = _response  # XXX move Browser._response into this class?
         while n > 0 or response is None:
@@ -51,8 +66,10 @@ class History:
                 raise BrowserStateError("already at start of history")
             n -= 1
         return request, response
+
     def clear(self):
         del self._history[:]
+
     def close(self):
         for request, response in self._history:
             if response is not None:
@@ -95,11 +112,11 @@ class Browser(UserAgentBase):
     default_features = copy.copy(UserAgentBase.default_features)
     default_features.append("_referer")
 
-    def __init__(self,
-                 factory=None,
-                 history=None,
-                 request_class=None,
-                 ):
+    def __init__(
+            self,
+            factory=None,
+            history=None,
+            request_class=None, ):
         """
 
         Only named arguments should be passed to this constructor.
@@ -142,7 +159,7 @@ class Browser(UserAgentBase):
     def close(self):
         UserAgentBase.close(self)
         if self._response is not None:
-            self._response.close()    
+            self._response.close()
         if self._history is not None:
             self._history.close()
             self._history = None
@@ -151,7 +168,7 @@ class Browser(UserAgentBase):
         self.form = None
         self.request = self._response = None
         self.request = self.response = self.set_response = None
-        self.geturl =  self.reload = self.back = None
+        self.geturl = self.reload = self.back = None
         self.clear_history = self.set_cookie = self.links = self.forms = None
         self.viewing_html = self.encoding = self.title = None
         self.select_form = self.click = self.submit = self.click_link = None
@@ -172,17 +189,18 @@ class Browser(UserAgentBase):
         if not origin_request and not self.request.has_header("Referer"):
             return request
 
-        if (self._handle_referer and
-            original_scheme in ["http", "https"] and
-            not (original_scheme == "https" and scheme != "https")):
+        if (self._handle_referer and original_scheme in ["http", "https"] and
+                not (original_scheme == "https" and scheme != "https")):
             # strip URL fragment (RFC 2616 14.36)
             parts = _rfc3986.urlsplit(self.request.get_full_url())
-            parts = parts[:-1]+(None,)
+            parts = parts[:-1] + (None, )
             referer = _rfc3986.urlunsplit(parts)
             request.add_unredirected_header("Referer", referer)
         return request
 
-    def open_novisit(self, url, data=None,
+    def open_novisit(self,
+                     url,
+                     data=None,
                      timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         """Open a URL without visiting it.
 
@@ -198,11 +216,17 @@ class Browser(UserAgentBase):
         """
         return self._mech_open(url, data, visit=False, timeout=timeout)
 
-    def open(self, url, data=None,
+    def open(self,
+             url,
+             data=None,
              timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         return self._mech_open(url, data, timeout=timeout)
 
-    def _mech_open(self, url, data=None, update_history=True, visit=None,
+    def _mech_open(self,
+                   url,
+                   data=None,
+                   update_history=True,
+                   visit=None,
                    timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         try:
             url.get_full_url
@@ -212,9 +236,8 @@ class Browser(UserAgentBase):
             if scheme is None:
                 # relative URL
                 if self._response is None:
-                    raise BrowserStateError(
-                        "can't fetch relative reference: "
-                        "not viewing any document")
+                    raise BrowserStateError("can't fetch relative reference: "
+                                            "not viewing any document")
                 url = _rfc3986.urljoin(self._response.geturl(), url)
 
         request = self._request(url, data, visit, timeout)
@@ -233,17 +256,18 @@ class Browser(UserAgentBase):
             if error.fp is None:  # not a response
                 raise
             response = error
-##         except (IOError, socket.error, OSError), error:
-##             # Yes, urllib2 really does raise all these :-((
-##             # See test_urllib2.py for examples of socket.gaierror and OSError,
-##             # plus note that FTPHandler raises IOError.
-##             # XXX I don't seem to have an example of exactly socket.error being
-##             #  raised, only socket.gaierror...
-##             # I don't want to start fixing these here, though, since this is a
-##             # subclass of OpenerDirector, and it would break old code.  Even in
-##             # Python core, a fix would need some backwards-compat. hack to be
-##             # acceptable.
-##             raise
+
+#         except (IOError, socket.error, OSError), error:
+#             Yes, urllib2 really does raise all these :-((
+#             See test_urllib2.py for examples of socket.gaierror and OSError,
+#             plus note that FTPHandler raises IOError.
+#             XXX I don't seem to have an example of exactly socket.error being
+#              raised, only socket.gaierror...
+#             I don't want to start fixing these here, though, since this is a
+#             subclass of OpenerDirector, and it would break old code.  Even in
+#             Python core, a fix would need some backwards-compat. hack to be
+#             acceptable.
+#             raise
 
         if visit:
             self._set_response(response, False)
@@ -278,7 +302,7 @@ class Browser(UserAgentBase):
 
     def open_local_file(self, filename):
         path = sanepathname2url(os.path.abspath(filename))
-        url = 'file://'+path
+        url = 'file://' + path
         return self.open(url)
 
     def set_response(self, response):
@@ -294,9 +318,7 @@ class Browser(UserAgentBase):
         # sanity check, necessary but far from sufficient
         if not (response is None or
                 (hasattr(response, "info") and hasattr(response, "geturl") and
-                 hasattr(response, "read")
-                 )
-                ):
+                 hasattr(response, "read"))):
             raise ValueError("not a response object")
 
         self.form = None
@@ -497,8 +519,8 @@ class Browser(UserAgentBase):
                 "at least one argument must be supplied to specify form")
 
         global_form = self._factory.global_form
-        if nr is None and name is None and \
-               predicate is not None and predicate(global_form):
+        if nr is None and name is None and predicate is not None and predicate(
+                global_form):
             self.form = global_form
             return
 
@@ -516,12 +538,14 @@ class Browser(UserAgentBase):
         else:
             # failure
             description = []
-            if name is not None: description.append("name '%s'" % name)
+            if name is not None:
+                description.append("name '%s'" % name)
             if predicate is not None:
                 description.append("predicate %s" % predicate)
-            if orig_nr is not None: description.append("nr %d" % orig_nr)
+            if orig_nr is not None:
+                description.append("nr %d" % orig_nr)
             description = ", ".join(description)
-            raise FormNotFoundError("no form matching "+description)
+            raise FormNotFoundError("no form matching " + description)
 
     def click(self, *args, **kwds):
         """See mechanize.HTMLForm.click for documentation."""
@@ -628,14 +652,17 @@ class Browser(UserAgentBase):
                 ".select_form()?)" % (self.__class__, name))
         return getattr(form, name)
 
-    def _filter_links(self, links,
-                    text=None, text_regex=None,
-                    name=None, name_regex=None,
-                    url=None, url_regex=None,
-                    tag=None,
-                    predicate=None,
-                    nr=0
-                    ):
+    def _filter_links(self,
+                      links,
+                      text=None,
+                      text_regex=None,
+                      name=None,
+                      name_regex=None,
+                      url=None,
+                      url_regex=None,
+                      tag=None,
+                      predicate=None,
+                      nr=0):
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
 
@@ -646,11 +673,11 @@ class Browser(UserAgentBase):
                 continue
             if url_regex is not None and not re.search(url_regex, link.url):
                 continue
-            if (text is not None and
-                (link.text is None or text != link.text)):
+            if (text is not None and (link.text is None or text != link.text)):
                 continue
-            if (text_regex is not None and
-                (link.text is None or not re.search(text_regex, link.text))):
+            if (text_regex is not None and (
+                    link.text is None or not re.search(text_regex, link.text)
+            )):
                 continue
             if name is not None and name != dict(link.attrs).get("name"):
                 continue
