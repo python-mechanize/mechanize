@@ -44,26 +44,29 @@ class CachingGeneratorFunction(object):
             yield item
 
 
+def get_encoding_from_response(response, verify=True):
+    # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
+    # headers may be in the response.  HTTP-EQUIV headers come last,
+    # so try in order from first to last.
+    for ct in response.info().getheaders("content-type"):
+        for k, v in split_header_words([ct])[0]:
+            if k == "charset":
+                if not verify:
+                    return v
+                try:
+                    codecs.lookup(v)
+                    return v
+                except LookupError:
+                    continue
+
+
 class EncodingFinder:
 
     def __init__(self, default_encoding):
         self._default_encoding = default_encoding
 
     def encoding(self, response):
-        # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
-        # headers may be in the response.  HTTP-EQUIV headers come last,
-        # so try in order from first to last.
-        for ct in response.info().getheaders("content-type"):
-            for k, v in split_header_words([ct])[0]:
-                if k == "charset":
-                    encoding = v
-                    try:
-                        codecs.lookup(v)
-                    except LookupError:
-                        continue
-                    else:
-                        return encoding
-        return self._default_encoding
+        return get_encoding_from_response(response) or self._default_encoding
 
 
 class ResponseTypeFinder:
