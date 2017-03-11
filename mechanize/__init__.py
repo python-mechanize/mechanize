@@ -42,7 +42,6 @@ __all__ = [
     'MozillaCookieJar',
     'OpenerDirector',
     'OpenerFactory',
-    'ParseError',
     'ProxyBasicAuthHandler',
     'ProxyDigestAuthHandler',
     'ProxyHandler',
@@ -73,17 +72,10 @@ __all__ = [
     # ClientForm API
     'AmbiguityError',
     'ControlNotFoundError',
-    'FormParser',
     'ItemCountError',
     'ItemNotFoundError',
     'LocateError',
     'Missing',
-    'ParseFile',
-    'ParseFileEx',
-    'ParseResponse',
-    'ParseResponseEx',
-    'ParseString',
-    'XHTMLCompatibleFormParser',
     # deprecated
     'CheckboxControl',
     'Control',
@@ -141,21 +133,13 @@ from _clientcookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
     LWPCookieJar, lwp_cookie_str, MozillaCookieJar, effective_request_host
 
 # forms
-from _form import (
+from _form_controls import (
     AmbiguityError,
     ControlNotFoundError,
-    FormParser,
     ItemCountError,
     ItemNotFoundError,
     LocateError,
     Missing,
-    ParseError,
-    ParseFile,
-    ParseFileEx,
-    ParseResponse,
-    ParseResponseEx,
-    ParseString,
-    XHTMLCompatibleFormParser,
     # deprecated
     CheckboxControl,
     Control,

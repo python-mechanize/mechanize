@@ -14,6 +14,7 @@ import re
 
 from _headersutil import split_header_words, is_html as _is_html
 from _rfc3986 import clean_url, urljoin
+from _form import parse_forms
 
 DEFAULT_ENCODING = "utf-8"
 
@@ -201,21 +202,16 @@ class Factory:
 
     def __init__(
             self,
-            encoding_finder=EncodingFinder(DEFAULT_ENCODING),
-            response_type_finder=ResponseTypeFinder(allow_xhtml=False), ):
+            default_encoding=DEFAULT_ENCODING,
+            allow_xhtml=False, ):
         """
 
         Pass keyword arguments only.
 
-        default_encoding: character encoding to use if encoding cannot be
-         determined (or guessed) from the response.  You should turn on
-         HTTP-EQUIV handling if you want the best chance of getting this right
-         without resorting to this default.  The default value of this
-         parameter (currently latin-1) may change in future.
-
         """
-        self._encoding_finder = encoding_finder
-        self._response_type_finder = response_type_finder
+        self._encoding_finder = EncodingFinder(default_encoding)
+        self._response_type_finder = ResponseTypeFinder(
+            allow_xhtml=allow_xhtml)
         self.content_parser = content_parser
         self._current_forms = self._current_links = self._current_title = lazy
         self._current_global_form = self._root = lazy
@@ -243,28 +239,26 @@ class Factory:
         objects returned by mechanize.urlopen().
 
         """
-        self._response = response
+        self._response = copy.copy(response)
         self._current_forms = self._current_links = self._current_title = lazy
         self._current_global_form = self._root = lazy
-        self.encoding = self._encoding_finder.encoding(response)
+        self.encoding = self._encoding_finder.encoding(self._response)
         self.is_html = self._response_type_finder.is_html(
-            copy.copy(self._response),
+            self._response,
             self.encoding) if self._response else False
-        self._raw_data = response.read() if response else b''
 
     @property
     def root(self):
         if self._root is lazy:
             response = self._response
             self._root = self.content_parser(
-                self._raw_data,
-                url=response.geturl(),
-                response_info=response.info(),
+                self._response.read() if self._response else b'',
+                url=response.geturl() if response else None,
+                response_info=response.info() if response else None,
                 default_encoding=self._encoding_finder._default_encoding,
                 is_html=self.is_html,
                 transport_encoding=get_encoding_from_response(
                     response, verify=False))
-            self._raw_data = b''
         return self._root
 
     @property
@@ -307,3 +301,5 @@ class Factory:
     def _get_forms(self):
         if self.root is None:
             return (), None
+        return parse_forms(self.root,
+                           self._response.geturl(), self._request_class)

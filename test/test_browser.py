@@ -309,9 +309,9 @@ class BrowserTests(TestCase):
         r = br.open("http://example.com")
         r.read(10)
         br.open('http://www.example.com/blah')
-        self.failIf(br.reloaded)
+        self.assertFalse(br.reloaded)
         br.back()
-        self.assert_(br.reloaded)
+        self.assertTrue(br.reloaded)
 
         # don't reload if already read
         br.reloaded = False
@@ -322,7 +322,6 @@ class BrowserTests(TestCase):
 
     def test_viewing_html(self):
         # XXX not testing multiple Content-Type headers
-        import mechanize
         url = "http://example.com/"
 
         for allow_xhtml in False, True:
@@ -339,9 +338,7 @@ class BrowserTests(TestCase):
                 ("text/html; charset=blah", True),
                 (" text/html ; charset=ook ", True),
             ]:
-                b = TestBrowser(
-                    mechanize.DefaultFactory(
-                        i_want_broken_xhtml_support=allow_xhtml))
+                b = TestBrowser(allow_xhtml=allow_xhtml)
                 hdrs = {}
                 if ct is not None:
                     hdrs["Content-Type"] = ct
@@ -362,9 +359,7 @@ class BrowserTests(TestCase):
                 (".xml", False),
                 ("", False),
             ]:
-                b = TestBrowser(
-                    mechanize.DefaultFactory(
-                        i_want_broken_xhtml_support=allow_xhtml))
+                b = TestBrowser(allow_xhtml=allow_xhtml)
                 url = "http://example.com/foo" + ext
                 b.add_handler(make_mock_handler()([("http_open", MockResponse(
                     url, "", {}))]))
@@ -806,7 +801,7 @@ class HttplibTests(mechanize._testcase.TestCase):
                 status = 200
                 reason = "OK"
 
-                def read(self__):
+                def read(self__, sz=-1):
                     return ""
 
             return Response()

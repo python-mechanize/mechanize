@@ -43,8 +43,8 @@ def deprecation(message, stack_offset=0):
     warnings.warn(message, DeprecationWarning, stacklevel=3 + stack_offset)
 
 
-def compress_text(text):
-    return _compress_re.sub(" ", text.strip())
+def compress_whitespace(text):
+    return re.sub(r'\s+', ' ', text or '').strip()
 
 
 def isstringlike(x):
@@ -225,37 +225,19 @@ class MimeWriter:
 
 class Label:
 
-    def __init__(self, attrs):
-        self.id = attrs.get("for")
-        self._text = attrs.get("__text").strip()
-        self._ctext = compress_text(self._text)
-        self.attrs = attrs
-        self._backwards_compat = False  # maintained by HTMLForm
+    def __init__(self, text, for_id=None):
+        self.id = for_id
+        self.text = compress_whitespace(text or '')
 
-    def __getattr__(self, name):
-        if name == "text":
-            if self._backwards_compat:
-                return self._text
-            else:
-                return self._ctext
-        return getattr(Label, name)
-
-    def __setattr__(self, name, value):
-        if name == "text":
-            # don't see any need for this, so make it read-only
-            raise AttributeError("text attribute is read-only")
-        self.__dict__[name] = value
-
-    def __str__(self):
+    def __repr__(self):
         return "<Label(id=%r, text=%r)>" % (self.id, self.text)
+    __str__ = __repr__
 
 
 def _get_label(attrs):
     text = attrs.get("__label")
     if text is not None:
         return Label(text)
-    else:
-        return None
 
 
 class Control:
@@ -941,7 +923,6 @@ class ListControl(Control):
         if id is not None and not isstringlike(id):
             raise TypeError("item id must be string-like")
         items = []  # order is important
-        compat = self._form.backwards_compat
         for o in self.items:
             if exclude_disabled and o.disabled:
                 continue
@@ -949,8 +930,7 @@ class ListControl(Control):
                 continue
             if label is not None:
                 for l in o.get_labels():
-                    if ((compat and l.text == label) or
-                            (not compat and l.text.find(label) > -1)):
+                    if label in l.text:
                         break
                 else:
                     continue
@@ -982,8 +962,7 @@ class ListControl(Control):
         nr is an optional 0-based index of the items matching the query.
 
         If nr is the default None value and more than item is found, raises
-        AmbiguityError (unless the HTMLForm instance's backwards_compat
-        attribute is true).
+        AmbiguityError.
 
         If no item is found, or if items are found but nr is specified and not
         found, raises ItemNotFoundError.
@@ -991,8 +970,6 @@ class ListControl(Control):
         Optionally excludes disabled items.
 
         """
-        if nr is None and self._form.backwards_compat:
-            nr = 0  # :-/
         items = self.get_items(name, label, id, exclude_disabled)
         return disambiguate(items, nr, name=name, label=label, id=id)
 
@@ -1043,21 +1020,17 @@ class ListControl(Control):
         if self.readonly:
             raise AttributeError("control '%s' is readonly" % self.name)
         action == bool(action)
-        compat = self._form.backwards_compat
-        if not compat and item.disabled:
+        if item.disabled:
             raise AttributeError("item is disabled")
+        if self.multiple:
+            item.__dict__["_selected"] = action
         else:
-            if compat and item.disabled and action:
-                raise AttributeError("item is disabled")
-            if self.multiple:
-                item.__dict__["_selected"] = action
+            if not action:
+                item.__dict__["_selected"] = False
             else:
-                if not action:
-                    item.__dict__["_selected"] = False
-                else:
-                    for o in self.items:
-                        o.__dict__["_selected"] = False
-                    item.__dict__["_selected"] = True
+                for o in self.items:
+                    o.__dict__["_selected"] = False
+                item.__dict__["_selected"] = True
 
     def toggle_single(self, by_label=None):
         """Deprecated: toggle the selection of the single item in this control.
@@ -1195,12 +1168,11 @@ class ListControl(Control):
 
     def __getattr__(self, name):
         if name == "value":
-            compat = self._form.backwards_compat
             if self.name is None:
                 return []
             return [
                 o.name for o in self.items
-                if o.selected and (not o.disabled or compat)
+                if o.selected and (not o.disabled)
             ]
         else:
             raise AttributeError("%s instance has no attribute '%s'" %
@@ -1222,9 +1194,8 @@ class ListControl(Control):
         if value is None or isstringlike(value):
             raise TypeError("ListControl, must set a sequence")
         if not value:
-            compat = self._form.backwards_compat
             for o in self.items:
-                if not o.disabled or compat:
+                if not o.disabled:
                     o.selected = False
         elif self.multiple:
             self._multiple_set_value(value)
@@ -1261,11 +1232,10 @@ class ListControl(Control):
             off[0].selected = True
 
     def _multiple_set_value(self, value):
-        compat = self._form.backwards_compat
         turn_on = []  # transactional-ish
         turn_off = [
             item for item in self.items
-            if item.selected and (not item.disabled or compat)
+            if item.selected and (not item.disabled)
         ]
         names = {}
         for nn in value:
@@ -1296,10 +1266,9 @@ class ListControl(Control):
         the item labels that should be selected.  Before substring matching is
         performed, the original label text is whitespace-compressed
         (consecutive whitespace characters are converted to a single space
-        character) and leading and trailing whitespace is stripped.  Ambiguous
-        labels are accepted without complaint if the form's backwards_compat is
-        True; otherwise, it will not complain as long as all ambiguous labels
-        share the same item name (e.g. OPTION value).
+        character) and leading and trailing whitespace is stripped. Ambiguous
+        labels: it will not complain as long as all ambiguous labels share the
+        same item name (e.g. OPTION value).
 
         """
         if isstringlike(value):
@@ -1311,19 +1280,15 @@ class ListControl(Control):
         for nn in value:
             found = self.get_items(label=nn)
             if len(found) > 1:
-                if not self._form.backwards_compat:
-                    # ambiguous labels are fine as long as item names (e.g.
-                    # OPTION values) are same
-                    opt_name = found[0].name
-                    if [o for o in found[1:] if o.name != opt_name]:
-                        raise AmbiguityError(nn)
-                else:
-                    # OK, we'll guess :-(  Assume first available item.
-                    found = found[:1]
+                # ambiguous labels are fine as long as item names (e.g.
+                # OPTION values) are same
+                opt_name = found[0].name
+                if [o for o in found[1:] if o.name != opt_name]:
+                    raise AmbiguityError(nn)
             for o in found:
                 # For the multiple-item case, we could try to be smarter,
                 # saving them up and trying to resolve, but that's too much.
-                if self._form.backwards_compat or o not in items:
+                if o not in items:
                     items.append(o)
                     break
             else:  # all of them are used
@@ -1337,9 +1302,8 @@ class ListControl(Control):
     def get_value_by_label(self):
         """Return the value of the control as given by normalized labels."""
         res = []
-        compat = self._form.backwards_compat
         for o in self.items:
-            if (not o.disabled or compat) and o.selected:
+            if (not o.disabled) and o.selected:
                 for l in o.get_labels():
                     if l.text:
                         res.append(l.text)
@@ -1552,11 +1516,11 @@ class SelectControl(ListControl):
             # different.
             label = attrs.get("label")
             if label:
-                o._labels.append(Label({"__text": label}))
+                o._labels.append(Label(label))
                 if contents and contents != label:
-                    o._labels.append(Label({"__text": contents}))
+                    o._labels.append(Label(contents))
             elif contents:
-                o._labels.append(Label({"__text": contents}))
+                o._labels.append(Label(contents))
 
     def fixup(self):
         ListControl.fixup(self)
@@ -1604,7 +1568,7 @@ class SubmitControl(ScalarControl):
     def get_labels(self):
         res = []
         if self.value:
-            res.append(Label({"__text": self.value}))
+            res.append(Label(self.value))
         res.extend(ScalarControl.get_labels(self))
         return res
 
@@ -1922,8 +1886,8 @@ class HTMLForm:
                  request_class=_request.Request,
                  forms=None,
                  labels=None,
-                 id_to_labels=None,
-                 backwards_compat=True):
+                 id_to_labels=None
+                 ):
         """
         In the usual case, use ParseResponse (or ParseFile) to create new
         HTMLForm objects.
@@ -1951,31 +1915,8 @@ class HTMLForm:
         self._labels = labels  # this is a semi-public API!
         self._id_to_labels = id_to_labels  # this is a semi-public API!
 
-        self.backwards_compat = backwards_compat  # note __setattr__
-
         self._urlunparse = urlparse.urlunparse
         self._urlparse = urlparse.urlparse
-
-    def __getattr__(self, name):
-        if name == "backwards_compat":
-            return self._backwards_compat
-        return getattr(HTMLForm, name)
-
-    def __setattr__(self, name, value):
-        # yuck
-        if name == "backwards_compat":
-            name = "_backwards_compat"
-            value = bool(value)
-            for cc in self.controls:
-                try:
-                    items = cc.items
-                except AttributeError:
-                    continue
-                else:
-                    for ii in items:
-                        for ll in ii.get_labels():
-                            ll._backwards_compat = value
-        self.__dict__[name] = value
 
     def new_control(self,
                     type,
@@ -2042,7 +1983,6 @@ class HTMLForm:
         """
         for control in self.controls:
             control.fixup()
-        self.backwards_compat = self._backwards_compat
 
 # ---------------------------------------------------
 
@@ -2460,8 +2400,7 @@ class HTMLForm:
         first).  Note that control 0 is the first control matching all the
         other arguments (if supplied); it is not necessarily the first control
         in the form.  If no nr is supplied, AmbiguityError is raised if
-        multiple controls match the other arguments (unless the
-        .backwards-compat attribute is true).
+        multiple controls match the other arguments.
 
         If label is specified, then the control must have this label.  Note
         that radio controls and checkboxes never have labels: their items do.
@@ -2512,8 +2451,6 @@ class HTMLForm:
         orig_nr = nr
         found = None
         ambiguous = False
-        if nr is None and self.backwards_compat:
-            nr = 0
 
         for control in self.controls:
             if ((name is not None and name != control.name) and

@@ -117,7 +117,8 @@ class Browser(UserAgentBase):
             self,
             history=None,
             request_class=None,
-            content_parser=None
+            content_parser=None,
+            allow_xhtml=False,
     ):
         """
 
@@ -143,7 +144,7 @@ class Browser(UserAgentBase):
         if request_class is None:
             request_class = _request.Request
 
-        factory = Factory()
+        factory = Factory(allow_xhtml=allow_xhtml)
         factory.set_request_class(request_class)
         if content_parser is not None:
             factory.set_content_parser(content_parser)
