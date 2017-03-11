@@ -23,12 +23,12 @@ import urllib
 # "0123456789"
 # "-_.~")
 # RESERVED_URI_CHARS = "!*'();:@&=+$,/?#[]"
-## URI_CHARS = RESERVED_URI_CHARS+UNRESERVED_URI_CHARS+'%'
+# URI_CHARS = RESERVED_URI_CHARS+UNRESERVED_URI_CHARS+'%'
 # this re matches any character that's not in URI_CHARS
 BAD_URI_CHARS_RE = re.compile("[^A-Za-z0-9\-_.~!*'();:@&=+$,/?%#[\]]")
 
 
-def clean_url(url, encoding):
+def clean_url(url, encoding='utf-8'):
     # percent-encode illegal URI characters
     # Trying to come up with test cases for this gave me a headache, revisit
     # when do switch to unicode.
@@ -36,12 +36,16 @@ def clean_url(url, encoding):
     # - IE will return you the url in the encoding you send it
     # - Mozilla/Firefox will send you latin-1 if there's no non latin-1
     # characters in your link. It will send you utf-8 however if there are...
-    if type(url) == type(""):
+    is_unicode = not isinstance(url, bytes)
+    if not is_unicode:
         url = url.decode(encoding, "replace")
     url = url.strip()
     # for second param to urllib.quote(), we want URI_CHARS, minus the
     # 'always_safe' characters that urllib.quote() never percent-encodes
-    return urllib.quote(url.encode(encoding), "!*'();:@&=+$,/?%#[]~")
+    ans = urllib.quote(url.encode(encoding), "!*'();:@&=+$,/?%#[]~")
+    if is_unicode:
+        ans = ans.decode(encoding)
+    return ans
 
 
 def is_clean_uri(uri):
@@ -247,6 +251,7 @@ def merge(base_authority, base_path, ref_path):
     if ii >= 0:
         return base_path[:ii + 1] + ref_path
     return ref_path
+
 
 if __name__ == "__main__":
     import doctest

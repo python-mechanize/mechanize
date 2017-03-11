@@ -12,8 +12,6 @@ import mechanize
 import mechanize._response
 import mechanize._testcase
 
-FACTORY_CLASSES = [mechanize.DefaultFactory, mechanize.RobustFactory]
-
 
 # XXX these 'mock' classes are badly in need of simplification / removal
 # (note this stuff is also used by test_useragent.py and test_browser.doctest)
@@ -374,14 +372,10 @@ class BrowserTests(TestCase):
                 self.assertEqual(b.viewing_html(), expect)
 
     def test_empty(self):
-        for factory_class in FACTORY_CLASSES:
-            self._test_empty(factory_class())
-
-    def _test_empty(self, factory):
         import mechanize
         url = "http://example.com/"
 
-        b = TestBrowser(factory=factory)
+        b = TestBrowser()
 
         self.assert_(b.response() is None)
 
@@ -447,14 +441,10 @@ class BrowserTests(TestCase):
             mechanize.LinkNotFoundError, b.find_link, predicate=lambda x: True)
 
     def test_forms(self):
-        for factory_class in FACTORY_CLASSES:
-            self._test_forms(factory_class())
-
-    def _test_forms(self, factory):
         import mechanize
         url = "http://example.com"
 
-        b = TestBrowser(factory=factory)
+        b = TestBrowser()
         r = test_html_response(
             url=url,
             headers=[("content-type", "text/html")],
@@ -500,16 +490,12 @@ class BrowserTests(TestCase):
         self.assertEqual(b.click_pairs(), [("two", "")])
 
     def test_link_encoding(self):
-        for factory_class in FACTORY_CLASSES:
-            self._test_link_encoding(factory_class())
-
-    def _test_link_encoding(self, factory):
         import mechanize
         from mechanize._rfc3986 import clean_url
         url = "http://example.com/"
         for encoding in ["UTF-8", "latin-1"]:
             encoding_decl = "; charset=%s" % encoding
-            b = TestBrowser(factory=factory)
+            b = TestBrowser()
             r = MockResponse(
                 url,
                 """\
@@ -521,17 +507,14 @@ class BrowserTests(TestCase):
             r = b.open(url)
 
             Link = mechanize.Link
-            try:
-                mdashx2 = u"\u2014".encode(encoding) * 2
-            except UnicodeError:
-                mdashx2 = '&mdash;&#x2014;'
+            mdashx2 = u"\u2014".encode('utf-8') * 2
             qmdashx2 = clean_url(mdashx2, encoding)
             # base_url, url, text, tag, attrs
             exp = Link(
                 url, "http://example.com/foo/bar%s.html" % qmdashx2,
-                "blah" + mdashx2, "a",
-                [("href", "http://example.com/foo/bar%s.html" % mdashx2),
-                 ("name", "name0%s" % mdashx2)])
+                u"blah\u2014\u2014", "a",
+                [("href", u"http://example.com/foo/bar\u2014\u2014.html"),
+                 ("name", u"name0\u2014\u2014")])
             # nr
             link = b.find_link()
             #             print
@@ -541,29 +524,24 @@ class BrowserTests(TestCase):
 
     def test_link_whitespace(self):
         from mechanize import Link
-        for factory_class in FACTORY_CLASSES:
-            base_url = "http://example.com/"
-            url = "  http://example.com/foo.html%20+ "
-            stripped_url = url.strip()
-            html = '<a href="%s"></a>' % url
-            b = TestBrowser(factory=factory_class())
-            r = MockResponse(base_url, html, {"content-type": "text/html"})
-            b.add_handler(make_mock_handler()([("http_open", r)]))
-            r = b.open(base_url)
-            link = b.find_link(nr=0)
-            self.assertEqual(
-                link, Link(base_url, stripped_url, "", "a", [("href", url)]))
+        base_url = "http://example.com/"
+        url = "  http://example.com/foo.html%20+ "
+        stripped_url = url.strip()
+        html = '<a href="%s"></a>' % url
+        b = TestBrowser()
+        r = MockResponse(base_url, html, {"content-type": "text/html"})
+        b.add_handler(make_mock_handler()([("http_open", r)]))
+        r = b.open(base_url)
+        link = b.find_link(nr=0)
+        self.assertEqual(
+            link, Link(base_url, stripped_url, "", "a", [("href", url)]))
 
     def test_links(self):
-        for factory_class in FACTORY_CLASSES:
-            self._test_links(factory_class())
-
-    def _test_links(self, factory):
         import mechanize
         from mechanize import Link
         url = "http://example.com/"
 
-        b = TestBrowser(factory=factory)
+        b = TestBrowser()
         r = MockResponse(url, """<html>
 <head><title>Title</title></head>
 <body>
@@ -574,7 +552,7 @@ class BrowserTests(TestCase):
 <form name="form2">
  <input type="submit" name="two">
 </form>
-<frame name="name" href="href" src="src"></frame>
+<iframe name="name" href="href" src="src"></iframe>
 <iframe name="name2" href="href" src="src"></iframe>
 <a name="name3" href="one">yada yada</a>
 <a name="pears" href="two" weird="stuff">rhubarb</a>
@@ -594,7 +572,7 @@ class BrowserTests(TestCase):
             Link(url, "spam", "", "a", [("href", "spam"), ("name", "pears")]),
             Link(url, "blah", None, "area",
                  [("href", "blah"), ("name", "foo")]),
-            Link(url, "src", None, "frame",
+            Link(url, "src", None, "iframe",
                  [("name", "name"), ("href", "href"), ("src", "src")]),
             Link(url, "src", None, "iframe",
                  [("name", "name2"), ("href", "href"), ("src", "src")]),
@@ -605,9 +583,9 @@ class BrowserTests(TestCase):
             Link(url, "foo", None, "iframe", [("src", "foo")]),
         ]
         links = list(b.links())
-        self.assertEqual(len(links), len(exp_links))
         for got, expect in zip(links, exp_links):
             self.assertEqual(got, expect)
+        self.assertEqual(len(links), len(exp_links))
         # nr
         l = b.find_link()
         self.assertEqual(l.url, "http://example.com/foo/bar.html")
@@ -666,7 +644,7 @@ class BrowserTests(TestCase):
                     url,
                     url="src",
                     text=None,
-                    tag="frame",
+                    tag="iframe",
                     attrs=[("name", "name"), ("href", "href"), ("src", "src")
                            ]),
                 Link(

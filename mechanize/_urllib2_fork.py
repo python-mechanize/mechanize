@@ -532,7 +532,7 @@ class HTTPRedirectHandler(BaseHandler):
             newurl = headers.getheaders('uri')[0]
         else:
             return
-        newurl = _rfc3986.clean_url(newurl, "latin-1")
+        newurl = _rfc3986.clean_url(newurl)
         newurl = _rfc3986.urljoin(req.get_full_url(), newurl)
 
         # XXX Probably want to forget about the state of the current

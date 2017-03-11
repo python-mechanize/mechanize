@@ -13,9 +13,36 @@ import copy
 import re
 
 from _headersutil import split_header_words, is_html as _is_html
-import _rfc3986
+from _rfc3986 import clean_url, urljoin
 
 DEFAULT_ENCODING = "utf-8"
+
+
+def elem_text(elem):
+    if elem.text:
+        yield elem.text
+    for child in elem:
+        for text in elem_text(child):
+            yield text
+        if child.tail:
+            yield child.tail
+
+
+def iterlinks(root, base_url):
+    link_tags = {"a": "href", "area": "href", "frame": "src", "iframe": "src"}
+    for tag in root.iter('*'):
+        q = tag.tag.lower()
+        attr = link_tags.get(q)
+        if attr is not None:
+            val = tag.get(attr)
+            if val:
+                url = clean_url(val)
+                yield Link(base_url, url, ''.join(elem_text(tag)), q,
+                           tag.items())
+        elif q == 'base':
+            href = tag.get('href')
+            if href:
+                base_url = href
 
 
 def compress_whitespace(text):
@@ -26,16 +53,17 @@ def get_encoding_from_response(response, verify=True):
     # HTTPEquivProcessor may be in use, so both HTTP and HTTP-EQUIV
     # headers may be in the response.  HTTP-EQUIV headers come last,
     # so try in order from first to last.
-    for ct in response.info().getheaders("content-type"):
-        for k, v in split_header_words([ct])[0]:
-            if k == "charset":
-                if not verify:
-                    return v
-                try:
-                    codecs.lookup(v)
-                    return v
-                except LookupError:
-                    continue
+    if response:
+        for ct in response.info().getheaders("content-type"):
+            for k, v in split_header_words([ct])[0]:
+                if k == "charset":
+                    if not verify:
+                        return v
+                    try:
+                        codecs.lookup(v)
+                        return v
+                    except LookupError:
+                        continue
 
 
 class EncodingFinder:
@@ -61,17 +89,23 @@ class Link:
     def __init__(self, base_url, url, text, tag, attrs):
         assert None not in [url, tag, attrs]
         self.base_url = base_url
-        self.absolute_url = _rfc3986.urljoin(base_url, url)
+        self.absolute_url = urljoin(base_url, url)
         self.url, self.text, self.tag, self.attrs = url, text, tag, attrs
+        self.text = self.text or None  # backwards compat
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         try:
-            for name in "url", "text", "tag", "attrs":
+            for name in "url", "text", "tag":
                 if getattr(self, name) != getattr(other, name):
-                    return -1
+                    return False
+            if dict(self.attrs) != dict(other.attrs):
+                return False
         except AttributeError:
-            return -1
-        return 0
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __repr__(self):
         return "Link(base_url=%r, url=%r, text=%r, tag=%r, attrs=%r)" % (
@@ -93,6 +127,45 @@ def content_parser(data,
         data,
         transport_encoding=transport_encoding,
         namespaceHTMLElements=False)
+
+
+def unescape(data, entities, encoding):
+    if data is None or "&" not in data:
+        return data
+
+    def replace_entities(match):
+        ent = match.group()
+        if ent[1] == "#":
+            return unescape_charref(ent[2:-1], encoding)
+
+        repl = entities.get(ent[1:-1])
+        if repl is not None:
+            repl = unichr(repl)
+            if type(repl) != type(""):  # noqa
+                try:
+                    repl = repl.encode(encoding)
+                except UnicodeError:
+                    repl = ent
+        else:
+            repl = ent
+        return repl
+
+    return re.sub(r"&#?[A-Za-z0-9]+?;", replace_entities, data)
+
+
+def unescape_charref(data, encoding):
+    name, base = data, 10
+    if name.startswith("x"):
+        name, base = name[1:], 16
+    uc = unichr(int(name, base))
+    if encoding is None:
+        return uc
+    else:
+        try:
+            repl = uc.encode(encoding)
+        except UnicodeError:
+            repl = "&#%s;" % data
+        return repl
 
 
 lazy = object()
@@ -161,7 +234,7 @@ class Factory:
         class when .click()ed.
 
         """
-        self._forms_factory.request_class = request_class
+        self._request_class = request_class
 
     def set_response(self, response):
         """Set response.
@@ -175,8 +248,9 @@ class Factory:
         self._current_global_form = self._root = lazy
         self.encoding = self._encoding_finder.encoding(response)
         self.is_html = self._response_type_finder.is_html(
-            copy.copy(self._response), self.encoding)
-        self._raw_data = response.read()
+            copy.copy(self._response),
+            self.encoding) if self._response else False
+        self._raw_data = response.read() if response else b''
 
     @property
     def root(self):
@@ -228,6 +302,7 @@ class Factory:
     def _get_links(self):
         if self.root is None:
             return ()
+        return tuple(iterlinks(self.root, self._response.geturl()))
 
     def _get_forms(self):
         if self.root is None:

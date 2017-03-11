@@ -10,13 +10,11 @@ __all__ = [
     'CookieJar',
     'CookiePolicy',
     'DefaultCookiePolicy',
-    'DefaultFactory',
     'FTPHandler',
     'Factory',
     'FileCookieJar',
     'FileHandler',
     'FormNotFoundError',
-    'FormsFactory',
     'HTTPBasicAuthHandler',
     'HTTPCookieProcessor',
     'HTTPDefaultErrorHandler',
@@ -40,7 +38,6 @@ __all__ = [
     'LWPCookieJar',
     'Link',
     'LinkNotFoundError',
-    'LinksFactory',
     'LoadError',
     'MozillaCookieJar',
     'OpenerDirector',
@@ -51,12 +48,7 @@ __all__ = [
     'ProxyHandler',
     'Request',
     'RobotExclusionError',
-    'RobustFactory',
-    'RobustFormsFactory',
-    'RobustLinksFactory',
-    'RobustTitleFactory',
     'SeekableResponseOpener',
-    'TitleFactory',
     'URLError',
     'USE_BARE_EXCEPT',
     'UnknownHandler',
@@ -125,11 +117,7 @@ from _mechanize import \
 
 # configurable URL-opener interface
 from _useragent import UserAgentBase, UserAgent
-from _html import \
-    Link, \
-    Factory, DefaultFactory, RobustFactory, \
-    FormsFactory, LinksFactory, TitleFactory, \
-    RobustFormsFactory, RobustLinksFactory, RobustTitleFactory
+from _html import Link, Factory
 
 # urllib2 work-alike interface.  This is a superset of the urllib2 interface.
 from _urllib2 import *
