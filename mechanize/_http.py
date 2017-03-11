@@ -377,7 +377,7 @@ def clean_refresh_url(url):
     if ((url.startswith('"') and url.endswith('"')) or
             (url.startswith("'") and url.endswith("'"))):
         url = url[1:-1]
-    return _rfc3986.clean_url(url, "latin-1")  # XXX encoding
+    return _rfc3986.clean_url(url, DEFAULT_ENCODING)  # XXX encoding
 
 
 def parse_refresh_header(refresh):
