@@ -20,7 +20,7 @@ import _response
 import _rfc3986
 import _sockettimeout
 import _urllib2_fork
-from _html import DefaultFactory
+from _html import Factory
 from _useragent import UserAgentBase
 
 
@@ -115,25 +115,23 @@ class Browser(UserAgentBase):
 
     def __init__(
             self,
-            factory=None,
             history=None,
-            request_class=None, ):
+            request_class=None,
+            content_parser=None
+    ):
         """
 
         Only named arguments should be passed to this constructor.
 
-        factory: object implementing the mechanize.Factory interface.
         history: object implementing the mechanize.History interface.  Note
          this interface is still experimental and may change in future.
         request_class: Request class to use.  Defaults to mechanize.Request
+        content_parser: A function that is responsible for parsing received
+        html/xhtml content. See the builtin content_parser function for
+        details on the interface this function must support.
 
-        The Factory and History objects passed in are 'owned' by the Browser,
-        so they should not be shared across Browsers.  In particular,
-        factory.set_response() should not be called except by the owning
-        Browser itself.
-
-        Note that the supplied factory's request_class is overridden by this
-        constructor, to ensure only one Request class is used.
+        The History object passed in is 'owned' by the Browser,
+        so it should not be shared across Browsers.
 
         """
         self._handle_referer = True
@@ -145,9 +143,10 @@ class Browser(UserAgentBase):
         if request_class is None:
             request_class = _request.Request
 
-        if factory is None:
-            factory = DefaultFactory()
+        factory = Factory()
         factory.set_request_class(request_class)
+        if content_parser is not None:
+            factory.set_content_parser(content_parser)
         self._factory = factory
         self.request_class = request_class
 
