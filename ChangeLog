@@ -2,6 +2,7 @@ This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
 Future Kovid Goyal
+	* mechanize now requires python >= 2.7.0
 	* When processing cookies that have a blank (unset) path, assume the path
 	 is /. Mimics modern browser behavior.
 	* Support PyPy (added to continuous integration testing)
