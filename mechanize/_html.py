@@ -12,7 +12,6 @@ import codecs
 import copy
 import re
 
-
 from _headersutil import split_header_words, is_html as _is_html
 import _rfc3986
 
@@ -90,7 +89,10 @@ def content_parser(data,
     if not is_html:
         return
     from html5lib import parse
-    return parse(data, transport_encoding=transport_encoding)
+    return parse(
+        data,
+        transport_encoding=transport_encoding,
+        namespaceHTMLElements=False)
 
 
 lazy = object()
@@ -143,7 +145,8 @@ class Factory:
         self._response_type_finder = response_type_finder
         self.content_parser = content_parser
         self._current_forms = self._current_links = self._current_title = lazy
-        self._current_global_form = lazy
+        self._current_global_form = self._root = lazy
+        self._raw_data = b''
         self.is_html, self.encoding = False, DEFAULT_ENCODING
 
         self.set_response(None)
@@ -169,18 +172,26 @@ class Factory:
         """
         self._response = response
         self._current_forms = self._current_links = self._current_title = lazy
-        self._current_global_form = lazy
+        self._current_global_form = self._root = lazy
         self.encoding = self._encoding_finder.encoding(response)
         self.is_html = self._response_type_finder.is_html(
             copy.copy(self._response), self.encoding)
-        self._root = self.content_parser(
-            response.read(),
-            url=response.geturl(),
-            response_info=response.info(),
-            default_encoding=self._encoding_finder._default_encoding,
-            is_html=self.is_html,
-            transport_encoding=get_encoding_from_response(
-                response, verify=False))
+        self._raw_data = response.read()
+
+    @property
+    def root(self):
+        if self._root is lazy:
+            response = self._response
+            self._root = self.content_parser(
+                self._raw_data,
+                url=response.geturl(),
+                response_info=response.info(),
+                default_encoding=self._encoding_finder._default_encoding,
+                is_html=self.is_html,
+                transport_encoding=get_encoding_from_response(
+                    response, verify=False))
+            self._raw_data = b''
+        return self._root
 
     @property
     def title(self):
@@ -189,8 +200,8 @@ class Factory:
         return self._current_title
 
     def _get_title(self):
-        if self._root is not None:
-            for title in self._root.iter('title'):
+        if self.root is not None:
+            for title in self.root.iter('title'):
                 text = compress_whitespace(title.text)
                 if text:
                     return text
@@ -215,9 +226,9 @@ class Factory:
         return self._get_links()
 
     def _get_links(self):
-        if self._root is None:
+        if self.root is None:
             return ()
 
     def _get_forms(self):
-        if self._root is None:
+        if self.root is None:
             return (), None
