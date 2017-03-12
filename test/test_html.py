@@ -48,46 +48,6 @@ class RegressionTests(TestCase):
             self._make_forms_from_bad_html, mechanize.FormsFactory())
 
 
-class CachingGeneratorFunctionTests(TestCase):
-
-    def _get_simple_cgenf(self, log):
-        from mechanize._html import CachingGeneratorFunction
-        todo = []
-        for ii in range(2):
-            def work(ii=ii):
-                log.append(ii)
-                return ii
-            todo.append(work)
-        def genf():
-            for a in todo:
-                yield a()
-        return CachingGeneratorFunction(genf())
-
-    def test_cache(self):
-        log = []
-        cgenf = self._get_simple_cgenf(log)
-        for repeat in range(2):
-            for ii, jj in zip(cgenf(), range(2)):
-                self.assertEqual(ii, jj)
-            self.assertEqual(log, range(2))  # work only done once
-
-    def test_interleaved(self):
-        log = []
-        cgenf = self._get_simple_cgenf(log)
-        cgen = cgenf()
-        self.assertEqual(cgen.next(), 0)
-        self.assertEqual(log, [0])
-        cgen2 = cgenf()
-        self.assertEqual(cgen2.next(), 0)
-        self.assertEqual(log, [0])
-        self.assertEqual(cgen.next(), 1)
-        self.assertEqual(log, [0, 1])
-        self.assertEqual(cgen2.next(), 1)
-        self.assertEqual(log, [0, 1])
-        self.assertRaises(StopIteration, cgen.next)
-        self.assertRaises(StopIteration, cgen2.next)
-
-
 class UnescapeTests(TestCase):
 
     def test_unescape_charref(self):
