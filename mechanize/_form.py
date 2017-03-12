@@ -1,10 +1,19 @@
+import re
 from collections import defaultdict
 from urlparse import urljoin
 
 from _form_controls import HTMLForm, Label
 
 
-def parse_control(elem, parent_of):
+class SkipControl(ValueError):
+    pass
+
+
+def normalize_line_endings(text):
+    return re.sub(ur"(?:(?<!\r)\n)|(?:\r(?!\n))", u"\r\n", text)
+
+
+def parse_control(elem, parent_of, *a):
     attrs = elem.attrib.copy()
     label_elem = parent_of(elem, 'label')
     label_text = None
@@ -17,26 +26,33 @@ def parse_control(elem, parent_of):
     return ctype, attrs.get('name'), attrs
 
 
-def parse_option(elem, parent_of):
+def parse_option(elem, parent_of, attrs_map):
     ctype, name, attrs = parse_control(elem, parent_of)
     og = parent_of(elem, 'optgroup')
+    contents = (elem.text or '').strip()
+    attrs['contents'] = contents
+    attrs['value'] = attrs.get('value', contents)
+    attrs['label'] = attrs.get('label', contents)
     if og is not None and og.get('disabled') is not None:
         attrs['disabled'] = 'disabled'
-    return ctype, name, attrs
+    sel = parent_of(elem, 'select')
+    if sel is None:
+        raise SkipControl()
+    attrs['__select'] = sel = attrs_map[sel]['__select']
+    return 'select', sel.get('name'), attrs
 
 
-def parse_textarea(elem, parent_of):
+def parse_textarea(elem, parent_of, *a):
     ctype, name, attrs = parse_control(elem, parent_of)
     ctype = 'textarea'
-    attrs['value'] = elem.text or u''
+    attrs['value'] = normalize_line_endings(elem.text or u'')
     return ctype, name, attrs
 
 
-def parse_select(elem, parent_of):
+def parse_select(elem, parent_of, *a):
     ctype, name, attrs = parse_control(elem, parent_of)
     ctype = 'select'
-    attrs['__select'] = attrs
-    return ctype, name, attrs
+    return ctype, name, {'__select': attrs}
 
 
 def parse_forms(root, base_url, request_class=None, select_default=False):
@@ -59,6 +75,8 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
                 l = Label(e.text, for_id)
                 labels.append(l)
                 id_to_labels[for_id].append(l)
+        elif q == 'base':
+            base_url = e.get('href') or base_url
 
     def parent_of(elem, parent_name):
         q = elem
@@ -85,6 +103,7 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
         forms_map[form_elem] = form
         forms.append(form)
 
+    attrs_map = {}
     control_names = {
         'option': parse_option,
         'button': parse_control,
@@ -99,7 +118,12 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
         if cfunc is not None:
             form_elem = parent_of(elem, 'form')
             form = forms_map.get(form_elem, global_form)
-            control_type, control_name, attrs = cfunc(elem, parent_of)
+            try:
+                control_type, control_name, attrs = cfunc(elem, parent_of,
+                                                          attrs_map)
+            except SkipControl:
+                continue
+            attrs_map[elem] = attrs
             form.new_control(
                 control_type,
                 control_name,

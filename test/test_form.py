@@ -339,7 +339,7 @@ class ParseTests(unittest.TestCase):
 """)
         forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
-        self.assert_(form.action == "http://example.com/abc")
+        self.assertEqual(form.action, "http://example.com/abc")
 
         file = StringIO("""<form action="abc">
 <input type="submit"></input>
@@ -376,7 +376,7 @@ users!</textarea>
         self.assert_(form.name is None)
         self.assertEqual(
             form.action,
-            "http://localhost/abc&amp;" + u"\u2014".encode('utf8') + "d")
+            "http://localhost/abc&amp;" + u"\u2014" + "d")
         control = form.find_control(type="textarea", nr=0)
         self.assert_(control.name is None)
         self.assert_(control.value == "blah, blah,\r\nRhubarb.\r\n\r\n")
@@ -708,7 +708,7 @@ Rhubarb.</button>
             "http://example.com/",
             backwards_compat=False, )
         ctl = forms[0].find_control(type="textarea")
-        self.assertEqual(ctl.value, "\nblah\n")
+        self.assertEqual(ctl.value, "\r\nblah\r\n")
 
     def test_embedded_newlines(self):
         # newlines that happen to be at the start of strings passed to the
@@ -720,7 +720,7 @@ Rhubarb.</button>
             "http://example.com/",
             backwards_compat=False, )
         ctl = forms[0].find_control(type="textarea")
-        self.assertEqual(ctl.value, "\nspam&\neggs\n")
+        self.assertEqual(ctl.value, "\r\nspam&\r\neggs\r\n")
 
     def test_double_select(self):
         # More than one SELECT control of the same name in a form never
