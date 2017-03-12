@@ -83,71 +83,6 @@ parse_file = partial(parse_file_ex, add_global=False)
 
 
 class UnescapeTests(unittest.TestCase):
-    def test_unescape_charref(self):
-        unescape_charref = _form.unescape_charref
-        mdash_utf8 = u"\u2014".encode("utf-8")
-        for ref, codepoint, utf8, latin1 in [
-            ("38", 38, u"&".encode("utf-8"), "&"),
-            ("x2014", 0x2014, mdash_utf8, "&#x2014;"),
-            ("8212", 8212, mdash_utf8, "&#8212;"),
-        ]:
-            self.assertEqual(unescape_charref(ref, None), unichr(codepoint))
-            self.assertEqual(unescape_charref(ref, 'latin-1'), latin1)
-            self.assertEqual(unescape_charref(ref, 'utf-8'), utf8)
-
-    def test_get_entitydefs(self):
-        get_entitydefs = _form.get_entitydefs
-        ed = get_entitydefs()
-        for name, char in [
-            ("&amp;", u"&"),
-            ("&lt;", u"<"),
-            ("&gt;", u">"),
-            ("&mdash;", u"\u2014"),
-            ("&spades;", u"\u2660"),
-        ]:
-            self.assertEqual(ed[name], char)
-
-    def test_unescape1(self):
-        unescape = _form.unescape
-        get_entitydefs = _form.get_entitydefs
-        data = "&amp; &lt; &mdash; &#8212; &#x2014;"
-        mdash_utf8 = u"\u2014".encode("utf-8")
-        ue = unescape(data, get_entitydefs(), "utf-8")
-        self.assertEqual("& < %s %s %s" % ((mdash_utf8, ) * 3), ue)
-
-        for text, expect in [
-            ("&a&amp;", "&a&"),
-            ("a&amp;", "a&"),
-        ]:
-            got = unescape(text, get_entitydefs(), "latin-1")
-            self.assertEqual(got, expect)
-
-    def test_unescape2(self):
-        unescape = _form.unescape
-        get_entitydefs = _form.get_entitydefs
-        self.assertEqual(
-            unescape("Donald Duck &amp; Co", {"&amp;": "&"}),
-            "Donald Duck & Co")
-        self.assertEqual(
-            unescape("&lt;Donald Duck &amp; Co&gt;",
-                     {"&amp;": "&",
-                      "&lt;": "<",
-                      "&gt;": ">"}), "<Donald Duck & Co>")
-        self.assertEqual(
-            unescape("Hei p&aring; deg", {"&aring;": "å"}), "Hei på deg")
-        self.assertEqual(
-            unescape("&amp;foo;", {"&amp;": "&",
-                                   "&foo;": "splat"}), "&foo;")
-        self.assertEqual(unescape("&amp;", {}), "&amp;")
-
-        for encoding, expected in [
-            ("utf-8", u"&\u06aa\u2014\u2014".encode("utf-8")),
-            ("latin-1", "&&#x06aa;&#x2014;&mdash;")
-        ]:
-            self.assertEqual(expected,
-                             unescape("&amp;&#x06aa;&#x2014;&mdash;",
-                                      get_entitydefs(), encoding))
-
     def test_unescape_parsing(self):
         file = StringIO("""<form action="&amp;amp;&mdash;&#x2014;&#8212;">
 <textarea name="name&amp;amp;&mdash;&#x2014;&#8212;">val&amp;amp;&mdash;\
@@ -394,19 +329,6 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(forms[0].controls[0].name, "a")
         # arguments were passed through
         self.assertTrue(isinstance(forms[0].click(), DerivedRequest))
-
-    def test_parse_error(self):
-        f = StringIO("""<form action="abc">
-<option>
-</form>
-""")
-        base_uri = "http://localhost/"
-        try:
-            parse_file(f, base_uri, backwards_compat=False)
-        except mechanize.ParseError, e:
-            self.assert_(e.base_uri == base_uri)
-        else:
-            self.assert_(0)
 
     def test_base_uri(self):
         # BASE element takes priority over document URI
@@ -786,7 +708,7 @@ Rhubarb.</button>
             "http://example.com/",
             backwards_compat=False, )
         ctl = forms[0].find_control(type="textarea")
-        self.assertEqual(ctl.value, "\r\nblah\r\n")
+        self.assertEqual(ctl.value, "\nblah\n")
 
     def test_embedded_newlines(self):
         # newlines that happen to be at the start of strings passed to the
@@ -798,7 +720,7 @@ Rhubarb.</button>
             "http://example.com/",
             backwards_compat=False, )
         ctl = forms[0].find_control(type="textarea")
-        self.assertEqual(ctl.value, "\r\nspam&\r\neggs\r\n")
+        self.assertEqual(ctl.value, "\nspam&\neggs\n")
 
     def test_double_select(self):
         # More than one SELECT control of the same name in a form never
