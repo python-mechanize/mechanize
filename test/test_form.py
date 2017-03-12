@@ -2205,36 +2205,28 @@ class FormTests(unittest.TestCase):
 </form>
 """)
         form = parse_file(f, "http://example.com/", backwards_compat=False)[0]
-        for compat in True, False:
-            form.backwards_compat = compat
-            fc = form.find_control
+        fc = form.find_control
 
-            self.assertEqual(fc("form.title").id, "form.title")
-            self.assertEqual(fc("form.title", nr=0).id, "form.title")
-            if compat:
-                self.assertEqual(fc("password").id, "pswd1")
-            else:
-                self.assertRaises(AmbiguityError, fc, "password")
-            self.assertEqual(fc("password", id="pswd2").id, "pswd2")
-            self.assertEqual(fc("password", nr=0).id, "pswd1")
-            self.assertRaises(ControlNotFoundError, fc, "form.title", nr=1)
-            self.assertRaises(ControlNotFoundError, fc, nr=50)
-            self.assertRaises(ValueError, fc, nr=-1)
-            self.assertRaises(ControlNotFoundError, fc, label="Bananas")
+        self.assertEqual(fc("form.title").id, "form.title")
+        self.assertEqual(fc("form.title", nr=0).id, "form.title")
+        self.assertRaises(AmbiguityError, fc, "password")
+        self.assertEqual(fc("password", id="pswd2").id, "pswd2")
+        self.assertEqual(fc("password", nr=0).id, "pswd1")
+        self.assertRaises(ControlNotFoundError, fc, "form.title", nr=1)
+        self.assertRaises(ControlNotFoundError, fc, nr=50)
+        self.assertRaises(ValueError, fc, nr=-1)
+        self.assertRaises(ControlNotFoundError, fc, label="Bananas")
 
-            # label
-            self.assertEqual(fc(label="Title").id, "form.title")
-            self.assertEqual(fc(label="Book Title").id, "form.title")
-            self.assertRaises(ControlNotFoundError, fc, label=" Book Title ")
-            self.assertRaises(ControlNotFoundError, fc, label="Bananas")
-            self.assertRaises(ControlNotFoundError, fc, label="title")
+        # label
+        self.assertEqual(fc(label="Title").id, "form.title")
+        self.assertEqual(fc(label="Book Title").id, "form.title")
+        self.assertRaises(ControlNotFoundError, fc, label=" Book Title ")
+        self.assertRaises(ControlNotFoundError, fc, label="Bananas")
+        self.assertRaises(ControlNotFoundError, fc, label="title")
 
-            self.assertEqual(fc(label="Book", nr=0).id, "form.title")
-            self.assertEqual(fc(label="Book", nr=1).id, "form.quality")
-            if compat:
-                self.assertEqual(fc(label="Book").id, "form.title")
-            else:
-                self.assertRaises(AmbiguityError, fc, label="Book")
+        self.assertEqual(fc(label="Book", nr=0).id, "form.title")
+        self.assertEqual(fc(label="Book", nr=1).id, "form.quality")
+        self.assertRaises(AmbiguityError, fc, label="Book")
 
     def test_find_nameless_control(self):
         data = """\
@@ -2621,10 +2613,6 @@ class FormTests(unittest.TestCase):
 </form>
 """)
         for kwds, backwards_compat in [
-            ({}, True),
-            ({
-                "backwards_compat": True
-            }, True),
             ({
                 "backwards_compat": False
             }, False),
@@ -2673,10 +2661,6 @@ class FormTests(unittest.TestCase):
 </form>
 """)
         for kwds, backwards_compat in [
-            ({}, True),
-            ({
-                "backwards_compat": True
-            }, True),
             ({
                 "backwards_compat": False
             }, False),
@@ -2806,23 +2790,7 @@ class FormTests(unittest.TestCase):
             form.find_control(label="Title").value, "The Grapes of Wrath")
 
         # Test item ambiguity, get, get_items, and set_value_by_label.
-        # A form can be in two states: either ignoring ambiguity or being
-        # careful about it.  Currently, by default, a form's backwards_compat
-        # attribute is True, so ambiguity is ignored.  For instance, notice
-        # that the form.grocery checkboxes include some loaves of bread and
-        # a loaf of challah.  The code just guesses what you mean:
-        form.backwards_compat = True
         c = form.find_control("form.grocery")
-        # label substring matching is turned off for compat mode
-        self.assertRaises(ItemNotFoundError, c.get, label="Loaf")
-        self.assertEqual(c.get(label="Loaf of Bread"), c.items[0])
-        c.set_value_by_label(["Loaf of Bread"])
-        self.assertEqual(c.get_value_by_label(), ["Loaf of Bread"])
-        self.assertEqual(c.items[0].id, "1")
-        # However, if the form's backwards_compat attribute is False, Ambiguity
-        # Errors may be raised.  This is generally a preferred approach, but is
-        # not backwards compatible.
-        form.backwards_compat = False
         self.assertRaises(mechanize.AmbiguityError, c.get, label="Loaf")
         self.assertRaises(mechanize.AmbiguityError, c.set_value_by_label,
                           ["Loaf"])

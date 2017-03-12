@@ -11,6 +11,7 @@ Future Kovid Goyal
 	* Support HTML 5 (all html is now parsed using html5lib)
 	* Backward incompatibility: The factory keyword argument to Browser is no longer allowed
 	* Backward incompatibility: Browser.forms() and Browser.links() return unicode strings instead of byte strings
+	* Backward incompatibility: When searching for a form control if more than one control matches, an AmbiguityError is always raised
 
 2011-03-31 John J Lee <jjl@pobox.com>
 	* 0.2.5 release.
