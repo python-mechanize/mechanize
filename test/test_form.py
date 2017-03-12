@@ -82,6 +82,10 @@ def parse_file_ex(file,
 parse_file = partial(parse_file_ex, add_global=False)
 
 
+def first_form(text, base_uri="http://example.com/"):
+    return parse_file(StringIO(text), base_uri)[0]
+
+
 class UnescapeTests(unittest.TestCase):
     def test_unescape_parsing(self):
         file = StringIO("""<form action="&amp;amp;&mdash;&#x2014;&#8212;">
@@ -3423,6 +3427,16 @@ Content-Type: application/octet-stream\r
 \r
 --123--\r
 """)
+
+
+class MutationTests(unittest.TestCase):
+    def test_add_textfield(self):
+        form = first_form('<input type="text" name="foo" value="bar" />')
+        more = first_form('<input type="text" name="spam" value="eggs" />')
+        combined = form.controls + more.controls
+        for control in more.controls:
+            control.add_to_form(form)
+        self.assertEquals(form.controls, combined)
 
 
 if __name__ == "__main__":
