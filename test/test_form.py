@@ -83,7 +83,7 @@ parse_file = partial(parse_file_ex, add_global=False)
 
 
 def first_form(text, base_uri="http://example.com/"):
-    return parse_file(StringIO(text), base_uri)[0]
+    return parse_file_ex(StringIO(text), base_uri)[0]
 
 
 class UnescapeTests(unittest.TestCase):
