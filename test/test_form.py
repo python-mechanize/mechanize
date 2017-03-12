@@ -1326,6 +1326,13 @@ class ControlTests(unittest.TestCase):
         # matters...
         self.assert_(request.get_full_url() == "http://foo.bar.com/")
         self.assert_(data == ("http://foo.bar.com/", None, []))
+        attrs = {
+            "type": "this is ignored",
+            "name": "name_value",
+            'disabled': 'disabled',
+        }
+        c = _form_controls.SubmitControl("submit", "name_value", attrs)
+        self.assertEqual(c.value, '')
 
     def testImageControl(self):
         attrs = {
