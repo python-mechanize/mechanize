@@ -113,7 +113,7 @@ class UnescapeTests(unittest.TestCase):
 """)
         forms = parse_file_ex(f, "http://localhost/", encoding="utf-8")
         form = forms[1]
-        test_string = "&amp;" + (u"\u2014".encode('utf8') * 3)
+        test_string = "&amp;" + (u"\u2014" * 3)
         control = form.find_control(nr=0)
         for ii in range(len(control.items)):
             item = control.items[ii]
@@ -210,25 +210,6 @@ class ParseErrorTests(_testcase.TestCase):
 
 
 class ParseTests(unittest.TestCase):
-    def test_failing_parse(self):
-        # XXX couldn't provoke an error from BeautifulSoup (!), so this has not
-        # been tested with RobustFormParser
-        import sgmllib
-        # Python 2.0 sgmllib raises RuntimeError rather than SGMLParseError,
-        # but seems never to even raise that except as an assertion, from
-        # reading the code...
-        if hasattr(sgmllib, "SGMLParseError"):
-            f = StringIO("<!!!!>")
-            base_uri = "http://localhost/"
-            self.assertRaises(
-                mechanize.ParseError,
-                parse_file,
-                f,
-                base_uri,
-                backwards_compat=False, )
-            self.assert_(
-                issubclass(mechanize.ParseError, sgmllib.SGMLParseError))
-
     def test_unknown_control(self):
         f = StringIO("""<form action="abc">
 <input type="bogus">
@@ -239,7 +220,7 @@ class ParseTests(unittest.TestCase):
         forms = parse_file(f, base_uri, backwards_compat=False)
         form = forms[0]
         for ctl in form.controls:
-            self.assert_(isinstance(ctl, _form.TextControl))
+            self.assert_(isinstance(ctl, _form_controls.TextControl))
 
     def test_ParseFileEx(self):
         # empty "outer form" (where the "outer form" is the form consisting of
@@ -281,54 +262,6 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(outer.method, "GET")
         self.assertEqual(outer.enctype, "application/x-www-form-urlencoded")
         self.assertEqual(outer.attrs, {})
-
-    def test_ParseResponse(self):
-        url = "http://example.com/"
-        r = MockResponse(
-            StringIO("""\
-<input type="text" name="outer"></input>
-<form action="abc"><input type="text" name="inner"></input></form>
-"""),
-            url, )
-
-        hide_deprecations()
-        forms = mechanize.ParseResponse(r)
-        reset_deprecations()
-        self.assertEqual(len(forms), 1)
-        form = forms[0]
-        self.assertEqual(form.action, url + "abc")
-        self.assertEqual(form.controls[0].name, "inner")
-
-    def test_ParseResponseEx(self):
-        url = "http://example.com/"
-        r = MockResponse(
-            StringIO("""\
-<input type="text" name="outer"></input>
-<form action="abc"><input type="text" name="inner"></input></form>
-"""),
-            url, )
-
-        forms = mechanize.ParseResponseEx(r)
-        self.assertEqual(len(forms), 2)
-        outer = forms[0]
-        inner = forms[1]
-        self.assertEqual(inner.action, url + "abc")
-        self.assertEqual(outer.action, url)
-        self.assertEqual(outer.controls[0].name, "outer")
-        self.assertEqual(inner.controls[0].name, "inner")
-
-    def test_ParseString(self):
-        class DerivedRequest(mechanize.Request):
-            pass
-
-        forms = mechanize.ParseString(
-            '<input name="a" />',
-            "http://example.com/",
-            request_class=DerivedRequest)
-        self.assertEqual(len(forms), 1)
-        self.assertEqual(forms[0].controls[0].name, "a")
-        # arguments were passed through
-        self.assertTrue(isinstance(forms[0].click(), DerivedRequest))
 
     def test_base_uri(self):
         # BASE element takes priority over document URI
@@ -440,27 +373,6 @@ Rhubarb.</button>
         self.assert_(form.find_control("b3").type == "buttonbutton")
         pairs = form.click_pairs()
         self.assert_(pairs == [("moo", "cow"), ("b", "")])
-
-    def testIsindex(self):
-        file = StringIO("""<form action="abc">
-
-<isindex prompt=">>>">
-
-</form>
-
-""")
-        forms = parse_file(file, "http://localhost/", backwards_compat=False)
-        form = forms[0]
-        control = form.find_control(type="isindex")
-        self.assert_(control.type == "isindex")
-        self.assert_(control.name is None)
-        self.assert_(control.value == "")
-        control.value = "some stuff"
-        self.assert_(form.click_pairs() == [])
-        self.assert_(form.click_request_data() == (
-            "http://localhost/abc?some+stuff", None, []))
-        self.assert_(
-            form.click().get_full_url() == "http://localhost/abc?some+stuff")
 
     def testEmptySelect(self):
         file = StringIO("""<form action="abc">
@@ -3306,27 +3218,21 @@ class MoreFormTests(unittest.TestCase):
         self.assertRaises(ItemNotFoundError, ctl.get, id="4")
 
     def test_label_whitespace(self):
-        for compat in [False, True]:
-            f = StringIO("""\
+        f = StringIO("""\
 <form>
-    <select multiple name="eg">
-        <option value="p"> a b  c  </option>
-        <option value="q">b</option>
-    </select>
+<select multiple name="eg">
+    <option value="p"> a b  c  </option>
+    <option value="q">b</option>
+</select>
 </form>
 """)
-            if compat:
-                hide_deprecations()
-            form = parse_file(
-                f, "http://example.com/", backwards_compat=compat)[0]
-            ctl = form.find_control("eg")
-            p = ctl.get("p")
-            q = ctl.get("q")
-            self.assertEqual(p.get_labels()[0].text,
-                             (compat and "a b  c" or "a b c"))
-            self.assertEqual(q.get_labels()[0].text, "b")
-            if compat:
-                reset_deprecations()
+        form = parse_file(
+            f, "http://example.com/")[0]
+        ctl = form.find_control("eg")
+        p = ctl.get("p")
+        q = ctl.get("q")
+        self.assertEqual(p.get_labels()[0].text, ("a b c"))
+        self.assertEqual(q.get_labels()[0].text, "b")
 
     def test_nameless_list_control(self):
         # ListControls are built up from elements that match by name and type
@@ -3373,13 +3279,6 @@ class MoreFormTests(unittest.TestCase):
             self.assertEqual(
                 form.click().get_full_url(),
                 "http://example.com/" + (method == "GET" and "?s=" or ""), )
-        data = '<form action=""><isindex /></form>'
-        f = StringIO(data)
-        form = parse_file(f, "http://example.com/", backwards_compat=False)[0]
-        form.find_control(type="isindex").value = "blah"
-        self.assertEqual(
-            form.click(type="isindex").get_full_url(),
-            "http://example.com/?blah")
 
     def test_click_empty_form_by_label(self):
         # http://github.com/jjlee/mechanize/issues#issue/16
