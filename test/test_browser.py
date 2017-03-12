@@ -565,17 +565,17 @@ class BrowserTests(TestCase):
                  [("href", "http://example.com/foo/bar.html"),
                   ("name", "apples")]),
             Link(url, "spam", "", "a", [("href", "spam"), ("name", "pears")]),
-            Link(url, "blah", None, "area",
+            Link(url, "blah", '', "area",
                  [("href", "blah"), ("name", "foo")]),
-            Link(url, "src", None, "iframe",
+            Link(url, "src", '', "iframe",
                  [("name", "name"), ("href", "href"), ("src", "src")]),
-            Link(url, "src", None, "iframe",
+            Link(url, "src", '', "iframe",
                  [("name", "name2"), ("href", "href"), ("src", "src")]),
             Link(url, "one", "yada yada", "a",
                  [("name", "name3"), ("href", "one")]),
             Link(url, "two", "rhubarb", "a",
                  [("name", "pears"), ("href", "two"), ("weird", "stuff")]),
-            Link(url, "foo", None, "iframe", [("src", "foo")]),
+            Link(url, "foo", '', "iframe", [("src", "foo")]),
         ]
         links = list(b.links())
         for got, expect in zip(links, exp_links):
@@ -638,14 +638,14 @@ class BrowserTests(TestCase):
                 Link(
                     url,
                     url="src",
-                    text=None,
+                    text='',
                     tag="iframe",
                     attrs=[("name", "name"), ("href", "href"), ("src", "src")
                            ]),
                 Link(
                     url,
                     url="src",
-                    text=None,
+                    text='',
                     tag="iframe",
                     attrs=[("name", "name2"), ("href", "href"), ("src", "src")
                            ]),

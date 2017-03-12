@@ -40,7 +40,8 @@ def iterlinks(root, base_url):
             val = tag.get(attr)
             if val:
                 url = clean_url(val)
-                yield Link(base_url, url, ''.join(elem_text(tag)), q,
+                yield Link(base_url, url,
+                           compress_whitespace(u''.join(elem_text(tag))), q,
                            tag.items())
         elif q == 'base':
             href = tag.get('href')
@@ -94,7 +95,7 @@ class Link:
         self.base_url = base_url
         self.absolute_url = urljoin(base_url, url)
         self.url, self.text, self.tag, self.attrs = url, text, tag, attrs
-        self.text = self.text or None  # backwards compat
+        self.text = self.text
 
     def __eq__(self, other):
         try:
@@ -246,8 +247,7 @@ class Factory:
         self._current_global_form = self._root = lazy
         self.encoding = self._encoding_finder.encoding(self._response)
         self.is_html = self._response_type_finder.is_html(
-            self._response,
-            self.encoding) if self._response else False
+            self._response, self.encoding) if self._response else False
 
     @property
     def root(self):
@@ -267,7 +267,7 @@ class Factory:
     def title(self):
         if self._current_title is lazy:
             self._current_title = self._get_title()
-        return self._current_title
+        return self._current_title or u''
 
     def _get_title(self):
         if self.root is not None:

@@ -83,6 +83,16 @@ class EncodingFinderTests(TestCase):
         self.assertEqual(encoding_finder.encoding(response), "utf-8")
 
 
+class TitleTests(TestCase):
+
+    def title_parsing(self):
+        html = ("""\
+<html><head>
+<title>Title</title>
+</head><body><p>Blah.<p></body></html>
+""")
+
+
 if __name__ == "__main__":
     import unittest
     unittest.main()
