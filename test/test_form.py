@@ -203,12 +203,6 @@ class MockResponse:
         return getattr(self._file, name)
 
 
-class ParseErrorTests(_testcase.TestCase):
-    def test_parseerror_str(self):
-        e = mechanize.ParseError("spam")
-        self.assertEqual(str(e), "spam")
-
-
 class ParseTests(unittest.TestCase):
     def test_unknown_control(self):
         f = StringIO("""<form action="abc">
@@ -1122,7 +1116,7 @@ class ControlTests(unittest.TestCase):
             "maxlength": "20",
             "id": "foo"
         }
-        c = _form.TextControl("texT", "ath_Uname", attrs)
+        c = _form_controls.TextControl("texT", "ath_Uname", attrs)
         c.fixup()
         self.assert_(c.type == "text")
         self.assert_(c.name == "ath_Uname")
@@ -1185,7 +1179,7 @@ class ControlTests(unittest.TestCase):
 
         # initialisation of readonly and disabled attributes
         attrs["readonly"] = True
-        c = _form.TextControl("text", "ath_Uname", attrs)
+        c = _form_controls.TextControl("text", "ath_Uname", attrs)
 
         def bad_assign(c=c):
             c.value = "foo"
@@ -1193,14 +1187,14 @@ class ControlTests(unittest.TestCase):
         self.assertRaises(AttributeError, bad_assign)
         del attrs["readonly"]
         attrs["disabled"] = True
-        c = _form.TextControl("text", "ath_Uname", attrs)
+        c = _form_controls.TextControl("text", "ath_Uname", attrs)
 
         def bad_assign(c=c):
             c.value = "foo"
 
         self.assertRaises(AttributeError, bad_assign)
         del attrs["disabled"]
-        c = _form.TextControl("hidden", "ath_Uname", attrs)
+        c = _form_controls.TextControl("hidden", "ath_Uname", attrs)
         self.assert_(c.readonly)
 
         def bad_assign(c=c):
@@ -1209,7 +1203,7 @@ class ControlTests(unittest.TestCase):
         self.assertRaises(AttributeError, bad_assign)
 
     def testFileControl(self):
-        c = _form.FileControl("file", "test_file", {})
+        c = _form_controls.FileControl("file", "test_file", {})
         fp = StringIO()
         c.add_file(fp)
         fp2 = StringIO()
@@ -1224,7 +1218,7 @@ class ControlTests(unittest.TestCase):
 
     def testIsindexControl(self):
         attrs = {"type": "this is ignored", "prompt": ">>>"}
-        c = _form.IsindexControl("isIndex", None, attrs)
+        c = _form_controls.IsindexControl("isIndex", None, attrs)
         c.fixup()
         self.assert_(c.type == "isindex")
         self.assert_(c.name is None)
@@ -1290,7 +1284,7 @@ class ControlTests(unittest.TestCase):
 
     def testIgnoreControl(self):
         attrs = {"type": "this is ignored"}
-        c = _form.IgnoreControl("reset", None, attrs)
+        c = _form_controls.IgnoreControl("reset", None, attrs)
         self.assert_(c.type == "reset")
         self.assert_(c.value is None)
         self.assert_(str(c) == "<IgnoreControl(<None>=<None>)>")
@@ -1312,7 +1306,7 @@ class ControlTests(unittest.TestCase):
             "value": "value_value",
             "img": "foo.gif"
         }
-        c = _form.SubmitControl("submit", "name_value", attrs)
+        c = _form_controls.SubmitControl("submit", "name_value", attrs)
         self.assert_(c.type == "submit")
         self.assert_(c.name == "name_value")
         self.assert_(c.value == "value_value")
@@ -1343,7 +1337,7 @@ class ControlTests(unittest.TestCase):
         c.readonly = True
 
         # click on button
-        form = _form.HTMLForm("http://foo.bar.com/")
+        form = _form_controls.HTMLForm("http://foo.bar.com/")
         c.add_to_form(form)
         self.assert_(c.pairs() == [])
         pairs = c._click(form, (1, 1), "pairs")
@@ -1371,7 +1365,7 @@ class ControlTests(unittest.TestCase):
             "name": "name_value",
             "img": "foo.gif"
         }
-        c = _form.ImageControl("image", "name_value", attrs, index=0)
+        c = _form_controls.ImageControl("image", "name_value", attrs, index=0)
         self.assert_(c.type == "image")
         self.assert_(c.name == "name_value")
         self.assert_(c.value == "")
@@ -1385,7 +1379,7 @@ class ControlTests(unittest.TestCase):
         c.value = ""
 
         # click, at coordinate (0, 55), on image
-        form = _form.HTMLForm("http://foo.bar.com/")
+        form = _form_controls.HTMLForm("http://foo.bar.com/")
         c.add_to_form(form)
         self.assert_(c.pairs() == [])
         request = c._click(form, (0, 55), "request")
@@ -1431,7 +1425,7 @@ class ControlTests(unittest.TestCase):
             "alt": "some string"
         }
         form = DummyForm()
-        c = _form.CheckboxControl("checkbox", "name_value", attrs)
+        c = _form_controls.CheckboxControl("checkbox", "name_value", attrs)
         c.add_to_form(form)
         c.fixup()
         self.assert_(c.type == "checkbox")
@@ -1454,10 +1448,10 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.name == "name_value")
 
         # construct larger list from length-1 lists
-        c = _form.CheckboxControl("checkbox", "name_value", attrs)
+        c = _form_controls.CheckboxControl("checkbox", "name_value", attrs)
         attrs2 = attrs.copy()
         attrs2["value"] = "value_value2"
-        c2 = _form.CheckboxControl("checkbox", "name_value", attrs2)
+        c2 = _form_controls.CheckboxControl("checkbox", "name_value", attrs2)
         c2.add_to_form(form)
         c.merge_control(c2)
         c.add_to_form(form)
@@ -1568,7 +1562,7 @@ class ControlTests(unittest.TestCase):
         }
         form = DummyForm()
         # with Netscape / IE default selection...
-        c = _form.SelectControl("select", "select_name", attrs)
+        c = _form_controls.SelectControl("select", "select_name", attrs)
         c.add_to_form(form)
         c.fixup()
         self.assert_(c.type == "select")
@@ -1581,17 +1575,17 @@ class ControlTests(unittest.TestCase):
         self.assertIn('type', c.attrs)
         self.assert_(c.attrs["alt"] == "alt_text")
         # ... and with RFC 1866 default selection
-        c = _form.SelectControl(
+        c = _form_controls.SelectControl(
             "select", "select_name", attrs, select_default=True)
         c.add_to_form(form)
         c.fixup()
         self.assert_(c.value == ["value_value"])
 
         # construct larger list from length-1 lists
-        c = _form.SelectControl("select", "select_name", attrs)
+        c = _form_controls.SelectControl("select", "select_name", attrs)
         attrs2 = attrs.copy()
         attrs2["value"] = "value_value2"
-        c2 = _form.SelectControl("select", "select_name", attrs2)
+        c2 = _form_controls.SelectControl("select", "select_name", attrs2)
         c2.add_to_form(form)
         c.merge_control(c2)
         c.add_to_form(form)
@@ -1708,9 +1702,9 @@ class ControlTests(unittest.TestCase):
                 "multiple": ""
             }
         }
-        c = _form.SelectControl("select", "select_name", attrs)
-        c2 = _form.SelectControl("select", "select_name", attrs2)
-        c3 = _form.SelectControl("select", "select_name", attrs3)
+        c = _form_controls.SelectControl("select", "select_name", attrs)
+        c2 = _form_controls.SelectControl("select", "select_name", attrs2)
+        c3 = _form_controls.SelectControl("select", "select_name", attrs3)
         form = DummyForm()
         c.merge_control(c2)
         c.merge_control(c3)
@@ -1825,9 +1819,9 @@ class ControlTests(unittest.TestCase):
                 "name": "select_name"
             }
         }
-        c = _form.SelectControl("select", "select_name", attrs)
-        c2 = _form.SelectControl("select", "select_name", attrs2)
-        c3 = _form.SelectControl("select", "select_name", attrs3)
+        c = _form_controls.SelectControl("select", "select_name", attrs)
+        c2 = _form_controls.SelectControl("select", "select_name", attrs2)
+        c3 = _form_controls.SelectControl("select", "select_name", attrs3)
         form = DummyForm()
         c.merge_control(c2)
         c.merge_control(c3)
@@ -1884,7 +1878,7 @@ class ControlTests(unittest.TestCase):
             }
         }
         # Netscape and IE behaviour...
-        c = _form.SelectControl("select", "select_name", attrs)
+        c = _form_controls.SelectControl("select", "select_name", attrs)
         form = DummyForm()
         c.add_to_form(form)
         c.fixup()
@@ -1898,17 +1892,17 @@ class ControlTests(unittest.TestCase):
         self.assertIn('type', c.attrs)
         self.assert_(c.attrs["alt"] == "alt_text")
         # ...and RFC 1866 behaviour are identical (unlike multiple SELECT).
-        c = _form.SelectControl(
+        c = _form_controls.SelectControl(
             "select", "select_name", attrs, select_default=1)
         c.add_to_form(form)
         c.fixup()
         self.assert_(c.value == ["value_value"])
 
         # construct larger list from length-1 lists
-        c = _form.SelectControl("select", "select_name", attrs)
+        c = _form_controls.SelectControl("select", "select_name", attrs)
         attrs2 = attrs.copy()
         attrs2["value"] = "value_value2"
-        c2 = _form.SelectControl("select", "select_name", attrs2)
+        c2 = _form_controls.SelectControl("select", "select_name", attrs2)
         c.merge_control(c2)
         c.add_to_form(form)
         c.fixup()
@@ -1990,7 +1984,7 @@ class ControlTests(unittest.TestCase):
             "id": "blah"
         }
         # Netscape and IE behaviour...
-        c = _form.RadioControl("radio", "name_value", attrs)
+        c = _form_controls.RadioControl("radio", "name_value", attrs)
         form = DummyForm()
         c.add_to_form(form)
         c.fixup()
@@ -2002,18 +1996,18 @@ class ControlTests(unittest.TestCase):
         self.assert_(c.possible_items() == ["value_value"])
         reset_deprecations()
         # ...and RFC 1866 behaviour
-        c = _form.RadioControl(
+        c = _form_controls.RadioControl(
             "radio", "name_value", attrs, select_default=True)
         c.add_to_form(form)
         c.fixup()
         self.assert_(c.value == ["value_value"])
 
         # construct larger list from length-1 lists
-        c = _form.RadioControl(
+        c = _form_controls.RadioControl(
             "radio", "name_value", attrs, select_default=True)
         attrs2 = attrs.copy()
         attrs2["value"] = "value_value2"
-        c2 = _form.RadioControl(
+        c2 = _form_controls.RadioControl(
             "radio", "name_value", attrs2, select_default=True)
         c.merge_control(c2)
         c.add_to_form(form)
@@ -2086,7 +2080,7 @@ class ControlTests(unittest.TestCase):
             "value": "value_value",
             "id": "name_value_1"
         }
-        c1 = _form.RadioControl("radio", "name_value", attrs)
+        c1 = _form_controls.RadioControl("radio", "name_value", attrs)
         attrs = {
             "type": "this is ignored",
             "name": "name_value",
@@ -2094,17 +2088,15 @@ class ControlTests(unittest.TestCase):
             "id": "name_value_2",
             "checked": "checked"
         }
-        c2 = _form.RadioControl("radio", "name_value", attrs)
+        c2 = _form_controls.RadioControl("radio", "name_value", attrs)
         attrs = {
             "type": "this is ignored",
             "name": "name_value",
             "value": "another_value",
             "id": "name_value_3",
-            "__label": {
-                "__text": "Third Option"
-            }
+            "__label": "Third Option"
         }
-        c3 = _form.RadioControl("radio", "name_value", attrs)
+        c3 = _form_controls.RadioControl("radio", "name_value", attrs)
         form = DummyForm()
         c1.merge_control(c2)
         c1.merge_control(c3)
@@ -2131,22 +2123,13 @@ class ControlTests(unittest.TestCase):
 
         # id labels
         form._id_to_labels['name_value_1'] = [
-            _form.Label({
-                'for': 'name_value_1',
-                '__text': 'First Option'
-            })
+            _form_controls.Label('First Option', 'name_value_1')
         ]
         form._id_to_labels['name_value_2'] = [
-            _form.Label({
-                'for': 'name_value_2',
-                '__text': 'Second Option'
-            })
+            _form_controls.Label('Second Option', 'name_value_2')
         ]
         form._id_to_labels['name_value_3'] = [
-            _form.Label({
-                'for': 'name_value_3',
-                '__text': 'Last Option'
-            })
+            _form_controls.Label('Last Option', 'name_value_3')
         ]  # notice __label above
         self.assertEqual([l.text for l in c1.items[0].get_labels()],
                          ['First Option'])
@@ -3271,7 +3254,7 @@ class ContentTypeTests(unittest.TestCase):
             def add_unredirected_header(self, key, val):
                 self.auh = True
 
-        class FakeForm(_form.HTMLForm):
+        class FakeForm(_form_controls.HTMLForm):
             def __init__(self, hdr):
                 self.hdr = hdr
 
@@ -3330,7 +3313,7 @@ class CaseInsensitiveDict:
 
 class UploadTests(_testcase.TestCase):
     def test_choose_boundary(self):
-        bndy = _form.choose_boundary()
+        bndy = _form_controls.choose_boundary()
         ii = string.find(bndy, '.')
         self.assert_(ii < 0)
 
