@@ -301,9 +301,8 @@ users!</textarea>
         self.assert_(len(forms) == 1)
         form = forms[0]
         self.assert_(form.name is None)
-        self.assertEqual(
-            form.action,
-            "http://localhost/abc&amp;" + u"\u2014" + "d")
+        self.assertEqual(form.action,
+                         "http://localhost/abc&amp;" + u"\u2014" + "d")
         control = form.find_control(type="textarea", nr=0)
         self.assert_(control.name is None)
         self.assert_(control.value == "blah, blah,\r\nRhubarb.\r\n\r\n")
@@ -695,10 +694,6 @@ Rhubarb.</button>
 
 class DisabledTests(unittest.TestCase):
     def testOptgroup(self):
-        for compat in [False, True]:
-            self._testOptgroup(compat)
-
-    def _testOptgroup(self, compat):
         file = StringIO("""<form action="abc" name="myform">
 
 <select name="foo" multiple>
@@ -745,12 +740,11 @@ class DisabledTests(unittest.TestCase):
 
 </form>""")
 
-        def get_control(name, file=file, compat=compat):
+        def get_control(name, file=file):
             file.seek(0)
             forms = parse_file(
                 file, "http://localhost/", backwards_compat=False)
             form = forms[0]
-            form.backwards_compat = compat
             return form.find_control(name)
 
         # can't call item_disabled with no args
@@ -769,10 +763,7 @@ class DisabledTests(unittest.TestCase):
 
         # ...multi selection
         control = get_control("foo")
-        if compat:
-            extra = ["7"]
-        else:
-            extra = []
+        extra = []
         # disabled items are not part of the submitted value, so "7" not
         # included (they are not "successful":
         # http://www.w3.org/TR/REC-html40/interact/forms.html#successful-controls
@@ -800,28 +791,16 @@ class DisabledTests(unittest.TestCase):
         hide_deprecations()
         for name in 7, 8, 10:
             self.assert_(control.get_item_disabled(str(name)))
-            if not compat:
-                # a disabled option is never "successful" (see above) so never
-                # in value
-                self.assert_(str(name) not in control.value)
-                # a disabled option always is always upset if you try to set it
-                self.assertRaises(AttributeError, control.set, True, str(name))
-                self.assert_(str(name) not in control.value)
-                self.assertRaises(AttributeError, control.set, False,
-                                  str(name))
-                self.assert_(str(name) not in control.value)
-                self.assertRaises(AttributeError, control.toggle, str(name))
-                self.assert_(str(name) not in control.value)
-            else:
-                self.assertRaises(AttributeError, control.set, True, str(name))
-                control.set(False, str(name))
-                self.assert_(str(name) not in control.value)
-                control.set(False, str(name))
-                self.assert_(str(name) not in control.value)
-                self.assertRaises(AttributeError, control.toggle, str(name))
-                self.assert_(str(name) not in control.value)
-                self.assertRaises(AttributeError, control.set, True, str(name))
-                self.assert_(str(name) not in control.value)
+            # a disabled option is never "successful" (see above) so never
+            # in value
+            self.assert_(str(name) not in control.value)
+            # a disabled option always is always upset if you try to set it
+            self.assertRaises(AttributeError, control.set, True, str(name))
+            self.assert_(str(name) not in control.value)
+            self.assertRaises(AttributeError, control.set, False, str(name))
+            self.assert_(str(name) not in control.value)
+            self.assertRaises(AttributeError, control.toggle, str(name))
+            self.assert_(str(name) not in control.value)
 
         control = get_control("foo")
         for name in 1, 2, 3, 4, 5, 6, 9:
@@ -851,10 +830,7 @@ class DisabledTests(unittest.TestCase):
         # ...single-selection
         control = get_control("bar")
         # 7 is selected but disabled
-        if compat:
-            value = ["7"]
-        else:
-            value = []
+        value = []
         self.assertEqual(control.value, value)
         self.assertEqual([ii.name for ii in control.items if ii.selected],
                          ["7"])
@@ -881,28 +857,16 @@ class DisabledTests(unittest.TestCase):
         hide_deprecations()
         for name in 7, 8, 10:
             self.assert_(control.get_item_disabled(str(name)))
-            if not compat:
-                # a disabled option is never "successful" (see above) so never
-                # in value
-                self.assert_(str(name) not in control.value)
-                # a disabled option always is always upset if you try to set it
-                self.assertRaises(AttributeError, control.set, True, str(name))
-                self.assert_(str(name) not in control.value)
-                self.assertRaises(AttributeError, control.set, False,
-                                  str(name))
-                self.assert_(str(name) not in control.value)
-                self.assertRaises(AttributeError, control.toggle, str(name))
-                self.assert_(str(name) not in control.value)
-            else:
-                self.assertRaises(AttributeError, control.set, True, str(name))
-                control.set(False, str(name))
-                self.assert_(str(name) != control.value)
-                control.set(False, str(name))
-                self.assert_(str(name) != control.value)
-                self.assertRaises(AttributeError, control.toggle, str(name))
-                self.assert_(str(name) != control.value)
-                self.assertRaises(AttributeError, control.set, True, str(name))
-                self.assert_(str(name) != control.value)
+            # a disabled option is never "successful" (see above) so never
+            # in value
+            self.assert_(str(name) not in control.value)
+            # a disabled option always is always upset if you try to set it
+            self.assertRaises(AttributeError, control.set, True, str(name))
+            self.assert_(str(name) not in control.value)
+            self.assertRaises(AttributeError, control.set, False, str(name))
+            self.assert_(str(name) not in control.value)
+            self.assertRaises(AttributeError, control.toggle, str(name))
+            self.assert_(str(name) not in control.value)
 
         control = get_control("bar")
         for name in 1, 2, 3, 4, 5, 6, 9:
@@ -3177,8 +3141,7 @@ class MoreFormTests(unittest.TestCase):
 </select>
 </form>
 """)
-        form = parse_file(
-            f, "http://example.com/")[0]
+        form = parse_file(f, "http://example.com/")[0]
         ctl = form.find_control("eg")
         p = ctl.get("p")
         q = ctl.get("q")
