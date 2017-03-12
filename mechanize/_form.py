@@ -25,6 +25,20 @@ def parse_option(elem, parent_of):
     return ctype, name, attrs
 
 
+def parse_textarea(elem, parent_of):
+    ctype, name, attrs = parse_control(elem, parent_of)
+    ctype = 'textarea'
+    attrs['value'] = elem.text or u''
+    return ctype, name, attrs
+
+
+def parse_select(elem, parent_of):
+    ctype, name, attrs = parse_control(elem, parent_of)
+    ctype = 'select'
+    attrs['__select'] = attrs
+    return ctype, name, attrs
+
+
 def parse_forms(root, base_url, request_class=None, select_default=False):
     if request_class is None:
         from mechanize import Request
@@ -74,7 +88,9 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
     control_names = {
         'option': parse_option,
         'button': parse_control,
-        'input': parse_control
+        'input': parse_control,
+        'textarea': parse_textarea,
+        'select': parse_select,
     }
 
     for i, elem in enumerate(all_elems):

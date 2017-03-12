@@ -6,17 +6,20 @@
 # Copyright 2005 Zope Corporation
 # Copyright 1998-2000 Gisle Aas.
 
-from cStringIO import StringIO
 import os
 import string
 import unittest
+import warnings
+from cStringIO import StringIO
+from functools import partial
 
 import mechanize
 import mechanize._form as _form
 import mechanize._form_controls as _form_controls
-from mechanize import ControlNotFoundError,  ItemNotFoundError, \
-    ItemCountError, AmbiguityError
 import mechanize._testcase as _testcase
+from mechanize import (AmbiguityError, ControlNotFoundError, ItemCountError,
+                       ItemNotFoundError)
+from mechanize._html import content_parser
 from mechanize._util import get1
 
 # XXX
@@ -25,8 +28,6 @@ from mechanize._util import get1
 #  implementations.
 # HTMLForm.enctype
 # XHTML
-
-import warnings
 
 
 def hide_deprecations():
@@ -48,7 +49,6 @@ def raise_deprecations():
 
 
 class DummyForm:
-
     def __init__(self):
         self._forms = []
         self._labels = []
@@ -60,8 +60,29 @@ class DummyForm:
         raise mechanize.ControlNotFoundError
 
 
-class UnescapeTests(unittest.TestCase):
+def parse_file_ex(file,
+                  base_uri,
+                  select_default=False,
+                  request_class=mechanize.Request,
+                  encoding=None,
+                  backwards_compat=False,
+                  add_global=True):
+    raw = file.read()
+    root = content_parser(raw, transport_encoding=encoding)
+    forms, global_form = _form.parse_forms(
+        root,
+        base_uri,
+        select_default=select_default,
+        request_class=request_class)
+    if not add_global:
+        return list(forms)
+    return [global_form] + list(forms)
 
+
+parse_file = partial(parse_file_ex, add_global=False)
+
+
+class UnescapeTests(unittest.TestCase):
     def test_unescape_charref(self):
         unescape_charref = _form.unescape_charref
         mdash_utf8 = u"\u2014".encode("utf-8")
@@ -133,13 +154,13 @@ class UnescapeTests(unittest.TestCase):
 &#x2014;&#8212;</textarea>
 </form>
 """)
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             file,
             "http://localhost/",
             backwards_compat=False,
             encoding="utf-8")
         form = forms[0]
-        test_string = "&amp;" + (u"\u2014".encode('utf8') * 3)
+        test_string = "&amp;" + (u"\u2014" * 3)
         self.assertEqual(form.action, "http://localhost/" + test_string)
         control = form.find_control(type="textarea", nr=0)
         self.assertEqual(control.value, "val" + test_string)
@@ -155,7 +176,7 @@ class UnescapeTests(unittest.TestCase):
 </select>
 </form>
 """)
-        forms = mechanize.ParseFileEx(f, "http://localhost/", encoding="utf-8")
+        forms = parse_file_ex(f, "http://localhost/", encoding="utf-8")
         form = forms[1]
         test_string = "&amp;" + (u"\u2014".encode('utf8') * 3)
         control = form.find_control(nr=0)
@@ -172,20 +193,20 @@ class UnescapeTests(unittest.TestCase):
 </form>
 """)
         # don't crash if we can't encode -- rather, leave entity ref intact
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             file,
             "http://localhost/",
             backwards_compat=False,
             encoding="latin-1")
         label = forms[0].find_control(nr=0).get_labels()[0]
-        self.assertEqual(label.text, "Blah &#x201d; &rdquo; blah")
+        self.assertEqual(label.text, u"Blah \u201d \u201d blah")
 
 
 class LWPFormTests(unittest.TestCase):
     """The original tests from libwww-perl 5.64."""
 
     def testEmptyParse(self):
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             StringIO(""), "http://localhost", backwards_compat=False)
         self.assert_(len(forms) == 0)
 
@@ -197,8 +218,7 @@ class LWPFormTests(unittest.TestCase):
         </form>
 
         """)
-        return mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        return parse_file(file, "http://localhost/", backwards_compat=False)
 
     def testParse(self):
         forms = self._forms()
@@ -237,7 +257,6 @@ def header_items(req):
 
 
 class MockResponse:
-
     def __init__(self, f, url):
         self._file = f
         self._url = url
@@ -250,14 +269,12 @@ class MockResponse:
 
 
 class ParseErrorTests(_testcase.TestCase):
-
     def test_parseerror_str(self):
         e = mechanize.ParseError("spam")
         self.assertEqual(str(e), "spam")
 
 
 class ParseTests(unittest.TestCase):
-
     def test_failing_parse(self):
         # XXX couldn't provoke an error from BeautifulSoup (!), so this has not
         # been tested with RobustFormParser
@@ -270,7 +287,7 @@ class ParseTests(unittest.TestCase):
             base_uri = "http://localhost/"
             self.assertRaises(
                 mechanize.ParseError,
-                mechanize.ParseFile,
+                parse_file,
                 f,
                 base_uri,
                 backwards_compat=False, )
@@ -284,7 +301,7 @@ class ParseTests(unittest.TestCase):
 </form>
 """)
         base_uri = "http://localhost/"
-        forms = mechanize.ParseFile(f, base_uri, backwards_compat=False)
+        forms = parse_file(f, base_uri, backwards_compat=False)
         form = forms[0]
         for ctl in form.controls:
             self.assert_(isinstance(ctl, _form.TextControl))
@@ -297,7 +314,7 @@ class ParseTests(unittest.TestCase):
 </form>
 """)
         base_uri = "http://localhost/"
-        forms = mechanize.ParseFileEx(f, base_uri)
+        forms = parse_file_ex(f, base_uri)
         outer = forms[0]
         self.assertEqual(len(forms), 2)
         self.assertEqual(outer.controls, [])
@@ -320,7 +337,7 @@ class ParseTests(unittest.TestCase):
 <input type="text" name="e"></input>
 """)
         base_uri = "http://localhost/"
-        forms = mechanize.ParseFileEx(f, base_uri)
+        forms = parse_file_ex(f, base_uri)
         outer = forms[0]
         self.assertEqual(len(forms), 3)
         self.assertEqual([c.name for c in outer.controls], ["a", "c", "e"])
@@ -385,7 +402,7 @@ class ParseTests(unittest.TestCase):
 """)
         base_uri = "http://localhost/"
         try:
-            mechanize.ParseFile(f, base_uri, backwards_compat=False)
+            parse_file(f, base_uri, backwards_compat=False)
         except mechanize.ParseError, e:
             self.assert_(e.base_uri == base_uri)
         else:
@@ -398,8 +415,7 @@ class ParseTests(unittest.TestCase):
 <input type="submit"></input>
 </form>
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         self.assert_(form.action == "http://example.com/abc")
 
@@ -407,8 +423,7 @@ class ParseTests(unittest.TestCase):
 <input type="submit"></input>
 </form>
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         self.assert_(form.action == "http://localhost/abc")
 
@@ -429,7 +444,7 @@ users!</textarea>
 </form>
 
 """)
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             file,
             "http://localhost/",
             backwards_compat=False,
@@ -464,8 +479,7 @@ users!</textarea>
 </form>
 
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
@@ -494,8 +508,7 @@ Rhubarb.</button>
 </form>
 
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         self.assert_(form.name == "myform")
         control = form.find_control(name="b")
@@ -514,8 +527,7 @@ Rhubarb.</button>
 </form>
 
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         control = form.find_control(type="isindex")
         self.assert_(control.type == "isindex")
@@ -536,8 +548,7 @@ Rhubarb.</button>
 
 </form>
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         control0 = form.find_control(type="select", nr=0)
         control1 = form.find_control(type="select", nr=1)
@@ -641,8 +652,7 @@ Rhubarb.</button>
 
 </form>
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         self.assert_(form.controls[0].name is None)
 
@@ -668,8 +678,7 @@ Rhubarb.</button>
 <input type="submit" name="submit">
 </form>
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         hide_deprecations()
         self.assert_(form.possible_items("foo") == ["on"])
@@ -715,8 +724,7 @@ Rhubarb.</button>
 
 </form>
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         # deselect all but last item if more than one were selected...
         spam = form.find_control("spam")
@@ -749,8 +757,7 @@ Rhubarb.</button>
 </form>
 
 """)
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=False)
+        forms = parse_file(file, "http://localhost/", backwards_compat=False)
         form = forms[0]
         control = form.find_control("a")
         self.assert_(control.value == [])
@@ -758,7 +765,7 @@ Rhubarb.</button>
         self.assert_(single_control.value == ["1"])
 
         file.seek(0)
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             file,
             "http://localhost/",
             select_default=1,
@@ -774,7 +781,7 @@ Rhubarb.</button>
         # Benji York: a single newline immediately after a start tag is
         # stripped by browsers, but not one immediately before an end tag.
         # TEXTAREA content is converted to the DOS newline convention.
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             StringIO("<form><textarea>\n\nblah\n</textarea></form>"),
             "http://example.com/",
             backwards_compat=False, )
@@ -785,7 +792,7 @@ Rhubarb.</button>
         # newlines that happen to be at the start of strings passed to the
         # parser's .handle_data() method must not be trimmed unless they also
         # follow immediately after a start tag
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             StringIO(
                 "<form><textarea>\n\nspam&amp;\neggs\n</textarea></form>"),
             "http://example.com/",
@@ -797,7 +804,7 @@ Rhubarb.</button>
         # More than one SELECT control of the same name in a form never
         # represent a single control (unlike RADIO and CHECKBOX elements), so
         # don't merge them.
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             StringIO("""\
 <form>
     <select name="a">
@@ -823,7 +830,7 @@ Rhubarb.</button>
         # regression test: closing select and textarea tags should not be
         # ignored, causing a ParseError due to incorrect tag nesting
 
-        mechanize.ParseFileEx(
+        parse_file_ex(
             StringIO("""\
 <select name="a">
     <option>b</option>
@@ -836,7 +843,7 @@ Rhubarb.</button>
 """),
             "http://example.com/", )
 
-        mechanize.ParseFile(
+        parse_file(
             StringIO("""\
 <textarea></textarea>
 <textarea></textarea>
@@ -845,13 +852,13 @@ Rhubarb.</button>
             backwards_compat=False, )
 
     def test_empty_document(self):
-        forms = mechanize.ParseFileEx(StringIO(""), "http://example.com/")
+        forms = parse_file_ex(StringIO(""), "http://example.com/")
         self.assertEquals(len(forms), 1)  # just the "global form"
 
     def test_missing_closing_body_tag(self):
         # Even if there is no closing form or body tag, the last form on the
         # page should be returned.
-        forms = mechanize.ParseFileEx(
+        forms = parse_file_ex(
             StringIO('<form name="spam">'),
             "http://example.com/", )
         self.assertEquals(len(forms), 2)
@@ -859,7 +866,6 @@ Rhubarb.</button>
 
 
 class DisabledTests(unittest.TestCase):
-
     def testOptgroup(self):
         for compat in [False, True]:
             self._testOptgroup(compat)
@@ -913,7 +919,7 @@ class DisabledTests(unittest.TestCase):
 
         def get_control(name, file=file, compat=compat):
             file.seek(0)
-            forms = mechanize.ParseFile(
+            forms = parse_file(
                 file, "http://localhost/", backwards_compat=False)
             form = forms[0]
             form.backwards_compat = compat
@@ -1151,8 +1157,7 @@ class DisabledTests(unittest.TestCase):
 </form>
 """)
         hide_deprecations()
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=compat)
+        forms = parse_file(file, "http://localhost/", backwards_compat=compat)
         reset_deprecations()
         form = forms[0]
         for name, control_disabled, item_disabled in [
@@ -1204,8 +1209,7 @@ class DisabledTests(unittest.TestCase):
 <input type="checkbox" name="foo" value="3" disabled></input>
 </form>""")
         hide_deprecations()
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=compat)
+        forms = parse_file(file, "http://localhost/", backwards_compat=compat)
         form = forms[0]
         control = form.find_control('foo')
 
@@ -1237,8 +1241,7 @@ class DisabledTests(unittest.TestCase):
 
 </form>""")
         hide_deprecations()
-        forms = mechanize.ParseFile(
-            file, "http://localhost/", backwards_compat=compat)
+        forms = parse_file(file, "http://localhost/", backwards_compat=compat)
         reset_deprecations()
         form = forms[0]
         for name, control_disabled, item_disabled in [("foo", False, False),
@@ -1277,7 +1280,6 @@ class DisabledTests(unittest.TestCase):
 
 
 class ControlTests(unittest.TestCase):
-
     def testTextControl(self):
         attrs = {
             "type": "this is ignored",
@@ -2368,8 +2370,7 @@ class FormTests(unittest.TestCase):
     <input type="password" id="pswd2" name="password" value="123" />
 </form>
 """)
-        form = mechanize.ParseFile(
-            f, "http://example.com/", backwards_compat=False)[0]
+        form = parse_file(f, "http://example.com/", backwards_compat=False)[0]
         for compat in True, False:
             form.backwards_compat = compat
             fc = form.find_control
@@ -2409,8 +2410,7 @@ class FormTests(unittest.TestCase):
 </form>
 """
         f = StringIO(data)
-        form = mechanize.ParseFile(
-            f, "http://example.com/", backwards_compat=False)[0]
+        form = parse_file(f, "http://example.com/", backwards_compat=False)[0]
         self.assertRaises(
             AmbiguityError,
             form.find_control,
@@ -2422,7 +2422,7 @@ class FormTests(unittest.TestCase):
     def test_deselect_disabled(self):
         def get_new_form(f, compat):
             f.seek(0)
-            form = mechanize.ParseFile(
+            form = parse_file(
                 f, "http://example.com/", backwards_compat=False)[0]
             form.backwards_compat = compat
             return form
@@ -2538,8 +2538,7 @@ class FormTests(unittest.TestCase):
 <input type="submit" name="bar"></input>
 </form>
 """)
-        form = mechanize.ParseFile(
-            file, "http://blah/", backwards_compat=False)[0]
+        form = parse_file(file, "http://blah/", backwards_compat=False)[0]
         self.assertRaises(ControlNotFoundError, form.click, nr=2)
         self.assert_(form.click().get_full_url() == "http://blah/abc?foo=")
         self.assert_(
@@ -2553,8 +2552,7 @@ class FormTests(unittest.TestCase):
 </form>
 """ % method)
             # " (this line is here for emacs)
-            form = mechanize.ParseFile(
-                file, "http://blah/", backwards_compat=False)[0]
+            form = parse_file(file, "http://blah/", backwards_compat=False)[0]
             if method == "GET":
                 url = "http://blah/abc?foo="
             else:
@@ -2563,7 +2561,7 @@ class FormTests(unittest.TestCase):
 
     def testAuth(self):
         fh = self._get_test_file("Auth.html")
-        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
+        forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
         self.assert_(form.action == "http://auth.athensams.net/"
@@ -2603,7 +2601,7 @@ class FormTests(unittest.TestCase):
 
     def testSearchType(self):
         fh = self._get_test_file("SearchType.html")
-        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
+        forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
@@ -2636,7 +2634,7 @@ class FormTests(unittest.TestCase):
 
     def testGeneralSearch(self):
         fh = self._get_test_file("GeneralSearch.html")
-        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
+        forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
@@ -2798,7 +2796,7 @@ class FormTests(unittest.TestCase):
             }, False),
         ]:
             hide_deprecations()
-            form = mechanize.ParseFile(f, "http://localhost/", **kwds)[0]
+            form = parse_file(f, "http://localhost/", **kwds)[0]
             reset_deprecations()
             f.seek(0)
             c = form.find_control("form.grocery")
@@ -2850,7 +2848,7 @@ class FormTests(unittest.TestCase):
             }, False),
         ]:
             hide_deprecations()
-            form = mechanize.ParseFile(f, "http://localhost/", **kwds)[0]
+            form = parse_file(f, "http://localhost/", **kwds)[0]
             reset_deprecations()
             f.seek(0)
             cc = form.find_control("s")
@@ -2957,8 +2955,7 @@ class FormTests(unittest.TestCase):
 <input type="submit" value="Submit" />
 </form>
 """)
-        form = mechanize.ParseFile(
-            f, "http://localhost/", backwards_compat=False)[0]
+        form = parse_file(f, "http://localhost/", backwards_compat=False)[0]
 
         # basic tests
         self.assertEqual(
@@ -3078,7 +3075,7 @@ class FormTests(unittest.TestCase):
 
     def testResults(self):
         fh = self._get_test_file("Results.html")
-        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
+        forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
@@ -3129,7 +3126,7 @@ class FormTests(unittest.TestCase):
 
     def testMarkedResults(self):
         fh = self._get_test_file("MarkedResults.html")
-        forms = mechanize.ParseFile(fh, self.base_uri, backwards_compat=False)
+        forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assert_(len(forms) == 1)
         form = forms[0]
 
@@ -3148,18 +3145,16 @@ class FormTests(unittest.TestCase):
 
 
 def make_form(html):
-    global_form, form = mechanize.ParseFileEx(
-        StringIO(html), "http://example.com/")
+    global_form, form = parse_file_ex(StringIO(html), "http://example.com/")
     assert len(global_form.controls) == 0
     return form
 
 
 def make_form_global(html):
-    return get1(mechanize.ParseFileEx(StringIO(html), "http://example.com/"))
+    return get1(parse_file_ex(StringIO(html), "http://example.com/"))
 
 
 class MoreFormTests(unittest.TestCase):
-
     def test_interspersed_controls(self):
         # must preserve item ordering even across controls
         f = StringIO("""\
@@ -3171,8 +3166,7 @@ class MoreFormTests(unittest.TestCase):
     <input type="submit"></input>
 </form>
 """)
-        form = mechanize.ParseFile(
-            f, "http://blah/", backwards_compat=False)[0]
+        form = parse_file(f, "http://blah/", backwards_compat=False)[0]
         form["murphy"] = ["a", "b", "c"]
         form["woof"] = ["d"]
         self.assertEqual(form.click_pairs(), [
@@ -3231,8 +3225,7 @@ class MoreFormTests(unittest.TestCase):
   <input type="checkbox" name="e" value="1"></input>
 </form>
 """)
-        return mechanize.ParseFile(
-            f, "http://blah/", backwards_compat=False)[0]
+        return parse_file(f, "http://blah/", backwards_compat=False)[0]
 
     def test_value(self):
         form = self.make_form()
@@ -3364,8 +3357,7 @@ class MoreFormTests(unittest.TestCase):
 """)
         if compat:
             hide_deprecations()
-        form = mechanize.ParseFile(
-            f, "http://example.com/", backwards_compat=compat)[0]
+        form = parse_file(f, "http://example.com/", backwards_compat=compat)[0]
         if compat:
             reset_deprecations()
         ctl = form.find_control("form.grocery")
@@ -3403,7 +3395,7 @@ class MoreFormTests(unittest.TestCase):
 """)
             if compat:
                 hide_deprecations()
-            form = mechanize.ParseFile(
+            form = parse_file(
                 f, "http://example.com/", backwards_compat=compat)[0]
             ctl = form.find_control("eg")
             p = ctl.get("p")
@@ -3441,7 +3433,7 @@ class MoreFormTests(unittest.TestCase):
 """,
         ]:
             f = StringIO(data)
-            form = mechanize.ParseFile(
+            form = parse_file(
                 f, "http://example.com/", backwards_compat=False)[0]
             bar = form.find_control(type="checkbox", id="a")
             # should have value "on", but not be successful
@@ -3454,15 +3446,14 @@ class MoreFormTests(unittest.TestCase):
             data = ('<form action="" method="%s">'
                     '<input type="submit" name="s"/></form>' % method)
             f = StringIO(data)
-            form = mechanize.ParseFile(
+            form = parse_file(
                 f, "http://example.com/", backwards_compat=False)[0]
             self.assertEqual(
                 form.click().get_full_url(),
                 "http://example.com/" + (method == "GET" and "?s=" or ""), )
         data = '<form action=""><isindex /></form>'
         f = StringIO(data)
-        form = mechanize.ParseFile(
-            f, "http://example.com/", backwards_compat=False)[0]
+        form = parse_file(f, "http://example.com/", backwards_compat=False)[0]
         form.find_control(type="isindex").value = "blah"
         self.assertEqual(
             form.click(type="isindex").get_full_url(),
@@ -3479,10 +3470,8 @@ class MoreFormTests(unittest.TestCase):
 
 
 class ContentTypeTests(unittest.TestCase):
-
     def test_content_type(self):
         class OldStyleRequest:
-
             def __init__(self, url, data=None, hdrs=None):
                 self.ah = self.auh = False
 
@@ -3490,12 +3479,10 @@ class ContentTypeTests(unittest.TestCase):
                 self.ah = True
 
         class NewStyleRequest(OldStyleRequest):
-
             def add_unredirected_header(self, key, val):
                 self.auh = True
 
         class FakeForm(_form.HTMLForm):
-
             def __init__(self, hdr):
                 self.hdr = hdr
 
@@ -3515,7 +3502,6 @@ class ContentTypeTests(unittest.TestCase):
 
 
 class FunctionTests(unittest.TestCase):
-
     def test_normalize_line_endings(self):
         def check(text, expected, self=self):
             got = _form.normalize_line_endings(text)
@@ -3541,7 +3527,6 @@ class FunctionTests(unittest.TestCase):
 
 
 class CaseInsensitiveDict:
-
     def __init__(self, items):
         self._dict = {}
         for key, val in items:
@@ -3555,7 +3540,6 @@ class CaseInsensitiveDict:
 
 
 class UploadTests(_testcase.TestCase):
-
     def test_choose_boundary(self):
         bndy = _form.choose_boundary()
         ii = string.find(bndy, '.')
@@ -3571,7 +3555,7 @@ class UploadTests(_testcase.TestCase):
 </form>
 """
 
-        return mechanize.ParseFile(
+        return parse_file(
             StringIO(html),
             "http://localhost/cgi-bin/upload.cgi",
             backwards_compat=False)[0]
@@ -3669,7 +3653,7 @@ class UploadTests(_testcase.TestCase):
 
     def test_empty_upload(self):
         # no controls except for INPUT/SUBMIT
-        forms = mechanize.ParseFile(
+        forms = parse_file(
             StringIO("""<html>
 <form method="POST" action="./weird.html" enctype="multipart/form-data">
 <input type="submit" name="submit"></input>
@@ -3689,7 +3673,7 @@ class UploadTests(_testcase.TestCase):
     def test_no_files(self):
         # no files uploaded
         self.monkey_patch(_form_controls, "choose_boundary", lambda: "123")
-        forms = mechanize.ParseFileEx(
+        forms = parse_file_ex(
             StringIO("""<html>
 <form method="POST" action="spam" enctype="multipart/form-data">
 <INPUT type="file" name="spam" />
