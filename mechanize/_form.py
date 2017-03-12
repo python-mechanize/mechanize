@@ -13,14 +13,23 @@ def normalize_line_endings(text):
     return re.sub(ur"(?:(?<!\r)\n)|(?:\r(?!\n))", u"\r\n", text)
 
 
+def label_text(elem):
+    ans = []
+    if elem.text:
+        ans.append(elem.text)
+    for child in elem:
+        if child.tail:
+            ans.append(child.tail)
+    return ''.join(ans)
+
+
 def parse_control(elem, parent_of, default_type='text'):
     attrs = elem.attrib.copy()
     label_elem = parent_of(elem, 'label')
-    label_text = None
     if label_elem is not None:
-        label_text = label_elem.text
-        if label_text:
-            attrs["__label"] = label_text
+        lt = label_text(label_elem)
+        if lt:
+            attrs["__label"] = lt
     ctype = attrs.get('type') or default_type
     return ctype, attrs.get('name'), attrs
 
@@ -83,7 +92,7 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
         elif q == 'label':
             for_id = e.get('for')
             if for_id is not None:
-                l = Label(e.text, for_id)
+                l = Label(label_text(e), for_id)
                 labels.append(l)
                 id_to_labels[for_id].append(l)
         elif q == 'base':
