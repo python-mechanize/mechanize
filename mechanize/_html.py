@@ -32,6 +32,8 @@ def elem_text(elem):
 def iterlinks(root, base_url):
     link_tags = {"a": "href", "area": "href", "iframe": "src"}
     for tag in root.iter('*'):
+        if not isinstance(tag.tag, basestring):
+            continue
         q = tag.tag.lower()
         attr = link_tags.get(q)
         if attr is not None:

@@ -434,7 +434,7 @@ Rhubarb.</button>
         form = forms[0]
         self.assert_(form.name == "myform")
         control = form.find_control(name="b")
-        self.assert_(control.type == "submitbutton")
+        self.assertEqual(control.type, "submitbutton")
         self.assert_(control.value == "")
         self.assert_(form.find_control("b2").type == "resetbutton")
         self.assert_(form.find_control("b3").type == "buttonbutton")

@@ -13,7 +13,7 @@ def normalize_line_endings(text):
     return re.sub(ur"(?:(?<!\r)\n)|(?:\r(?!\n))", u"\r\n", text)
 
 
-def parse_control(elem, parent_of, *a):
+def parse_control(elem, parent_of, default_type='text'):
     attrs = elem.attrib.copy()
     label_elem = parent_of(elem, 'label')
     label_text = None
@@ -21,9 +21,19 @@ def parse_control(elem, parent_of, *a):
         label_text = label_elem.text
         if label_text:
             attrs["__label"] = label_text
-    default_type = 'text' if elem.tag.lower() == 'input' else 'submit'
     ctype = attrs.get('type') or default_type
     return ctype, attrs.get('name'), attrs
+
+
+def parse_input(elem, parent_of, *a):
+    return parse_control(elem, parent_of)
+
+
+def parse_button(elem, parent_of, *a):
+    ctype, name, attrs = parse_control(elem, parent_of, default_type='submit')
+    ctype += 'button'
+    # TODO: Handle HTML5 button attributes
+    return ctype, name, attrs
 
 
 def parse_option(elem, parent_of, attrs_map):
@@ -62,7 +72,8 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
     global_form = HTMLForm(base_url)
     forms, labels = [], []
     form_elems = []
-    all_elems = tuple(root.iter('*'))
+    all_elems = tuple(
+        e for e in root.iter('*') if isinstance(e.tag, basestring))
     parent_map = {c: p for p in all_elems for c in p}
     id_to_labels = defaultdict(list)
     for e in all_elems:
@@ -106,8 +117,8 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
     attrs_map = {}
     control_names = {
         'option': parse_option,
-        'button': parse_control,
-        'input': parse_control,
+        'button': parse_button,
+        'input': parse_input,
         'textarea': parse_textarea,
         'select': parse_select,
     }
