@@ -16,7 +16,7 @@ from ._form_controls import (
     SubmitButtonControl, SubmitControl, TextareaControl, TextControl)
 from ._html import Factory, Link
 # misc
-from ._http import HeadParser, XHTMLCompatibleHeadParser
+from ._http import XHTMLCompatibleHeadParser
 # high-level stateful browser-style interface
 from ._mechanize import (Browser, BrowserStateError, FormNotFoundError,
                          History, LinkNotFoundError)
@@ -86,7 +86,6 @@ __all__ = [
     'HTTPResponseDebugProcessor',
     'HTTPRobotRulesProcessor',
     'HTTPSClientCertMgr',
-    'HeadParser',
     'History',
     'LWPCookieJar',
     'Link',

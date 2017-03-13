@@ -22,10 +22,8 @@ import socket
 import time
 from cStringIO import StringIO
 
-from . import _sgmllib_copy as sgmllib
 from . import _rfc3986, _sockettimeout
 from ._headersutil import is_html
-from ._html import unescape, unescape_charref
 from ._request import Request
 from ._response import response_seek_wrapper
 from ._urllib2_fork import BaseHandler, HTTPError
@@ -34,15 +32,14 @@ debug = logging.getLogger("mechanize").debug
 debug_robots = logging.getLogger("mechanize.robots").debug
 
 # monkeypatch urllib2.HTTPError to show URL
-## import urllib2
+# import urllib2
 # def urllib2_str(self):
 # return 'HTTP Error %s: %s (%s)' % (
 # self.code, self.msg, self.geturl())
-## urllib2.HTTPError.__str__ = urllib2_str
+# urllib2.HTTPError.__str__ = urllib2_str
 
 
-CHUNK = 1024  # size of chunks fed to HTML HEAD parser, in bytes
-DEFAULT_ENCODING = 'latin-1'
+CHUNK = 2048  # size of chunks fed to HTML HEAD parser, in bytes
 
 # XXX would self.reset() work, instead of raising this exception?
 
@@ -57,7 +54,6 @@ class AbstractHeadParser:
                   "title", "base",
                   "script", "style", "meta", "link", "object")
     _entitydefs = htmlentitydefs.name2codepoint
-    _encoding = DEFAULT_ENCODING
 
     def __init__(self):
         self.http_equiv = []
@@ -66,40 +62,14 @@ class AbstractHeadParser:
         http_equiv = content = None
         for key, value in attrs:
             if key == "http-equiv":
-                http_equiv = self.unescape_attr_if_required(value)
+                http_equiv = value
             elif key == "content":
-                content = self.unescape_attr_if_required(value)
+                content = value
         if http_equiv is not None and content is not None:
             self.http_equiv.append((http_equiv, content))
 
     def end_head(self):
         raise EndOfHeadError()
-
-    def handle_entityref(self, name):
-        #debug("%s", name)
-        self.handle_data(unescape(
-            '&%s;' % name, self._entitydefs, self._encoding))
-
-    def handle_charref(self, name):
-        #debug("%s", name)
-        self.handle_data(unescape_charref(name, self._encoding))
-
-    def unescape_attr(self, name):
-        #debug("%s", name)
-        return unescape(name, self._entitydefs, self._encoding)
-
-    def unescape_attrs(self, attrs):
-        #debug("%s", attrs)
-        escaped_attrs = {}
-        for key, val in attrs.items():
-            escaped_attrs[key] = self.unescape_attr(val)
-        return escaped_attrs
-
-    def unknown_entityref(self, ref):
-        self.handle_data("&%s;" % ref)
-
-    def unknown_charref(self, ref):
-        self.handle_data("&#%s;" % ref)
 
 
 class XHTMLCompatibleHeadParser(AbstractHeadParser,
@@ -112,63 +82,14 @@ class XHTMLCompatibleHeadParser(AbstractHeadParser,
     def handle_starttag(self, tag, attrs):
         if tag not in self.head_elems:
             raise EndOfHeadError()
-        try:
-            method = getattr(self, 'start_' + tag)
-        except AttributeError:
-            try:
-                method = getattr(self, 'do_' + tag)
-            except AttributeError:
-                pass  # unknown tag
-            else:
-                method(attrs)
-        else:
-            method(attrs)
+        if tag == 'meta':
+            self.start_meta(attrs)
 
     def handle_endtag(self, tag):
         if tag not in self.head_elems:
             raise EndOfHeadError()
-        try:
-            method = getattr(self, 'end_' + tag)
-        except AttributeError:
-            pass  # unknown tag
-        else:
-            method()
-
-    def unescape(self, name):
-        # Use the entitydefs passed into constructor, not
-        # HTMLParser.HTMLParser's entitydefs.
-        return self.unescape_attr(name)
-
-    def unescape_attr_if_required(self, name):
-        return name  # HTMLParser.HTMLParser already did it
-
-
-class HeadParser(AbstractHeadParser, sgmllib.SGMLParser):
-
-    def _not_called(self):
-        assert False
-
-    def __init__(self):
-        sgmllib.SGMLParser.__init__(self)
-        AbstractHeadParser.__init__(self)
-
-    def handle_starttag(self, tag, method, attrs):
-        if tag not in self.head_elems:
-            raise EndOfHeadError()
-        if tag == "meta":
-            method(attrs)
-
-    def unknown_starttag(self, tag, attrs):
-        self.handle_starttag(tag, self._not_called, attrs)
-
-    def handle_endtag(self, tag, method):
-        if tag in self.head_elems:
-            method()
-        else:
-            raise EndOfHeadError()
-
-    def unescape_attr_if_required(self, name):
-        return self.unescape_attr(name)
+        if tag == 'head':
+            self.end_head()
 
 
 def parse_head(fileobj, parser):
@@ -191,7 +112,7 @@ class HTTPEquivProcessor(BaseHandler):
 
     handler_order = 300  # before handlers that look at HTTP headers
 
-    def __init__(self, head_parser_class=HeadParser,
+    def __init__(self, head_parser_class=XHTMLCompatibleHeadParser,
                  i_want_broken_xhtml_support=False,
                  ):
         self.head_parser_class = head_parser_class
@@ -213,8 +134,7 @@ class HTTPEquivProcessor(BaseHandler):
                                               self.head_parser_class())
                 finally:
                     response.seek(0)
-            except (HTMLParser.HTMLParseError,
-                    sgmllib.SGMLParseError):
+            except HTMLParser.HTMLParseError:
                 pass
             else:
                 for hdr, val in html_headers:
@@ -318,8 +238,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
         origin_req = getattr(request, "_origin_req", None)
         if (origin_req is not None and
                 origin_req.get_selector() == "/robots.txt" and
-                origin_req.get_host() == host
-            ):
+                origin_req.get_host() == host):
             return request
 
         if host != self._host:
@@ -383,7 +302,7 @@ def clean_refresh_url(url):
     if ((url.startswith('"') and url.endswith('"')) or
             (url.startswith("'") and url.endswith("'"))):
         url = url[1:-1]
-    return _rfc3986.clean_url(url, DEFAULT_ENCODING)  # XXX encoding
+    return _rfc3986.clean_url(url, 'utf-8')  # XXX encoding
 
 
 def parse_refresh_header(refresh):
@@ -446,7 +365,7 @@ class HTTPRefreshProcessor(BaseHandler):
     def http_response(self, request, response):
         code, msg, hdrs = response.code, response.msg, response.info()
 
-        if code == 200 and hdrs.has_key("refresh"):
+        if code == 200 and 'refresh' in hdrs:
             refresh = hdrs.getheaders("refresh")[0]
             try:
                 pause, newurl = parse_refresh_header(refresh)

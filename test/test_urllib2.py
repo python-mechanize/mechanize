@@ -1623,7 +1623,7 @@ class HeadParserTests(unittest.TestCase):
 
     def test(self):
         # XXX XHTML
-        from mechanize import HeadParser
+        from mechanize import XHTMLCompatibleHeadParser
         htmls = [
             ("""<meta http-equiv="refresh" content="1; http://example.com/">
             """,
@@ -1645,7 +1645,7 @@ class HeadParserTests(unittest.TestCase):
         ]
         for html, result in htmls:
             self.assertEqual(parse_head(
-                StringIO.StringIO(html), HeadParser()), result)
+                StringIO.StringIO(html), XHTMLCompatibleHeadParser()), result)
 
 
 class A:

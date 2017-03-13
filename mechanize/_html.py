@@ -136,45 +136,6 @@ def content_parser(data,
         namespaceHTMLElements=False)
 
 
-def unescape(data, entities, encoding):
-    if data is None or "&" not in data:
-        return data
-
-    def replace_entities(match):
-        ent = match.group()
-        if ent[1] == "#":
-            return unescape_charref(ent[2:-1], encoding)
-
-        repl = entities.get(ent[1:-1])
-        if repl is not None:
-            repl = unichr(repl)
-            if type(repl) != type(""):  # noqa
-                try:
-                    repl = repl.encode(encoding)
-                except UnicodeError:
-                    repl = ent
-        else:
-            repl = ent
-        return repl
-
-    return re.sub(r"&#?[A-Za-z0-9]+?;", replace_entities, data)
-
-
-def unescape_charref(data, encoding):
-    name, base = data, 10
-    if name.startswith("x"):
-        name, base = name[1:], 16
-    uc = unichr(int(name, base))
-    if encoding is None:
-        return uc
-    else:
-        try:
-            repl = uc.encode(encoding)
-        except UnicodeError:
-            repl = "&#%s;" % data
-        return repl
-
-
 lazy = object()
 
 
