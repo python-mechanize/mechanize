@@ -86,7 +86,7 @@ def first_form(text, base_uri="http://example.com/"):
     return parse_file_ex(StringIO(text), base_uri)[0]
 
 
-class UnescapeTests(unittest.TestCase):
+class UnescapeTests(unittest.TestCase):  # {{{
     def test_unescape_parsing(self):
         file = StringIO("""<form action="&amp;amp;&mdash;&#x2014;&#8212;">
 <textarea name="name&amp;amp;&mdash;&#x2014;&#8212;">val&amp;amp;&mdash;\
@@ -207,7 +207,10 @@ class MockResponse:
         return getattr(self._file, name)
 
 
-class ParseTests(unittest.TestCase):
+# }}}
+
+
+class ParseTests(unittest.TestCase):  # {{{
     def test_unknown_control(self):
         f = StringIO("""<form action="abc">
 <input type="bogus">
@@ -219,6 +222,20 @@ class ParseTests(unittest.TestCase):
         form = forms[0]
         for ctl in form.controls:
             self.assert_(isinstance(ctl, _form_controls.TextControl))
+
+    def test_form_attribute(self):
+        f = StringIO(
+            '''<form id="f"><input name="a"><input name="c" form="o"></form>
+            <input name="b" form="f"></input>
+            <form id="o"><input name="d"></form>''')
+        forms = parse_file(f, 'http://example.com')
+        self.assertEqual(len(forms), 2)
+        f = forms[0]
+        self.assertEqual(len(f.controls), 2)
+        self.assertEqual([c.name for c in f.controls], 'a b'.split())
+        f = forms[1]
+        self.assertEqual(len(f.controls), 2)
+        self.assertEqual([c.name for c in f.controls], 'c d'.split())
 
     def test_ParseFileEx(self):
         # empty "outer form" (where the "outer form" is the form consisting of
@@ -696,7 +713,10 @@ Rhubarb.</button>
         self.assertEquals(forms[1].name, "spam")
 
 
-class DisabledTests(unittest.TestCase):
+# }}}
+
+
+class DisabledTests(unittest.TestCase):  # {{{
     def testOptgroup(self):
         file = StringIO("""<form action="abc" name="myform">
 
@@ -1075,7 +1095,10 @@ class DisabledTests(unittest.TestCase):
         reset_deprecations()
 
 
-class ControlTests(unittest.TestCase):
+# }}}
+
+
+class ControlTests(unittest.TestCase):  # {{{
     def testTextControl(self):
         attrs = {
             "type": "this is ignored",
@@ -2129,7 +2152,10 @@ class ControlTests(unittest.TestCase):
         self.assertEqual(c1.get_value_by_label(), ['First Option'])
 
 
-class FormTests(unittest.TestCase):
+# }}}
+
+
+class FormTests(unittest.TestCase):  # {{{
 
     base_uri = "http://auth.athensams.net/"
 
@@ -2904,6 +2930,9 @@ class FormTests(unittest.TestCase):
         pass  # XXX
 
 
+# }}}
+
+
 def make_form(html):
     global_form, form = parse_file_ex(StringIO(html), "http://example.com/")
     assert len(global_form.controls) == 0
@@ -2914,7 +2943,7 @@ def make_form_global(html):
     return get1(parse_file_ex(StringIO(html), "http://example.com/"))
 
 
-class MoreFormTests(unittest.TestCase):
+class MoreFormTests(unittest.TestCase):  # {{{
     def test_interspersed_controls(self):
         # must preserve item ordering even across controls
         f = StringIO("""\
@@ -3215,7 +3244,10 @@ class MoreFormTests(unittest.TestCase):
             label="no control has this label")
 
 
-class ContentTypeTests(unittest.TestCase):
+# }}}
+
+
+class ContentTypeTests(unittest.TestCase):  # {{{
     def test_content_type(self):
         class OldStyleRequest:
             def __init__(self, url, data=None, hdrs=None):
@@ -3247,7 +3279,10 @@ class ContentTypeTests(unittest.TestCase):
             self.assertEqual(req.ah, not auh)
 
 
-class FunctionTests(unittest.TestCase):
+# }}}
+
+
+class FunctionTests(unittest.TestCase):  # {{{
     def test_normalize_line_endings(self):
         def check(text, expected, self=self):
             got = _form.normalize_line_endings(text)
@@ -3272,7 +3307,10 @@ class FunctionTests(unittest.TestCase):
         check("\r\n\n\r\r\r\n", "\r\n" * 5)
 
 
-class CaseInsensitiveDict:
+# }}}
+
+
+class CaseInsensitiveDict:  # {{{
     def __init__(self, items):
         self._dict = {}
         for key, val in items:
@@ -3285,7 +3323,10 @@ class CaseInsensitiveDict:
         return getattr(self._dict, name)
 
 
-class UploadTests(_testcase.TestCase):
+# }}}
+
+
+class UploadTests(_testcase.TestCase):  # {{{
     def test_choose_boundary(self):
         bndy = _form_controls.choose_boundary()
         ii = string.find(bndy, '.')
@@ -3436,7 +3477,10 @@ Content-Type: application/octet-stream\r
 """)
 
 
-class MutationTests(unittest.TestCase):
+# }}}
+
+
+class MutationTests(unittest.TestCase):  # {{{
     def test_add_textfield(self):
         form = first_form('<input type="text" name="foo" value="bar" />')
         more = first_form('<input type="text" name="spam" value="eggs" />')
@@ -3445,6 +3489,8 @@ class MutationTests(unittest.TestCase):
             control.add_to_form(form)
         self.assertEquals(form.controls, combined)
 
+
+# }}}
 
 if __name__ == "__main__":
     unittest.main()

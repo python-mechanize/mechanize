@@ -41,7 +41,6 @@ def parse_input(elem, parent_of, *a):
 def parse_button(elem, parent_of, *a):
     ctype, name, attrs = parse_control(elem, parent_of, default_type='submit')
     ctype += 'button'
-    # TODO: Handle HTML5 button attributes
     return ctype, name, attrs
 
 
@@ -81,6 +80,7 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
     global_form = HTMLForm(base_url)
     forms, labels = [], []
     form_elems = []
+    form_id_map = {}
     all_elems = tuple(
         e for e in root.iter('*') if isinstance(e.tag, basestring))
     parent_map = {c: p for p in all_elems for c in p}
@@ -89,6 +89,9 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
         q = e.tag.lower()
         if q == 'form':
             form_elems.append(e)
+            fid = e.get('id')
+            if fid:
+                form_id_map[fid] = e
         elif q == 'label':
             for_id = e.get('for')
             if for_id is not None:
@@ -136,7 +139,11 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
         q = elem.tag.lower()
         cfunc = control_names.get(q)
         if cfunc is not None:
-            form_elem = parent_of(elem, 'form')
+            fid = elem.get('form')
+            if fid and fid in form_id_map:
+                form_elem = form_id_map[fid]
+            else:
+                form_elem = parent_of(elem, 'form')
             form = forms_map.get(form_elem, global_form)
             try:
                 control_type, control_name, attrs = cfunc(elem, parent_of,
