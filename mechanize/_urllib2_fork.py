@@ -1180,6 +1180,12 @@ if hasattr(httplib, 'HTTPS'):
 
         https_request = AbstractHTTPHandler.do_request_
 
+        def clone(self):
+            ans = self.__class__(self.client_cert_manager)
+            ans._debuglevel = self._debuglevel
+            ans.ssl_context = self.ssl_context
+            return ans
+
 
 class HTTPCookieProcessor(BaseHandler):
     """Handle HTTP cookies.
