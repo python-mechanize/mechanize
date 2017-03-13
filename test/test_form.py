@@ -1291,6 +1291,23 @@ class ControlTests(unittest.TestCase):  # {{{
         c = _form_controls.SubmitControl("submit", "name_value", attrs)
         self.assertEqual(c.value, '')
 
+        # form override attributes
+        form = _form_controls.HTMLForm("http://foo.bar.com/")
+        attrs = {
+            "name": "override",
+            'formaction': 'http://override.net',
+            'formmethod': 'POST',
+            'formenctype': 'multipart/form-data',
+            'value': 'v'
+        }
+        c = _form_controls.SubmitControl("submit", "override", attrs)
+        c.add_to_form(form)
+        req = form.click(name='override')
+        self.assertEqual(req.get_full_url(), 'http://override.net')
+        self.assertEqual(req.get_method(), 'POST')
+        url, data, headers = form.click_request_data(name='override')
+        self.assertIn('multipart/form-data', dict(headers)['Content-type'])
+
     def testImageControl(self):
         attrs = {
             "type": "this is ignored",

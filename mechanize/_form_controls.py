@@ -224,13 +224,13 @@ class MimeWriter:
 
 
 class Label:
-
     def __init__(self, text, for_id=None):
         self.id = for_id
         self.text = compress_whitespace(text or '')
 
     def __repr__(self):
         return "<Label(id=%r, text=%r)>" % (self.id, self.text)
+
     __str__ = __repr__
 
 
@@ -629,7 +629,6 @@ class IgnoreControl(ScalarControl):
 
 
 class Item:
-
     def __init__(self, control, attrs, index=None):
         label = _get_label(attrs)
         self.__dict__.update({
@@ -1096,8 +1095,7 @@ class ListControl(Control):
             if self.name is None:
                 return []
             return [
-                o.name for o in self.items
-                if o.selected and (not o.disabled)
+                o.name for o in self.items if o.selected and (not o.disabled)
             ]
         else:
             raise AttributeError("%s instance has no attribute '%s'" %
@@ -1810,8 +1808,7 @@ class HTMLForm:
                  request_class=_request.Request,
                  forms=None,
                  labels=None,
-                 id_to_labels=None
-                 ):
+                 id_to_labels=None):
         """
         In the usual case, use ParseResponse (or ParseFile) to create new
         HTMLForm objects.
@@ -2451,7 +2448,18 @@ class HTMLForm:
             # so return state without clicking any control
             return self._switch_click(return_type, request_class)
         else:
-            return control._click(self, coord, return_type, request_class)
+            originals = self.method, self.action, self.enctype
+            try:
+                if isinstance(control, ScalarControl):
+                    self.method = control.attrs.get(
+                        'formmethod') or self.method
+                    self.action = control.attrs.get(
+                        'formaction') or self.action
+                    self.enctype = control.attrs.get(
+                        'formenctype') or self.enctype
+                return control._click(self, coord, return_type, request_class)
+            finally:
+                self.method, self.action, self.enctype = originals
 
     def _pairs(self):
         """Return sequence of (key, value) pairs suitable for urlencoding."""
