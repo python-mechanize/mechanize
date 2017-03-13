@@ -417,6 +417,9 @@ class BaseHandler:
             return True
         return self.handler_order < other.handler_order
 
+    def clone(self):
+        return self.__class__()
+
 
 class HTTPErrorProcessor(BaseHandler):
     """Process HTTP error responses.
@@ -688,6 +691,9 @@ class ProxyHandler(BaseHandler):
             # ftp://proxy.example.com/a
             return self.parent.open(req)
 
+    def clone(self):
+        return ProxyHandler(self.proxies.copy(), self._proxy_bypass)
+
 
 class HTTPPasswordMgr:
 
@@ -752,6 +758,11 @@ class HTTPPasswordMgr:
             return True
         return False
 
+    def clone(self):
+        ans = self.__class__()
+        ans.proxies = copy.deepcopy(self.proxies)
+        return ans
+
 
 class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
@@ -809,6 +820,9 @@ class AbstractBasicAuthHandler:
         else:
             return None
 
+    def clone(self):
+        return self.__class__(self.passwd.clone())
+
 
 class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
@@ -818,6 +832,9 @@ class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
         url = req.get_full_url()
         return self.http_error_auth_reqed('www-authenticate',
                                           url, req, headers)
+
+    def clone(self):
+        return AbstractBasicAuthHandler.clone(self)
 
 
 class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
@@ -832,6 +849,9 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
         authority = req.get_host()
         return self.http_error_auth_reqed('proxy-authenticate',
                                           authority, req, headers)
+
+    def clone(self):
+        return AbstractBasicAuthHandler.clone(self)
 
 
 def randombytes(n):
@@ -991,6 +1011,9 @@ class AbstractDigestAuthHandler:
         # XXX not implemented yet
         return None
 
+    def clone(self):
+        return self.__class__(self.passwd.clone())
+
 
 class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     """An authentication protocol defined by RFC 2069
@@ -1009,6 +1032,9 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
         self.reset_retry_count()
         return retry
 
+    def clone(self):
+        return AbstractDigestAuthHandler.clone(self)
+
 
 class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
@@ -1021,6 +1047,9 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
                                            host, req, headers)
         self.reset_retry_count()
         return retry
+
+    def clone(self):
+        return AbstractDigestAuthHandler.clone(self)
 
 
 class AbstractHTTPHandler(BaseHandler):
@@ -1118,6 +1147,9 @@ class AbstractHTTPHandler(BaseHandler):
                                   r.status, r.reason)
         return resp
 
+    def clone(self):
+        return self.__class__(self._debuglevel)
+
 
 class HTTPHandler(AbstractHTTPHandler):
 
@@ -1175,6 +1207,9 @@ class HTTPCookieProcessor(BaseHandler):
     def http_response(self, request, response):
         self.cookiejar.extract_cookies(response, request)
         return response
+
+    def clone(self):
+        return self.__class__(self.cookiejar)
 
     https_request = http_request
     https_response = http_response
