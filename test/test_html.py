@@ -5,6 +5,7 @@ from unittest import TestCase
 import mechanize
 import mechanize._form
 from mechanize._response import test_html_response
+from mechanize._html import content_parser, get_title
 
 
 class RegressionTests(TestCase):
@@ -58,9 +59,10 @@ class TitleTests(TestCase):
     def title_parsing(self):
         html = ("""\
 <html><head>
-<title>Title</title>
+<title> Title\n Test</title>
 </head><body><p>Blah.<p></body></html>
 """)
+        self.assertEqual(get_title(content_parser(html)), 'Title Test')
 
 
 if __name__ == "__main__":

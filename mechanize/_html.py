@@ -136,6 +136,13 @@ def content_parser(data,
         namespaceHTMLElements=False)
 
 
+def get_title(root):
+    for title in root.iter('title'):
+        text = compress_whitespace(title.text)
+        if text:
+            return text
+
+
 lazy = object()
 
 
@@ -230,15 +237,9 @@ class Factory:
     @property
     def title(self):
         if self._current_title is lazy:
-            self._current_title = self._get_title()
+            self._current_title = get_title(
+                self.root) if self.root is not None else None
         return self._current_title or u''
-
-    def _get_title(self):
-        if self.root is not None:
-            for title in self.root.iter('title'):
-                text = compress_whitespace(title.text)
-                if text:
-                    return text
 
     @property
     def global_form(self):
