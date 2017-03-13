@@ -13,6 +13,7 @@ included with the distribution).
 
 from __future__ import absolute_import
 
+import copy
 import warnings
 
 from . import _auth, _gzip, _opener, _response, _sockettimeout, _urllib2
@@ -339,7 +340,7 @@ class UserAgentBase(_opener.OpenerDirector):
         rmap = {v: k for k, v in self._ua_handlers.iteritems()}
 
         def clone_handler(h):
-            ans = h.clone()
+            ans = copy.copy(h)
             ans.add_parent(other)
             try:
                 other._ua_handlers[rmap[h]] = ans

@@ -413,7 +413,7 @@ class BaseHandler:
     def __lt__(self, other):
         return self.handler_order < getattr(other, 'handler_order', sys.maxint)
 
-    def clone(self):
+    def __copy__(self):
         return self.__class__()
 
 
@@ -688,7 +688,7 @@ class ProxyHandler(BaseHandler):
             # ftp://proxy.example.com/a
             return self.parent.open(req)
 
-    def clone(self):
+    def __copy__(self):
         return ProxyHandler(self.proxies.copy(), self._proxy_bypass)
 
 
@@ -755,7 +755,7 @@ class HTTPPasswordMgr:
             return True
         return False
 
-    def clone(self):
+    def __copy__(self):
         ans = self.__class__()
         ans.proxies = copy.deepcopy(self.passwd)
         return ans
@@ -817,8 +817,8 @@ class AbstractBasicAuthHandler:
         else:
             return None
 
-    def clone(self):
-        return self.__class__(self.passwd.clone())
+    def __copy__(self):
+        return self.__class__(self.passwd.__copy__())
 
 
 class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
@@ -830,8 +830,8 @@ class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
         return self.http_error_auth_reqed('www-authenticate',
                                           url, req, headers)
 
-    def clone(self):
-        return AbstractBasicAuthHandler.clone(self)
+    def __copy__(self):
+        return AbstractBasicAuthHandler.__copy__(self)
 
 
 class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
@@ -847,8 +847,8 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
         return self.http_error_auth_reqed('proxy-authenticate',
                                           authority, req, headers)
 
-    def clone(self):
-        return AbstractBasicAuthHandler.clone(self)
+    def __copy__(self):
+        return AbstractBasicAuthHandler.__copy__(self)
 
 
 def randombytes(n):
@@ -1008,8 +1008,8 @@ class AbstractDigestAuthHandler:
         # XXX not implemented yet
         return None
 
-    def clone(self):
-        return self.__class__(self.passwd.clone())
+    def __copy__(self):
+        return self.__class__(self.passwd.__copy__())
 
 
 class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
@@ -1029,8 +1029,8 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
         self.reset_retry_count()
         return retry
 
-    def clone(self):
-        return AbstractDigestAuthHandler.clone(self)
+    def __copy__(self):
+        return AbstractDigestAuthHandler.__copy__(self)
 
 
 class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
@@ -1045,8 +1045,8 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
         self.reset_retry_count()
         return retry
 
-    def clone(self):
-        return AbstractDigestAuthHandler.clone(self)
+    def __copy__(self):
+        return AbstractDigestAuthHandler.__copy__(self)
 
 
 class AbstractHTTPHandler(BaseHandler):
@@ -1144,7 +1144,7 @@ class AbstractHTTPHandler(BaseHandler):
                                   r.status, r.reason)
         return resp
 
-    def clone(self):
+    def __copy__(self):
         return self.__class__(self._debuglevel)
 
 
@@ -1182,7 +1182,7 @@ if hasattr(httplib, 'HTTPS'):
 
         https_request = AbstractHTTPHandler.do_request_
 
-        def clone(self):
+        def __copy__(self):
             ans = self.__class__(self.client_cert_manager)
             ans._debuglevel = self._debuglevel
             ans.ssl_context = self.ssl_context
@@ -1211,7 +1211,7 @@ class HTTPCookieProcessor(BaseHandler):
         self.cookiejar.extract_cookies(response, request)
         return response
 
-    def clone(self):
+    def __copy__(self):
         return self.__class__(self.cookiejar)
 
     https_request = http_request

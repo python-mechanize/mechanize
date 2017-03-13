@@ -73,7 +73,7 @@ class History:
                 response.close()
         del self._history[:]
 
-    def clone(self):
+    def __copy__(self):
         ans = self.__class__()
         ans._history = self._history[:]
         return ans
@@ -159,7 +159,7 @@ class Browser(UserAgentBase):
         # do this last to avoid __getattr__ problems
         UserAgentBase.__init__(self)
 
-    def clone_browser(self):
+    def __copy__(self):
         '''
         Clone this browser instance. The clone will share the same, thread-safe
         cookie jar, and have all the same handlers/settings, but will not share
@@ -173,7 +173,7 @@ class Browser(UserAgentBase):
                 '_content_parser'):
             setattr(ans._factory, attr, getattr(self._factory, attr))
         ans.request_class = self.request_class
-        ans._history = self._history.clone()
+        ans._history = copy.copy(self._history)
         return ans
 
     def close(self):

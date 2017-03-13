@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 """Tests for mechanize.Browser."""
 
-from unittest import TestCase
-import StringIO
+import copy
 import httplib
 import mimetools
 import re
+import StringIO
+from unittest import TestCase
 
-from mechanize._response import test_html_response
 import mechanize
 import mechanize._response
 import mechanize._testcase
+from mechanize._response import test_html_response
 
 
 # XXX these 'mock' classes are badly in need of simplification / removal
@@ -728,7 +729,7 @@ class BrowserTests(TestCase):
         br = Browser()
         br.set_handle_refresh(True, max_time=237, honor_time=True)
         br.set_handle_robots(False)
-        cbr = br.clone_browser()
+        cbr = copy.copy(br)
         for h, ch in zip(br.handlers, cbr.handlers):
             self.assertIsNot(h, ch)
             self.assertIs(ch.parent, cbr)

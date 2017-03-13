@@ -6,6 +6,7 @@
 
 # thanks Moof (aka Giles Antonio Radford) for some of these
 
+import copy
 import errno
 import os
 import socket
@@ -277,7 +278,7 @@ class SimpleTests(SocketTimeoutTest):
                 return response
 
         self.browser.add_handler(ObservingHandler())
-        for br in self.browser, self.browser.clone_browser():
+        for br in self.browser, copy.copy(self.browser):
             r = br.open(urljoin(self.uri, "redirected_good"))
             self.assertEqual(r.code, 200)
             self.assert_("GeneralFAQ.html" in r.read(2048))

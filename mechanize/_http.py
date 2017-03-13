@@ -197,7 +197,7 @@ class HTTPEquivProcessor(BaseHandler):
         self.head_parser_class = head_parser_class
         self._allow_xhtml = i_want_broken_xhtml_support
 
-    def clone(self):
+    def __copy__(self):
         return self.__class__(self.head_parser_class, self._allow_xhtml)
 
     def http_response(self, request, response):
@@ -299,7 +299,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
         self.rfp = None
         self._host = None
 
-    def clone(self):
+    def __copy__(self):
         return self.__class__(self.rfp_class)
 
     def http_request(self, request):
@@ -440,7 +440,7 @@ class HTTPRefreshProcessor(BaseHandler):
         self.honor_time = honor_time
         self._sleep = time.sleep
 
-    def clone(self):
+    def __copy__(self):
         return self.__class__(self.max_time, self.honor_time)
 
     def http_response(self, request, response):
