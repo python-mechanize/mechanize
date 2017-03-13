@@ -335,6 +335,29 @@ class UserAgentBase(_opener.OpenerDirector):
             if h is not None:
                 h.set_http_debuglevel(level)
 
+    def _copy_state(self, other):
+        if self._ua_handlers is None:
+            raise ValueError('Cannot copy state from a closed UserAgentBase')
+        other.addheaders = self.addheaders[:]
+        rmap = {v: k for k, v in self._ua_handlers.iteritems()}
+
+        def clone_handler(h):
+            ans = h.clone()
+            ans.add_parent(other)
+            try:
+                other._ua_handlers[rmap[h]] = ans
+            except KeyError:
+                pass
+            return ans
+        other._ua_handlers.clear()
+        other.handlers = [clone_handler(h) for h in self.handlers]
+        other._handler_index_valid = False
+
+    def handlers_by_class(self, cls):
+        for h in self.handlers:
+            if isinstance(h, cls):
+                yield h
+
     def _set_handler(self, name, handle=None, obj=None,
                      constructor_args=(), constructor_kwds={}):
         if handle is None:
@@ -353,8 +376,8 @@ class UserAgentBase(_opener.OpenerDirector):
     def _replace_handler(self, name, newhandler=None):
         # first, if handler was previously added, remove it
         if name is not None:
-            handler = self._ua_handlers.get(name)
-            if handler:
+            handler = self._ua_handlers.pop(name, None)
+            if handler is not None:
                 try:
                     self.handlers.remove(handler)
                 except ValueError:

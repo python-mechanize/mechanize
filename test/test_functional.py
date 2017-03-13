@@ -266,18 +266,24 @@ class SimpleTests(SocketTimeoutTest):
 
     def test_redirect(self):
         # 301 redirect due to missing final '/'
-        codes = []
 
         class ObservingHandler(mechanize.BaseHandler):
 
+            def __init__(self):
+                self.codes = []
+
             def http_response(self, request, response):
-                codes.append(response.code)
+                self.codes.append(response.code)
                 return response
+
         self.browser.add_handler(ObservingHandler())
-        r = self.browser.open(urljoin(self.uri, "redirected_good"))
-        self.assertEqual(r.code, 200)
-        self.assertIn(302, codes)
-        self.assert_("GeneralFAQ.html" in r.read(2048))
+        for br in self.browser, self.browser.clone_browser():
+            r = br.open(urljoin(self.uri, "redirected_good"))
+            self.assertEqual(r.code, 200)
+            self.assert_("GeneralFAQ.html" in r.read(2048))
+            self.assertEqual([
+                [c for c in h.codes if c == 302]
+                for h in br.handlers_by_class(ObservingHandler)], [[302]])
 
     def test_refresh(self):
         def refresh_request(seconds):

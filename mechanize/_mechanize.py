@@ -76,6 +76,11 @@ class History:
                 response.close()
         del self._history[:]
 
+    def clone(self):
+        ans = self.__class__()
+        ans._history = self._history[:]
+        return ans
+
 
 class HTTPRefererProcessor(_urllib2_fork.BaseHandler):
 
@@ -156,6 +161,23 @@ class Browser(UserAgentBase):
 
         # do this last to avoid __getattr__ problems
         UserAgentBase.__init__(self)
+
+    def clone_browser(self):
+        '''
+        Clone this browser instance. The clone will share the same, thread-safe
+        cookie jar, and have all the same handlers/settings, but will not share
+        any other state, making it safe to use in another thread.
+        '''
+        ans = self.__class__()
+        self._copy_state(ans)
+        ans._handle_referer = self._handle_referer
+        for attr in (
+                '_response_type_finder', '_encoding_finder',
+                '_content_parser'):
+            setattr(ans._factory, attr, getattr(self._factory, attr))
+        ans.request_class = self.request_class
+        ans._history = self._history.clone()
+        return ans
 
     def close(self):
         UserAgentBase.close(self)

@@ -9,6 +9,7 @@ Future Kovid Goyal
 	* Make the global urlopen/urlretrieve methods threadsafe
 	* Add support for user supplied CA certificates
 	* Support HTML 5 (all html is now parsed using html5lib)
+	* Implement cloning of browser instances via Browser.clone_browser()
 	* Backward incompatibility: The factory keyword argument to Browser is no longer allowed
 	* Backward incompatibility: Browser.forms() and Browser.links() return unicode strings instead of byte strings
 	* Backward incompatibility: When searching for a form control if more than one control matches, an AmbiguityError is always raised

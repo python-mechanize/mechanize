@@ -723,6 +723,24 @@ class BrowserTests(TestCase):
         self.assertEqual(len(cj), 1)
         self.assertEqual(cj._cookies["example.com"]["/"]["foo"].value, "bar")
 
+    def test_clone_browser(self):
+        from mechanize import Browser
+        br = Browser()
+        br.set_handle_refresh(True, max_time=237, honor_time=True)
+        br.set_handle_robots(False)
+        cbr = br.clone_browser()
+        for h, ch in zip(br.handlers, cbr.handlers):
+            self.assertIsNot(h, ch)
+            self.assertIs(ch.parent, cbr)
+            self.assertIs(h.__class__, ch.__class__)
+        self.assertEqual(set(br._ua_handlers), set(cbr._ua_handlers))
+        self.assertIs(br._ua_handlers['_cookies'].cookiejar,
+                      cbr._ua_handlers['_cookies'].cookiejar)
+        self.assertIsNot(br.addheaders, cbr.addheaders)
+        self.assertEqual(br.addheaders, cbr.addheaders)
+        h = cbr._ua_handlers['_refresh']
+        self.assertEqual((h.honor_time, h.max_time), (True, 237))
+
 
 class ResponseTests(TestCase):
 

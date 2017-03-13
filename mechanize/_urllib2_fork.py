@@ -755,7 +755,7 @@ class HTTPPasswordMgr:
 
     def clone(self):
         ans = self.__class__()
-        ans.proxies = copy.deepcopy(self.proxies)
+        ans.proxies = copy.deepcopy(self.passwd)
         return ans
 
 

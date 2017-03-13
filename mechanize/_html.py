@@ -215,7 +215,7 @@ class Factory:
         self._encoding_finder = EncodingFinder(default_encoding)
         self._response_type_finder = ResponseTypeFinder(
             allow_xhtml=allow_xhtml)
-        self.content_parser = content_parser
+        self._content_parser = content_parser
         self._current_forms = self._current_links = self._current_title = lazy
         self._current_global_form = self._root = lazy
         self._raw_data = b''
@@ -224,7 +224,7 @@ class Factory:
         self.set_response(None)
 
     def set_content_parser(self, val):
-        self.content_parser = val
+        self._content_parser = val
 
     def set_request_class(self, request_class):
         """Set request class (mechanize.Request by default).
@@ -253,7 +253,7 @@ class Factory:
     def root(self):
         if self._root is lazy:
             response = self._response
-            self._root = self.content_parser(
+            self._root = self._content_parser(
                 self._response.read() if self._response else b'',
                 url=response.geturl() if response else None,
                 response_info=response.info() if response else None,

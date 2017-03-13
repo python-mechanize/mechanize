@@ -157,6 +157,17 @@ print response.read()
 When using mechanize, anything you would normally import from `urllib2` should
 be imported from mechanize instead.
 
+Thread safety
+---------------
+
+The global `mechanize.urlopen()` and `mechanize.urlretrieve()` functions are
+thread safe. However, mechanize browser instances **are not** thread safe. If
+you want to use a mechanize Browser instance in multiple threads, clone it,
+using the `Browser.clone_browser()` method. The clone will share the same,
+thread safe cookie jar, and have the same settings/handlers as the original,
+but all other state is not shared, making the clone safe to use in a different
+thread.
+
 Using custom CA certificates
 -------------------------------
 
