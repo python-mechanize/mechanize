@@ -410,12 +410,7 @@ class BaseHandler:
         pass
 
     def __lt__(self, other):
-        if not hasattr(other, "handler_order"):
-            # Try to preserve the old behavior of having custom classes
-            # inserted after default ones (works only for custom user
-            # classes which are not aware of handler_order).
-            return True
-        return self.handler_order < other.handler_order
+        return self.handler_order < getattr(other, 'handler_order', sys.maxint)
 
     def clone(self):
         return self.__class__()
