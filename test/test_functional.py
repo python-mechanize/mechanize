@@ -645,54 +645,6 @@ def add_to_path(env, name, value):
     env[name] = value
 
 
-class FormsExamplesTests(mechanize._testcase.GoldenTestCase):
-
-    def check_forms_example(self, name, golden_path, fixup):
-        self.get_cached_fixture("server")
-        python = sys.executable
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(this_dir)
-        forms_examples_dir = os.path.join(parent_dir, "examples", "forms")
-        output_dir = self.make_temp_dir()
-        env = os.environ.copy()
-        add_to_path(env, "PYTHONPATH", parent_dir)
-        output = get_cmd_stdout([python, name, self.uri],
-                                env=env,
-                                cwd=forms_examples_dir)
-        output = fixup(output)
-        write_file(os.path.join(output_dir, "output"), output)
-        self.assert_golden(output_dir,
-                           os.path.join(this_dir, golden_path))
-
-    @unittest.skip('Golden files do not work with randomized hashes')
-    def test_simple(self):
-        def fixup(output):
-            return output.replace("POST %s" % self.uri.rstrip("/"),
-                                  "POST http://127.0.0.1:8000")
-        self.check_forms_example(
-            "simple.py",
-            os.path.join("functional_tests_golden",
-                         "FormsExamplesTests.test_simple"),
-            fixup)
-
-    @unittest.skip('Golden files do not work with randomized hashes')
-    def test_example(self):
-        def fixup(output):
-            lines = [l for l in output.splitlines(True) if
-                     not l.startswith("Vary:") and
-                     not l.startswith("Server:") and
-                     not l.startswith("Transfer-Encoding:") and
-                     not l.startswith("Content-Length:")]
-            output = "".join(lines)
-            return output.replace(self.uri.rstrip("/"),
-                                  "http://127.0.0.1:8000")
-        self.check_forms_example(
-            "example.py",
-            os.path.join("functional_tests_golden",
-                         "FormsExamplesTests.test_example"),
-            fixup)
-
-
 class CookieJarTests(TestCase):
 
     def _test_cookiejar(self, make_cookiejar, commit):

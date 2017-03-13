@@ -1,13 +1,11 @@
 from __future__ import absolute_import
 import os
 import shutil
-import subprocess
 import tempfile
 import unittest
 
 
 class SetupStack(object):
-
     def __init__(self):
         self._on_teardown = []
 
@@ -20,7 +18,6 @@ class SetupStack(object):
 
 
 class TearDownConvenience(object):
-
     def __init__(self, setup_stack=None):
         self._own_setup_stack = setup_stack is None
         if setup_stack is None:
@@ -34,12 +31,13 @@ class TearDownConvenience(object):
 
 
 class TempDirMaker(TearDownConvenience):
-
     def make_temp_dir(self, dir_=None):
-        temp_dir = tempfile.mkdtemp(prefix="tmp-%s-" % self.__class__.__name__,
-                                    dir=dir_)
+        temp_dir = tempfile.mkdtemp(
+            prefix="tmp-%s-" % self.__class__.__name__, dir=dir_)
+
         def tear_down():
             shutil.rmtree(temp_dir)
+
         self._setup_stack.add_teardown(tear_down)
         return temp_dir
 
@@ -51,8 +49,10 @@ class MonkeyPatcher(TearDownConvenience):
     def monkey_patch(self, obj, name, value):
         orig_value = getattr(obj, name)
         setattr(obj, name, value)
+
         def reverse_patch():
             setattr(obj, name, orig_value)
+
         self._setup_stack.add_teardown(reverse_patch)
 
     def _set_environ(self, env, name, value):
@@ -67,13 +67,14 @@ class MonkeyPatcher(TearDownConvenience):
     def monkey_patch_environ(self, name, value, env=os.environ):
         orig_value = env.get(name, self.Unset)
         self._set_environ(env, name, value)
+
         def reverse_patch():
             self._set_environ(env, name, orig_value)
+
         self._setup_stack.add_teardown(reverse_patch)
 
 
 class FixtureFactory(object):
-
     def __init__(self):
         self._setup_stack = SetupStack()
         self._context_managers = {}
@@ -100,7 +101,6 @@ class FixtureFactory(object):
 
 
 class TestCase(unittest.TestCase):
-
     def setUp(self):
         self._setup_stack = SetupStack()
         self._monkey_patcher = MonkeyPatcher(self._setup_stack)
@@ -109,8 +109,8 @@ class TestCase(unittest.TestCase):
         self._setup_stack.tear_down()
 
     def register_context_manager(self, name, context_manager):
-        return self.fixture_factory.register_context_manager(
-            name, context_manager)
+        return self.fixture_factory.register_context_manager(name,
+                                                             context_manager)
 
     def get_fixture(self, name):
         return self.fixture_factory.get_fixture(name, self.add_teardown)
@@ -131,33 +131,8 @@ class TestCase(unittest.TestCase):
         return self._monkey_patcher.monkey_patch_environ(*args, **kwds)
 
     def assert_contains(self, container, containee):
-        self.assertTrue(containee in container, "%r not in %r" %
-                        (containee, container))
+        self.assertTrue(containee in container,
+                        "%r not in %r" % (containee, container))
 
     def assert_less_than(self, got, expected):
-        self.assertTrue(got < expected, "%r >= %r" %
-                        (got, expected))
-
-
-#  http://lackingrhoticity.blogspot.com/2009/01/testing-using-golden-files-in-python.html
-
-class GoldenTestCase(TestCase):
-
-    run_meld = False
-
-    def assert_golden(self, dir_got, dir_expect):
-        assert os.path.exists(dir_expect), dir_expect
-        proc = subprocess.Popen(["diff", "--recursive", "-u", "-N",
-                                 "--exclude=.*", dir_expect, dir_got],
-                                stdout=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        if len(stdout) > 0:
-            if self.run_meld:
-                # Put expected output on the right because that is the
-                # side we usually edit.
-                subprocess.call(["meld", dir_got, dir_expect])
-            raise AssertionError(
-                "Differences from golden files found.\n"
-                "Try running with --meld to update golden files.\n"
-                "%s" % stdout)
-        self.assertEquals(proc.wait(), 0)
+        self.assertTrue(got < expected, "%r >= %r" % (got, expected))

@@ -369,9 +369,6 @@ class TestProgram(unittest.TestProgram):
         parser.add_option("--log-server", action="store_true",
                           help=("Turn on logging for twisted.web local HTTP "
                                 " server"))
-        parser.add_option("--meld", action="store_true",
-                          help=("On golden test failure, run meld to view & "
-                                "edit differences"))
 
         options, remaining_args = parser.parse_args(argv)
         if len(remaining_args) > 3:
@@ -455,9 +452,6 @@ class TestProgram(unittest.TestProgram):
             "ftp_server", make_ftp_server_cm(options.log_server))
         test_attributes = dict(uri=options.uri, no_proxies=options.no_proxies,
                                fixture_factory=fixture_factory)
-        if options.meld:
-            import mechanize._testcase
-            mechanize._testcase.GoldenTestCase.run_meld = True
         self.test = toplevel_test(self.test, test_attributes)
 
 
