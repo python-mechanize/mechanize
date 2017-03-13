@@ -16,6 +16,7 @@ Future Kovid Goyal
 	  class. Parsing now uses the HTML 5 algorithm, which almost never fails.
 	* Backward incompatibility: For links that do not have any text the text
 	  attribute is now always an empty string instead of None or an empty string.
+	* Backward incompatibility: Remove support for the <isindex> HTML tag which was deprecated in HTML 4 and removed in HTML 5
 
 2011-03-31 John J Lee <jjl@pobox.com>
 	* 0.2.5 release.
