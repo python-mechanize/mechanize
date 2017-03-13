@@ -640,10 +640,8 @@ class Browser(UserAgentBase):
 
         If a matching link is not found, mechanize.LinkNotFoundError is raised.
 
-        text: link text between link tags: e.g. <a href="blah">this bit</a> (as
-         returned by pullparser.get_compressed_text(), ie. without tags but
-         with opening tags "textified" as per the pullparser docs) must compare
-         equal to this argument, if supplied
+        text: link text between link tags: e.g. <a href="blah">this bit</a>
+         with whitespace compressed.
         text_regex: link text between tag (as defined above) must match the
          regular expression object or regular expression string passed as this
          argument, if supplied
