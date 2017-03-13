@@ -28,6 +28,8 @@ COPYING.txt included with the distribution).
 # complex proxies  XXX not sure what exactly was meant by this
 # abstract factory for opener
 
+from __future__ import absolute_import
+
 import base64
 import bisect
 import copy
@@ -53,10 +55,9 @@ from urllib import (addinfourl, ftpwrapper, getproxies, splitattr, splitpasswd,
                     unwrap, url2pathname)
 from urllib2 import HTTPError, URLError
 
-import _request
-import _rfc3986
-from _clientcookie import CookieJar
-from _response import closeable_response
+from . import _rfc3986
+from ._clientcookie import CookieJar
+from ._response import closeable_response
 
 
 def sha1_digest(bytes):
@@ -499,6 +500,7 @@ class HTTPRedirectHandler(BaseHandler):
         else should try to handle this url.  Return None if you can't
         but another Handler might.
         """
+        from ._request import Request
         m = req.get_method()
         if (code in (301, 302, 303, 307, "refresh") and m in ("GET", "HEAD")
                 or code in (301, 302, 303, "refresh") and m == "POST"):
@@ -509,7 +511,7 @@ class HTTPRedirectHandler(BaseHandler):
             # the same.
             # TODO: really refresh redirections should be visiting; tricky to
             # fix
-            new = _request.Request(
+            new = Request(
                 newurl,
                 headers=req.headers,
                 origin_req_host=req.get_origin_req_host(),

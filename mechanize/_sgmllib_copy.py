@@ -15,6 +15,7 @@
 #          stacklevel=2)
 # del warnpy3k
 
+from __future__ import absolute_import
 import markupbase
 import re
 

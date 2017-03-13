@@ -11,14 +11,11 @@ included with the distribution).
 
 """
 
+from __future__ import absolute_import
+
 import warnings
 
-import _auth
-import _gzip
-import _opener
-import _response
-import _sockettimeout
-import _urllib2
+from . import _auth, _gzip, _opener, _response, _sockettimeout, _urllib2
 
 
 class UserAgentBase(_opener.OpenerDirector):

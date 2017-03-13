@@ -1,3 +1,54 @@
+from __future__ import absolute_import
+import logging
+
+from ._clientcookie import request_host_lc as request_host
+# cookies
+from ._clientcookie import (Cookie, CookieJar, CookiePolicy,
+                            DefaultCookiePolicy, FileCookieJar, LoadError,
+                            LWPCookieJar, MozillaCookieJar,
+                            effective_request_host, lwp_cookie_str)
+# forms
+from ._form_controls import (
+    AmbiguityError, CheckboxControl, Control, ControlNotFoundError,
+    FileControl, HiddenControl, HTMLForm, IgnoreControl, ImageControl, Item,
+    ItemCountError, ItemNotFoundError, Label, ListControl, LocateError,
+    Missing, PasswordControl, RadioControl, ScalarControl, SelectControl,
+    SubmitButtonControl, SubmitControl, TextareaControl, TextControl)
+from ._html import Factory, Link
+# misc
+from ._http import HeadParser, XHTMLCompatibleHeadParser
+# high-level stateful browser-style interface
+from ._mechanize import (Browser, BrowserStateError, FormNotFoundError,
+                         History, LinkNotFoundError)
+from ._opener import ContentTooShortError, OpenerFactory, urlretrieve
+from ._response import (make_response, response_seek_wrapper,
+                        seek_wrapped_response)
+from ._rfc3986 import urljoin
+from ._urllib2 import (
+    AbstractBasicAuthHandler, AbstractDigestAuthHandler, BaseHandler,
+    CacheFTPHandler, FileHandler, FTPHandler, HTTPBasicAuthHandler,
+    HTTPCookieProcessor, HTTPDefaultErrorHandler, HTTPDigestAuthHandler,
+    HTTPEquivProcessor, HTTPError, HTTPErrorProcessor, HTTPHandler,
+    HTTPPasswordMgr, HTTPPasswordMgrWithDefaultRealm, HTTPProxyPasswordMgr,
+    HTTPRedirectDebugProcessor, HTTPRedirectHandler, HTTPRefererProcessor,
+    HTTPRefreshProcessor, HTTPResponseDebugProcessor, HTTPRobotRulesProcessor,
+    HTTPSClientCertMgr, HTTPSHandler, OpenerDirector, ProxyBasicAuthHandler,
+    ProxyDigestAuthHandler, ProxyHandler, Request, RobotExclusionError,
+    SeekableResponseOpener, UnknownHandler, URLError, build_opener,
+    install_opener, urlopen)
+# configurable URL-opener interface
+from ._useragent import UserAgent, UserAgentBase
+from ._util import http2time as str2time
+from ._version import __version__
+
+# If you hate the idea of turning bugs into warnings, do:
+# import mechanize; mechanize.USE_BARE_EXCEPT = False
+USE_BARE_EXCEPT = True
+
+logger = logging.getLogger("mechanize")
+if logger.level is logging.NOTSET:
+    logger.setLevel(logging.CRITICAL)
+del logger
 __all__ = [
     'AbstractBasicAuthHandler',
     'AbstractDigestAuthHandler',
@@ -10,6 +61,7 @@ __all__ = [
     'CookieJar',
     'CookiePolicy',
     'DefaultCookiePolicy',
+    'effective_request_host',
     'FTPHandler',
     'Factory',
     'FileCookieJar',
@@ -23,6 +75,7 @@ __all__ = [
     'HTTPError',
     'HTTPErrorProcessor',
     'HTTPHandler',
+    'HTTPSHandler',
     'HTTPPasswordMgr',
     'HTTPPasswordMgrWithDefaultRealm',
     'HTTPProxyPasswordMgr',
@@ -96,75 +149,3 @@ __all__ = [
     'TextControl',
     'TextareaControl',
 ]
-
-import logging
-
-from _version import __version__
-
-# high-level stateful browser-style interface
-from _mechanize import \
-    Browser, History, \
-    BrowserStateError, LinkNotFoundError, FormNotFoundError
-
-# configurable URL-opener interface
-from _useragent import UserAgentBase, UserAgent
-from _html import Link, Factory
-
-# urllib2 work-alike interface.  This is a superset of the urllib2 interface.
-from _urllib2 import *
-import _urllib2
-if hasattr(_urllib2, "HTTPSHandler"):
-    __all__.append("HTTPSHandler")
-del _urllib2
-
-# misc
-from _http import HeadParser
-from _http import XHTMLCompatibleHeadParser
-from _opener import ContentTooShortError, OpenerFactory, urlretrieve
-from _response import \
-    response_seek_wrapper, seek_wrapped_response, make_response
-from _rfc3986 import urljoin
-from _util import http2time as str2time
-
-# cookies
-from _clientcookie import Cookie, CookiePolicy, DefaultCookiePolicy, \
-    CookieJar, FileCookieJar, LoadError, request_host_lc as request_host, \
-    LWPCookieJar, lwp_cookie_str, MozillaCookieJar, effective_request_host
-
-# forms
-from _form_controls import (
-    AmbiguityError,
-    ControlNotFoundError,
-    ItemCountError,
-    ItemNotFoundError,
-    LocateError,
-    Missing,
-    # deprecated
-    CheckboxControl,
-    Control,
-    FileControl,
-    HTMLForm,
-    HiddenControl,
-    IgnoreControl,
-    ImageControl,
-    Item,
-    Label,
-    ListControl,
-    PasswordControl,
-    RadioControl,
-    ScalarControl,
-    SelectControl,
-    SubmitButtonControl,
-    SubmitControl,
-    TextControl,
-    TextareaControl,
-)
-
-# If you hate the idea of turning bugs into warnings, do:
-# import mechanize; mechanize.USE_BARE_EXCEPT = False
-USE_BARE_EXCEPT = True
-
-logger = logging.getLogger("mechanize")
-if logger.level is logging.NOTSET:
-    logger.setLevel(logging.CRITICAL)
-del logger

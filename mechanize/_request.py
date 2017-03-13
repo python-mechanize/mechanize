@@ -8,11 +8,12 @@ COPYING.txt included with the distribution).
 
 """
 
+from __future__ import absolute_import
 import logging
 
-import _rfc3986
-import _sockettimeout
-import _urllib2_fork
+from . import _rfc3986
+from . import _sockettimeout
+from . import _urllib2_fork
 
 warn = logging.getLogger("mechanize").warning
 

@@ -7,6 +7,8 @@ public API and should not be used directly.
 
 """
 
+from __future__ import absolute_import
+
 import re
 
 _declname_match = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*').match

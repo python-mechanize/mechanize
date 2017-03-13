@@ -8,6 +8,8 @@ COPYING.txt included with the distribution).
 
 """
 
+from __future__ import absolute_import
+
 import bisect
 import httplib
 import os
@@ -16,12 +18,12 @@ import threading
 import types
 import urllib2
 
-import _response
-import _rfc3986
-import _sockettimeout
-import _urllib2_fork
-from _request import Request
-from _util import isstringlike
+from . import _response
+from . import _rfc3986
+from . import _sockettimeout
+from . import _urllib2_fork
+from ._request import Request
+from ._util import isstringlike
 
 
 open_file = open

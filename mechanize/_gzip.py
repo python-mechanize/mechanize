@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+
+import zlib
 from cStringIO import StringIO
 
-import _response
-import _urllib2_fork
+from . import _response, _urllib2_fork
 
 
 # GzipConsumer was taken from Fredrik Lundh's effbot.org-0.1-20041009 library
@@ -43,7 +45,6 @@ class GzipConsumer:
             except IndexError:
                 self.__data = data
                 return  # need more data
-            import zlib
             self.__data = ""
             self.__decoder = zlib.decompressobj(-zlib.MAX_WBITS)
         data = self.__decoder.decompress(data)

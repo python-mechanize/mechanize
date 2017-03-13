@@ -33,13 +33,15 @@ under the terms of the BSD or ZPL 2.1 licenses.
 
 """
 
-import re
+from __future__ import absolute_import
+
 import htmlentitydefs
-import _sgmllib_copy as sgmllib
 import HTMLParser
+import re
 from xml.sax import saxutils
 
-from _html import unescape, unescape_charref
+from . import _sgmllib_copy as sgmllib
+from ._html import unescape, unescape_charref
 
 
 class NoMoreTokensError(Exception):
@@ -413,8 +415,9 @@ class TolerantPullParser(_AbstractParser, sgmllib.SGMLParser):
 
 def _test():
     import doctest
-    import _pullparser
+    from . import _pullparser
     return doctest.testmod(_pullparser)
+
 
 if __name__ == "__main__":
     _test()

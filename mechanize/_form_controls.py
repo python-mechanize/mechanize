@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # vim:fileencoding=utf-8
+from __future__ import absolute_import
 
 import random
 import re
@@ -9,7 +10,7 @@ import urlparse
 import warnings
 from cStringIO import StringIO
 
-import _request
+from . import _request
 
 
 class Missing:

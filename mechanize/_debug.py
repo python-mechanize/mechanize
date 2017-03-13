@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+
 import logging
 
-from _response import response_seek_wrapper
-from _urllib2_fork import BaseHandler
+from ._response import response_seek_wrapper
+from ._urllib2_fork import BaseHandler
 
 
 class HTTPResponseDebugProcessor(BaseHandler):

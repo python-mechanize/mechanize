@@ -1,8 +1,11 @@
+from __future__ import absolute_import
+
 import re
 from collections import defaultdict
 from urlparse import urljoin
 
-from _form_controls import HTMLForm, Label
+from ._form_controls import HTMLForm, Label
+from ._request import Request
 
 
 class SkipControl(ValueError):
@@ -75,7 +78,6 @@ def parse_select(elem, parent_of, *a):
 
 def parse_forms(root, base_url, request_class=None, select_default=False):
     if request_class is None:
-        from mechanize import Request
         request_class = Request
     global_form = HTMLForm(base_url)
     forms, labels = [], []

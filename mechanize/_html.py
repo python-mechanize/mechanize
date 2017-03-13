@@ -8,13 +8,16 @@ included with the distribution).
 
 """
 
+from __future__ import absolute_import
+
 import codecs
 import copy
 import re
 
-from _headersutil import split_header_words, is_html as _is_html
-from _rfc3986 import clean_url, urljoin
-from _form import parse_forms
+from ._form import parse_forms
+from ._headersutil import is_html as _is_html
+from ._headersutil import split_header_words
+from ._rfc3986 import clean_url, urljoin
 
 DEFAULT_ENCODING = "utf-8"
 

@@ -7,9 +7,12 @@ under the terms of the BSD or ZPL 2.1 licenses (see the file
 COPYING.txt included with the distribution).
 """
 
+from __future__ import absolute_import
+
 import re
 import time
 import warnings
+from calendar import timegm
 
 
 class ExperimentalWarning(UserWarning):
@@ -77,7 +80,6 @@ def isstringlike(x):
 # return sys.exc_traceback.tb_frame.f_back.f_back.f_code.co_name
 
 
-from calendar import timegm
 
 # Date/time conversion routines for formats used by the HTTP protocol.
 

@@ -9,7 +9,8 @@ included with the distribution).
 
 """
 
-from _urllib2_fork import HTTPPasswordMgr
+from __future__ import absolute_import
+from ._urllib2_fork import HTTPPasswordMgr
 
 
 # TODO: stop deriving from HTTPPasswordMgr

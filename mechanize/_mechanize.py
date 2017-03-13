@@ -8,6 +8,7 @@ under the terms of the BSD or ZPL 2.1 licenses (see the file COPYING.txt
 included with the distribution).
 
 """
+from __future__ import absolute_import
 
 import copy
 import os
@@ -15,13 +16,9 @@ import re
 import urllib
 import urllib2
 
-import _request
-import _response
-import _rfc3986
-import _sockettimeout
-import _urllib2_fork
-from _html import Factory
-from _useragent import UserAgentBase
+from . import _request, _response, _rfc3986, _sockettimeout, _urllib2_fork
+from ._html import Factory
+from ._useragent import UserAgentBase
 
 
 class BrowserStateError(Exception):

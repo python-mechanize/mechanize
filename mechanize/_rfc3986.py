@@ -12,6 +12,7 @@ included with the distribution).
 
 # XXX Wow, this is ugly.  Overly-direct translation of the RFC ATM.
 
+from __future__ import absolute_import
 import re
 import urllib
 

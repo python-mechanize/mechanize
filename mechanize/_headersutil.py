@@ -9,14 +9,17 @@ COPYING.txt included with the distribution).
 
 """
 
+from __future__ import absolute_import
+
 import os
 import re
-from types import StringType
-from types import UnicodeType
+from types import StringType, UnicodeType
+
+from . import _rfc3986
+from ._util import http2time
+
 STRING_TYPES = StringType, UnicodeType
 
-from _util import http2time
-import _rfc3986
 
 
 def is_html_file_extension(url, allow_xhtml):
@@ -246,7 +249,7 @@ def parse_ns_headers(ns_headers):
 
 def _test():
     import doctest
-    import _headersutil
+    from . import _headersutil
     return doctest.testmod(_headersutil)
 
 if __name__ == "__main__":
