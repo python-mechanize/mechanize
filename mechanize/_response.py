@@ -41,6 +41,7 @@ def len_of_seekable(file_):
 # instead, but I think he's released his code publicly since, could pinch the
 # tests from it, at least...
 
+
 # For testing seek_wrapper invariant (note that
 # test_urllib2.HandlerTest.test_seekable is expected to fail when this
 # invariant checking is turned on).  The invariant checking is done by module
@@ -69,6 +70,7 @@ class seek_wrapper:
     particular file object.
 
     """
+
     # General strategy is to check that cache is full enough, then delegate to
     # the cache (self.__cache, which is a cStringIO.StringIO instance).  A seek
     # position (self.__pos) is maintained independently of the cache, in order
@@ -245,7 +247,8 @@ class seek_wrapper:
         self.__pos = self.__cache.tell()
         return data
 
-    def __iter__(self): return self
+    def __iter__(self):
+        return self
 
     def next(self):
         line = self.readline()
@@ -261,7 +264,6 @@ class seek_wrapper:
 
 
 class response_seek_wrapper(seek_wrapper):
-
     """
     Supports copying response objects and setting response body data.
 
@@ -301,28 +303,34 @@ class response_seek_wrapper(seek_wrapper):
 class eoffile:
     # file-like object that always claims to be at end-of-file...
 
-    def read(self, size=-1): return ""
+    def read(self, size=-1):
+        return ""
 
-    def readline(self, size=-1): return ""
+    def readline(self, size=-1):
+        return ""
 
-    def __iter__(self): return self
+    def __iter__(self):
+        return self
 
-    def next(self): return ""
+    def next(self):
+        return ""
 
-    def close(self): pass
+    def close(self):
+        pass
 
 
 class eofresponse(eoffile):
-
     def __init__(self, url, headers, code, msg):
         self._url = url
         self._headers = headers
         self.code = code
         self.msg = msg
 
-    def geturl(self): return self._url
+    def geturl(self):
+        return self._url
 
-    def info(self): return self._headers
+    def info(self):
+        return self._headers
 
 
 class closeable_response:
@@ -375,8 +383,8 @@ class closeable_response:
         self.next = self.fp.next
 
     def __repr__(self):
-        return '<%s at %s whose fp = %r>' % (
-            self.__class__.__name__, hex(abs(id(self))), self.fp)
+        return '<%s at %s whose fp = %r>' % (self.__class__.__name__,
+                                             hex(abs(id(self))), self.fp)
 
     def info(self):
         return self._headers
@@ -399,8 +407,8 @@ class closeable_response:
     def close(self):
         wrapped = self.fp
         wrapped.close()
-        new_wrapped = eofresponse(
-            self._url, self._headers, self.code, self.msg)
+        new_wrapped = eofresponse(self._url, self._headers, self.code,
+                                  self.msg)
         self._set_fp(new_wrapped)
 
     def __getstate__(self):
@@ -420,19 +428,25 @@ class closeable_response:
         # So we do 1.
 
         state = self.__dict__.copy()
-        new_wrapped = eofresponse(
-            self._url, self._headers, self.code, self.msg)
+        new_wrapped = eofresponse(self._url, self._headers, self.code,
+                                  self.msg)
         state["wrapped"] = new_wrapped
         return state
 
 
-def test_response(data='test data', headers=[],
-                  url="http://example.com/", code=200, msg="OK"):
+def test_response(data='test data',
+                  headers=[],
+                  url="http://example.com/",
+                  code=200,
+                  msg="OK"):
     return make_response(data, headers, url, code, msg)
 
 
-def test_html_response(data='test data', headers=[],
-                       url="http://example.com/", code=200, msg="OK"):
+def test_html_response(data='test data',
+                       headers=[],
+                       url="http://example.com/",
+                       code=200,
+                       msg="OK"):
     headers += [("Content-type", "text/html")]
     return make_response(data, headers, url, code, msg)
 
@@ -465,6 +479,7 @@ def make_headers(headers):
 # Rest of this module is especially horrible, but needed, at least until fork
 # urllib2.  Even then, may want to preseve urllib2 compatibility.
 
+
 def get_seek_wrapper_class(response):
     # in order to wrap response objects that are also exceptions, we must
     # dynamically subclass the exception :-(((
@@ -473,8 +488,8 @@ def get_seek_wrapper_class(response):
         if response.__class__.__module__ == "__builtin__":
             exc_class_name = response.__class__.__name__
         else:
-            exc_class_name = "%s.%s" % (
-                response.__class__.__module__, response.__class__.__name__)
+            exc_class_name = "%s.%s" % (response.__class__.__module__,
+                                        response.__class__.__name__)
 
         class httperror_seek_wrapper(response_seek_wrapper,
                                      response.__class__):
@@ -490,12 +505,11 @@ def get_seek_wrapper_class(response):
                 self.filename = wrapped.geturl()
 
             def __repr__(self):
-                return (
-                    "<%s (%s instance) at %s "
-                    "whose wrapped object = %r>" % (
-                        self.__class__.__name__, self._exc_class_name,
-                        hex(abs(id(self))), self.wrapped)
-                )
+                return ("<%s (%s instance) at %s "
+                        "whose wrapped object = %r>" %
+                        (self.__class__.__name__, self._exc_class_name,
+                         hex(abs(id(self))), self.wrapped))
+
         wrapper_class = httperror_seek_wrapper
     else:
         wrapper_class = response_seek_wrapper
@@ -556,8 +570,9 @@ def upgrade_response(response):
     if get_data:
         data = get_data()
 
-    response = closeable_response(
-        response.fp, response.info(), response.geturl(), code, msg)
+    response = closeable_response(response.fp,
+                                  response.info(), response.geturl(), code,
+                                  msg)
     response = wrapper_class(response)
     if data:
         response.set_data(data)
