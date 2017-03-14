@@ -22,6 +22,8 @@ import mimetools
 import urllib2
 from cStringIO import StringIO
 
+from ._headersutil import normalize_header_name
+
 
 def len_of_seekable(file_):
     # this function exists because evaluation of len(file_.getvalue()) on every
@@ -379,6 +381,18 @@ class closeable_response:
     def info(self):
         return self._headers
 
+    def get_header_values(self, name):
+        return self._headers.getheaders(name)
+
+    def get_all_header_names(self, normalize=True):
+        ans = []
+        for line in self._headers.headers:
+            h = line.partition(':')[0]
+            if normalize:
+                h = normalize_header_name(h)
+            ans.append(h)
+        return ans
+
     def geturl(self):
         return self._url
 
@@ -462,7 +476,8 @@ def get_seek_wrapper_class(response):
             exc_class_name = "%s.%s" % (
                 response.__class__.__module__, response.__class__.__name__)
 
-        class httperror_seek_wrapper(response_seek_wrapper, response.__class__):
+        class httperror_seek_wrapper(response_seek_wrapper,
+                                     response.__class__):
             # this only derives from HTTPError in order to be a subclass --
             # the HTTPError behaviour comes from delegation
 
