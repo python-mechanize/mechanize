@@ -1143,8 +1143,9 @@ class AbstractHTTPHandler(BaseHandler):
         r.recv = r.read
         fp = create_readline_wrapper(r)
 
-        resp = closeable_response(fp, r.msg, req.get_full_url(),
-                                  r.status, r.reason)
+        resp = closeable_response(
+            fp, r.msg, req.get_full_url(), r.status, r.reason,
+            getattr(r, 'version', None))
         return resp
 
     def __copy__(self):

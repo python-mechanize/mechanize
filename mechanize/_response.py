@@ -44,7 +44,7 @@ def len_of_seekable(file_):
 # invariant checking is turned on).  The invariant checking is done by module
 # ipdc, which is available here:
 # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/436834
-## from ipdbc import ContractBase
+# from ipdbc import ContractBase
 # class seek_wrapper(ContractBase):
 class seek_wrapper:
     """Adds a seek method to a file object.
@@ -154,7 +154,7 @@ class seek_wrapper:
                 # of .wrapped, since fseek() doesn't complain in that case.
                 # Also like fseek(), pretend we have seek()ed past the end,
                 # i.e. not:
-                #self.__pos = self.__cache.tell()
+                # self.__pos = self.__cache.tell()
                 # but rather:
                 self.__pos = dest
         else:
@@ -342,6 +342,7 @@ class closeable_response:
 
     .code
     .msg
+    .http_version
 
     Also supports pickling (but the stdlib currently does something to prevent
     it: http://python.org/sf/1144636).
@@ -350,12 +351,13 @@ class closeable_response:
     # presence of this attr indicates is useable after .close()
     closeable_response = None
 
-    def __init__(self, fp, headers, url, code, msg):
+    def __init__(self, fp, headers, url, code, msg, http_version=None):
         self._set_fp(fp)
         self._headers = headers
         self._url = url
         self.code = code
         self.msg = msg
+        self.http_version = http_version
 
     def _set_fp(self, fp):
         self.fp = fp
