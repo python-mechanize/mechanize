@@ -453,6 +453,65 @@ class MockHTTPHandler(mechanize.BaseHandler):
             return test_response("", [], req.get_full_url())
 
 
+class MockHTTPResponse:
+    def __init__(self, fp, msg, status, reason):
+        self.fp = fp
+        self.msg = msg
+        self.status = status
+        self.reason = reason
+
+    def read(self):
+        return ''
+
+
+class MockHTTPClass:
+    def __init__(self):
+        self.req_headers = []
+        self.data = None
+        self.raise_on_endheaders = False
+        self._tunnel_headers = {}
+
+    def __call__(self, host, timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
+        self.host = host
+        self.timeout = timeout
+        return self
+
+    def set_debuglevel(self, level):
+        self.level = level
+
+    def set_tunnel(self, host, port=None, headers=None):
+        self._tunnel_host = host
+        self._tunnel_port = port
+        if headers:
+            self._tunnel_headers = headers
+        else:
+            self._tunnel_headers.clear()
+
+    def request(self, method, url, body=None, headers={}):
+        self.method = method
+        self.selector = url
+        self.req_headers += headers.items()
+        self.req_headers.sort()
+        if body:
+            self.data = body
+        if self.raise_on_endheaders:
+            import socket
+
+            raise socket.error()
+
+    def getresponse(self):
+        return MockHTTPResponse(MockFile(), {}, 200, "OK")
+
+
+class MockHTTPSHandler(AbstractHTTPHandler):
+    # Useful for testing the Proxy-Authorization request by verifying the
+    # properties of httpcon
+    httpconn = MockHTTPClass()
+
+    def https_open(self, req):
+        return self.do_open(self.httpconn, req)
+
+
 class MockPasswordManager:
     def add_password(self, realm, uri, user, password):
         self.realm = realm
@@ -1569,6 +1628,29 @@ class HandlerTests(mechanize._testcase.TestCase):
             password_manager,
             "http://acme.example.com:3128/protected",
             "proxy.example.com:3128", )
+
+    def test_proxy_https_proxy_authorization(self):
+        o = OpenerDirector()
+        ph = mechanize.ProxyHandler(dict(https='proxy.example.com:3128'))
+        o.add_handler(ph)
+        https_handler = MockHTTPSHandler()
+        o.add_handler(https_handler)
+        req = Request("https://www.example.com/")
+        req.add_header("Proxy-Authorization", "FooBar")
+        req.add_header("User-Agent", "Grail")
+        self.assertEqual(req.get_host(), "www.example.com")
+        self.assertIsNone(req._tunnel_host)
+        r = o.open(req)
+        # Verify Proxy-Authorization gets tunneled to request.
+        # httpsconn req_headers do not have the Proxy-Authorization header but
+        # the req will have.
+        self.assertFalse(("Proxy-Authorization",
+                          "FooBar") in https_handler.httpconn.req_headers)
+        self.assertTrue(
+            ("User-Agent", "Grail") in https_handler.httpconn.req_headers)
+        self.assertIsNotNone(req._tunnel_host)
+        self.assertEqual(req.get_host(), "proxy.example.com:3128")
+        self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
 
     def test_basic_and_digest_auth_handlers(self):
         # HTTPDigestAuthHandler threw an exception if it couldn't handle a 40*
