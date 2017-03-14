@@ -103,7 +103,7 @@ class FtpTestCase(TestCase):
         write_file(file_path, data)
         relative_path = os.path.join(os.path.basename(path), "stuff")
         r = browser.open("ftp://anon@localhost:%s/%s" %
-                         (server.port, relative_path))
+                         (server.port, relative_path.replace(os.sep, '/')))
         self.assertEqual(r.read(), data)
 
 
