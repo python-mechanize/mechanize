@@ -58,6 +58,7 @@ from urllib2 import HTTPError, URLError
 from . import _rfc3986
 from ._clientcookie import CookieJar
 from ._response import closeable_response
+from ._headersutil import normalize_header_name
 
 
 def sha1_digest(bytes):
@@ -219,17 +220,19 @@ class Request:
 
     def add_header(self, key, val):
         # useful for something like authentication
-        self.headers[key.capitalize()] = val
+        self.headers[normalize_header_name(key)] = val
 
     def add_unredirected_header(self, key, val):
         # will not be added to a redirected request
-        self.unredirected_hdrs[key.capitalize()] = val
+        self.unredirected_hdrs[normalize_header_name(key)] = val
 
     def has_header(self, header_name):
+        header_name = normalize_header_name(header_name)
         return (header_name in self.headers or
                 header_name in self.unredirected_hdrs)
 
     def get_header(self, header_name, default=None):
+        header_name = normalize_header_name(header_name)
         return self.headers.get(
             header_name,
             self.unredirected_hdrs.get(header_name, default))

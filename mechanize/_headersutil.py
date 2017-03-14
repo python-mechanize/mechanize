@@ -21,7 +21,6 @@ from ._util import http2time
 STRING_TYPES = StringType, UnicodeType
 
 
-
 def is_html_file_extension(url, allow_xhtml):
     ext = os.path.splitext(_rfc3986.urlsplit(url)[2])[1]
     html_exts = [".htm", ".html"]
@@ -47,8 +46,10 @@ def is_html(ct_headers, url, allow_xhtml=False):
     html_types = ["text/html"]
     if allow_xhtml:
         html_types += [
-            "text/xhtml", "text/xml",
-            "application/xml", "application/xhtml+xml",
+            "text/xhtml",
+            "text/xml",
+            "application/xml",
+            "application/xhtml+xml",
         ]
     return ct in html_types
 
@@ -57,6 +58,7 @@ def unmatched(match):
     """Return unmatched part of re.Match object."""
     start, end = match.span(0)
     return match.string[:start] + match.string[end:]
+
 
 token_re = re.compile(r"^\s*([^=\s;,]+)")
 quoted_value_re = re.compile(r"^\s*=\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"")
@@ -151,6 +153,7 @@ def split_header_words(header_values):
             result.append(pairs)
     return result
 
+
 join_escape_re = re.compile(r"([\"\\])")
 
 
@@ -207,9 +210,15 @@ def parse_ns_headers(ns_headers):
     Currently, this is also used for parsing RFC 2109 cookies.
 
     """
-    known_attrs = ("expires", "domain", "path", "secure",
-                   # RFC 2109 attrs (may turn up in Netscape cookies, too)
-                   "version", "port", "max-age")
+    known_attrs = (
+        "expires",
+        "domain",
+        "path",
+        "secure",
+        # RFC 2109 attrs (may turn up in Netscape cookies, too)
+        "version",
+        "port",
+        "max-age")
 
     result = []
     for ns_header in ns_headers:
@@ -247,10 +256,24 @@ def parse_ns_headers(ns_headers):
     return result
 
 
+uppercase_headers = {'WWW', 'TE'}
+
+
+def normalize_header_name(name):
+    parts = [x.capitalize() for x in name.split('-')]
+    q = parts[0].upper()
+    if q in uppercase_headers:
+        parts[0] = q
+    if len(parts) == 3 and parts[1] == 'Websocket':
+        parts[1] = 'WebSocket'
+    return '-'.join(parts)
+
+
 def _test():
     import doctest
     from . import _headersutil
     return doctest.testmod(_headersutil)
+
 
 if __name__ == "__main__":
     _test()

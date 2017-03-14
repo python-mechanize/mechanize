@@ -967,21 +967,21 @@ class HandlerTests(mechanize._testcase.TestCase):
                 self.assertTrue("Content-length" not in req.unredirected_hdrs)
                 self.assertTrue("Content-type" not in req.unredirected_hdrs)
             else:  # POST
-                self.assertEqual(req.unredirected_hdrs["Content-length"], "0")
-                self.assertEqual(req.unredirected_hdrs["Content-type"],
+                self.assertEqual(req.unredirected_hdrs["Content-Length"], "0")
+                self.assertEqual(req.unredirected_hdrs["Content-Type"],
                                  "application/x-www-form-urlencoded")
             # XXX the details of Host could be better tested
             self.assertEqual(req.unredirected_hdrs["Host"], "example.com")
             self.assertEqual(req.unredirected_hdrs["Spam"], "eggs")
 
             # don't clobber existing headers
-            req.add_unredirected_header("Content-length", "foo")
-            req.add_unredirected_header("Content-type", "bar")
+            req.add_unredirected_header("Content-Length", "foo")
+            req.add_unredirected_header("Content-Type", "bar")
             req.add_unredirected_header("Host", "baz")
             req.add_unredirected_header("Spam", "foo")
             newreq = h.do_request_(req)
-            self.assertEqual(req.unredirected_hdrs["Content-length"], "foo")
-            self.assertEqual(req.unredirected_hdrs["Content-type"], "bar")
+            self.assertEqual(req.unredirected_hdrs["Content-Length"], "foo")
+            self.assertEqual(req.unredirected_hdrs["Content-Type"], "bar")
             self.assertEqual(req.unredirected_hdrs["Host"], "baz")
             self.assertEqual(req.unredirected_hdrs["Spam"], "foo")
 

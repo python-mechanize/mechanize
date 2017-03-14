@@ -27,15 +27,15 @@ interface and also provided access to the "unredirected" headers.  It's
 probably too late to fix that, though.
 
 
-Check .capitalize() case normalization:
+Check case normalization:
 
 >>> url = "http://example.com"
->>> Request(url, headers={"Spam-eggs": "blah"}).headers["Spam-eggs"]
+>>> Request(url, headers={"Spam-eggs": "blah"}).headers["Spam-Eggs"]
 'blah'
->>> Request(url, headers={"spam-EggS": "blah"}).headers["Spam-eggs"]
+>>> Request(url, headers={"spam-EggS": "blah"}).headers["Spam-Eggs"]
 'blah'
 
-Currently, Request(url, "Spam-eggs").headers["Spam-Eggs"] raises KeyError,
+Currently, Request(url, "Spam-eggs").headers["Spam-eggs"] raises KeyError,
 but that could be changed in future.
 
 
@@ -52,17 +52,12 @@ httplib).
 >>> r.has_header("Spam-eggs")
 True
 >>> r.header_items()
-[('Spam-eggs', 'blah')]
+[('Spam-Eggs', 'blah')]
 >>> r.add_header("Foo-Bar", "baz")
 >>> items = r.header_items()
 >>> items.sort()
 >>> items
-[('Foo-bar', 'baz'), ('Spam-eggs', 'blah')]
-
-Note that e.g. r.has_header("spam-EggS") is currently False, and
-r.get_header("spam-EggS") returns None, but that could be changed in
-future.
-
+[('Foo-Bar', 'baz'), ('Spam-Eggs', 'blah')]
 >>> r.has_header("Not-there")
 False
 >>> print r.get_header("Not-there")
