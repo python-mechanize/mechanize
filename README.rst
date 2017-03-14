@@ -11,27 +11,27 @@ Major features
 
 Stateful programmatic web browsing in Python
 
-  * `mechanize.Browser` and `mechanize.UserAgentBase` implement the
-    interface of `urllib2.OpenerDirector`, so:
+* `mechanize.Browser` and `mechanize.UserAgentBase` implement the
+interface of `urllib2.OpenerDirector`, so:
 
-      * any URL can be opened, not just `http:`
+    * any URL can be opened, not just `http:`
 
-      * `mechanize.UserAgentBase` offers easy dynamic configuration of
-        user-agent features like protocol, cookie, redirection and
-        `robots.txt` handling, without having to make a new
-        `OpenerDirector` each time, e.g. by calling `build_opener()`.
+    * `mechanize.UserAgentBase` offers easy dynamic configuration of
+    user-agent features like protocol, cookie, redirection and
+    `robots.txt` handling, without having to make a new
+    `OpenerDirector` each time, e.g. by calling `build_opener()`.
 
-  * Easy HTML form filling.
+* Easy HTML form filling.
 
-  * Convenient link parsing and following.
+* Convenient link parsing and following.
 
-  * Browser history (`.back()` and `.reload()` methods).
+* Browser history (`.back()` and `.reload()` methods).
 
-  * The `Referer` HTTP header is added properly (optional).
+* The `Referer` HTTP header is added properly (optional).
 
-  * Automatic observance of `robots.txt <http://www.robotstxt.org/wc/norobots.html>`_.
+* Automatic observance of `robots.txt <http://www.robotstxt.org/wc/norobots.html>`_.
 
-  * Automatic handling of HTTP-Equiv and Refresh.
+* Automatic handling of HTTP-Equiv and Refresh.
 
 
 Installation
