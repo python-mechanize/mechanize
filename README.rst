@@ -205,7 +205,7 @@ Also:
 Thanks also to the many people who have contributed bug reports and
 patches.
 
-.. |pypi| image:: https://img.shields.io/pypi/v/mechanize.svg?style=flat-square&label=latest%20version
+.. |pypi| image:: https://img.shields.io/pypi/v/mechanize.svg?label=version
     :target: https://pypi.python.org/pypi/mechanize
     :alt: Latest version released on PyPi
 
