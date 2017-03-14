@@ -12,7 +12,7 @@ Major features
 Stateful programmatic web browsing in Python
 
 - `mechanize.Browser` and `mechanize.UserAgentBase` implement the
-interface of `urllib2.OpenerDirector`, so:
+  interface of `urllib2.OpenerDirector`, so:
 
     - any URL can be opened, not just `http:`
 
