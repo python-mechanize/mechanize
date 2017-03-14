@@ -4,6 +4,7 @@
 import copy
 import httplib
 import mimetools
+import os
 import re
 import StringIO
 from io import BytesIO
@@ -12,8 +13,8 @@ from unittest import TestCase
 import mechanize
 import mechanize._response
 import mechanize._testcase
-from mechanize._response import test_html_response
 from mechanize._gzip import HTTPGzipProcessor, compress_readable_output
+from mechanize._response import test_html_response
 
 
 # XXX these 'mock' classes are badly in need of simplification / removal
@@ -755,7 +756,7 @@ class BrowserTests(TestCase):
         req.add_header('Accept-Encoding', 'moo, *')
         req = p.https_request(req)
         self.assertEqual(req.get_header('Accept-Encoding'), 'moo, *, gzip')
-        data = b'properly unpacked'
+        data = os.urandom(1024*1024)
         r = MockResponse(
             url,
             data=b''.join(compress_readable_output(BytesIO(data))),
