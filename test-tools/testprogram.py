@@ -97,11 +97,10 @@ class ServerProcess:
 
     def stop(self):
         """Kill process (forcefully if necessary)."""
-        pid = self._process.pid
         if os.name == 'nt':
-            kill_windows(pid, self.report_hook)
+            self._process.kill()
         else:
-            kill_posix(pid, self.report_hook)
+            kill_posix(self._process.pid, self.report_hook)
 
 
 def backoff(func, errors,
@@ -120,16 +119,6 @@ def backoff(func, errors,
             break
     else:
         raise
-
-
-def kill_windows(handle, report_hook):
-    try:
-        import win32api
-    except ImportError:
-        import ctypes
-        ctypes.windll.kernel32.TerminateProcess(int(handle), -1)
-    else:
-        win32api.TerminateProcess(int(handle), -1)
 
 
 def kill_posix(pid, report_hook):
