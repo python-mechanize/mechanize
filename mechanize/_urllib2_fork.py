@@ -1402,8 +1402,8 @@ class FTPHandler(BaseHandler):
             sf = StringIO(headers)
             headers = mimetools.Message(sf)
             return addinfourl(fp, headers, req.get_full_url())
-        except ftplib.all_errors, msg:
-            raise URLError(('ftp error: %s' % msg), sys.exc_info()[2])
+        except ftplib.all_errors as msg:
+            raise URLError('ftp error: %s' % msg), None, sys.exc_info()[2]
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         try:
