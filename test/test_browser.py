@@ -33,6 +33,12 @@ class MockHeaders(dict):
         name = name.lower()
         return [v for k, v in self.iteritems() if name == k.lower()]
 
+    def __delitem__(self, k):
+        kmap = {q.lower(): q for q in self}
+        k = kmap.get(k)
+        if k is not None:
+            dict.__delitem__[k]
+
 
 class MockResponse:
     closeable_response = None
@@ -43,6 +49,10 @@ class MockResponse:
         if info is None:
             info = {}
         self._info = self._headers = MockHeaders(info)
+        self.close_called = False
+
+    def _set_fp(self, fp):
+        self.fp = fp
 
     def info(self):
         return self._info
@@ -58,7 +68,7 @@ class MockResponse:
         self.fp.seek(0)
 
     def close(self):
-        pass
+        self.close_called = True
 
     def get_data(self):
         pass
@@ -746,8 +756,10 @@ class BrowserTests(TestCase):
         req = p.https_request(req)
         self.assertEqual(req.get_header('Accept-Encoding'), 'moo, *, gzip')
         data = b'properly unpacked'
-        r = MockResponse(url, data=b''.join(compress_readable_output(BytesIO(
-            data))), info={'Content-Encoding': 'gzip'})
+        r = MockResponse(
+            url,
+            data=b''.join(compress_readable_output(BytesIO(data))),
+            info={'Content-Encoding': 'gzip'})
         r = p.https_response(req, r)
         self.assertEqual(r.read(), data)
 

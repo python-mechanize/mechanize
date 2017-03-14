@@ -2,10 +2,9 @@ from __future__ import absolute_import
 
 import struct
 import zlib
-from cStringIO import StringIO
 from io import DEFAULT_BUFFER_SIZE
 
-from . import _response, _urllib2_fork
+from ._urllib2_fork import BaseHandler
 
 
 def gzip_prefix():
@@ -38,100 +37,137 @@ def compress_readable_output(src_file, compress_level=6):
             prefix_written = True
             data = gzip_prefix() + data
         yield data
-    yield zobj.flush() + struct.pack(b"<L", crc & 0xffffffff) + struct.pack(
-        b"<L", size)
+    yield zobj.flush() + struct.pack(b"<LL", crc & 0xffffffffL, size)
 
 
-# GzipConsumer was taken from Fredrik Lundh's effbot.org-0.1-20041009 library
-class GzipConsumer:
-    def __init__(self, consumer):
-        self.__consumer = consumer
-        self.__decoder = None
-        self.__data = ""
+def read_amt(f, amt):
+    ans = b''
+    while len(ans) < amt:
+        extra = f.read(amt - len(ans))
+        if not extra:
+            raise EOFError('Unexpected end of compressed stream')
+        ans += extra
+    return ans
 
-    def __getattr__(self, key):
-        return getattr(self.__consumer, key)
 
-    def feed(self, data):
-        if self.__decoder is None:
-            # check if we have a full gzip header
-            data = self.__data + data
-            try:
-                i = 10
-                flag = ord(data[3])
-                if flag & 4:  # extra
-                    x = ord(data[i]) + 256 * ord(data[i + 1])
-                    i = i + 2 + x
-                if flag & 8:  # filename
-                    while ord(data[i]):
-                        i = i + 1
-                    i = i + 1
-                if flag & 16:  # comment
-                    while ord(data[i]):
-                        i = i + 1
-                    i = i + 1
-                if flag & 2:  # crc
-                    i = i + 2
-                if len(data) < i:
-                    raise IndexError("not enough data")
-                if data[:3] != "\x1f\x8b\x08":
-                    raise IOError("invalid gzip data")
-                data = data[i:]
-            except IndexError:
-                self.__data = data
-                return  # need more data
-            self.__data = ""
-            self.__decoder = zlib.decompressobj(-zlib.MAX_WBITS)
-        data = self.__decoder.decompress(data)
-        if data:
-            self.__consumer.feed(data)
+class UnzipWrapper:
+    def __init__(self, fp):
+        self.__decoder = zlib.decompressobj(-zlib.MAX_WBITS)
+        self.__data = b''
+        self.__crc = zlib.crc32(self.__data) & 0xffffffffL
+        self.__fp = fp
+        self.__size = 0
+        self.__is_fully_read = False
+
+    def read(self, sz=-1):
+        amt_read = 0
+        ans = []
+        if self.__data:
+            if sz < 0 or len(self.__data) < sz:
+                ans.append(self.__data)
+                amt_read += len(self.__data)
+                self.__data = b''
+            else:
+                self.__data, ret = self.__data[sz:], self.__data[:sz]
+                return ret
+
+        if not self.__is_fully_read:
+            while not self.__decoder.unused_data and (sz < 0 or amt_read < sz):
+                chunk = self.__fp.read(1024)
+                if chunk:
+                    if self.__decoder.unconsumed_tail:
+                        chunk = self.__decoder.unconsumed_tail + chunk
+                    chunk = self.__decoder.decompress(chunk)
+                    ans.append(chunk)
+                    amt_read += len(chunk)
+                    self.__size += len(chunk)
+                    self.__crc = zlib.crc32(chunk, self.__crc)
+                else:
+                    if not self.__decoder.unused_data:
+                        raise ValueError(
+                            'unexpected end of compressed gzip data,'
+                            ' before reading trailer')
+                    break
+
+            if self.__decoder.unused_data:
+                # End of compressed stream reached
+                tail = self.__decoder.unused_data
+                if len(tail) < 8:
+                    tail += read_amt(self.__fp, 8 - len(tail))
+                # ignore any extra bytes after end of compressed stream
+                self.__fp.read()
+                # check CRC, ignore size mismatch
+                crc, size = struct.unpack(b'<LL', tail)
+                if (crc & 0xffffffffL) != (self.__crc & 0xffffffffL):
+                    raise ValueError(
+                        'gzip stream is corrupted, CRC does not match')
+                self.__is_fully_read = True
+
+        ans = b''.join(ans)
+        if len(ans) > sz and sz > -1:
+            ans, self.__data = ans[:sz], ans[sz:]
+        return ans
+
+    def readline(self, sz=-1):
+        # Dont care about making this efficient
+        data = self.read()
+        idx = data.find(b'\n')
+        if idx > 0:
+            if sz < 0 or idx < sz:
+                line, self.__data = data[:idx + 1], data[idx + 1:]
+            else:
+                line, self.__data = data[:sz], data[sz:]
+        else:
+            if sz > -1:
+                line, self.__data = data[:sz], data[sz:]
+            else:
+                line = data
+        return line
 
     def close(self):
-        if self.__decoder:
-            data = self.__decoder.flush()
-            if data:
-                self.__consumer.feed(data)
-        self.__consumer.close()
+        self.__fp.close()
+
+    def fileno(self):
+        return self.__fp.fileno()
+
+    def __iter__(self):
+        ans = self.readline()
+        if ans:
+            yield ans
+
+    def next(self):
+        ans = self.readline()
+        if not ans:
+            raise StopIteration()
+        return ans
 
 
-# --------------------------------------------------------------------
-
-# the rest of this module is John Lee's stupid code, not
-# Fredrik's nice code :-)
-
-
-class stupid_gzip_consumer:
-    def __init__(self):
-        self.data = []
-
-    def feed(self, data):
-        self.data.append(data)
-
-
-class stupid_gzip_wrapper(_response.closeable_response):
-    def __init__(self, response):
-        self._response = response
-
-        c = stupid_gzip_consumer()
-        gzc = GzipConsumer(c)
-        gzc.feed(response.read())
-        self.__data = StringIO("".join(c.data))
-
-    def read(self, size=-1):
-        return self.__data.read(size)
-
-    def readline(self, size=-1):
-        return self.__data.readline(size)
-
-    def readlines(self, sizehint=-1):
-        return self.__data.readlines(sizehint)
-
-    def __getattr__(self, name):
-        # delegate unknown methods/attributes
-        return getattr(self._response, name)
+def create_gzip_decompressor(zipped_file):
+    prefix = read_amt(zipped_file, 10)
+    if prefix[:2] != b'\x1f\x8b':
+        raise ValueError('gzip stream has incorrect magic bytes: %r' %
+                         prefix[:2])
+    if prefix[2] != b'\x08':
+        raise ValueError('gzip stream has unknown compression method: %r' %
+                         prefix[2])
+    flag = ord(prefix[3])
+    if flag & 4:  # extra
+        extra_amt = read_amt(zipped_file, 2)
+        extra_amt = ord(extra_amt[0]) + 256 * ord(extra_amt[1])
+        if extra_amt:
+            read_amt(zipped_file, extra_amt)
+    if flag & 8:  # filename
+        while read_amt(zipped_file, 1) != b'\0':
+            continue
+    if flag & 16:  # comment
+        while read_amt(zipped_file, 1) != b'\0':
+            continue
+    if flag & 2:  # crc
+        read_amt(zipped_file, 2)
+    return UnzipWrapper(zipped_file)
 
 
-class HTTPGzipProcessor(_urllib2_fork.BaseHandler):
+class HTTPGzipProcessor(BaseHandler):
     handler_order = 200  # response processing before HTTPEquivProcessor
 
     def __init__(self, request_gzip=False):
@@ -154,10 +190,13 @@ class HTTPGzipProcessor(_urllib2_fork.BaseHandler):
 
     def http_response(self, request, response):
         # post-process response
-        enc_hdrs = response.info().getheaders("Content-encoding")
+        h = response.info()
+        enc_hdrs = h.getheaders("Content-encoding")
         for enc_hdr in enc_hdrs:
-            if "gzip" in enc_hdr or "compress" in enc_hdr:
-                return stupid_gzip_wrapper(response)
+            if "gzip" in enc_hdr:
+                response._set_fp(create_gzip_decompressor(response.fp))
+                del h['Content-encoding']
+                del h['Content-length']
         return response
 
     https_response = http_response
