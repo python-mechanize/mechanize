@@ -36,9 +36,9 @@ class MockHeaders(dict):
 
     def __delitem__(self, k):
         kmap = {q.lower(): q for q in self}
-        k = kmap.get(k)
+        k = kmap.get(k.lower())
         if k is not None:
-            dict.__delitem__[k]
+            dict.__delitem__(self, k)
 
 
 class MockResponse:
@@ -756,13 +756,20 @@ class BrowserTests(TestCase):
         req.add_header('Accept-Encoding', 'moo, *')
         req = p.https_request(req)
         self.assertEqual(req.get_header('Accept-Encoding'), 'moo, *, gzip')
-        data = os.urandom(1024*1024)
+        data = os.urandom(1024 * 1024)
+        cdata = b''.join(compress_readable_output(BytesIO(data)))
         r = MockResponse(
             url,
-            data=b''.join(compress_readable_output(BytesIO(data))),
-            info={'Content-Encoding': 'gzip'})
+            data=cdata,
+            info={
+                'Content-Encoding': 'gzip',
+                'Content-Length': str(len(cdata))
+            })
         r = p.https_response(req, r)
         self.assertEqual(r.read(), data)
+        h = r.info()
+        self.assertFalse(h.getheaders('content-encoding'))
+        self.assertFalse(h.getheaders('content-length'))
 
 
 class ResponseTests(TestCase):
