@@ -6,18 +6,19 @@ import httplib
 import mimetools
 import re
 import StringIO
+from io import BytesIO
 from unittest import TestCase
 
 import mechanize
 import mechanize._response
 import mechanize._testcase
 from mechanize._response import test_html_response
+from mechanize._gzip import HTTPGzipProcessor, compress_readable_output
 
 
 # XXX these 'mock' classes are badly in need of simplification / removal
 # (note this stuff is also used by test_useragent.py and test_browser.doctest)
 class MockMethod:
-
     def __init__(self, meth_name, action, handle):
         self.meth_name = meth_name
         self.handle = handle
@@ -28,7 +29,6 @@ class MockMethod:
 
 
 class MockHeaders(dict):
-
     def getheaders(self, name):
         name = name.lower()
         return [v for k, v in self.iteritems() if name == k.lower()]
@@ -38,11 +38,11 @@ class MockResponse:
     closeable_response = None
 
     def __init__(self, url="http://example.com/", data=None, info=None):
-        self.url = url
+        self.url = self._url = url
         self.fp = StringIO.StringIO(data)
         if info is None:
             info = {}
-        self._info = MockHeaders(info)
+        self._info = self._headers = MockHeaders(info)
 
     def info(self):
         return self._info
@@ -135,7 +135,6 @@ class TestBrowser2(mechanize.Browser):
 
 
 class BrowserTests(TestCase):
-
     def test_referer(self):
         b = TestBrowser()
         url = "http://www.example.com/"
@@ -215,7 +214,6 @@ class BrowserTests(TestCase):
             return ra.wrapped is rb.wrapped
 
         class Handler(mechanize.BaseHandler):
-
             def http_open(self, request):
                 r = _response.test_response(url=request.get_full_url())
                 # these tests aren't interested in auto-.reload() behaviour of
@@ -255,7 +253,6 @@ class BrowserTests(TestCase):
         # even if we get an HTTPError, history, .response() and .request should
         # still get updated
         class Handler2(mechanize.BaseHandler):
-
             def https_open(self, request):
                 r = mechanize.HTTPError("https://example.com/bad", 503, "Oops",
                                         MockHeaders(), StringIO.StringIO())
@@ -285,7 +282,6 @@ class BrowserTests(TestCase):
         from mechanize._response import test_response
 
         class Browser(TestBrowser):
-
             def __init__(self):
                 TestBrowser.__init__(self)
                 self.reloaded = False
@@ -299,7 +295,6 @@ class BrowserTests(TestCase):
         data = data % ("The quick brown fox jumps over the lazy dog." * 100)
 
         class Handler(mechanize.BaseHandler):
-
             def http_open(self, requst):
                 return test_response(data, [("content-type", "text/html")])
 
@@ -492,13 +487,10 @@ class BrowserTests(TestCase):
         for encoding in ["UTF-8", "latin-1"]:
             encoding_decl = "; charset=%s" % encoding
             b = TestBrowser()
-            r = MockResponse(
-                url,
-                """\
+            r = MockResponse(url, """\
 <a href="http://example.com/foo/bar&mdash;&#x2014;.html"
    name="name0&mdash;&#x2014;">blah&mdash;&#x2014;</a>
-""",
-                {"content-type": "text/html%s" % encoding_decl})
+""", {"content-type": "text/html%s" % encoding_decl})
             b.add_handler(make_mock_handler()([("http_open", r)]))
             r = b.open(url)
 
@@ -566,8 +558,7 @@ class BrowserTests(TestCase):
                  [("href", "http://example.com/foo/bar.html"),
                   ("name", "apples")]),
             Link(url, "spam", "", "a", [("href", "spam"), ("name", "pears")]),
-            Link(url, "blah", '', "area",
-                 [("href", "blah"), ("name", "foo")]),
+            Link(url, "blah", '', "area", [("href", "blah"), ("name", "foo")]),
             Link(url, "src", '', "iframe",
                  [("name", "name"), ("href", "href"), ("src", "src")]),
             Link(url, "src", '', "iframe",
@@ -641,15 +632,15 @@ class BrowserTests(TestCase):
                     url="src",
                     text='',
                     tag="iframe",
-                    attrs=[("name", "name"), ("href", "href"), ("src", "src")
-                           ]),
+                    attrs=[("name", "name"), ("href", "href"),
+                           ("src", "src")]),
                 Link(
                     url,
                     url="src",
                     text='',
                     tag="iframe",
-                    attrs=[("name", "name2"), ("href", "href"), ("src", "src")
-                           ]),
+                    attrs=[("name", "name2"), ("href", "href"),
+                           ("src", "src")]),
             ])
 
     def test_base_uri(self):
@@ -742,9 +733,26 @@ class BrowserTests(TestCase):
         h = cbr._ua_handlers['_refresh']
         self.assertEqual((h.honor_time, h.max_time), (True, 237))
 
+    def test_gzip(self):
+        p = HTTPGzipProcessor()
+        url = "https://www.example.com/"
+        req = p.https_request(mechanize.Request(url))
+        self.assertIsNone(req.get_header('Accept-Encoding'))
+        p.request_gzip = True
+        req = p.https_request(mechanize.Request(url))
+        self.assertEqual(req.get_header('Accept-Encoding'), 'gzip')
+        req = mechanize.Request(url)
+        req.add_header('Accept-Encoding', 'moo, *')
+        req = p.https_request(req)
+        self.assertEqual(req.get_header('Accept-Encoding'), 'moo, *, gzip')
+        data = b'properly unpacked'
+        r = MockResponse(url, data=b''.join(compress_readable_output(BytesIO(
+            data))), info={'Content-Encoding': 'gzip'})
+        r = p.https_response(req, r)
+        self.assertEqual(r.read(), data)
+
 
 class ResponseTests(TestCase):
-
     def test_set_response(self):
         import copy
         from mechanize import response_seek_wrapper
@@ -802,7 +810,6 @@ class ResponseTests(TestCase):
 
 
 class HttplibTests(mechanize._testcase.TestCase):
-
     def make_browser(self):
         class TestBrowser(mechanize.Browser):
             default_features = []

@@ -14,7 +14,6 @@ included with the distribution).
 from __future__ import absolute_import
 
 import copy
-import warnings
 
 from . import _auth, _gzip, _opener, _response, _sockettimeout, _urllib2
 
@@ -67,7 +66,7 @@ class UserAgentBase(_opener.OpenerDirector):
         "_proxy_basicauth": _urllib2.ProxyBasicAuthHandler,
         "_proxy_digestauth": _urllib2.ProxyDigestAuthHandler,
         "_robots": _urllib2.HTTPRobotRulesProcessor,
-        "_gzip": _gzip.HTTPGzipProcessor,  # experimental!
+        "_gzip": _gzip.HTTPGzipProcessor,
 
         # debug handlers
         "_debug_redirect": _urllib2.HTTPRedirectDebugProcessor,
@@ -76,12 +75,19 @@ class UserAgentBase(_opener.OpenerDirector):
 
     default_schemes = ["http", "ftp", "file"]
     default_others = ["_unknown", "_http_error", "_http_default_error"]
-    default_features = ["_redirect", "_cookies",
-                        "_refresh", "_equiv",
-                        "_basicauth", "_digestauth",
-                        "_proxy", "_proxy_basicauth", "_proxy_digestauth",
-                        "_robots",
-                        ]
+    default_features = [
+        "_gzip",
+        "_redirect",
+        "_cookies",
+        "_refresh",
+        "_equiv",
+        "_basicauth",
+        "_digestauth",
+        "_proxy",
+        "_proxy_basicauth",
+        "_proxy_digestauth",
+        "_robots",
+    ]
     if hasattr(_urllib2, 'HTTPSHandler'):
         handler_classes["https"] = _urllib2.HTTPSHandler
         default_schemes.append("https")
@@ -90,8 +96,7 @@ class UserAgentBase(_opener.OpenerDirector):
         _opener.OpenerDirector.__init__(self)
 
         ua_handlers = self._ua_handlers = {}
-        for scheme in (self.default_schemes +
-                       self.default_others +
+        for scheme in (self.default_schemes + self.default_others +
                        self.default_features):
             klass = self.handler_classes[scheme]
             ua_handlers[scheme] = klass()
@@ -190,16 +195,17 @@ class UserAgentBase(_opener.OpenerDirector):
         ...     proxy_bypass)
 
         """
-        self._set_handler("_proxy", True,
-                          constructor_kwds=dict(proxies=proxies,
-                                                proxy_bypass=proxy_bypass))
+        self._set_handler(
+            "_proxy",
+            True,
+            constructor_kwds=dict(proxies=proxies, proxy_bypass=proxy_bypass))
 
     def add_password(self, url, user, password, realm=None):
         self._password_manager.add_password(realm, url, user, password)
 
     def add_proxy_password(self, user, password, hostport=None, realm=None):
-        self._proxy_password_manager.add_password(
-            realm, hostport, user, password)
+        self._proxy_password_manager.add_password(realm, hostport, user,
+                                                  password)
 
     def add_client_certificate(self, url, key_file, cert_file):
         """Add an SSL client certificate, for HTTPS client auth.
@@ -262,8 +268,11 @@ class UserAgentBase(_opener.OpenerDirector):
 
     def set_handle_refresh(self, handle, max_time=None, honor_time=True):
         """Set whether to handle HTTP Refresh headers."""
-        self._set_handler("_refresh", handle, constructor_kwds={
-                          "max_time": max_time, "honor_time": honor_time})
+        self._set_handler(
+            "_refresh",
+            handle,
+            constructor_kwds={"max_time": max_time,
+                              "honor_time": honor_time})
 
     def set_handle_equiv(self, handle, head_parser_class=None):
         """Set whether to treat HTML http-equiv headers like HTTP headers.
@@ -278,14 +287,15 @@ class UserAgentBase(_opener.OpenerDirector):
             constructor_kwds = {}
         self._set_handler("_equiv", handle, constructor_kwds=constructor_kwds)
 
-    def set_handle_gzip(self, handle):
-        """Handle gzip transfer encoding.
+    def set_request_gzip(self, handle):
+        """Add header indicating to server that we handle gzip
+        content encoding. Note that if the server sends gzip'ed content,
+        it is handled automatically in any case, regardless of this setting.
 
         """
-        if handle:
-            warnings.warn(
-                "gzip transfer encoding is experimental!", stacklevel=2)
-        self._set_handler("_gzip", handle)
+        self._set_handler(
+            "_gzip", True, constructor_kwds={'request_gzip': bool(handle)})
+    set_handle_gzip = set_request_gzip  # legacy
 
     def set_debug_redirects(self, handle):
         """Log information about HTTP redirects (including refreshes).
@@ -347,6 +357,7 @@ class UserAgentBase(_opener.OpenerDirector):
             except KeyError:
                 pass
             return ans
+
         other._ua_handlers.clear()
         other.handlers = [clone_handler(h) for h in self.handlers]
         other._handler_index_valid = False
@@ -356,8 +367,12 @@ class UserAgentBase(_opener.OpenerDirector):
             if isinstance(h, cls):
                 yield h
 
-    def _set_handler(self, name, handle=None, obj=None,
-                     constructor_args=(), constructor_kwds={}):
+    def _set_handler(self,
+                     name,
+                     handle=None,
+                     obj=None,
+                     constructor_args=(),
+                     constructor_kwds={}):
         if handle is None:
             handle = obj is not None
         if handle:
@@ -365,8 +380,8 @@ class UserAgentBase(_opener.OpenerDirector):
             if obj is not None:
                 newhandler = handler_class(obj)
             else:
-                newhandler = handler_class(
-                    *constructor_args, **constructor_kwds)
+                newhandler = handler_class(*constructor_args,
+                                           **constructor_kwds)
         else:
             newhandler = None
         self._replace_handler(name, newhandler)
@@ -387,7 +402,6 @@ class UserAgentBase(_opener.OpenerDirector):
 
 
 class UserAgent(UserAgentBase):
-
     def __init__(self):
         UserAgentBase.__init__(self)
         self._seekable = False
@@ -396,15 +410,20 @@ class UserAgent(UserAgentBase):
         """Make response objects .seek()able."""
         self._seekable = bool(handle)
 
-    def open(self, fullurl, data=None,
+    def open(self,
+             fullurl,
+             data=None,
              timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         if self._seekable:
-            def bound_open(fullurl, data=None,
+
+            def bound_open(fullurl,
+                           data=None,
                            timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
                 return UserAgentBase.open(self, fullurl, data, timeout)
-            response = _opener.wrapped_open(
-                bound_open, _response.seek_wrapped_response, fullurl, data,
-                timeout)
+
+            response = _opener.wrapped_open(bound_open,
+                                            _response.seek_wrapped_response,
+                                            fullurl, data, timeout)
         else:
             response = UserAgentBase.open(self, fullurl, data)
         return response

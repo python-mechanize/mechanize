@@ -1,14 +1,49 @@
 from __future__ import absolute_import
 
+import struct
 import zlib
 from cStringIO import StringIO
+from io import DEFAULT_BUFFER_SIZE
 
 from . import _response, _urllib2_fork
 
 
+def gzip_prefix():
+    # See http://www.gzip.org/zlib/rfc-gzip.html
+    return b''.join((
+        b'\x1f\x8b',  # ID1 and ID2: gzip marker
+        b'\x08',  # CM: compression method
+        b'\x00',  # FLG: none set
+        # MTIME: 4 bytes, set to zero so as not to leak timezone information
+        b'\0\0\0\0',
+        b'\x02',  # XFL: max compression, slowest algo
+        b'\xff',  # OS: unknown
+    ))
+
+
+def compress_readable_output(src_file, compress_level=6):
+    crc = zlib.crc32(b"")
+    size = 0
+    zobj = zlib.compressobj(compress_level, zlib.DEFLATED, -zlib.MAX_WBITS,
+                            zlib.DEF_MEM_LEVEL, zlib.Z_DEFAULT_STRATEGY)
+    prefix_written = False
+    while True:
+        data = src_file.read(DEFAULT_BUFFER_SIZE)
+        if not data:
+            break
+        size += len(data)
+        crc = zlib.crc32(data, crc)
+        data = zobj.compress(data)
+        if not prefix_written:
+            prefix_written = True
+            data = gzip_prefix() + data
+        yield data
+    yield zobj.flush() + struct.pack(b"<L", crc & 0xffffffff) + struct.pack(
+        b"<L", size)
+
+
 # GzipConsumer was taken from Fredrik Lundh's effbot.org-0.1-20041009 library
 class GzipConsumer:
-
     def __init__(self, consumer):
         self.__consumer = consumer
         self.__decoder = None
@@ -64,15 +99,16 @@ class GzipConsumer:
 # the rest of this module is John Lee's stupid code, not
 # Fredrik's nice code :-)
 
+
 class stupid_gzip_consumer:
+    def __init__(self):
+        self.data = []
 
-    def __init__(self): self.data = []
-
-    def feed(self, data): self.data.append(data)
+    def feed(self, data):
+        self.data.append(data)
 
 
 class stupid_gzip_wrapper(_response.closeable_response):
-
     def __init__(self, response):
         self._response = response
 
@@ -98,16 +134,31 @@ class stupid_gzip_wrapper(_response.closeable_response):
 class HTTPGzipProcessor(_urllib2_fork.BaseHandler):
     handler_order = 200  # response processing before HTTPEquivProcessor
 
+    def __init__(self, request_gzip=False):
+        self.request_gzip = request_gzip
+
+    def __copy__(self):
+        return self.__class__(self.request_gzip)
+
     def http_request(self, request):
-        request.add_header("Accept-Encoding", "gzip")
+        if self.request_gzip:
+            existing = [
+                x.strip()
+                for x in request.get_header('Accept-Encoding', '').split(',')
+            ]
+            if sum('gzip' in x for x in existing) < 1:
+                existing.append('gzip')
+                request.add_header("Accept-Encoding",
+                                   ', '.join(filter(None, existing)))
         return request
 
     def http_response(self, request, response):
         # post-process response
         enc_hdrs = response.info().getheaders("Content-encoding")
         for enc_hdr in enc_hdrs:
-            if ("gzip" in enc_hdr) or ("compress" in enc_hdr):
+            if "gzip" in enc_hdr or "compress" in enc_hdr:
                 return stupid_gzip_wrapper(response)
         return response
 
     https_response = http_response
+    https_request = http_request
