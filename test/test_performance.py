@@ -6,7 +6,7 @@ import unittest
 import mechanize
 from mechanize._testcase import TestCase, TempDirMaker
 from mechanize._rfc3986 import urljoin
-
+from mechanize._mechanize import sanepathname2url
 
 KB = 1024
 MB = 1024**2
@@ -34,20 +34,23 @@ def time_retrieve_local_file(temp_maker, size, retrieve_fn):
     temp_dir = temp_maker.make_temp_dir()
     filename = os.path.join(temp_dir, "data")
     write_data(filename, size)
+
     def operation():
-        retrieve_fn(urljoin("file://", filename),
-                    os.path.join(temp_dir, "retrieved"))
+        retrieve_fn(
+            urljoin('file://', sanepathname2url(filename)),
+            os.path.join(temp_dir, "retrieved"))
+
     return time_it(operation)
 
 
 class PerformanceTests(TestCase):
-
     def test_retrieve_local_file(self):
         def retrieve(url, filename):
             br = mechanize.Browser()
             br.retrieve(url, filename)
+
         size = 100 * MB
-#         size = 1 * KB
+        #         size = 1 * KB
         desired_rate = 2 * MB  # per second
         desired_time = size / float(desired_rate)
         fudge_factor = 2.
@@ -96,7 +99,6 @@ def performance_plot():
             temp_maker.tear_down()
         rows.append((size // float(MB), elapsed))
     show_plot(rows)
-
 
 if __name__ == "__main__":
     args = sys.argv[1:]
