@@ -11,27 +11,27 @@ Major features
 
 Stateful programmatic web browsing in Python
 
-* `mechanize.Browser` and `mechanize.UserAgentBase` implement the
+- `mechanize.Browser` and `mechanize.UserAgentBase` implement the
 interface of `urllib2.OpenerDirector`, so:
 
     - any URL can be opened, not just `http:`
 
     - `mechanize.UserAgentBase` offers easy dynamic configuration of
-       user-agent features like protocol, cookie, redirection and
-       `robots.txt` handling, without having to make a new
-       `OpenerDirector` each time, e.g. by calling `build_opener()`.
+      user-agent features like protocol, cookie, redirection and
+      `robots.txt` handling, without having to make a new
+      `OpenerDirector` each time, e.g. by calling `build_opener()`.
 
-* Easy HTML form filling.
+- Easy HTML form filling.
 
-* Convenient link parsing and following.
+- Convenient link parsing and following.
 
-* Browser history (`.back()` and `.reload()` methods).
+- Browser history (`.back()` and `.reload()` methods).
 
-* The `Referer` HTTP header is added properly (optional).
+- The `Referer` HTTP header is added properly (optional).
 
-* Automatic observance of `robots.txt <http://www.robotstxt.org/wc/norobots.html>`_.
+- Automatic observance of `robots.txt <http://www.robotstxt.org/wc/norobots.html>`_.
 
-* Automatic handling of HTTP-Equiv and Refresh.
+- Automatic handling of HTTP-Equiv and Refresh.
 
 
 Installation
@@ -192,21 +192,21 @@ Kovid Goyal in 2017.
 
 Much of the code was originally derived from the work of the following people:
 
- * Gisle Aas -- [libwww-perl]
+- Gisle Aas -- [libwww-perl]
 
- * Jeremy Hylton (and many others) -- [urllib2]
+- Jeremy Hylton (and many others) -- [urllib2]
 
- * Andy Lester -- [WWW::Mechanize]
+- Andy Lester -- [WWW::Mechanize]
 
- * Johnny Lee (coincidentally-named) -- MSIE CookieJar Perl code from which
-mechanize's support for that is derived.
+- Johnny Lee (coincidentally-named) -- MSIE CookieJar Perl code from which
+  mechanize's support for that is derived.
 
 Also:
 
- * Gary Poster and Benji York at Zope Corporation -- contributed significant
-changes to the HTML forms code
+- Gary Poster and Benji York at Zope Corporation -- contributed significant
+  changes to the HTML forms code
 
- * Ronald Tschalar -- provided help with Netscape cookies
+- Ronald Tschalar -- provided help with Netscape cookies
 
 Thanks also to the many people who have contributed bug reports and
 patches.
