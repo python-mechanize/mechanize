@@ -79,7 +79,7 @@ def main():
         description=__doc__.split("\n", 1)[0],
         long_description=__doc__.split("\n", 2)[-1],
         url="https://github.com/python-mechanize/mechanize",
-        download_url=("http://pypi.python.org/packages/source/m/mechanize/"
+        download_url=("https://pypi.python.org/packages/source/m/mechanize/"
                       "mechanize-%s.tar.gz" % VERSION),
         packages=["mechanize"],
     )
