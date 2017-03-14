@@ -1324,7 +1324,11 @@ class FileHandler(BaseHandler):
         import mimetypes
         host = req.get_host()
         file = req.get_selector()
-        localfile = url2pathname(file)
+        try:
+            localfile = url2pathname(file)
+        except IOError as err:
+            # url2pathname raises this on windows for bad urls
+            raise URLError(err)
         try:
             stats = os.stat(localfile)
             size = stats.st_size

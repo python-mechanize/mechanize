@@ -32,6 +32,7 @@ import mechanize._response
 import mechanize._sockettimeout as _sockettimeout
 import mechanize._testcase
 import mechanize._urllib2_fork
+from mechanize._mechanize import sanepathname2url
 
 ## from logging import getLogger, DEBUG
 ## l = getLogger("mechanize")
@@ -62,7 +63,7 @@ class TrivialTests(mechanize._testcase.TestCase):
             fname = os.expand(fname)
             fname = fname.translate(string.maketrans("/.", "./"))
 
-        file_url = "file://%s" % fname
+        file_url = "file://%s" % sanepathname2url(fname)
         f = mechanize.urlopen(file_url)
 
         buf = f.read()
@@ -784,15 +785,6 @@ class OpenerDirectorTests(unittest.TestCase):
                                  isinstance(args[1], MockResponse))
 
 
-def sanepathname2url(path):
-    import urllib
-    urlpath = urllib.pathname2url(path)
-    if os.name == "nt" and urlpath.startswith("///"):
-        urlpath = urlpath[2:]
-    # XXX don't ask me about the mac...
-    return urlpath
-
-
 class MockRobotFileParserClass:
     def __init__(self):
         self.calls = []
@@ -925,9 +917,9 @@ class HandlerTests(mechanize._testcase.TestCase):
                 "file://localhost:80%s" % urlpath,
                 "file:///file_does_not_exist.txt",
                 "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
-                                       os.getcwd(), temp_file),
+                                       sanepathname2url(os.getcwd()), temp_file),
                 "file://somerandomhost.ontheinternet.com%s/%s" %
-            (os.getcwd(), temp_file),
+                    (sanepathname2url(os.getcwd()), temp_file),
         ]:
             write_file(temp_file, towrite)
             self.assertRaises(mechanize.URLError, h.file_open, Request(url))
