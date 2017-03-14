@@ -8,7 +8,7 @@ build: off
 
 install:
     # We need wheel installed to build wheels
-    - "%PYTHON%\\python.exe -m pip install wheel twisted"
+    - "%PYTHON%\\python.exe -m pip install wheel twisted pypiwin32"
     - "%PYTHON%\\python.exe -m pip install -r requirements.txt"
 
 test_script:
