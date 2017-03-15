@@ -1,20 +1,21 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
-Future Kovid Goyal
+2017-03-15 Kovid Goyal
 	* 0.3.0 release.
+	* Support HTML 5 (all html is now parsed using html5lib)
+	* Implement cloning of browser instances via Browser.__copy__()
+	* Make gzip content-encoding non-experimental. Always handle it if sent by the server, regardless of set_handle_gzip().
 	* mechanize now requires python >= 2.7.0
 	* When processing cookies that have a blank (unset) path, assume the path
 	 is /. Mimics modern browser behavior.
 	* Support PyPy (added to continuous integration testing)
 	* Make the global urlopen/urlretrieve methods threadsafe
 	* Add support for user supplied CA certificates
-	* Support HTML 5 (all html is now parsed using html5lib)
-	* Implement cloning of browser instances via Browser.__copy__()
-	* Make gzip content-encoding non-experimental. Always handle it if sent by the server, regardless of set_handle_gzip().
 	* Fix gzip not being requested on HTTPS connections
 	* Normalize the case of HTTP headers in requests
-	* Fix proxy authentication for http connections not working
+	* Fix proxy authentication for https connections not working
+	* Size of codebase reduced by 10,000 lines of code (40%)
 
 	* Backward incompatibility: The factory keyword argument to Browser is no longer allowed
 	* Backward incompatibility: Browser.forms() and Browser.links() return unicode strings instead of byte strings
