@@ -53,8 +53,9 @@ def tag_release():
 
 
 def upload_release():
+    files = list(glob.glob('dist/*'))
     run('twine', 'upload', '--config-file',
-        os.path.join(os.environ['PENV'], 'pypi'))
+        os.path.join(os.environ['PENV'], 'pypi'), *files)
 
 
 def main():
