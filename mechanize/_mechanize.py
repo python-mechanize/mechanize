@@ -560,7 +560,7 @@ class Browser(UserAgentBase):
             raise BrowserStateError("not viewing HTML")
         return self._factory.title
 
-    def select_form(self, name=None, predicate=None, nr=None):
+    def select_form(self, name=None, predicate=None, nr=None, **attrs):
         """Select an HTML form for input.
 
         This is a bit like giving a form the "input focus" in a browser.
@@ -573,8 +573,7 @@ class Browser(UserAgentBase):
         form assigned should be one of the objects returned by the
         :meth:`forms()` method.
 
-        At least one of the `name`, `predicate` and `nr` arguments must be
-        supplied.  If no matching form is found,
+        If no matching form is found,
         :class:`mechanize.FormNotFoundError` is raised.
 
         If `name` is specified, then the form must have the indicated name.
@@ -592,10 +591,28 @@ class Browser(UserAgentBase):
         to have no name, so will not be matched unless both name and nr are
         None.
 
+        You can also match on any HTML attribute of the `<form>` tag by passing
+        in the attribute name and value as keyword arguments. To convert HTML
+        attributes into syntactically valid python keyword arguments, the
+        following simple rule is used. The python keyword argument name is
+        converted to an HTML attribute name by: Replacing all underscores with
+        hyphens and removing any trailing underscores. You can pass in strings,
+        functions or regular expression objects as the values to match. For
+        example:
+
+        .. code-block:: python
+
+            # Match form with the exact action specified
+            br.select_form(action='http://foo.com/submit.php')
+            # Match form with a class attribute that contains 'login'
+            br.select_form(class_=lambda x: 'login' in x)
+            # Match form with a data-form-type attribute that matches a regex
+            br.select_form(data_form_type=re.compile(r'a|b'))
+
         """
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
-        if (name is None) and (predicate is None) and (nr is None):
+        if name is None and predicate is None and nr is None and not attrs:
             raise ValueError(
                 "at least one argument must be supplied to specify form")
 
@@ -605,6 +622,22 @@ class Browser(UserAgentBase):
             self.form = global_form
             return
 
+        def attr_selector(q):
+            if isinstance(q, basestring):
+                return lambda x: x == q
+            if callable(q):
+                return q
+            return lambda x: q.match(x) is not None
+        attrsq = {aname.rstrip('_').replace('_', '-'): attr_selector(v)
+                  for aname, v in attrs.iteritems()}
+
+        def form_attrs_match(form_attrs):
+            for aname, q in attrsq.iteritems():
+                val = form_attrs.get(aname)
+                if val is None or not q(val):
+                    return False
+            return True
+
         orig_nr = nr
         for form in self.forms():
             if name is not None and name != form.name:
@@ -613,6 +646,8 @@ class Browser(UserAgentBase):
                 continue
             if nr:
                 nr -= 1
+                continue
+            if attrs and not form_attrs_match(form.attrs):
                 continue
             self.form = form
             break  # success
@@ -625,6 +660,9 @@ class Browser(UserAgentBase):
                 description.append("predicate %s" % predicate)
             if orig_nr is not None:
                 description.append("nr %d" % orig_nr)
+            if attrs:
+                for k, v in attrs.iteritems():
+                    description.append('%s = %r' % (k, v))
             description = ", ".join(description)
             raise FormNotFoundError("no form matching " + description)
 

@@ -804,6 +804,30 @@ class ResponseTests(TestCase):
         self.assertEqual(br.response().read(), newhtml)
         self.assertEqual(list(br.links())[0].url, "eggs")
 
+    def test_select_form(self):
+        from mechanize import _response
+        br = TestBrowser()
+        fp = StringIO.StringIO('''<html>
+            <form name="a"></form>
+            <form name="b" data-ac="123"></form>
+            <form name="c" class="x"></form>
+            </html>''')
+        headers = mimetools.Message(
+            StringIO.StringIO("Content-type: text/html"))
+        response = _response.response_seek_wrapper(
+            _response.closeable_response(fp, headers, "http://example.com/",
+                                         200, "OK"))
+        br.set_response(response)
+        for i, n in enumerate('abc'):
+            br.select_form(nr=i)
+            self.assertEqual(br.form.name, n)
+            br.select_form(nr=0), br.select_form(name=n)
+            self.assertEqual(br.form.name, n)
+        br.select_form(data_ac=re.compile(r'\d+'))
+        self.assertEqual(br.form.name, 'b')
+        br.select_form(class_=lambda x: x == 'x')
+        self.assertEqual(br.form.name, 'c')
+
     def test_str(self):
         from mechanize import _response
 

@@ -1677,8 +1677,8 @@ class HTMLForm:
     arguments.  Note that each item may have several labels.
 
     The question of default values of OPTION contents, labels and values is
-    somewhat complicated: see SelectControl.__doc__ and
-    ListControl.get_item_attrs.__doc__ if you think you need to know.
+    somewhat complicated: see :class:`SelectControl` and
+    :meth:`ListControl.get_item_attrs` if you think you need to know.
 
     Controls can be disabled or readonly.  In either case, the control's value
     cannot be changed until you clear those flags (see example below).
