@@ -423,7 +423,7 @@ class Browser(UserAgentBase):
 
         For example:
 
-        .. code-block: python
+        .. code-block:: python
 
             browser.set_cookie(
                 "sid=abcdef; expires=Wednesday, 09-Nov-06 23:12:40 GMT")
@@ -450,8 +450,10 @@ class Browser(UserAgentBase):
         and optionally the `path`.
         The created cookie will never expire. For example:
 
-        browser.set_simple_cookie('some_key', 'some_value', '.example.com',
-                                  path='/some-page')
+        .. code-block:: python
+
+            browser.set_simple_cookie('some_key', 'some_value', '.example.com',
+                                      path='/some-page')
         '''
         self.cookiejar.set_cookie(
             Cookie(None, name, value, None, False, domain, True, False, path,

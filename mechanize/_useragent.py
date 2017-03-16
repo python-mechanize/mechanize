@@ -298,28 +298,33 @@ class UserAgentBase(_opener.OpenerDirector):
     set_handle_gzip = set_request_gzip  # legacy
 
     def set_debug_redirects(self, handle):
-        """Log information about HTTP redirects (including refreshes).
+        """
+        Log information about HTTP redirects (including refreshes).
 
         Logging is performed using module logging.  The logger name is
-        "mechanize.http_redirects".  To actually print some debug output,
+        `"mechanize.http_redirects"`.  To actually print some debug output,
         eg:
 
-        import sys, logging
-        logger = logging.getLogger("mechanize.http_redirects")
-        logger.addHandler(logging.StreamHandler(sys.stdout))
-        logger.setLevel(logging.INFO)
+        .. code-block:: python
+
+            import sys, logging
+            logger = logging.getLogger("mechanize.http_redirects")
+            logger.addHandler(logging.StreamHandler(sys.stdout))
+            logger.setLevel(logging.INFO)
 
         Other logger names relevant to this module:
 
-        "mechanize.http_responses"
-        "mechanize.cookies"
+        `"mechanize.http_responses"`
+        `"mechanize.cookies"`
 
         To turn on everything:
 
-        import sys, logging
-        logger = logging.getLogger("mechanize")
-        logger.addHandler(logging.StreamHandler(sys.stdout))
-        logger.setLevel(logging.INFO)
+        .. code-block:: python
+
+            import sys, logging
+            logger = logging.getLogger("mechanize")
+            logger.addHandler(logging.StreamHandler(sys.stdout))
+            logger.setLevel(logging.INFO)
 
         """
         self._set_handler("_debug_redirect", handle)
@@ -327,7 +332,7 @@ class UserAgentBase(_opener.OpenerDirector):
     def set_debug_responses(self, handle):
         """Log HTTP response bodies.
 
-        See docstring for .set_debug_redirects() for details of logging.
+        See :meth:`set_debug_redirects()` for details of logging.
 
         Response objects may be .seek()able if this is set (currently returned
         responses are, raised HTTPError exception responses are not).

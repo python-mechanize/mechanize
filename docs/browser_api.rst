@@ -16,6 +16,7 @@ You can create a mechanize :class:`Browser` instance as:
 
 .. autoclass:: mechanize.Browser
    :members:
+   :inherited-members:
 
 .. autoclass:: mechanize.Link
    :members:
