@@ -1,8 +1,5 @@
 /build/
 /dist/
-/docs/download.txt
-/docs/forms.txt
-/docs/html
-/docs/styles
+/docs/_*
 *.egg-info/
 *.py[co]
