@@ -88,22 +88,28 @@ class MimeWriter:
 
     General usage is:
 
-    f = <open the output file>
-    w = MimeWriter(f)
-    ...call w.addheader(key, value) 0 or more times...
+    .. code-block:: python
+
+        f = <open the output file>
+        w = MimeWriter(f)
+        ...call w.addheader(key, value) 0 or more times...
 
     followed by either:
 
-    f = w.startbody(content_type)
-    ...call f.write(data) for body data...
+    .. code-block:: python
+
+        f = w.startbody(content_type)
+        ...call f.write(data) for body data...
 
     or:
 
-    w.startmultipartbody(subtype)
-    for each part:
-        subwriter = w.nextpart()
-        ...use the subwriter's methods to create the subpart...
-    w.lastpart()
+    .. code-block:: python
+
+        w.startmultipartbody(subtype)
+        for each part:
+            subwriter = w.nextpart()
+            ...use the subwriter's methods to create the subpart...
+        w.lastpart()
 
     The subwriter is another MimeWriter instance, and should be
     treated in the same way as the toplevel MimeWriter.  This way,
@@ -283,14 +289,14 @@ class Control:
 
     Public attributes:
 
-    type: string describing type of control (see the keys of the
-     HTMLForm.type2class dictionary for the allowable values) (readonly)
-    name: name of control (readonly)
-    value: current value of control (subclasses may allow a single value, a
-     sequence of values, or either)
-    disabled: disabled state
-    readonly: readonly state
-    id: value of id HTML attribute
+    :ivar str type: string describing type of control (see the keys of the
+        HTMLForm.type2class dictionary for the allowable values) (readonly)
+    :ivar str name: name of control (readonly)
+    :ivar value: current value of control (subclasses may allow a single value,
+        a sequence of values, or either)
+    :ivar bool disabled: disabled state
+    :ivar bool readonly: readonly state
+    :ivar str id: value of id HTML attribute
 
     """
 
@@ -373,8 +379,8 @@ class ScalarControl(Control):
 
     Additional read-only public attribute:
 
-    attrs: dictionary mapping the names of original HTML attributes of the
-     control to their values
+    :ivar dict attrs: dictionary mapping the names of original HTML attributes
+        of the control to their values
 
     """
 
@@ -452,12 +458,7 @@ class ScalarControl(Control):
 class TextControl(ScalarControl):
     """Textual input control.
 
-    Covers:
-
-    INPUT/TEXT
-    INPUT/PASSWORD
-    INPUT/HIDDEN
-    TEXTAREA
+    Covers HTML elements: INPUT/TEXT, INPUT/PASSWORD, INPUT/HIDDEN, TEXTAREA
 
     """
 
@@ -478,7 +479,7 @@ class FileControl(ScalarControl):
 
     The value attribute of a FileControl is always None.  Use add_file instead.
 
-    Additional public method: add_file
+    Additional public method: :meth:`add_file`
 
     """
 
@@ -502,6 +503,8 @@ class FileControl(ScalarControl):
             self.__dict__[name] = value
 
     def add_file(self, file_object, content_type=None, filename=None):
+        ''' Add data from the specified file to be uploaded. content_type and
+        filename are sent in the HTTP headers if specified. '''
         if not hasattr(file_object, "read"):
             raise TypeError("file-like object must have read method")
         if content_type is not None and not isstringlike(content_type):
@@ -590,11 +593,7 @@ class FileControl(ScalarControl):
 class IgnoreControl(ScalarControl):
     """Control that we're not interested in.
 
-    Covers:
-
-    INPUT/RESET
-    BUTTON/RESET
-    INPUT/BUTTON
+    Covers html elements: INPUT/RESET, BUTTON/RESET, INPUT/BUTTON,
     BUTTON/BUTTON
 
     These controls are always unsuccessful, in the terminology of HTML 4 (ie.
@@ -731,8 +730,10 @@ class ListControl(Control):
 
     Note the following mistake:
 
-    control.value = some_value
-    assert control.value == some_value    # not necessarily true
+    .. code-block:: python
+
+        control.value = some_value
+        assert control.value == some_value    # not necessarily true
 
     The reason for this is that the value attribute always gives the list items
     in the order they were listed in the HTML.
@@ -745,17 +746,17 @@ class ListControl(Control):
     HTML by SELECT elements (which contain OPTION elements, representing
     individual list items), CHECKBOXes and RADIOs are not represented by *any*
     element.  Instead, those controls are represented by a collection of INPUT
-    elements.  For example, this is a SELECT control, named "control1":
+    elements.  For example, this is a SELECT control, named "control1"::
 
-    <select name="control1">
-     <option>foo</option>
-     <option value="1">bar</option>
-    </select>
+        <select name="control1">
+        <option>foo</option>
+        <option value="1">bar</option>
+        </select>
 
-    and this is a CHECKBOX control, named "control2":
+    and this is a CHECKBOX control, named "control2"::
 
-    <input type="checkbox" name="control2" value="foo" id="cbe1">
-    <input type="checkbox" name="control2" value="bar" id="cbe2">
+        <input type="checkbox" name="control2" value="foo" id="cbe1">
+        <input type="checkbox" name="control2" value="bar" id="cbe2">
 
     The id attribute of a CHECKBOX or RADIO ListControl is always that of its
     first element (for example, "cbe1" above).
@@ -814,7 +815,7 @@ class ListControl(Control):
         # As Controls are merged in with .merge_control(), self.attrs will
         # refer to each Control in turn -- always the most recently merged
         # control.  Each merged-in Control instance corresponds to a single
-        # list item: see ListControl.__doc__.
+        # list item: see ListControl.__doc__.:
         self.items = []
         self._form = None
 
@@ -1359,13 +1360,13 @@ class SelectControl(ListControl):
     OPTION 'values', in HTML parlance, are Item 'names' in mechanize parlance.
 
     SELECT control values and labels are subject to some messy defaulting
-    rules.  For example, if the HTML representation of the control is:
+    rules.  For example, if the HTML representation of the control is::
 
-    <SELECT name=year>
-      <OPTION value=0 label="2002">current year</OPTION>
-      <OPTION value=1>2001</OPTION>
-      <OPTION>2000</OPTION>
-    </SELECT>
+        <SELECT name=year>
+            <OPTION value=0 label="2002">current year</OPTION>
+            <OPTION value=1>2001</OPTION>
+            <OPTION>2000</OPTION>
+        </SELECT>
 
     The items, in order, have labels "2002", "2001" and "2000", whereas their
     names (the OPTION values) are "0", "1" and "2000" respectively.  Note that
@@ -1386,9 +1387,9 @@ class SelectControl(ListControl):
 
     Another special case is that the Item.attrs dictionaries have a special key
     "contents" which does not correspond to any real HTML attribute, but rather
-    contains the contents of the OPTION element:
+    contains the contents of the OPTION element::
 
-    <OPTION>this bit</OPTION>
+        <OPTION>this bit</OPTION>
 
     """
 
@@ -1567,7 +1568,8 @@ def is_listcontrol(control):
 
 
 class HTMLForm:
-    """Represents a single HTML <form> ... </form> element.
+    """
+    Represents a single HTML <form> ... </form> element.
 
     A form consists of a sequence of controls that usually have names, and
     which can take on various values.  The values of the various types of
@@ -1581,21 +1583,12 @@ class HTMLForm:
     passing to mechanize.urlopen (or the click_request_data or click_pairs
     methods for integration with third-party code).
 
-    import mechanize
-    forms = mechanize.ParseFile(html, base_uri)
-    form = forms[0]
-
-    form["query"] = "Python"
-    form.find_control("nr_results").get("lots").selected = True
-
-    response = mechanize.urlopen(form.click())
-
-    Usually, HTMLForm instances are not created directly.  Instead, the
-    ParseFile or ParseResponse factory functions are used.  If you do construct
-    HTMLForm objects yourself, however, note that an HTMLForm instance is only
-    properly initialised after the fixup method has been called (ParseFile and
-    ParseResponse do this for you).  See ListControl.__doc__ for the reason
-    this is required.
+    Usually, HTMLForm instances are not created directly.  Instead, they are
+    automatically created when visting a page with a mechanize Browser.  If you
+    do construct HTMLForm objects yourself, however, note that an HTMLForm
+    instance is only properly initialised after the fixup method has been
+    called (ParseFile and ParseResponse do this for you).  See
+    ListControl.__doc__ for the reason this is required.
 
     Indexing a form (form["control_name"]) returns the named Control's value
     attribute.  Assignment to a form index (form["control_name"] = something)
@@ -1608,7 +1601,7 @@ class HTMLForm:
     cause data to be returned to the server).  The list item's name is the
     value of the corresponding HTML element's"value" attribute.
 
-    Example:
+    Example::
 
       <INPUT type="CHECKBOX" name="cheeses" value="leicester"></INPUT>
       <INPUT type="CHECKBOX" name="cheeses" value="cheddar"></INPUT>
@@ -1616,7 +1609,7 @@ class HTMLForm:
     defines a CHECKBOX control with name "cheeses" which has two items, named
     "leicester" and "cheddar".
 
-    Another example:
+    Another example::
 
       <SELECT name="more_cheeses">
         <OPTION>1</OPTION>
@@ -1625,20 +1618,22 @@ class HTMLForm:
 
     defines a SELECT control with name "more_cheeses" which has two items,
     named "1" and "2" (because the OPTION element's value HTML attribute
-    defaults to the element contents -- see SelectControl.__doc__ for more on
+    defaults to the element contents -- see :class:`SelectControl` for more on
     these defaulting rules).
 
     To select, deselect or otherwise manipulate individual list items, use the
-    HTMLForm.find_control() and ListControl.get() methods.  To set the whole
-    value, do as for any other control: use indexing or the set_/get_value
-    methods.
+    :meth:`HTMLForm.find_control()` and :meth:`ListControl.get()` methods.  To
+    set the whole value, do as for any other control: use indexing or the
+    `set_value/get_value` methods.
 
     Example:
 
-    # select *only* the item named "cheddar"
-    form["cheeses"] = ["cheddar"]
-    # select "cheddar", leave other items unaffected
-    form.find_control("cheeses").get("cheddar").selected = True
+    .. code-block:: python
+
+        # select *only* the item named "cheddar"
+        form["cheeses"] = ["cheddar"]
+        # select "cheddar", leave other items unaffected
+        form.find_control("cheeses").get("cheddar").selected = True
 
     Some controls (RADIO and SELECT without the multiple attribute) can only
     have zero or one items selected at a time.  Some controls (CHECKBOX and
@@ -1646,7 +1641,9 @@ class HTMLForm:
     time.  To set the whole value of a ListControl, assign a sequence to a form
     index:
 
-    form["cheeses"] = ["cheddar", "leicester"]
+    .. code-block:: python
+
+        form["cheeses"] = ["cheddar", "leicester"]
 
     If the ListControl is not multiple-selection, the assigned list must be of
     length one.
@@ -1654,17 +1651,23 @@ class HTMLForm:
     To check if a control has an item, if an item is selected, or if an item is
     successful (selected and not disabled), respectively:
 
-    "cheddar" in [item.name for item in form.find_control("cheeses").items]
-    "cheddar" in [item.name for item in form.find_control("cheeses").items and
-                  item.selected]
-    "cheddar" in form["cheeses"]  # (or "cheddar" in form.get_value("cheeses"))
+    .. code-block:: python
+
+        "cheddar" in [item.name for item in form.find_control("cheeses").items]
+        "cheddar" in [item.name for item in form.find_control("cheeses").items
+                        and item.selected]
+        "cheddar" in form["cheeses"]
+        # or
+        "cheddar" in form.get_value("cheeses")
 
     Note that some list items may be disabled (see below).
 
     Note the following mistake:
 
-    form[control_name] = control_value
-    assert form[control_name] == control_value  # not necessarily true
+    .. code-block:: python
+
+        form[control_name] = control_value
+        assert form[control_name] == control_value  # not necessarily true
 
     The reason for this is that form[control_name] always gives the list items
     in the order they were listed in the HTML.
@@ -1688,20 +1691,26 @@ class HTMLForm:
 
     If a lot of controls are readonly, it can be useful to do this:
 
-    form.set_all_readonly(False)
+    .. code-block:: python
+
+        form.set_all_readonly(False)
 
     To clear a control's value attribute, so that it is not successful (until a
     value is subsequently set):
 
-    form.clear("cheeses")
+    .. code-block:: python
+
+        form.clear("cheeses")
 
     More examples:
 
-    control = form.find_control("cheeses")
-    control.disabled = False
-    control.readonly = False
-    control.get("gruyere").disabled = True
-    control.items[0].selected = True
+    .. code-block:: python
+
+        control = form.find_control("cheeses")
+        control.disabled = False
+        control.readonly = False
+        control.get("gruyere").disabled = True
+        control.items[0].selected = True
 
     See the various Control classes for further documentation.  Many methods
     take name, type, kind, id, label and nr arguments to specify the control to
@@ -1726,56 +1735,62 @@ class HTMLForm:
 
     Public attributes:
 
-    action: full (absolute URI) form action
-    method: "GET" or "POST"
-    enctype: form transfer encoding MIME type
-    name: name of form (None if no name was specified)
-    attrs: dictionary mapping original HTML form attributes to their values
-
-    controls: list of Control instances; do not alter this list
-     (instead, call form.new_control to make a Control and add it to the
-     form, or control.add_to_form if you already have a Control instance)
+    :ivar action: full (absolute URI) form action
+    :ivar method: "GET" or "POST"
+    :ivar enctype: form transfer encoding MIME type
+    :ivar name: name of form (None if no name was specified)
+    :ivar attrs: dictionary mapping original HTML form attributes to their
+        values
+    :ivar controls: list of Control instances; do not alter this list
+        (instead, call form.new_control to make a Control and add it to the
+        form, or control.add_to_form if you already have a Control instance)
 
 
 
     Methods for form filling:
-    -------------------------
 
     Most of the these methods have very similar arguments.  See
     HTMLForm.find_control.__doc__ for details of the name, type, kind, label
     and nr arguments.
 
-    def find_control(self,
-                     name=None, type=None, kind=None, id=None, predicate=None,
-                     nr=None, label=None)
+    .. code-block:: python
 
-    get_value(name=None, type=None, kind=None, id=None, nr=None,
-              by_label=False,  # by_label is deprecated
-              label=None)
-    set_value(value,
-              name=None, type=None, kind=None, id=None, nr=None,
-              by_label=False,  # by_label is deprecated
-              label=None)
+        def find_control(self,
+                        name=None, type=None, kind=None, id=None,
+                        predicate=None, nr=None, label=None)
 
-    clear_all()
-    clear(name=None, type=None, kind=None, id=None, nr=None, label=None)
+        get_value(name=None, type=None, kind=None, id=None, nr=None,
+                by_label=False,  # by_label is deprecated
+                label=None)
+        set_value(value,
+                name=None, type=None, kind=None, id=None, nr=None,
+                by_label=False,  # by_label is deprecated
+                label=None)
 
-    set_all_readonly(readonly)
+        clear_all()
+        clear(name=None, type=None, kind=None, id=None, nr=None, label=None)
+
+        set_all_readonly(readonly)
 
 
     Method applying only to FileControls:
 
-    add_file(file_object,
+    .. code-block:: python
+
+        add_file(file_object,
              content_type="application/octet-stream", filename=None,
              name=None, id=None, nr=None, label=None)
 
 
     Methods applying only to clickable controls:
 
-    click(name=None, type=None, id=None, nr=0, coord=(1,1), label=None)
-    click_request_data(name=None, type=None, id=None, nr=0, coord=(1,1),
-                       label=None)
-    click_pairs(name=None, type=None, id=None, nr=0, coord=(1,1), label=None)
+    .. code-block:: python
+
+        click(name=None, type=None, id=None, nr=0, coord=(1,1), label=None)
+        click_request_data(name=None, type=None, id=None, nr=0, coord=(1,1),
+                        label=None)
+        click_pairs(name=None, type=None, id=None, nr=0, coord=(1,1),
+                        label=None)
 
     """
 
@@ -1849,23 +1864,23 @@ class HTMLForm:
                     index=None):
         """Adds a new control to the form.
 
-        This is usually called by ParseFile and ParseResponse.  Don't call it
-        youself unless you're building your own Control instances.
+        This is usually called by mechanize.  Don't call it
+        yourself unless you're building your own Control instances.
 
         Note that controls representing lists of items are built up from
         controls holding only a single list item.  See ListControl.__doc__ for
         further information.
 
-        type: type of control (see Control.__doc__ for a list)
-        attrs: HTML attributes of control
-        ignore_unknown: if true, use a dummy Control instance for controls of
-         unknown type; otherwise, use a TextControl
-        select_default: for RADIO and multiple-selection SELECT controls, pick
-         the first item as the default if no 'selected' HTML attribute is
-         present (this defaulting happens when the HTMLForm.fixup method is
-         called)
-        index: index of corresponding element in HTML (see
-         MoreFormTests.test_interspersed_controls for motivation)
+        :arg type: type of control (see Control.__doc__ for a list)
+        :arg attrs: HTML attributes of control
+        :arg ignore_unknown: if true, use a dummy Control instance for controls
+            of unknown type; otherwise, use a TextControl
+        :arg select_default: for RADIO and multiple-selection SELECT controls,
+            pick the first item as the default if no 'selected' HTML attribute
+            is present (this defaulting happens when the HTMLForm.fixup method
+            is called)
+        :arg index: index of corresponding element in HTML (see
+            MoreFormTests.test_interspersed_controls for motivation)
 
         """
         type = type.lower()
@@ -2159,20 +2174,17 @@ class HTMLForm:
                  label=None):
         """Add a file to be uploaded.
 
-        file_object: file-like object (with read method) from which to read
-         data to upload
-        content_type: MIME content type of data to upload
-        filename: filename to pass to server
+        :arg file_object: file-like object (with read method) from which to
+            read data to upload
+        :arg content_type: MIME content type of data to upload
+        :arg filename: filename to pass to server
 
         If filename is None, no filename is sent to the server.
 
         If content_type is None, the content type is guessed based on the
         filename and the data from read from the file object.
 
-        XXX
         At the moment, guessed content type is always application/octet-stream.
-        Use sndhdr, imghdr modules.  Should also try to guess HTML, XML, and
-        plain text.
 
         Note the following useful HTML attributes of file upload controls (see
         HTML 4.01 spec, section 17):
@@ -2181,6 +2193,7 @@ class HTMLForm:
          handle correctly; you can use this to filter out non-conforming files
         size: XXX IIRC, this is indicative of whether form wants multiple or
          single files
+
         maxlength: XXX hint of max content length in bytes?
 
         """
@@ -2236,25 +2249,6 @@ class HTMLForm:
         You can use this data to send a request to the server.  This is useful
         if you're using httplib or urllib rather than mechanize.  Otherwise,
         use the click method.
-
-        # Untested.  Have to subclass to add headers, I think -- so use
-        # mechanize instead!
-        import urllib
-        url, data, hdrs = form.click_request_data()
-        r = urllib.urlopen(url, data)
-
-        # Untested.  I don't know of any reason to use httplib -- you can get
-        # just as much control with mechanize.
-        import httplib, urlparse
-        url, data, hdrs = form.click_request_data()
-        tup = urlparse(url)
-        host, path = tup[1], urlparse.urlunparse((None, None)+tup[2:])
-        conn = httplib.HTTPConnection(host)
-        if data:
-            httplib.request("POST", path, data, hdrs)
-        else:
-            httplib.request("GET", path, headers=hdrs)
-        r = conn.getresponse()
 
         """
         return self._click(name, type, id, label, nr, coord, "request_data",

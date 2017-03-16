@@ -10,6 +10,7 @@ with easy HTML form filling and clicking of links.
 
    faq
    browser_api
+   forms_api
    advanced
 
 
