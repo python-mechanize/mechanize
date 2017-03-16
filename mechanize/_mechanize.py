@@ -81,7 +81,6 @@ class History:
 
 
 class HTTPRefererProcessor(_urllib2_fork.BaseHandler):
-
     def http_request(self, request):
         # See RFC 2616 14.36.  The only times we know the source of the
         # request URI has a URI associated with it are redirect, and
@@ -99,15 +98,28 @@ class HTTPRefererProcessor(_urllib2_fork.BaseHandler):
 class Browser(UserAgentBase):
     """Browser-like class with support for history, forms and links.
 
-    BrowserStateError is raised whenever the browser is in the wrong state to
-    complete the requested operation - e.g., when .back() is called when the
-    browser history is empty, or when .follow_link() is called when the current
-    response does not contain HTML data.
+    :class:`BrowserStateError` is raised whenever the browser is in the wrong
+    state to complete the requested operation - e.g., when :meth:`back()` is
+    called when the browser history is empty, or when :meth:`follow_link()` is
+    called when the current response does not contain HTML data.
 
     Public attributes:
 
-    request: current request (mechanize.Request)
-    form: currently selected form (see .select_form())
+    request: current request (:class:`mechanize.Request`)
+
+    form: currently selected form (see :meth:`select_form()`)
+
+    :param history: object implementing the :class:`mechanize.History`
+                    interface.  Note this interface is still experimental
+                    and may change in future. This object is owned
+                    by the browser instance and must not be shared
+                    among browsers.
+    :param request_class: Request class to use. Defaults to
+                            :class:`mechanize.Request`
+    :param content_parser: A function that is responsible for parsing
+        received html/xhtml content. See the builtin
+        :func:`mechanize._html.content_parser()` function for details
+        on the interface this function must support.
 
     """
 
@@ -121,21 +133,9 @@ class Browser(UserAgentBase):
             history=None,
             request_class=None,
             content_parser=None,
-            allow_xhtml=False,
-    ):
+            allow_xhtml=False, ):
         """
-
         Only named arguments should be passed to this constructor.
-
-        history: object implementing the mechanize.History interface.  Note
-         this interface is still experimental and may change in future.
-        request_class: Request class to use.  Defaults to mechanize.Request
-        content_parser: A function that is responsible for parsing received
-        html/xhtml content. See the builtin content_parser function for
-        details on the interface this function must support.
-
-        The History object passed in is 'owned' by the Browser,
-        so it should not be shared across Browsers.
 
         """
         self._handle_referer = True
@@ -169,9 +169,8 @@ class Browser(UserAgentBase):
         ans = self.__class__()
         self._copy_state(ans)
         ans._handle_referer = self._handle_referer
-        for attr in (
-                '_response_type_finder', '_encoding_finder',
-                '_content_parser'):
+        for attr in ('_response_type_finder', '_encoding_finder',
+                     '_content_parser'):
             setattr(ans._factory, attr, getattr(self._factory, attr))
         ans.request_class = self.request_class
         ans._history = copy.copy(self._history)
@@ -228,11 +227,11 @@ class Browser(UserAgentBase):
         Browser state (including request, response, history, forms and links)
         is left unchanged by calling this function.
 
-        The interface is the same as for .open().
+        The interface is the same as for :meth:`open()`.
 
         This is useful for things like fetching images.
 
-        See also .retrieve().
+        See also :meth:`retrieve()`
 
         """
         return self._mech_open(url, data, visit=False, timeout=timeout)
@@ -316,7 +315,7 @@ class Browser(UserAgentBase):
         """Return a copy of the current response.
 
         The returned object has the same interface as the object returned by
-        .open() (or mechanize.urlopen()).
+        :meth:`.open()`
 
         """
         return copy.copy(self._response)
@@ -351,10 +350,10 @@ class Browser(UserAgentBase):
         self._factory.set_response(response)
 
     def visit_response(self, response, request=None):
-        """Visit the response, as if it had been .open()ed.
+        """Visit the response, as if it had been :meth:`open()` ed.
 
-        Unlike .set_response(), this updates history rather than replacing the
-        current response.
+        Unlike :meth:`set_response()`, this updates history rather than
+        replacing the current response.
         """
         if request is None:
             request = _request.Request(response.geturl())
@@ -424,8 +423,10 @@ class Browser(UserAgentBase):
 
         For example:
 
-        browser.set_cookie(
-            "sid=abcdef; expires=Wednesday, 09-Nov-06 23:12:40 GMT")
+        .. code-block: python
+
+            browser.set_cookie(
+                "sid=abcdef; expires=Wednesday, 09-Nov-06 23:12:40 GMT")
 
         Currently, this method does not allow for adding RFC 2986 cookies.
         This limitation will be lifted if anybody requests it.
@@ -452,13 +453,9 @@ class Browser(UserAgentBase):
         browser.set_simple_cookie('some_key', 'some_value', '.example.com',
                                   path='/some-page')
         '''
-        self.cookiejar.set_cookie(Cookie(
-            None, name, value,
-            None, False,
-            domain, True, False,
-            path, True,
-            False, None, False, None, None, None
-        ))
+        self.cookiejar.set_cookie(
+            Cookie(None, name, value, None, False, domain, True, False, path,
+                   True, False, None, False, None, None, None))
 
     @property
     def cookiejar(self):
@@ -469,7 +466,7 @@ class Browser(UserAgentBase):
             pass
 
     def links(self, **kwds):
-        """Return iterable over links (mechanize.Link objects)."""
+        """Return iterable over links (:class:`mechanize.Link` objects)."""
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         links = self._factory.links()
@@ -481,7 +478,8 @@ class Browser(UserAgentBase):
     def forms(self):
         """Return iterable over forms.
 
-        The returned form objects implement the mechanize.HTMLForm interface.
+        The returned form objects implement the :class:`mechanize.HTMLForm`
+        interface.
 
         """
         if not self.viewing_html():
@@ -495,7 +493,8 @@ class Browser(UserAgentBase):
         The "global" form object contains all controls that are not descendants
         of any FORM element.
 
-        The returned form object implements the mechanize.HTMLForm interface.
+        The returned form object implements the :class:`mechanize.HTMLForm`
+        interface.
 
         This is a separate method since the global form is not regarded as part
         of the sequence of forms in the document -- mostly for
@@ -518,12 +517,7 @@ class Browser(UserAgentBase):
         return self._factory.encoding
 
     def title(self):
-        r"""Return title, or None if there is no title element in the document.
-
-        Treatment of any tag children of attempts to follow Firefox and IE
-        (currently, tags are preserved).
-
-        """
+        ' Return title, or None if there is no title element in the document. '
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         return self._factory.title
@@ -534,23 +528,25 @@ class Browser(UserAgentBase):
         This is a bit like giving a form the "input focus" in a browser.
 
         If a form is selected, the Browser object supports the HTMLForm
-        interface, so you can call methods like .set_value(), .set(), and
-        .click().
+        interface, so you can call methods like :meth:`set_value()`,
+        :meth:`set()`, and :meth:`click()`.
 
         Another way to select a form is to assign to the .form attribute.  The
-        form assigned should be one of the objects returned by the .forms()
-        method.
+        form assigned should be one of the objects returned by the
+        :meth:`forms()` method.
 
-        At least one of the name, predicate and nr arguments must be supplied.
-        If no matching form is found, mechanize.FormNotFoundError is raised.
+        At least one of the `name`, `predicate` and `nr` arguments must be
+        supplied.  If no matching form is found,
+        :class:`mechanize.FormNotFoundError` is raised.
 
-        If name is specified, then the form must have the indicated name.
+        If `name` is specified, then the form must have the indicated name.
 
-        If predicate is specified, then the form must match that function.  The
-        predicate function is passed the HTMLForm as its single argument, and
-        should return a boolean value indicating whether the form matched.
+        If `predicate` is specified, then the form must match that function.
+        The predicate function is passed the :class:`mechanize.HTMLForm` as its
+        single argument, and should return a boolean value indicating whether
+        the form matched.
 
-        nr, if supplied, is the sequence number of the form (where 0 is the
+        `nr`, if supplied, is the sequence number of the form (where 0 is the
         first).  Note that control 0 is the first form matching all the other
         arguments (if supplied); it is not necessarily the first control in the
         form.  The "global form" (consisting of all form controls not contained
@@ -595,7 +591,7 @@ class Browser(UserAgentBase):
             raise FormNotFoundError("no form matching " + description)
 
     def click(self, *args, **kwds):
-        """See mechanize.HTMLForm.click for documentation."""
+        """See :meth:`mechanize.HTMLForm.click()` for documentation."""
         if not self.viewing_html():
             raise BrowserStateError("not viewing HTML")
         request = self.form.click(*args, **kwds)
@@ -604,18 +600,17 @@ class Browser(UserAgentBase):
     def submit(self, *args, **kwds):
         """Submit current form.
 
-        Arguments are as for mechanize.HTMLForm.click().
+        Arguments are as for :meth:`mechanize.HTMLForm.click()`.
 
-        Return value is same as for Browser.open().
-
+        Return value is same as for :meth:`open()`.
         """
         return self.open(self.click(*args, **kwds))
 
     def click_link(self, link=None, **kwds):
         """Find a link and return a Request object for it.
 
-        Arguments are as for .find_link(), except that a link may be supplied
-        as the first argument.
+        Arguments are as for :meth:`find_link()`, except that a link may be
+        supplied as the first argument.
 
         """
         if not self.viewing_html():
@@ -630,61 +625,76 @@ class Browser(UserAgentBase):
         return self._add_referer_header(request)
 
     def follow_link(self, link=None, **kwds):
-        """Find a link and .open() it.
+        """Find a link and :meth:`open()` it.
 
-        Arguments are as for .click_link().
+        Arguments are as for :meth:`click_link()`.
 
-        Return value is same as for Browser.open().
+        Return value is same as for :meth:`open()`.
 
         """
         return self.open(self.click_link(link, **kwds))
 
-    def find_link(self, **kwds):
+    def find_link(self,
+                  text=None,
+                  text_regex=None,
+                  name=None,
+                  name_regex=None,
+                  url=None,
+                  url_regex=None,
+                  tag=None,
+                  predicate=None,
+                  nr=0):
         """Find a link in current page.
 
-        Links are returned as mechanize.Link objects.
+        Links are returned as :class:`mechanize.Link` objects. Examples:
 
-        # Return third link that .search()-matches the regexp "python"
-        # (by ".search()-matches", I mean that the regular expression method
-        # .search() is used, rather than .match()).
-        find_link(text_regex=re.compile("python"), nr=2)
+        .. code-block:: python
 
-        # Return first http link in the current page that points to somewhere
-        # on python.org whose link text (after tags have been removed) is
-        # exactly "monty python".
-        find_link(text="monty python",
-                  url_regex=re.compile("http.*python.org"))
+            # Return third link that .search()-matches the regexp "python" (by
+            # ".search()-matches", I mean that the regular expression method
+            # .search() is used, rather than .match()).
+            find_link(text_regex=re.compile("python"), nr=2)
 
-        # Return first link with exactly three HTML attributes.
-        find_link(predicate=lambda link: len(link.attrs) == 3)
+            # Return first http link in the current page that points to
+            # somewhere on python.org whose link text (after tags have been
+            # removed) is exactly "monty python".
+            find_link(text="monty python",
+                    url_regex=re.compile("http.*python.org"))
 
-        Links include anchors (<a>), image maps (<area>), and frames (<frame>,
-        <iframe>).
+            # Return first link with exactly three HTML attributes.
+            find_link(predicate=lambda link: len(link.attrs) == 3)
+
+        Links include anchors `<a>`, image maps `<area>`, and frames
+        `<iframe>`.
 
         All arguments must be passed by keyword, not position.  Zero or more
         arguments may be supplied.  In order to find a link, all arguments
         supplied must match.
 
-        If a matching link is not found, mechanize.LinkNotFoundError is raised.
+        If a matching link is not found, :class:`mechanize.LinkNotFoundError`
+        is raised.
 
-        text: link text between link tags: e.g. <a href="blah">this bit</a>
-         with whitespace compressed.
-        text_regex: link text between tag (as defined above) must match the
-         regular expression object or regular expression string passed as this
-         argument, if supplied
-        name, name_regex: as for text and text_regex, but matched against the
-         name HTML attribute of the link tag
-        url, url_regex: as for text and text_regex, but matched against the
-         URL of the link tag (note this matches against Link.url, which is a
-         relative or absolute URL according to how it was written in the HTML)
-        tag: element name of opening tag, e.g. "a"
-        predicate: a function taking a Link object as its single argument,
-         returning a boolean result, indicating whether the links
-        nr: matches the nth link that matches all other criteria (default 0)
+        :param text: link text between link tags: e.g. <a href="blah">this
+            bit</a> with whitespace compressed.
+        :param text_regex: link text between tag (as defined above) must match
+            the regular expression object or regular expression string passed
+            as this argument, if supplied
+        :param name: as for text and text_regex, but matched
+            against the name HTML attribute of the link tag
+        :url: as for text and text_regex, but matched against the
+            URL of the link tag (note this matches against Link.url, which is a
+            relative or absolute URL according to how it was written in the
+            HTML)
+        :param tag: element name of opening tag, e.g. "a"
+        :param predicate: a function taking a Link object as its single
+            argument, returning a boolean result, indicating whether the links
+        :nr: matches the nth link that matches all other criteria (default 0)
 
         """
         try:
-            return self._filter_links(self._factory.links(), **kwds).next()
+            return self._filter_links(self._factory.links(), text, text_regex,
+                                      name, name_regex, url, url_regex, tag,
+                                      predicate, nr).next()
         except StopIteration:
             raise LinkNotFoundError()
 
@@ -720,9 +730,10 @@ class Browser(UserAgentBase):
                 continue
             if (text is not None and (link.text is None or text != link.text)):
                 continue
-            if (text_regex is not None and (
-                    link.text is None or not re.search(text_regex, link.text)
-            )):
+            if (
+                    text_regex is not None and (
+                        link.text is None or not re.search(
+                            text_regex, link.text))):
                 continue
             if name is not None and name != dict(link.attrs).get("name"):
                 continue

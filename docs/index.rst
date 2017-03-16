@@ -1,14 +1,14 @@
-.. mechanize documentation master file, created by
-   sphinx-quickstart on Thu Mar 16 11:15:03 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to mechanize's documentation!
+mechanize
 =====================================
+
+Stateful programmatic web browsing in Python. Browse pages programmatically
+with easy HTML form filling and clicking of links.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Table of Contents:
+
+   browser_api
 
 
 
