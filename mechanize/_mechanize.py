@@ -18,6 +18,7 @@ import urllib2
 
 from . import _request, _response, _rfc3986, _sockettimeout, _urllib2_fork
 from ._clientcookie import Cookie
+from ._headersutil import normalize_header_name
 from ._html import Factory
 from ._useragent import UserAgentBase
 
@@ -466,6 +467,31 @@ class Browser(UserAgentBase):
             return self._ua_handlers["_cookies"].cookiejar
         except Exception:
             pass
+
+    def set_header(self, header, value=None):
+        '''
+        Convenience method to set a header value in `self.addheaders`
+        so that the header is sent out with all requests automatically.
+
+        :param header: The header name, e.g. User-Agent
+        :param value: The header value. If set to None the header is removed.
+        '''
+        found = False
+        header = normalize_header_name(header)
+        q = header.lower()
+        remove = []
+        for i, (k, v) in enumerate(tuple(self.addheaders)):
+            if k.lower() == q:
+                if value:
+                    self.addheaders[i] = (header, value)
+                    found = True
+                else:
+                    remove.append(i)
+        if not found:
+            self.addheaders.append((header, value))
+        if remove:
+            for i in reversed(remove):
+                del self.addheaders[i]
 
     def links(self, **kwds):
         """Return iterable over links (:class:`mechanize.Link` objects)."""
