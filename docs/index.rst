@@ -8,6 +8,7 @@ with easy HTML form filling and clicking of links.
    :maxdepth: 2
    :caption: Table of Contents:
 
+   faq
    browser_api
    advanced
 

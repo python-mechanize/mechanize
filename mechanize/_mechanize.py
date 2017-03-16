@@ -220,7 +220,7 @@ class Browser(UserAgentBase):
         return request
 
     def open_novisit(self,
-                     url,
+                     url_or_request,
                      data=None,
                      timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         """Open a URL without visiting it.
@@ -235,13 +235,23 @@ class Browser(UserAgentBase):
         See also :meth:`retrieve()`
 
         """
-        return self._mech_open(url, data, visit=False, timeout=timeout)
+        return self._mech_open(
+            url_or_request, data, visit=False, timeout=timeout)
 
     def open(self,
-             url,
+             url_or_request,
              data=None,
              timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
-        return self._mech_open(url, data, timeout=timeout)
+        '''
+        Open a URL. Loads the page so that you can subsequently use
+        :meth:`forms()`, :meth:`links()`, etc. on it.
+
+        :param url_or_request: Either a URL or a :class:`mechanize.Request`
+        :param dict data: data to send with a POST request
+        :param timeout: Timeout in seconds
+        :return: A :class:`mechanize.Response` object
+        '''
+        return self._mech_open(url_or_request, data, timeout=timeout)
 
     def _mech_open(self,
                    url,

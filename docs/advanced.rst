@@ -1,6 +1,8 @@
 Advanced topics
 ==================
 
+.. _threading:
+
 Thread safety
 ---------------
 
@@ -19,10 +21,14 @@ mechanize supports the same mechanism for using custom CA certificates as
 python >= 2.7.9. To change the certificates a mechanize browser instance uses,
 call the :meth:`mechanize.Browser.set_ca_data()` method on it. 
 
+.. _debugging:
+
 Debugging
 --------------
 
 Hints for debugging programs that use mechanize.
+
+.. _cookies:
 
 Cookies
 ^^^^^^^^^^
