@@ -17,6 +17,7 @@ import urllib
 import urllib2
 
 from . import _request, _response, _rfc3986, _sockettimeout, _urllib2_fork
+from ._clientcookie import Cookie
 from ._html import Factory
 from ._useragent import UserAgentBase
 
@@ -402,7 +403,7 @@ class Browser(UserAgentBase):
         self._history.clear()
 
     def set_cookie(self, cookie_string):
-        """Request to set a cookie.
+        """Set a cookie.
 
         Note that it is NOT necessary to call this method under ordinary
         circumstances: cookie handling is normally entirely automatic.  The
@@ -440,6 +441,32 @@ class Browser(UserAgentBase):
         headers = response.info()
         headers["Set-cookie"] = cookie_string
         cookiejar.extract_cookies(response, self.request)
+
+    def set_simple_cookie(self, name, value, domain, path='/'):
+        '''
+        Similar to :meth:`set_cookie()` except that instead of using a
+        cookie string, you simply specify the `name`, `value`, `domain`
+        and optionally the `path`.
+        The created cookie will never expire. For example:
+
+        browser.set_simple_cookie('some_key', 'some_value', '.example.com',
+                                  path='/some-page')
+        '''
+        self.cookiejar.set_cookie(Cookie(
+            None, name, value,
+            None, False,
+            domain, True, False,
+            path, True,
+            False, None, False, None, None, None
+        ))
+
+    @property
+    def cookiejar(self):
+        ' Return the current cookiejar or None '
+        try:
+            return self._ua_handlers["_cookies"].cookiejar
+        except Exception:
+            pass
 
     def links(self, **kwds):
         """Return iterable over links (mechanize.Link objects)."""
