@@ -125,6 +125,9 @@ You may control the browser's policy by using the methods of
     # default: no need to do this unless you have some reason to use a
     # particular cookiejar)
     br.set_cookiejar(cj)
+    # Tell the browser to send the Accept-Encoding: gzip header to the server
+    # to indicate it supports gzip Content-Encoding
+    br.set_request_gzip(True)
     # Log information about HTTP redirects and Refreshes.
     br.set_debug_redirects(True)
     # Log HTTP response bodies (ie. the HTML, most of the time).
