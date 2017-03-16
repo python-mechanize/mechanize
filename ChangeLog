@@ -1,6 +1,14 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2017-03-17 Kovid Goyal
+	* 0.3.1 release.
+	* Allow easily selecting forms based on HTML attributes of the <form> tag
+	* Allow specifying the HTTP method when creating requests
+	* Convenience API to set headers
+	* Convenience API for dealing with cookies
+	* Create full documentation at: https://mechanize.readthedocs.io/en/latest/
+
 2017-03-15 Kovid Goyal
 	* 0.3.0 release.
 	* Support HTML 5 (all html is now parsed using html5lib)
