@@ -14,9 +14,23 @@ You can create a mechanize :class:`Browser` instance as:
     from mechanize import Browser
     br = Browser()
 
+.. contents:: Contents
+
+The Browser
+----------------
+
 .. autoclass:: mechanize.Browser
    :members:
    :inherited-members:
+
+The Request
+--------------
+.. autoclass:: mechanize.Request
+   :members:
+   :inherited-members:
+
+Miscellaneous
+-----------------
 
 .. autoclass:: mechanize.Link
    :members:

@@ -125,10 +125,11 @@ def request_host(request):
 class Request:
 
     def __init__(self, url, data=None, headers={},
-                 origin_req_host=None, unverifiable=False):
+                 origin_req_host=None, unverifiable=False, method=None):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.__original = unwrap(url)
         self.type = None
+        self._method = method and str(method)
         # self.__r_type is what's left after doing the splittype
         self.host = None
         self.port = None
@@ -156,20 +157,24 @@ class Request:
         raise AttributeError(attr)
 
     def get_method(self):
-        if self.has_data():
-            return "POST"
-        else:
-            return "GET"
+        ' The method used for HTTP requests '
+        if self._method is None:
+            return "POST" if self.has_data() else 'GET'
+        return self._method
 
     # XXX these helper methods are lame
 
-    def add_data(self, data):
+    def set_data(self, data):
+        ' Set the data (a bytestring) to be sent with this request '
         self.data = data
+    add_data = set_data
 
     def has_data(self):
+        ' True iff there is some data to be sent with this request '
         return self.data is not None
 
     def get_data(self):
+        ' The data to be sent with this request '
         return self.data
 
     def get_full_url(self):
@@ -218,29 +223,45 @@ class Request:
     def is_unverifiable(self):
         return self.unverifiable
 
-    def add_header(self, key, val):
+    def add_header(self, key, val=None):
+        ''' Add the specified header, replacing existing one, if needed. If val
+        is None, remove the header. '''
         # useful for something like authentication
-        self.headers[normalize_header_name(key)] = val
+        key = normalize_header_name(key)
+        if val is None:
+            self.headers.pop(key, None)
+        else:
+            self.headers[key] = val
 
     def add_unredirected_header(self, key, val):
-        # will not be added to a redirected request
-        self.unredirected_hdrs[normalize_header_name(key)] = val
+        ''' Same as :meth:`add_header()` except that this header will not
+        be sent for redirected requests. '''
+        key = normalize_header_name(key)
+        if val is None:
+            self.unredirected_hdrs.pop(key, None)
+        else:
+            self.unredirected_hdrs[key] = val
 
     def has_header(self, header_name):
+        ''' Check if the specified header is present '''
         header_name = normalize_header_name(header_name)
         return (header_name in self.headers or
                 header_name in self.unredirected_hdrs)
 
     def get_header(self, header_name, default=None):
+        ''' Get the value of the specified header. If absent, return `default`
+        '''
         header_name = normalize_header_name(header_name)
         return self.headers.get(
             header_name,
             self.unredirected_hdrs.get(header_name, default))
 
     def header_items(self):
+        ''' Get a copy of all headers for this request as a list of 2-tuples
+        '''
         hdrs = self.unredirected_hdrs.copy()
         hdrs.update(self.headers)
-        return hdrs.items()
+        return list(hdrs.iteritems())
 
 
 class OpenerDirector:

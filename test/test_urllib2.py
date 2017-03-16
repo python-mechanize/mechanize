@@ -917,9 +917,10 @@ class HandlerTests(mechanize._testcase.TestCase):
                 "file://localhost:80%s" % urlpath,
                 "file:///file_does_not_exist.txt",
                 "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
-                                       sanepathname2url(os.getcwd()), temp_file),
+                                       sanepathname2url(os.getcwd()),
+                                       temp_file),
                 "file://somerandomhost.ontheinternet.com%s/%s" %
-                    (sanepathname2url(os.getcwd()), temp_file),
+            (sanepathname2url(os.getcwd()), temp_file),
         ]:
             write_file(temp_file, towrite)
             self.assertRaises(mechanize.URLError, h.file_open, Request(url))
@@ -1880,6 +1881,15 @@ class RequestTests(unittest.TestCase):
         self.assertTrue(self.get.has_proxy())
         self.assertEqual("www.python.org", self.get.get_origin_req_host())
         self.assertEqual("www.perl.org", self.get.get_host())
+
+    def test_data(self):
+        r = Request('https://example.com', data={'a': 1})
+        self.assertEqual(r.get_method(), 'POST')
+        self.assertEqual(r.get_data(), 'a=1')
+        r = Request('https://example.com', data={'a': 1}, method='GET')
+        self.assertEqual(r.get_method(), 'GET')
+        self.assertEqual(r.get_data(), None)
+        self.assertEqual(r.get_full_url(), 'https://example.com?a=1')
 
 
 if __name__ == "__main__":

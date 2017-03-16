@@ -10,6 +10,7 @@ COPYING.txt included with the distribution).
 
 from __future__ import absolute_import
 import logging
+from urllib import urlencode
 
 from . import _rfc3986
 from . import _sockettimeout
@@ -18,11 +19,39 @@ from . import _urllib2_fork
 warn = logging.getLogger("mechanize").warning
 
 
+def as_utf8(x):
+    if not isinstance(x, basestring):
+        x = unicode(x)
+    if isinstance(x, type(u'')):
+        x = x.encode('utf-8')
+    return x
+
+
 class Request(_urllib2_fork.Request):
+
+    '''
+    A request for some network resource. Note that if you specify the method as
+    'GET' and the data as a dict, then it will be automatically appended to the
+    URL. If you leave method as None, then the method will be auto-set to
+    POST and the data will become part of the POST request.
+
+    :arg str url: The URL to request
+    :arg data: Data to send with this request. Can be either a dictionary
+        which will be encoded and sent as application/x-www-form-urlencoded
+        data or a bytestring which will be sent as is. If you use a bytestring
+        you should also set the Content-Type header appropriately.
+    :arg dict headers: Headers to send with this request
+    :arg str method: Method to use for HTTP requests. If not specified
+        mechanize will choose GET or POST automatically as appropriate.
+    :arg float timeout: Timeout in seconds
+
+    The remaining arguments are for internal use.
+    '''
 
     def __init__(self, url, data=None, headers={},
                  origin_req_host=None, unverifiable=False, visit=None,
-                 timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
+                 timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT,
+                 method=None):
         # In mechanize 0.2, the interpretation of a unicode url argument will
         # change: A unicode url argument will be interpreted as an IRI, and a
         # bytestring as a URI. For now, we accept unicode or bytestring.  We
@@ -33,7 +62,14 @@ class Request(_urllib2_fork.Request):
         if not _rfc3986.is_clean_uri(url):
             warn("url argument is not a URI "
                  "(contains illegal characters) %r" % url)
-        _urllib2_fork.Request.__init__(self, url, data, headers)
+        if isinstance(data, dict):
+            data = {as_utf8(k): as_utf8(v) for k, v in data.iteritems()}
+            data = urlencode(data)
+            data = data or None
+            if data and method == 'GET':
+                url += ('&' if '?' in url else '?') + data
+                data = None
+        _urllib2_fork.Request.__init__(self, url, data, headers, method=method)
         self.selector = None
         self.visit = visit
         self.timeout = timeout
