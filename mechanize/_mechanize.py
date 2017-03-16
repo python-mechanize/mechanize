@@ -462,7 +462,7 @@ class Browser(UserAgentBase):
 
     @property
     def cookiejar(self):
-        ' Return the current cookiejar or None '
+        ' Return the current cookiejar (:class:`mechanize.CookieJar`) or None '
         try:
             return self._ua_handlers["_cookies"].cookiejar
         except Exception:
