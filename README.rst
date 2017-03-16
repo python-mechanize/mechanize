@@ -43,7 +43,7 @@ To install for development:
 
     git clone https://github.com/python-mechanize/mechanize.git
     cd mechanize
-    sudo pip2 install -e
+    sudo pip2 install -e .
 
 To install manually, simply add the `mechanize` sub-directory somewhere on your
 `PYTHONPATH`.
