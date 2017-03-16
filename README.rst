@@ -52,7 +52,7 @@ To install manually, simply add the `mechanize` sub-directory somewhere on your
 Documentation
 ---------------
 
-See `https://mechanize.readthedocs.io/en/latest/`_.
+See https://mechanize.readthedocs.io/en/latest/
 
 Credits
 -----------------
