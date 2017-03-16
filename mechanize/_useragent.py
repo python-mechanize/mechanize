@@ -246,7 +246,17 @@ class UserAgentBase(_opener.OpenerDirector):
         self._client_cert_manager = handler.client_cert_manager = cert_manager
 
     def set_ca_data(self, cafile=None, capath=None, cadata=None, context=None):
-        ''' Set the SSL Context used for connecting to SSL servers. '''
+        '''
+        Set the SSL Context used for connecting to SSL servers.
+
+        This method accepts the same arguments as the
+        :py:meth:`ssl.SSLContext.load_verify_locations()` method from the
+        python standard library. You can also pass a pre-built context via the
+        `context` keyword argument. Note that to use this feature, you must be
+        using python >= 2.7.9. In addition you can directly pass in
+        a pre-built :class:`ssl.SSLContext` as the `context` argument.
+
+        '''
         import ssl
         if context is None:
             try:
