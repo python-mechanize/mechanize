@@ -20,8 +20,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
-from mechanize._version import __version__  as mechanize_version  # noqa
-
+from mechanize._version import __version__ as mechanize_version  # noqa
 
 # -- General configuration ------------------------------------------------
 
@@ -32,7 +31,10 @@ from mechanize._version import __version__  as mechanize_version  # noqa
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.viewcode', 'sphinx.ext.autodoc']
+extensions = [
+    'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinx.ext.intersphinx'
+]
+intersphinx_mapping = {'python': ('https://docs.python.org/2.7', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -78,7 +80,6 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -97,12 +98,10 @@ todo_include_todos = False
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'mechanizedoc'
-
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -128,20 +127,15 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'mechanize.tex', 'mechanize Documentation',
-     'Kovid Goyal', 'manual'),
+    (master_doc, 'mechanize.tex', 'mechanize Documentation', 'Kovid Goyal',
+     'manual'),
 ]
-
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'mechanize', 'mechanize Documentation',
-     [author], 1)
-]
-
+man_pages = [(master_doc, 'mechanize', 'mechanize Documentation', [author], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -149,7 +143,6 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'mechanize', 'mechanize Documentation',
-     author, 'mechanize', 'One line description of project.',
-     'Miscellaneous'),
+    (master_doc, 'mechanize', 'mechanize Documentation', author, 'mechanize',
+     'One line description of project.', 'Miscellaneous'),
 ]

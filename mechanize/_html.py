@@ -1,13 +1,3 @@
-"""HTML handling.
-
-Copyright 2003-2006 John J. Lee <jjl@pobox.com>
-
-This code is free software; you can redistribute it and/or modify it under
-the terms of the BSD or ZPL 2.1 licenses (see the file COPYING.txt
-included with the distribution).
-
-"""
-
 from __future__ import absolute_import
 
 import codecs
@@ -93,6 +83,17 @@ class ResponseTypeFinder:
 
 
 class Link:
+    '''
+    A link in a HTML document
+
+    :ivar absolute_url: The absolutized link URL
+    :ivar url: The link URL
+    :ivar base_url: The base URL against which this link is resolved
+    :ivar text: The link text
+    :ivar tag: The link tag name
+    :ivar attrs: The tag attributes
+
+    '''
     def __init__(self, base_url, url, text, tag, attrs):
         assert None not in [url, tag, attrs]
         self.base_url = base_url
@@ -125,8 +126,20 @@ def content_parser(data,
                    transport_encoding=None,
                    default_encoding=DEFAULT_ENCODING,
                    is_html=True):
-    ''' Parse data (a bytes object) into an etree representation such as
-    xml.etree or lxml.etree '''
+    '''
+    Parse data (a bytes object) into an etree representation such as
+    :py:mod:`xml.etree.ElementTree` or `lxml.etree`
+
+    :param bytes data: The data to parse
+    :param url: The URL of the document being parsed or None
+    :param response_info: Information about the document
+        (contains all HTTP headers as :class:`mimetools.Message`)
+    :param transport_encoding: The character encoding for the document being
+        parsed as specified in the HTTP headers or None.
+    :param default_encoding: The character encoding to use if no encoding
+        could be detected and no transport_encoding is specified
+    :param is_html: If the document is to be parsed as HTML.
+    '''
     if not is_html:
         return
     from html5lib import parse

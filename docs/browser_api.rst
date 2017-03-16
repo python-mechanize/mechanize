@@ -17,6 +17,11 @@ You can create a mechanize :class:`Browser` instance as:
 .. autoclass:: mechanize.Browser
    :members:
 
+.. autoclass:: mechanize.Link
+   :members:
+
 .. autoclass:: mechanize.History
    :members:
 
+.. automodule:: mechanize._html
+   :members: content_parser
