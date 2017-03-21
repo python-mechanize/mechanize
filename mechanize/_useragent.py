@@ -175,10 +175,10 @@ class UserAgentBase(_opener.OpenerDirector):
     def set_proxies(self, proxies=None, proxy_bypass=None):
         """Configure proxy settings.
 
-        proxies: dictionary mapping URL scheme to proxy specification.  None
-          means use the default system-specific settings.
-        proxy_bypass: function taking hostname, returning whether proxy should
-          be used.  None means use the default system-specific settings.
+        :arg proxies: dictionary mapping URL scheme to proxy specification.
+          None means use the default system-specific settings.
+        :arg proxy_bypass: function taking hostname, returning whether proxy
+          should be used.  None means use the default system-specific settings.
 
         The default is to try to obtain proxy settings from the system (see the
         documentation for urllib.urlopen for information about the

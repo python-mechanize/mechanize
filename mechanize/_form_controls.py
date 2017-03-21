@@ -1060,8 +1060,8 @@ class ListControl(Control):
         """
         ListControls are built up from component list items (which are also
         ListControls) during parsing.  This method should be called after all
-        items have been added.  See ListControl.__doc__ for the reason this is
-        required.
+        items have been added.  See :class:`mechanize.ListControl` for the
+        reason this is required.
 
         """
         # Need to set default selection where no item was indicated as being
@@ -1580,15 +1580,15 @@ class HTMLForm:
 
     Forms can be filled in with data to be returned to the server, and then
     submitted, using the click method to generate a request object suitable for
-    passing to mechanize.urlopen (or the click_request_data or click_pairs
-    methods for integration with third-party code).
+    passing to :func:`mechanize.urlopen` (or the click_request_data or
+    click_pairs methods for integration with third-party code).
 
     Usually, HTMLForm instances are not created directly.  Instead, they are
     automatically created when visting a page with a mechanize Browser.  If you
     do construct HTMLForm objects yourself, however, note that an HTMLForm
     instance is only properly initialised after the fixup method has been
-    called (ParseFile and ParseResponse do this for you).  See
-    ListControl.__doc__ for the reason this is required.
+    called.  See :class:`mechanize.ListControl` for the reason this is
+    required.
 
     Indexing a form (form["control_name"]) returns the named Control's value
     attribute.  Assignment to a form index (form["control_name"] = something)
@@ -1618,13 +1618,13 @@ class HTMLForm:
 
     defines a SELECT control with name "more_cheeses" which has two items,
     named "1" and "2" (because the OPTION element's value HTML attribute
-    defaults to the element contents -- see :class:`SelectControl` for more on
-    these defaulting rules).
+    defaults to the element contents -- see :class:`mechanize.SelectControl`
+    for more on these defaulting rules).
 
     To select, deselect or otherwise manipulate individual list items, use the
-    :meth:`HTMLForm.find_control()` and :meth:`ListControl.get()` methods.  To
-    set the whole value, do as for any other control: use indexing or the
-    `set_value/get_value` methods.
+    :meth:`mechanize.HTMLForm.find_control()` and
+    :meth:`mechanize.ListControl.get()` methods.  To set the whole value, do as
+    for any other control: use indexing or the `set_value/get_value` methods.
 
     Example:
 
@@ -1677,8 +1677,9 @@ class HTMLForm:
     arguments.  Note that each item may have several labels.
 
     The question of default values of OPTION contents, labels and values is
-    somewhat complicated: see :class:`SelectControl` and
-    :meth:`ListControl.get_item_attrs` if you think you need to know.
+    somewhat complicated: see :class:`mechanize.SelectControl` and
+    :meth:`mechanize.ListControl.get_item_attrs()` if you think you need to
+    know.
 
     Controls can be disabled or readonly.  In either case, the control's value
     cannot be changed until you clear those flags (see example below).
@@ -1714,7 +1715,7 @@ class HTMLForm:
 
     See the various Control classes for further documentation.  Many methods
     take name, type, kind, id, label and nr arguments to specify the control to
-    be operated on: see HTMLForm.find_control.__doc__.
+    be operated on: see :meth:`mechanize.HTMLForm.find_control()`.
 
     ControlNotFoundError (subclass of ValueError) is raised if the specified
     control can't be found.  This includes occasions where a non-ListControl
@@ -1750,8 +1751,8 @@ class HTMLForm:
     Methods for form filling:
 
     Most of the these methods have very similar arguments.  See
-    HTMLForm.find_control.__doc__ for details of the name, type, kind, label
-    and nr arguments.
+    :meth:`mechanize.HTMLForm.find_control()` for details of the name, type,
+    kind, label and nr arguments.
 
     .. code-block:: python
 
@@ -1868,10 +1869,10 @@ class HTMLForm:
         yourself unless you're building your own Control instances.
 
         Note that controls representing lists of items are built up from
-        controls holding only a single list item.  See ListControl.__doc__ for
-        further information.
+        controls holding only a single list item.  See
+        :class:`mechanize.ListControl` for further information.
 
-        :arg type: type of control (see Control.__doc__ for a list)
+        :arg type: type of control (see :class:`mechanize.Control` for a list)
         :arg attrs: HTML attributes of control
         :arg ignore_unknown: if true, use a dummy Control instance for controls
             of unknown type; otherwise, use a TextControl
@@ -2046,7 +2047,7 @@ class HTMLForm:
     def clear_all(self):
         """Clear the value attributes of all controls in the form.
 
-        See HTMLForm.clear.__doc__.
+        See :meth:`mechanize.HTMLForm.clear()`
 
         """
         for control in self.controls:
@@ -2155,7 +2156,7 @@ class HTMLForm:
                       label=None):  # deprecated
         """Toggle selected state of list item in control having only one item.
 
-        The rest is as for HTMLForm.set_single.__doc__.
+        The rest is as for :meth:`mechanize.HTMLForm.set_single()`
 
         """  # by_label ignored and deprecated
         self._find_list_control(name, type, kind, id, label,

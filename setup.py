@@ -72,6 +72,7 @@ def main():
         version=VERSION,
         license="BSD",
         platforms=["any"],
+        install_requires=['html5lib'],
         classifiers=[c for c in CLASSIFIERS.split("\n") if c],
         install_requires=[],
         zip_safe=True,
