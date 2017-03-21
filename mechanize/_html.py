@@ -72,14 +72,15 @@ class EncodingFinder:
 
 
 class ResponseTypeFinder:
-    def __init__(self, allow_xhtml):
+    def __init__(self, allow_xhtml, allow_json=False):
         self._allow_xhtml = allow_xhtml
+        self._allow_json = allow_json
 
     def is_html(self, response, encoding):
         ct_hdrs = response.info().getheaders("content-type")
         url = response.geturl()
         # XXX encoding
-        return _is_html(ct_hdrs, url, self._allow_xhtml)
+        return _is_html(ct_hdrs, url, self._allow_xhtml, self._allow_json)
 
 
 class Link:
@@ -190,7 +191,7 @@ class Factory:
     def __init__(
             self,
             default_encoding=DEFAULT_ENCODING,
-            allow_xhtml=False, ):
+            allow_xhtml=False, allow_json=False):
         """
 
         Pass keyword arguments only.
@@ -198,7 +199,7 @@ class Factory:
         """
         self._encoding_finder = EncodingFinder(default_encoding)
         self._response_type_finder = ResponseTypeFinder(
-            allow_xhtml=allow_xhtml)
+            allow_xhtml=allow_xhtml, allow_json=allow_json)
         self._content_parser = content_parser
         self._current_forms = self._current_links = self._current_title = lazy
         self._current_global_form = self._root = lazy
