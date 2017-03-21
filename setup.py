@@ -74,7 +74,6 @@ def main():
         platforms=["any"],
         install_requires=['html5lib'],
         classifiers=[c for c in CLASSIFIERS.split("\n") if c],
-        install_requires=[],
         zip_safe=True,
         author="Kovid Goyal",
         author_email='no@no.no',
