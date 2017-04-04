@@ -1101,12 +1101,12 @@ class AbstractHTTPHandler(BaseHandler):
             scheme, sel = splittype(request.get_selector())
             sel_host, sel_path = splithost(sel)
 
-        if not request.has_header('Host'):
-            request.add_unredirected_header('Host', sel_host)
         for name, value in self.parent.addheaders:
             name = name.capitalize()
             if not request.has_header(name):
                 request.add_unredirected_header(name, value)
+        if not request.has_header('Host'):
+            request.add_unredirected_header('Host', sel_host)
 
         return request
 

@@ -891,7 +891,7 @@ class HttplibTests(mechanize._testcase.TestCase):
         self.monkey_patch_httplib(putheader)
         browser = self.make_browser()
         request = mechanize.Request("http://example.com/")
-        request.add_header("Host", "myway.example.com")
+        browser.addheaders = [("Host", "myway.example.com")]
         browser.open(request)
         self.assertIn(("Host", "myway.example.com"), headers)
 
