@@ -72,7 +72,7 @@ def main():
         version=VERSION,
         license="BSD",
         platforms=["any"],
-        install_requires=['html5lib'],
+        install_requires=['html5lib>=0.999999999'],
         classifiers=[c for c in CLASSIFIERS.split("\n") if c],
         zip_safe=True,
         author="Kovid Goyal",
