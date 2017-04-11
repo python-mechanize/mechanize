@@ -45,6 +45,7 @@ Operating System :: OS Independent
 Programming Language :: Python
 Programming Language :: Python :: 2
 Programming Language :: Python :: 2.7
+Programming Language :: Python :: 2 :: Only
 Topic :: Internet
 Topic :: Internet :: File Transfer Protocol (FTP)
 Topic :: Internet :: WWW/HTTP
