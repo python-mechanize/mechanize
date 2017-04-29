@@ -1135,15 +1135,17 @@ class AbstractHTTPHandler(BaseHandler):
         # which will block while the server waits for the next request.
         # So make sure the connection gets closed after the (only)
         # request.
-        headers["Connection"] = "close"
-        headers = dict(
-            (name.title(), val) for name, val in headers.items())
+        headers[b"Connection"] = b"close"
+        # httplib in python 2 needs str() not unicode() for all request
+        # parameters
+        headers = {str(name.title()): str(val)
+                   for name, val in headers.items()}
 
         if req._tunnel_host:
             set_tunnel = h.set_tunnel if hasattr(
                 h, "set_tunnel") else h._set_tunnel
             tunnel_headers = {}
-            proxy_auth_hdr = "Proxy-Authorization"
+            proxy_auth_hdr = b"Proxy-Authorization"
             if proxy_auth_hdr in headers:
                 tunnel_headers[proxy_auth_hdr] = headers[proxy_auth_hdr]
                 # Proxy-Authorization should not be sent to origin server.
@@ -1151,7 +1153,8 @@ class AbstractHTTPHandler(BaseHandler):
             set_tunnel(req._tunnel_host, headers=tunnel_headers)
 
         try:
-            h.request(req.get_method(), req.get_selector(), req.data, headers)
+            h.request(str(req.get_method()), str(req.get_selector()), req.data,
+                      headers)
             r = h.getresponse()
         except socket.error as err:  # XXX what error?
             raise URLError(err)
