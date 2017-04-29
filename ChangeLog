@@ -1,6 +1,11 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2017-04-29 Kovid Goyal
+	* 0.3.2 release.
+	* Allow overriding of Host headers via addheaders 
+	* Fix using unicode strings in addheaders and trying to send data with a request failing
+
 2017-03-17 Kovid Goyal
 	* 0.3.1 release.
 	* Allow easily selecting forms based on HTML attributes of the <form> tag
