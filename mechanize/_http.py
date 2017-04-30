@@ -114,12 +114,15 @@ class HTTPEquivProcessor(BaseHandler):
 
     def __init__(self, head_parser_class=XHTMLCompatibleHeadParser,
                  i_want_broken_xhtml_support=False,
+                 i_want_broken_json_support=False
                  ):
         self.head_parser_class = head_parser_class
         self._allow_xhtml = i_want_broken_xhtml_support
+        self._allow_json = i_want_broken_json_support
 
     def __copy__(self):
-        return self.__class__(self.head_parser_class, self._allow_xhtml)
+        return self.__class__(self.head_parser_class, self._allow_xhtml,
+                self._allow_json)
 
     def http_response(self, request, response):
         if not hasattr(response, "seek"):
@@ -127,7 +130,7 @@ class HTTPEquivProcessor(BaseHandler):
         http_message = response.info()
         url = response.geturl()
         ct_hdrs = http_message.getheaders("content-type")
-        if is_html(ct_hdrs, url, self._allow_xhtml):
+        if is_html(ct_hdrs, url, self._allow_xhtml, self._allow_json):
             try:
                 try:
                     html_headers = parse_head(response,

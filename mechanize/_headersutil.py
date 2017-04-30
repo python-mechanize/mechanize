@@ -21,25 +21,27 @@ from ._util import http2time
 STRING_TYPES = StringType, UnicodeType
 
 
-def is_html_file_extension(url, allow_xhtml):
+def is_html_file_extension(url, allow_xhtml, allow_json=False):
     ext = os.path.splitext(_rfc3986.urlsplit(url)[2])[1]
     html_exts = [".htm", ".html"]
     if allow_xhtml:
         html_exts += [".xhtml"]
+    if allow_json:
+        html_exts += [".json"]
     return ext in html_exts
 
 
-def is_html(ct_headers, url, allow_xhtml=False):
+def is_html(ct_headers, url, allow_xhtml=False, allow_json=False):
     """
     ct_headers: Sequence of Content-Type headers
     url: Response URL
 
     """
     if not ct_headers:
-        return is_html_file_extension(url, allow_xhtml)
+        return is_html_file_extension(url, allow_xhtml, allow_json)
     headers = split_header_words(ct_headers)
     if len(headers) < 1:
-        return is_html_file_extension(url, allow_xhtml)
+        return is_html_file_extension(url, allow_xhtml, allow_json)
     first_header = headers[0]
     first_parameter = first_header[0]
     ct = first_parameter[0]
@@ -50,6 +52,10 @@ def is_html(ct_headers, url, allow_xhtml=False):
             "text/xml",
             "application/xml",
             "application/xhtml+xml",
+        ]
+    if allow_json:
+        html_types += [
+            "application/json",
         ]
     return ct in html_types
 
