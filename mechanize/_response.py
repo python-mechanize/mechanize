@@ -389,6 +389,9 @@ class closeable_response:
     def info(self):
         return self._headers
 
+    def getcode(self):
+        return self.code
+
     def get_header_values(self, name):
         return self._headers.getheaders(name)
 
