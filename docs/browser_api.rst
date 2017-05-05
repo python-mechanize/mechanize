@@ -34,7 +34,7 @@ The Request
 The Response
 ---------------
 
-Response objects in mechanize are `seek()` able `file`-like objects that support
+Response objects in mechanize are `seek()` able :class:`file`-like objects that support
 some additional methods, depending on the protocol used for the connection. The documentation
 below is for HTTP(s) responses, as these are the most common.
 
