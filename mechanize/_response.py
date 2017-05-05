@@ -404,6 +404,9 @@ class closeable_response:
             ans.append(h)
         return ans
 
+    def __getitem__(self, name):
+        return self._headers[name]
+
     def geturl(self):
         return self._url
 
