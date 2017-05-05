@@ -1,6 +1,10 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2017-05-05 Kovid Goyal
+	* 0.3.3 release.
+	* Add get() and __getitem__ methods to the response object for conveninent access to response headers
+
 2017-04-29 Kovid Goyal
 	* 0.3.2 release.
 	* Allow overriding of Host headers via addheaders 
