@@ -407,6 +407,9 @@ class closeable_response:
     def __getitem__(self, name):
         return self._headers[name]
 
+    def get(self, name, default):
+        return self._headers.get(name)
+
     def geturl(self):
         return self._url
 
