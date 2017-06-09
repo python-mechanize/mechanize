@@ -37,8 +37,8 @@ look that way.
 	* Backward incompatibility: The factory keyword argument to Browser is no longer allowed
 	* Backward incompatibility: Browser.forms() and Browser.links() return unicode strings instead of byte strings
 	* Backward incompatibility: When searching for a form control if more than one control matches, an AmbiguityError is always raised
-	* Backward incompatibility: There is no longer a mechanize.ParseError
-	  class. Parsing now uses the HTML 5 algorithm, which almost never fails.
+	* Backward incompatibility: There is no longer a mechanize.ParseError and mechanize.ParseResponse 
+	  class. Parsing now uses the HTML 5 algorithm, which is designed to not fail on malformed markup.
 	* Backward incompatibility: For links that do not have any text the text
 	  attribute is now always an empty string instead of None or an empty string.
 	* Backward incompatibility: Remove support for the <isindex> HTML tag which was deprecated in HTML 4 and removed in HTML 5
