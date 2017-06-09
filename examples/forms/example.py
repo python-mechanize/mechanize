@@ -9,11 +9,10 @@ if len(sys.argv) == 1:
 else:
     uri = sys.argv[1]
 
-request = mechanize.Request(mechanize.urljoin(uri, "mechanize/example.html"))
-response = mechanize.urlopen(request)
-forms = mechanize.ParseResponse(response, backwards_compat=False)
-response.close()
-## f = open("example.html")
+br = mechanize.Browser()
+br.open(mechanize.urljoin(uri, "mechanize/example.html"))
+forms = list(br.forms())
+# f = open("example.html")
 # forms = mechanize.ParseFile(f, "http://example.com/example.html",
 # backwards_compat=False)
 # f.close()
@@ -116,6 +115,8 @@ def control_has_caerphilly(control):
     for item in control.items:
         if item.name == "caerphilly":
             return True
+
+
 form.find_control(kind="list", predicate=control_has_caerphilly)
 
 # HTMLForm.controls is a list of all controls in the form
@@ -155,7 +156,8 @@ print "parmesan" in form["cheeses"]
 print "parmesan" in [
     item.name for item in form.find_control("cheeses").items if item.selected]
 #  does cheeses control have a "caerphilly" item?
-print "caerphilly" in [item.name for item in form.find_control("cheeses").items]
+print "caerphilly" in [
+    item.name for item in form.find_control("cheeses").items]
 
 # Sometimes one wants to set or clear individual items in a list, rather
 # than setting the whole .value:
