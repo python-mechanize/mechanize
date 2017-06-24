@@ -192,6 +192,10 @@ class HTTPEquivParser(object):
                 continue
             name = entity_pat.sub(replace_entity, name)
             val = entity_pat.sub(replace_entity, val)
+            try:
+                name, val = name.encode('ascii'), val.encode('ascii')
+            except ValueError:
+                continue
             ans.append((name, val))
         return ans
 
