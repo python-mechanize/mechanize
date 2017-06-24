@@ -17,7 +17,8 @@ from ._form_controls import (
     SubmitButtonControl, SubmitControl, TextareaControl, TextControl)
 from ._html import Factory, Link
 # misc
-from ._http import XHTMLCompatibleHeadParser
+from ._entities import html5_entities
+from ._equiv import HTTPEquivParser
 # high-level stateful browser-style interface
 from ._mechanize import (Browser, BrowserStateError, FormNotFoundError,
                          History, LinkNotFoundError)
@@ -108,7 +109,8 @@ __all__ = [
     'UnknownHandler',
     'UserAgent',
     'UserAgentBase',
-    'XHTMLCompatibleHeadParser',
+    'HTTPEquivParser',
+    'html5_entities',
     '__version__',
     'build_opener',
     'install_opener',

@@ -1738,26 +1738,32 @@ class HandlerTests(mechanize._testcase.TestCase):
 
 class HeadParserTests(unittest.TestCase):
     def test(self):
-        # XXX XHTML
-        from mechanize import XHTMLCompatibleHeadParser
-        htmls = [(
-            """<meta http-equiv="refresh" content="1; http://example.com/">
-            """, [("refresh", "1; http://example.com/")]), ("""
-            <html><head>
-            <meta http-equiv="refresh" content="1; http://example.com/">
-            <meta name="spam" content="eggs">
-            <meta http-equiv="foo" content="bar">
-            <p> <!-- p is not allowed in head, so parsing should stop here-->
-            <meta http-equiv="moo" content="cow">
-            </html>
-            """, [("refresh", "1; http://example.com/"), ("foo", "bar")]),
-                 ("""<meta http-equiv="refresh">
-            """, [])]
+        from mechanize import HTTPEquivParser
+        htmls = [
+            (
+                b"""<meta http-equiv=refresh content="1; http://example.com/">
+                """, [("refresh", "1; http://example.com/")]),
+
+            (
+                b"""
+                <html><head><title>\xea</title>
+                <meta http-equiv="refresh" content="1; http://example.com/">
+                <meta name="spam" content="eggs">
+                <meta content="b&bsol;ar" http-equiv="f&Newline;oo">
+                <p> <!-- p is not allowed in head, so parsing should stop -->
+                <meta http-equiv="moo" content="cow">
+                </html>
+                """,
+                [("refresh", "1; http://example.com/"), ("f\noo", "b\\ar")]),
+
+            (
+                b"""<meta http-equiv="refresh">
+                """, []),
+
+        ]
         for html, result in htmls:
-            self.assertEqual(
-                parse_head(
-                    StringIO.StringIO(html), XHTMLCompatibleHeadParser()),
-                result)
+            headers = HTTPEquivParser(html)()
+            self.assertEqual(result, headers)
 
 
 class A:

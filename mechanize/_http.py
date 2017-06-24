@@ -14,8 +14,6 @@ COPYING.txt included with the distribution).
 
 from __future__ import absolute_import
 
-import htmlentitydefs
-import HTMLParser
 import logging
 import robotparser
 import socket
@@ -27,84 +25,16 @@ from ._headersutil import is_html
 from ._request import Request
 from ._response import response_seek_wrapper
 from ._urllib2_fork import BaseHandler, HTTPError
+from ._equiv import HTTPEquivParser
 
 debug = logging.getLogger("mechanize").debug
 debug_robots = logging.getLogger("mechanize.robots").debug
 
-# monkeypatch urllib2.HTTPError to show URL
-# import urllib2
-# def urllib2_str(self):
-# return 'HTTP Error %s: %s (%s)' % (
-# self.code, self.msg, self.geturl())
-# urllib2.HTTPError.__str__ = urllib2_str
 
-
-CHUNK = 2048  # size of chunks fed to HTML HEAD parser, in bytes
-
-# XXX would self.reset() work, instead of raising this exception?
-
-
-class EndOfHeadError(Exception):
-    pass
-
-
-class AbstractHeadParser:
-    # only these elements are allowed in or before HEAD of document
-    head_elems = ("html", "head",
-                  "title", "base",
-                  "script", "style", "meta", "link", "object")
-    _entitydefs = htmlentitydefs.name2codepoint
-
-    def __init__(self):
-        self.http_equiv = []
-
-    def start_meta(self, attrs):
-        http_equiv = content = None
-        for key, value in attrs:
-            if key == "http-equiv":
-                http_equiv = value
-            elif key == "content":
-                content = value
-        if http_equiv is not None and content is not None:
-            self.http_equiv.append((http_equiv, content))
-
-    def end_head(self):
-        raise EndOfHeadError()
-
-
-class XHTMLCompatibleHeadParser(AbstractHeadParser,
-                                HTMLParser.HTMLParser):
-
-    def __init__(self):
-        HTMLParser.HTMLParser.__init__(self)
-        AbstractHeadParser.__init__(self)
-
-    def handle_starttag(self, tag, attrs):
-        if tag not in self.head_elems:
-            raise EndOfHeadError()
-        if tag == 'meta':
-            self.start_meta(attrs)
-
-    def handle_endtag(self, tag):
-        if tag not in self.head_elems:
-            raise EndOfHeadError()
-        if tag == 'head':
-            self.end_head()
-
-
-def parse_head(fileobj, parser):
+def parse_head(fileobj):
     """Return a list of key, value pairs."""
-    while 1:
-        data = fileobj.read(CHUNK)
-        try:
-            parser.feed(data)
-        except EndOfHeadError:
-            break
-        if len(data) != CHUNK:
-            # this should only happen if there is no HTML body, or if
-            # CHUNK is big
-            break
-    return parser.http_equiv
+    p = HTTPEquivParser(fileobj.read(4096))
+    return p()
 
 
 class HTTPEquivProcessor(BaseHandler):
@@ -112,29 +42,19 @@ class HTTPEquivProcessor(BaseHandler):
 
     handler_order = 300  # before handlers that look at HTTP headers
 
-    def __init__(self, head_parser_class=XHTMLCompatibleHeadParser,
-                 i_want_broken_xhtml_support=False,
-                 ):
-        self.head_parser_class = head_parser_class
-        self._allow_xhtml = i_want_broken_xhtml_support
-
-    def __copy__(self):
-        return self.__class__(self.head_parser_class, self._allow_xhtml)
-
     def http_response(self, request, response):
         if not hasattr(response, "seek"):
             response = response_seek_wrapper(response)
         http_message = response.info()
         url = response.geturl()
         ct_hdrs = http_message.getheaders("content-type")
-        if is_html(ct_hdrs, url, self._allow_xhtml):
+        if is_html(ct_hdrs, url, True):
             try:
                 try:
-                    html_headers = parse_head(response,
-                                              self.head_parser_class())
+                    html_headers = parse_head(response)
                 finally:
                     response.seek(0)
-            except HTMLParser.HTMLParseError:
+            except Exception:
                 pass
             else:
                 for hdr, val in html_headers:
