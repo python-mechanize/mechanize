@@ -2,7 +2,7 @@ This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
 2017-06-24 Kovid Goyal
-	* 0.3.4 release.
+	* 0.3.5 release.
 	* Fix error when trying to open pages that contain HTML entities that
 	  decode to unicode characters in their <head> sections
 
