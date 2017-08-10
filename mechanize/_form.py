@@ -27,7 +27,7 @@ def label_text(elem):
 
 
 def parse_control(elem, parent_of, default_type='text'):
-    attrs = elem.attrib.copy()
+    attrs = dict(elem.attrib)
     label_elem = parent_of(elem, 'label')
     if label_elem is not None:
         lt = label_text(label_elem)

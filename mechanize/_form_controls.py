@@ -394,7 +394,7 @@ class ScalarControl(Control):
         self.readonly = 'readonly' in attrs
         self.id = attrs.get("id")
 
-        self.attrs = attrs.copy()
+        self.attrs = dict(attrs)
 
         self._clicked = False
 
@@ -1410,13 +1410,13 @@ class SelectControl(ListControl):
     def __init__(self, type, name, attrs, select_default=False, index=None):
         # fish out the SELECT HTML attributes from the OPTION HTML attributes
         # dictionary
-        self.attrs = attrs["__select"].copy()
+        self.attrs = dict(attrs["__select"])
         self.__dict__["_label"] = _get_label(self.attrs)
         self.__dict__["id"] = self.attrs.get("id")
         self.__dict__["multiple"] = 'multiple' in self.attrs
         # the majority of the contents, label, and value dance already happened
         contents = attrs.get("contents")
-        attrs = attrs.copy()
+        attrs = dict(attrs)
         del attrs["__select"]
 
         ListControl.__init__(
@@ -1842,7 +1842,7 @@ class HTMLForm:
         self.enctype = enctype
         self.name = name
         if attrs is not None:
-            self.attrs = attrs.copy()
+            self.attrs = dict(attrs)
         else:
             self.attrs = {}
         self.controls = []
@@ -1892,7 +1892,7 @@ class HTMLForm:
             else:
                 klass = TextControl
 
-        a = attrs.copy()
+        a = dict(attrs)
         if issubclass(klass, ListControl):
             control = klass(type, name, a, select_default, index)
         else:

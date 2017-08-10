@@ -142,11 +142,16 @@ def content_parser(data,
     '''
     if not is_html:
         return
-    from html5lib import parse
-    return parse(
-        data,
-        transport_encoding=transport_encoding,
-        namespaceHTMLElements=False)
+    try:
+        from html5_parser import parse
+    except ImportError:
+        from html5lib import parse
+        return parse(
+            data,
+            transport_encoding=transport_encoding,
+            namespaceHTMLElements=False)
+    else:
+        return parse(data, transport_encoding=transport_encoding)
 
 
 def get_title(root):

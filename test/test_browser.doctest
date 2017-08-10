@@ -263,12 +263,12 @@ compatibility reasons).
 Traceback (most recent call last):
 BrowserStateError: not viewing any document
 >>> br.set_response(response)
->>> br.global_form().find_control(nr=0).name
-u'a'
+>>> str(br.global_form().find_control(nr=0).name)
+'a'
 >>> len(list(br.forms()))
 1
->>> iter(br.forms()).next().find_control(nr=0).name
-u'b'
+>>> str(iter(br.forms()).next().find_control(nr=0).name)
+'b'
 
 
 
@@ -291,5 +291,5 @@ u'b'
 ...     else:
 ...         return True
 >>> br.select_form(predicate=has_a)
->>> br.form.find_control(name="a").value
-u'b'
+>>> str(br.form.find_control(name="a").value)
+'b'

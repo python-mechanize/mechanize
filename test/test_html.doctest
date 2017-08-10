@@ -52,11 +52,11 @@ elements (haven't tested IE).
 
 >>> html = ("""\
 ... <html><head>
-... <title>Title</title>
+... <title>T&nbsp;itle</title>
 ... </head><body><p>Blah.<p></body></html>
 ... """)
 >>> get_title(html)
-u'Title'
+u'T\xa0itle'
 
 >>> html = ("""\
 ... <html><head>
@@ -65,8 +65,8 @@ u'Title'
 ... </title>
 ... </head><body><p>Blah.<p></body></html>
 ... """)
->>> get_title(html)
-u'Ti<script type="text/strange">alert("this is valid HTML -- yuck!")</script> tle &&'
+>>> str(get_title(html))
+'Ti<script type="text/strange">alert("this is valid HTML -- yuck!")</script> tle &&'
 
 
 No more tags after <title> used to cause an exception
