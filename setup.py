@@ -74,6 +74,7 @@ def main():
         license="BSD",
         platforms=["any"],
         install_requires=['html5lib>=0.999999999'],
+        extras_require={'fast': ['html5-parser>=0.4.4']},
         classifiers=[c for c in CLASSIFIERS.split("\n") if c],
         zip_safe=True,
         author="Kovid Goyal",
