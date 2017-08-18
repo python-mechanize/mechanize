@@ -423,7 +423,13 @@ thread_local.opener = None
 
 
 def get_thread_local_opener():
-    ans = thread_local.opener
+    try:
+        ans = thread_local.opener
+    except AttributeError:
+        # threading module is broken, use a single global instance
+        ans = getattr(get_thread_local_opener, 'ans', None)
+        if ans is None:
+            ans = get_thread_local_opener.ans = build_opener()
     if ans is None:
         ans = thread_local.opener = build_opener()
     return ans
@@ -440,4 +446,8 @@ def urlretrieve(url, filename=None, reporthook=None, data=None,
 
 
 def install_opener(opener):
-    thread_local.opener = opener
+    get_thread_local_opener.ans = opener
+    try:
+        thread_local.opener = opener
+    except AttributeError:
+        pass
