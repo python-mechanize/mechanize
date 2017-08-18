@@ -321,7 +321,7 @@ def wrapped_open(urlopen, process_response_object, fullurl, data=None,
     success = True
     try:
         response = urlopen(fullurl, data, timeout)
-    except urllib2.HTTPError, error:
+    except urllib2.HTTPError as error:
         success = False
         if error.fp is None:  # not a response
             raise

@@ -1368,7 +1368,7 @@ class FileHandler(BaseHandler):
             ):
                 return addinfourl(open(localfile, 'rb'),
                                   headers, 'file:' + file)
-        except OSError, msg:
+        except OSError as msg:
             # urllib2 users shouldn't expect OSErrors coming from urlopen()
             raise URLError(msg)
         raise URLError('file not on local host')
@@ -1400,7 +1400,7 @@ class FTPHandler(BaseHandler):
 
         try:
             host = socket.gethostbyname(host)
-        except socket.error, msg:
+        except socket.error as msg:
             raise URLError(msg)
         path, attrs = splitattr(req.get_selector())
         dirs = path.split('/')

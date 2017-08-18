@@ -61,7 +61,7 @@ class TempfileTestMixin:
         for fn in self._tempfiles:
             try:
                 os.remove(fn)
-            except IOError, exc:
+            except IOError as exc:
                 if exc.errno != errno.ENOENT:
                     raise
 
@@ -1262,7 +1262,7 @@ class CookieJarPersistenceTests(TempfileTestMixin, unittest.TestCase):
         finally:
             try:
                 os.remove(filename)
-            except IOError, exc:
+            except IOError as exc:
                 if exc.errno != errno.ENOENT:
                     raise
 
@@ -1279,7 +1279,7 @@ class CookieJarPersistenceTests(TempfileTestMixin, unittest.TestCase):
         finally:
             try:
                 os.remove(filename)
-            except IOError, exc:
+            except IOError as exc:
                 if exc.errno != errno.ENOENT:
                     raise
 

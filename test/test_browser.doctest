@@ -151,7 +151,7 @@ non-visiting.
 >>> def raises(exc_class, fn, *args, **kwds):
 ...     try:
 ...         fn(*args, **kwds)
-...     except exc_class, exc:
+...     except exc_class as exc:
 ...         return True
 ...     return False
 >>> def test_state(br):

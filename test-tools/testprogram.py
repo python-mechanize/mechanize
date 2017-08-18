@@ -143,7 +143,7 @@ def kill_posix(pid, report_hook):
             report_hook("forcefully killing")
             try:
                 os.kill(pid, signal.SIGKILL)
-            except OSError, exc:
+            except OSError as exc:
                 if exc.errno != errno.ECHILD:
                     raise
     finally:
