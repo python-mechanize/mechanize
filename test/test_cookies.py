@@ -397,8 +397,8 @@ class CookieTests(unittest.TestCase):
         interact_netscape(c, "http://www.acme.com/", 'version=eggs; spam=eggs')
 
         cookies = c._cookies["www.acme.com"]["/"]
-        self.assert_(cookies.has_key('expires'))
-        self.assert_(cookies.has_key('version'))
+        self.assert_('expires' in cookies)
+        self.assert_('version' in cookies)
 
     def test_expires(self):
         from mechanize._util import time2netscape
@@ -449,39 +449,39 @@ class CookieTests(unittest.TestCase):
 
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/", 'spam="bar"; Version="1"')
-        assert c._cookies["www.acme.com"].has_key("/")
+        assert "/" in c._cookies["www.acme.com"]
 
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/blah", 'eggs="bar"; Version="1"')
-        assert c._cookies["www.acme.com"].has_key("/")
+        assert "/" in c._cookies["www.acme.com"]
 
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/blah/rhubarb",
                       'eggs="bar"; Version="1"')
-        assert c._cookies["www.acme.com"].has_key("/blah/")
+        assert "/blah/" in c._cookies["www.acme.com"]
 
         c = CookieJar(pol)
         interact_2965(c, "http://www.acme.com/blah/rhubarb/",
                       'eggs="bar"; Version="1"')
-        assert c._cookies["www.acme.com"].has_key("/blah/rhubarb/")
+        assert "/blah/rhubarb/" in c._cookies["www.acme.com"]
 
         # Netscape
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/", 'spam="bar"')
-        assert c._cookies["www.acme.com"].has_key("/")
+        assert "/" in c._cookies["www.acme.com"]
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/blah", 'eggs="bar"')
-        assert c._cookies["www.acme.com"].has_key("/")
+        assert "/" in c._cookies["www.acme.com"]
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/blah/rhubarb", 'eggs="bar"')
-        assert c._cookies["www.acme.com"].has_key("/blah")
+        assert "/blah" in c._cookies["www.acme.com"]
 
         c = CookieJar()
         interact_netscape(c, "http://www.acme.com/blah/rhubarb/", 'eggs="bar"')
-        assert c._cookies["www.acme.com"].has_key("/blah/rhubarb")
+        assert "/blah/rhubarb" in c._cookies["www.acme.com"]
 
     def test_default_path_with_query(self):
         cj = mechanize.CookieJar()
