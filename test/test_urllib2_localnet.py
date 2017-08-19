@@ -429,7 +429,7 @@ class TestUrlopen(TestCase):
 
         try:
             mechanize.urlopen('http://localhost:%s/weeble' % handler.port)
-        except mechanize.URLError, f:
+        except mechanize.URLError as f:
             pass
         else:
             self.fail('404 should raise URLError')

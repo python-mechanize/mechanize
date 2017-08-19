@@ -266,7 +266,7 @@ class OpenerTests(unittest.TestCase):
         try:
             try:
                 op.retrieve(url, reporthook=verif.callback)
-            except mechanize.ContentTooShortError, exc:
+            except mechanize.ContentTooShortError as exc:
                 filename, headers = exc.result
                 self.assertNotEqual(filename, tfn)
                 self.assertEqual(headers["foo"], 'Bar')

@@ -34,7 +34,7 @@ the result is raised rather than returned.
 ...     _opener.wrapped_open(urlopen, response_hook,
 ...                          "http://example.com", "data"
 ...                          )
-... except Exception, exc:
+... except Exception as exc:
 ...     print exc
 fullurl 'http://example.com'
 data 'data'
@@ -51,7 +51,7 @@ Other exceptions get ignored, since they're not response objects.
 ...     _opener.wrapped_open(urlopen, response_hook,
 ...                          "http://example.com", "data"
 ...                          )
-... except Exception, exc:
+... except Exception as exc:
 ...     print exc
 fullurl 'http://example.com'
 data 'data'

@@ -375,7 +375,7 @@ class ResponseTests(TestCase):
         opener.set_seekable_responses(True)
         try:
             opener.open(urljoin(self.uri, "nonexistent"))
-        except mechanize.HTTPError, exc:
+        except mechanize.HTTPError as exc:
             self.assert_("HTTPError instance" in repr(exc))
 
     def test_no_seek(self):
@@ -385,7 +385,7 @@ class ResponseTests(TestCase):
             self.assert_(not hasattr(r, "seek"))
             try:
                 opener.open(urljoin(self.uri, "nonexistent"))
-            except mechanize.HTTPError, exc:
+            except mechanize.HTTPError as exc:
                 self.assert_(not hasattr(exc, "seek"))
 
         # mechanize.UserAgent
@@ -410,7 +410,7 @@ class ResponseTests(TestCase):
             self.assertEqual(data, r.read(), r.get_data())
             try:
                 opener.open(urljoin(self.uri, "nonexistent"))
-            except mechanize.HTTPError, exc:
+            except mechanize.HTTPError as exc:
                 data = exc.read()
                 if excs_also:
                     exc.seek(0)
@@ -678,7 +678,7 @@ class CookieJarTests(TestCase):
             cj = mechanize.MozillaCookieJar(filename=filename)
             try:
                 cj.revert()
-            except IOError, exc:
+            except IOError as exc:
                 if exc.errno != errno.ENOENT:
                     raise
             return cj

@@ -282,13 +282,13 @@ class Browser(UserAgentBase):
         success = True
         try:
             response = UserAgentBase.open(self, request, data)
-        except urllib2.HTTPError, error:
+        except urllib2.HTTPError as error:
             success = False
             if error.fp is None:  # not a response
                 raise
             response = error
 
-#         except (IOError, socket.error, OSError), error:
+#         except (IOError, socket.error, OSError) as error:
 #             Yes, urllib2 really does raise all these :-((
 #             See test_urllib2.py for examples of socket.gaierror and OSError,
 #             plus note that FTPHandler raises IOError.

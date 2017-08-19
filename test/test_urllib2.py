@@ -1141,7 +1141,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         # case 1. it's not an HTTPError
         try:
             h.http_error_default(request, response, code, msg, response.info())
-        except mechanize.HTTPError, exc:
+        except mechanize.HTTPError as exc:
             self.assert_(exc is not response)
             self.assert_(exc.fp is response)
         else:
@@ -1151,7 +1151,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         error = mechanize.HTTPError(url, code, msg, "fake headers", response)
         try:
             h.http_error_default(request, error, code, msg, error.info())
-        except mechanize.HTTPError, exc:
+        except mechanize.HTTPError as exc:
             self.assert_(exc is error)
         else:
             self.assert_(False)
@@ -1199,7 +1199,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         req = Request(url)
         try:
             h.http_request(req)
-        except mechanize.HTTPError, e:
+        except mechanize.HTTPError as e:
             self.assert_(e.request == req)
             self.assert_(e.code == 403)
         # new host: reload robots.txt (even though the host and port are

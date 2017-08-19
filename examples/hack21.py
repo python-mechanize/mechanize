@@ -23,7 +23,7 @@ mech.set_handle_robots(False)
 # Get the starting search page
 try:
     mech.open("http://search.cpan.org")
-except HTTPError, e:
+except HTTPError as e:
     sys.exit("%d: %s" % (e.code, e.msg))
 
 # Select the form, fill the fields, and submit
@@ -32,13 +32,13 @@ mech["query"] = "Lester"
 mech["mode"] = ["author"]
 try:
     mech.submit()
-except HTTPError, e:
+except HTTPError as e:
     sys.exit("post failed: %d: %s" % (e.code, e.msg))
 
 # Find the link for "Andy"
 try:
     mech.follow_link(text_regex=re.compile("Andy"))
-except HTTPError, e:
+except HTTPError as e:
     sys.exit("post failed: %d: %s" % (e.code, e.msg))
 
 # Get all the tarballs
