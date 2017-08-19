@@ -28,14 +28,14 @@ cookieHdr = os.environ.get("HTTP_COOKIE", "")
 cookie.load(cookieHdr)
 form = cgi.FieldStorage()
 refresh_value = None
-if form.has_key("refresh"):
+if "refresh" in form:
     refresh = form["refresh"]
     if not isinstance(refresh, ListType):
         refresh_value = refresh.value
 if refresh_value is not None:
     print '<meta http-equiv="refresh" content=%s>' % (
         saxutils.quoteattr(urllib.unquote_plus(refresh_value)))
-elif not cookie.has_key("foo"):
+elif "foo" not in cookie:
     print '<meta http-equiv="refresh" content="5">'
 
 print "</head>"
@@ -43,9 +43,9 @@ print "<p>Received cookies:</p>"
 print "<pre>"
 print cgi.escape(os.environ.get("HTTP_COOKIE", ""))
 print "</pre>"
-if cookie.has_key("foo"):
+if "foo" in cookie:
     print "<p>Your browser supports cookies!"
-if cookie.has_key("sessioncookie"):
+if "sessioncookie" in cookie:
     print "<p>Received session cookie"
 print "<p>Referer:</p>"
 print "<pre>"

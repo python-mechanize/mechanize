@@ -146,7 +146,7 @@ timezone_re = re.compile(r"^([-+])?(\d\d?):?(\d\d)?$")
 
 def offset_from_tz_string(tz):
     offset = None
-    if UTC_ZONES.has_key(tz):
+    if tz in UTC_ZONES:
         offset = 0
     else:
         m = timezone_re.search(tz)
