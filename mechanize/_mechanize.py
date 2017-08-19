@@ -442,6 +442,8 @@ class Browser(UserAgentBase):
         Currently, this method does not allow for adding RFC 2986 cookies.
         This limitation will be lifted if anybody requests it.
 
+        See also :meth:`set_simple_cookie()` for an easier way to set cookies
+        without needing to create a Set-Cookie header string.
         """
         if self._response is None:
             raise BrowserStateError("not viewing any document")
