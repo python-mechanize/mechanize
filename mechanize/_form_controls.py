@@ -2485,18 +2485,27 @@ class HTMLForm:
         rest, (query, frag) = parts[:-2], parts[-2:]
         frag
 
+        def as_utf8(x):
+            if not isinstance(x, bytes):
+                x = x.encode('utf-8')
+            return x
+
+        def encode_query():
+            p = [(as_utf8(k), as_utf8(v)) for k, v in self._pairs()]
+            return urllib.urlencode(p)
+
         if method == "GET":
             if self.enctype != "application/x-www-form-urlencoded":
                 raise ValueError("unknown GET form encoding type '%s'" %
                                  self.enctype)
-            parts = rest + (urllib.urlencode(self._pairs()), None)
+            parts = rest + (encode_query(), None)
             uri = self._urlunparse(parts)
             return uri, None, []
         elif method == "POST":
             parts = rest + (query, None)
             uri = self._urlunparse(parts)
             if self.enctype == "application/x-www-form-urlencoded":
-                return (uri, urllib.urlencode(self._pairs()),
+                return (uri, encode_query(),
                         [("Content-Type", self.enctype)])
             elif self.enctype == "multipart/form-data":
                 data = StringIO()
