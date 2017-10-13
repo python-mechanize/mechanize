@@ -1,6 +1,14 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2017-10-13 Kovid Goyal
+	* 0.3.6 release.
+	* Use html5-parser for parsing HTML, when available instead of html5lib
+	for a big performance boost.
+	* Fix error when trying to submit forms with non-ascii values on systems
+	where the default encoding is ascii.
+	* Fix errors on python environments with broken threading
+
 2017-06-24 Kovid Goyal
 	* 0.3.5 release.
 	* Fix error when trying to open pages that contain HTML entities that
