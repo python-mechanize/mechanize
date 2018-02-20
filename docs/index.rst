@@ -76,8 +76,8 @@ You may control the browser's policy by using the methods of
     br.add_proxy_password("joe", "password")
     # Add HTTP Basic/Digest auth username and password for website access.
     br.add_password("http://example.com/protected/", "joe", "password")
-    # Add a Referer header
-    br.addheaders += [('Referer', 'https://google.com')]
+    # Add an extra header to all outgoing requests
+    br.addheaders += [('My-Custom-Header', 'Something')]
     # Don't handle HTTP-EQUIV headers (HTTP headers embedded in HTML).
     br.set_handle_equiv(False)
     # Ignore robots.txt.  Do not do this without thought and consideration.
