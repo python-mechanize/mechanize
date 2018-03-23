@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 # urllib2 work-alike interface
 # ...from urllib2...
-from urllib2 import HTTPError, URLError
+from .polyglot import HTTPError, URLError
 
 # ...and from mechanize
 from ._auth import HTTPProxyPasswordMgr, HTTPSClientCertMgr

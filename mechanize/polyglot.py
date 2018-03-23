@@ -15,13 +15,14 @@ if is_py2:
     from urllib2 import HTTPError, URLError
     from robotparser import RobotFileParser
     from urlparse import urlsplit, urljoin, urlparse, urlunparse
-    from httplib import HTTPMessage
+    from httplib import HTTPMessage, HTTPConnection, HTTPSConnection
     from cookielib import (
             DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
             FileCookieJar, LoadError, LWPCookieJar, _debug, domain_match,
             eff_request_host, escape_path, is_HDN, lwp_cookie_str, reach,
             request_path, request_port, user_domain_match, Cookie, CookieJar,
             MozillaCookieJar, request_host)
+    from cStringIO import StringIO
 
     def is_string(x):
         return isinstance(x, basestring)
@@ -32,6 +33,9 @@ if is_py2:
     def is_class(obj):
         return isinstance(obj, (types.ClassType, type))
 
+    def raise_with_traceback(exc):
+        raise exc, None, sys.exc_info[2]  # noqa
+
     codepoint_to_chr = unichr
     unicode_type = unicode
 
@@ -41,13 +45,14 @@ else:
     from urllib.robotparser import RobotFileParser
     from urllib.parse import urlsplit, urljoin, urlparse, urlunparse, urlencode
     from urllib.request import pathname2url, quote
-    from http.client import HTTPMessage
+    from http.client import HTTPMessage, HTTPConnection, HTTPSConnection
     from http.cookiejar import (
             DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
             FileCookieJar, LoadError, LWPCookieJar, _debug, domain_match,
             eff_request_host, escape_path, is_HDN, lwp_cookie_str, reach,
             request_path, request_port, user_domain_match, Cookie, CookieJar,
             MozillaCookieJar, request_host)
+    from io import StringIO
 
     def is_string(x):
         return isinstance(x, str)
@@ -58,12 +63,16 @@ else:
     def is_class(obj):
         return isinstance(obj, type)
 
+    def raise_with_traceback(exc):
+        raise exc.with_traceback(sys.exc_info()[2])
+
     codepoint_to_chr = chr
     unicode_type = str
 
 if False:
     HTTPError, urlsplit, urljoin, urlparse, urlunparse, urlencode, HTTPMessage
-    pathname2url, RobotFileParser, URLError, quote
+    pathname2url, RobotFileParser, URLError, quote, HTTPConnection
+    HTTPSConnection, StringIO
     (DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
      FileCookieJar, LoadError, LWPCookieJar, _debug,
      domain_match, eff_request_host, escape_path, is_HDN,

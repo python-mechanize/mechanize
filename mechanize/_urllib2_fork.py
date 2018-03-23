@@ -34,7 +34,6 @@ import base64
 import bisect
 import copy
 import hashlib
-import httplib
 import logging
 import mimetools
 import os
@@ -45,20 +44,23 @@ import re
 import socket
 import sys
 import time
-import urllib
-import urlparse
-from cStringIO import StringIO
+from future_builtins import map
 from functools import partial
 # support for FileHandler, proxies via environment variables
 from urllib import (addinfourl, ftpwrapper, getproxies, splitattr, splitpasswd,
                     splitport, splittype, splituser, splitvalue, unquote,
-                    unwrap, url2pathname)
-from urllib2 import HTTPError, URLError
+                    unwrap, url2pathname, proxy_bypass as urllib_proxy_bypass,
+                    splithost as urllib_splithost)
 
 from . import _rfc3986
 from ._clientcookie import CookieJar
 from ._response import closeable_response
 from ._headersutil import normalize_header_name
+from .polyglot import (
+        HTTPError, URLError, HTTPConnection, HTTPSConnection, urlparse,
+        urlsplit, is_class, iteritems, is_string, raise_with_traceback,
+        StringIO
+)
 
 
 def sha1_digest(bytes):
@@ -80,7 +82,7 @@ else:
         return socket._fileobject(fh, close=True)
 
 
-splithost = urllib.splithost
+splithost = urllib_splithost
 
 
 # used in User-Agent header sent
@@ -113,7 +115,7 @@ def request_host(request):
 
     """
     url = request.get_full_url()
-    host = urlparse.urlparse(url)[1]
+    host = urlparse(url)[1]
     if host == "":
         host = request.get_header("Host", "")
 
@@ -136,7 +138,7 @@ class Request:
         self._tunnel_host = None
         self.data = data
         self.headers = {}
-        for key, value in headers.items():
+        for key, value in iteritems(headers):
             self.add_header(key, value)
         self.unredirected_hdrs = {}
         if origin_req_host is None:
@@ -261,7 +263,7 @@ class Request:
         '''
         hdrs = self.unredirected_hdrs.copy()
         hdrs.update(self.headers)
-        return list(hdrs.iteritems())
+        return list(iteritems(hdrs))
 
 
 class OpenerDirector:
@@ -392,21 +394,15 @@ def build_opener(*handlers):
     If any of the handlers passed as arguments are subclasses of the
     default handlers, the default handlers will not be used.
     """
-    import types
-
-    def isclass(obj):
-        return isinstance(obj, (types.ClassType, type))
-
     opener = OpenerDirector()
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
                        FTPHandler, FileHandler, HTTPErrorProcessor]
-    if hasattr(httplib, 'HTTPS'):
-        default_classes.append(HTTPSHandler)
+    default_classes.append(HTTPSHandler)
     skip = set()
     for klass in default_classes:
         for check in handlers:
-            if isclass(check):
+            if is_class(check):
                 if issubclass(check, klass):
                     skip.add(klass)
             elif isinstance(check, klass):
@@ -418,7 +414,7 @@ def build_opener(*handlers):
         opener.add_handler(klass())
 
     for h in handlers:
-        if isclass(h):
+        if is_class(h):
             h = h()
         opener.add_handler(h)
     return opener
@@ -435,7 +431,8 @@ class BaseHandler:
         pass
 
     def __lt__(self, other):
-        return self.handler_order < getattr(other, 'handler_order', sys.maxint)
+        return self.handler_order < getattr(
+                other, 'handler_order', sys.maxsize)
 
     def __copy__(self):
         return self.__class__()
@@ -676,12 +673,12 @@ class ProxyHandler(BaseHandler):
 
         assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
         self.proxies = proxies
-        for type, url in proxies.items():
+        for type, url in iteritems(proxies):
             setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open:
                     meth(r, proxy, type))
         if proxy_bypass is None:
-            proxy_bypass = urllib.proxy_bypass
+            proxy_bypass = urllib_proxy_bypass
         self._proxy_bypass = proxy_bypass
 
     def proxy_open(self, req, proxy, type):
@@ -723,7 +720,7 @@ class HTTPPasswordMgr:
 
     def add_password(self, realm, uri, user, passwd):
         # uri could be a single URI or a sequence
-        if isinstance(uri, basestring):
+        if is_string(uri):
             uri = [uri]
         if realm not in self.passwd:
             self.passwd[realm] = {}
@@ -736,7 +733,7 @@ class HTTPPasswordMgr:
         domains = self.passwd.get(realm, {})
         for default_port in True, False:
             reduced_authuri = self.reduce_uri(authuri, default_port)
-            for uris, authinfo in domains.iteritems():
+            for uris, authinfo in iteritems(domains):
                 for uri in uris:
                     if self.is_suburi(uri, reduced_authuri):
                         return authinfo
@@ -745,7 +742,7 @@ class HTTPPasswordMgr:
     def reduce_uri(self, uri, default_port=True):
         """Accept authority or URI and extract only the authority and path."""
         # note HTTP URLs do not have a userinfo component
-        parts = urlparse.urlsplit(uri)
+        parts = urlsplit(uri)
         if parts[1]:
             # URI
             scheme = parts[0]
@@ -1047,7 +1044,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     handler_order = 490  # before Basic auth
 
     def http_error_401(self, req, fp, code, msg, headers):
-        host = urlparse.urlparse(req.get_full_url())[1]
+        host = urlparse(req.get_full_url())[1]
         retry = self.http_error_auth_reqed('www-authenticate',
                                            host, req, headers)
         self.reset_retry_count()
@@ -1139,7 +1136,7 @@ class AbstractHTTPHandler(BaseHandler):
         # httplib in python 2 needs str() not unicode() for all request
         # parameters
         headers = {str(name.title()): str(val)
-                   for name, val in headers.items()}
+                   for name, val in iteritems(headers)}
 
         if req._tunnel_host:
             set_tunnel = h.set_tunnel if hasattr(
@@ -1185,42 +1182,40 @@ class AbstractHTTPHandler(BaseHandler):
 class HTTPHandler(AbstractHTTPHandler):
 
     def http_open(self, req):
-        return self.do_open(httplib.HTTPConnection, req)
+        return self.do_open(HTTPConnection, req)
 
     http_request = AbstractHTTPHandler.do_request_
 
 
-if hasattr(httplib, 'HTTPS'):
+class HTTPSHandler(AbstractHTTPHandler):
 
-    class HTTPSHandler(AbstractHTTPHandler):
+    def __init__(self, client_cert_manager=None):
+        AbstractHTTPHandler.__init__(self)
+        self.client_cert_manager = client_cert_manager
+        self.ssl_context = None
 
-        def __init__(self, client_cert_manager=None):
-            AbstractHTTPHandler.__init__(self)
-            self.client_cert_manager = client_cert_manager
-            self.ssl_context = None
+    def https_open(self, req):
+        key_file = cert_file = None
+        if self.client_cert_manager is not None:
+            key_file, cert_file = self.client_cert_manager.find_key_cert(
+                req.get_full_url())
+        if self.ssl_context is None:
+            conn_factory = partial(
+                HTTPSConnection, key_file=key_file,
+                cert_file=cert_file)
+        else:
+            conn_factory = partial(
+                HTTPSConnection, key_file=key_file,
+                cert_file=cert_file, context=self.ssl_context)
+        return self.do_open(conn_factory, req)
 
-        def https_open(self, req):
-            key_file = cert_file = None
-            if self.client_cert_manager is not None:
-                key_file, cert_file = self.client_cert_manager.find_key_cert(
-                    req.get_full_url())
-            if self.ssl_context is None:
-                conn_factory = partial(
-                    httplib.HTTPSConnection, key_file=key_file,
-                    cert_file=cert_file)
-            else:
-                conn_factory = partial(
-                    httplib.HTTPSConnection, key_file=key_file,
-                    cert_file=cert_file, context=self.ssl_context)
-            return self.do_open(conn_factory, req)
+    https_request = AbstractHTTPHandler.do_request_
 
-        https_request = AbstractHTTPHandler.do_request_
-
-        def __copy__(self):
-            ans = self.__class__(self.client_cert_manager)
-            ans._debuglevel = self._debuglevel
-            ans.ssl_context = self.ssl_context
-            return ans
+    def __copy__(self):
+        ans = self.__class__(self.client_cert_manager)
+        ans._debuglevel = self._debuglevel
+        ans.ssl_context = self.ssl_context
+        return ans
 
 
 class HTTPCookieProcessor(BaseHandler):
@@ -1404,7 +1399,7 @@ class FTPHandler(BaseHandler):
             raise URLError(msg)
         path, attrs = splitattr(req.get_selector())
         dirs = path.split('/')
-        dirs = map(unquote, dirs)
+        dirs = list(map(unquote, dirs))
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
@@ -1427,7 +1422,7 @@ class FTPHandler(BaseHandler):
             headers = mimetools.Message(sf)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
-            raise URLError('ftp error: %s' % msg), None, sys.exc_info()[2]
+            raise_with_traceback(URLError('ftp error: %s' % msg))
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         try:
@@ -1471,7 +1466,7 @@ class CacheFTPHandler(FTPHandler):
         # first check for old ones
         t = time.time()
         if self.soonest <= t:
-            for k, v in self.timeout.items():
+            for k, v in iteritems(self.timeout):
                 if v < t:
                     self.cache[k].close()
                     del self.cache[k]
@@ -1480,7 +1475,7 @@ class CacheFTPHandler(FTPHandler):
 
         # then check the size
         if len(self.cache) == self.max_conns:
-            for k, v in self.timeout.items():
+            for k, v in iteritems(self.timeout):
                 if v == self.soonest:
                     del self.cache[k]
                     del self.timeout[k]
