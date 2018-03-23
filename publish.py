@@ -58,12 +58,18 @@ def upload_release():
         os.path.join(os.environ['PENV'], 'pypi'), *files)
 
 
+try:
+    myinput = raw_input
+except NameError:
+    myinput = input
+
+
 def main():
-    if raw_input('Publish version {} [y/n]? '.format(red(VERSION))) != 'y':
+    if myinput('Publish version {} [y/n]? '.format(red(VERSION))) != 'y':
         raise SystemExit(1)
     build_release()
     sign_release()
-    if raw_input(red('Upload') + ' release [y/n]? ') != 'y':
+    if myinput(red('Upload') + ' release [y/n]? ') != 'y':
         raise SystemExit(1)
     tag_release()
     upload_release()
