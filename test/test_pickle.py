@@ -1,9 +1,14 @@
-import cPickle
 import pickle
+import importlib
 
 import mechanize
 import mechanize._response
 import mechanize._testcase
+from mechanize.polyglot import is_py2
+
+pickle_modules = [pickle]
+if is_py2:
+    pickle_modules.append(importlib.import_module('cPickle'))
 
 
 def pickle_and_unpickle(obj, implementation):
@@ -11,8 +16,8 @@ def pickle_and_unpickle(obj, implementation):
 
 
 def test_pickling(obj, check=lambda unpickled: None):
-    check(pickle_and_unpickle(obj, cPickle))
-    check(pickle_and_unpickle(obj, pickle))
+    for pm in pickle_modules:
+        check(pickle_and_unpickle(obj, pm))
 
 
 class PickleTest(mechanize._testcase.TestCase):

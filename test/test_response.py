@@ -1,14 +1,16 @@
 """Tests for mechanize._response.seek_wrapper and friends."""
 
 import copy
-import cStringIO
+from io import BytesIO
 from unittest import TestCase
+from future_builtins import map
+from functools import partial
 
 
 class TestUnSeekable:
 
     def __init__(self, text):
-        self._file = cStringIO.StringIO(text)
+        self._file = BytesIO(text)
         self.log = []
 
     def tell(self): return self._file.tell()
@@ -56,7 +58,7 @@ jumps over the lazy
 dog.
 
 """
-    text_lines = map(lambda l: l + "\n", text.split("\n")[:-1])
+    text_lines = list(map(lambda l: l + "\n", text.split("\n")[:-1]))
 
     def testSeekable(self):
         from mechanize._response import seek_wrapper
@@ -146,10 +148,10 @@ dog.
         limit = 10
         while count < limit:
             if count == 5:
-                self.assertRaises(StopIteration, sfh.next)
+                self.assertRaises(StopIteration, partial(next, sfh))
                 break
             else:
-                sfh.next() == text_lines[count]
+                next(sfh) == text_lines[count]
             count = count + 1
         else:
             assert False, "StopIteration not raised"
@@ -158,9 +160,9 @@ dog.
         text = self.text
         sfh.read(10)
         sfh.seek(5)
-        self.assert_(sfh.invariant())
+        self.assertTrue(sfh.invariant())
         sfh.seek(0, 2)
-        self.assert_(sfh.invariant())
+        self.assertTrue(sfh.invariant())
         sfh.seek(0)
         self.assertEqual(sfh.read(), text)
 
@@ -170,9 +172,9 @@ dog.
         r = TestUnSeekableResponse(self.text, hdrs)
         rsw = response_seek_wrapper(r)
         rsw2 = self._testCopy(rsw)
-        self.assert_(rsw is not rsw2)
+        self.assertTrue(rsw is not rsw2)
         self.assertEqual(rsw.info(), rsw2.info())
-        self.assert_(rsw.info() is not rsw2.info())
+        self.assertTrue(rsw.info() is not rsw2.info())
 
         # should be able to close already-closed object
         rsw2.close()
