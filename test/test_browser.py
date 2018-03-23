@@ -2,11 +2,9 @@
 """Tests for mechanize.Browser."""
 
 import copy
-import httplib
 import mimetools
 import os
 import re
-import StringIO
 from io import BytesIO
 from unittest import TestCase
 
@@ -15,6 +13,10 @@ import mechanize._response
 import mechanize._testcase
 from mechanize._gzip import HTTPGzipProcessor, compress_readable_output
 from mechanize._response import test_html_response
+from mechanize.polyglot import (
+        HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type)
+
+em_dash = codepoint_to_chr(0x2014)
 
 
 # XXX these 'mock' classes are badly in need of simplification / removal
@@ -26,13 +28,13 @@ class MockMethod:
         self.action = action
 
     def __call__(self, *args):
-        return apply(self.handle, (self.meth_name, self.action) + args)
+        return self.handle(self.meth_name, self.action, *args)
 
 
 class MockHeaders(dict):
     def getheaders(self, name):
         name = name.lower()
-        return [v for k, v in self.iteritems() if name == k.lower()]
+        return [v for k, v in iteritems(self) if name == k.lower()]
 
     def __delitem__(self, k):
         kmap = {q.lower(): q for q in self}
@@ -46,7 +48,7 @@ class MockResponse:
 
     def __init__(self, url="http://example.com/", data=None, info=None):
         self.url = self._url = url
-        self.fp = StringIO.StringIO(data)
+        self.fp = BytesIO(data)
         if info is None:
             info = {}
         self._info = self._headers = MockHeaders(info)
@@ -167,10 +169,10 @@ class BrowserTests(TestCase):
         # Referer not added by .open()...
         req = mechanize.Request(url)
         b.open(req)
-        self.assert_(req.get_header("Referer") is None)
+        self.assertTrue(req.get_header("Referer") is None)
         # ...even if we're visiting a document
         b.open(req)
-        self.assert_(req.get_header("Referer") is None)
+        self.assertTrue(req.get_header("Referer") is None)
         # Referer added by .click_link() and .click()
         b.select_form("form1")
         req2 = b.click()
@@ -186,22 +188,20 @@ class BrowserTests(TestCase):
             req4.get_header("Referer"), "http://example.com/foo/bar.html")
         b.open(req4)
         req5 = b.click_link(name="apples")
-        self.assert_(not req5.has_header("Referer"))
+        self.assertTrue(not req5.has_header("Referer"))
         # Referer not added for non-http, non-https requests
         b.add_handler(make_mock_handler()([("blah_open", r)]))
         req6 = b.click_link(name="pears")
-        self.assert_(not req6.has_header("Referer"))
+        self.assertTrue(not req6.has_header("Referer"))
         # Referer not added when going from non-http, non-https URL
         b.open(req6)
         req7 = b.click_link(name="apples")
-        self.assert_(not req7.has_header("Referer"))
+        self.assertTrue(not req7.has_header("Referer"))
 
         # XXX Referer added for redirect
 
     def test_encoding(self):
         import mechanize
-        from StringIO import StringIO
-        import urllib
         # always take first encoding, since that's the one from the real HTTP
         # headers, rather than from HTTP-EQUIV
         b = mechanize.Browser()
@@ -212,8 +212,8 @@ class BrowserTests(TestCase):
             ("Content-Type: text/html; charset=UTF-8\r\n"
              "Content-Type: text/html; charset=KOI8-R\r\n\r\n", "UTF-8"),
         ]:
-            msg = mimetools.Message(StringIO(s))
-            r = urllib.addinfourl(StringIO(""), msg, "http://www.example.com/")
+            msg = mimetools.Message(BytesIO(s))
+            r = addinfourl(BytesIO(""), msg, "http://www.example.com/")
             b.set_response(r)
             self.assertEqual(b.encoding(), ct)
 
@@ -238,26 +238,26 @@ class BrowserTests(TestCase):
         r1 = b.open("http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back)
         b.open("http://example.com/foo")
-        self.assert_(same_response(b.back(), r1))
+        self.assertTrue(same_response(b.back(), r1))
         r3 = b.open("http://example.com/bar")
         b.open("http://example.com/spam")
-        self.assert_(same_response(b.back(), r3))
-        self.assert_(same_response(b.back(), r1))
-        self.assertEquals(b.geturl(), "http://example.com/")
+        self.assertTrue(same_response(b.back(), r3))
+        self.assertTrue(same_response(b.back(), r1))
+        self.assertEqual(b.geturl(), "http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back)
         # reloading does a real HTTP fetch rather than using history cache
         r5 = b.reload()
-        self.assert_(not same_response(r5, r1))
+        self.assertTrue(not same_response(r5, r1))
         # .geturl() gets fed through to b.response
-        self.assertEquals(b.geturl(), "http://example.com/")
+        self.assertEqual(b.geturl(), "http://example.com/")
         # can go back n times
         b.open("spam")
-        self.assertEquals(b.geturl(), "http://example.com/spam")
+        self.assertEqual(b.geturl(), "http://example.com/spam")
         r7 = b.open("/spam")
-        self.assert_(same_response(b.response(), r7))
-        self.assertEquals(b.geturl(), "http://example.com/spam")
-        self.assert_(same_response(b.back(2), r5))
-        self.assertEquals(b.geturl(), "http://example.com/")
+        self.assertTrue(same_response(b.response(), r7))
+        self.assertEqual(b.geturl(), "http://example.com/spam")
+        self.assertTrue(same_response(b.back(2), r5))
+        self.assertEqual(b.geturl(), "http://example.com/")
         self.assertRaises(mechanize.BrowserStateError, b.back, 2)
         r8 = b.open("/spam")
 
@@ -266,7 +266,7 @@ class BrowserTests(TestCase):
         class Handler2(mechanize.BaseHandler):
             def https_open(self, request):
                 r = mechanize.HTTPError("https://example.com/bad", 503, "Oops",
-                                        MockHeaders(), StringIO.StringIO())
+                                        MockHeaders(), BytesIO())
                 return r
 
         b.add_handler(Handler2())
@@ -275,7 +275,7 @@ class BrowserTests(TestCase):
         self.assertEqual(b.response().geturl(), "https://example.com/bad")
         self.assertEqual(b.request.get_full_url(),
                          "https://example.com/badreq")
-        self.assert_(same_response(b.back(), r8))
+        self.assertTrue(same_response(b.back(), r8))
 
         # .close() should make use of Browser methods and attributes complain
         # noisily, since they should not be called after .close()
@@ -286,7 +286,7 @@ class BrowserTests(TestCase):
                      "clear_history set_cookie links forms viewing_html "
                      "encoding title select_form click submit click_link "
                      "follow_link find_link".split()):
-            self.assert_(getattr(b, attr) is None)
+            self.assertTrue(getattr(b, attr) is None)
 
     def test_reload_read_incomplete(self):
         import mechanize
@@ -325,7 +325,7 @@ class BrowserTests(TestCase):
         br.response().read()
         br.open('http://www.example.com/blah')
         br.back()
-        self.failIf(br.reloaded)
+        self.assertFalse(br.reloaded)
 
     def test_viewing_html(self):
         # XXX not testing multiple Content-Type headers
@@ -379,7 +379,7 @@ class BrowserTests(TestCase):
 
         b = TestBrowser()
 
-        self.assert_(b.response() is None)
+        self.assertTrue(b.response() is None)
 
         # To open a relative reference (often called a "relative URL"), you
         # have to have already opened a URL for it "to be relative to".
@@ -411,7 +411,7 @@ class BrowserTests(TestCase):
         b.add_handler(
             make_mock_handler()([("http_open", MockResponse(url, "", {}))]))
         r = b.open(url)
-        self.assert_(not b.viewing_html())
+        self.assertTrue(not b.viewing_html())
         test_state_error("click links forms title select_form".split())
         self.assertRaises(mechanize.BrowserStateError, b.submit, nr=0)
         self.assertRaises(mechanize.BrowserStateError, b.click_link, nr=0)
@@ -506,14 +506,15 @@ class BrowserTests(TestCase):
             r = b.open(url)
 
             Link = mechanize.Link
-            mdashx2 = u"\u2014".encode('utf-8') * 2
+            mdashx2 = em_dash.encode('utf-8') * 2
             qmdashx2 = clean_url(mdashx2, encoding)
             # base_url, url, text, tag, attrs
             exp = Link(
                 url, "http://example.com/foo/bar%s.html" % qmdashx2,
-                u"blah\u2014\u2014", "a",
-                [("href", u"http://example.com/foo/bar\u2014\u2014.html"),
-                 ("name", u"name0\u2014\u2014")])
+                unicode_type("blah") + (em_dash * 2), "a",
+                [("href", unicode_type("http://example.com/foo/bar%s.html") % (
+                    em_dash*2)),
+                 ("name", unicode_type("name0") + em_dash + em_dash)])
             # nr
             link = b.find_link()
             #             print
@@ -807,13 +808,13 @@ class ResponseTests(TestCase):
     def test_select_form(self):
         from mechanize import _response
         br = TestBrowser()
-        fp = StringIO.StringIO('''<html>
+        fp = BytesIO('''<html>
             <form name="a"></form>
             <form name="b" data-ac="123"></form>
             <form name="c" class="x"></form>
             </html>''')
         headers = mimetools.Message(
-            StringIO.StringIO("Content-type: text/html"))
+            BytesIO("Content-type: text/html"))
         response = _response.response_seek_wrapper(
             _response.closeable_response(fp, headers, "http://example.com/",
                                          200, "OK"))
@@ -834,9 +835,9 @@ class ResponseTests(TestCase):
         br = TestBrowser()
         self.assertEqual(str(br), "<TestBrowser (not visiting a URL)>")
 
-        fp = StringIO.StringIO('<html><form name="f"><input /></form></html>')
+        fp = BytesIO('<html><form name="f"><input /></form></html>')
         headers = mimetools.Message(
-            StringIO.StringIO("Content-type: text/html"))
+            BytesIO("Content-type: text/html"))
         response = _response.response_seek_wrapper(
             _response.closeable_response(fp, headers, "http://example.com/",
                                          200, "OK"))
@@ -867,7 +868,7 @@ class HttplibTests(mechanize._testcase.TestCase):
 
         def getresponse(self_):
             class Response(object):
-                msg = mimetools.Message(StringIO.StringIO(""))
+                msg = mimetools.Message(BytesIO(""))
                 status = 200
                 reason = "OK"
 
@@ -876,11 +877,11 @@ class HttplibTests(mechanize._testcase.TestCase):
 
             return Response()
 
-        self.monkey_patch(httplib.HTTPConnection, "putheader", putheader)
-        self.monkey_patch(httplib.HTTPConnection, "connect", do_nothing)
-        self.monkey_patch(httplib.HTTPConnection, "send", do_nothing)
-        self.monkey_patch(httplib.HTTPConnection, "close", do_nothing)
-        self.monkey_patch(httplib.HTTPConnection, "getresponse", getresponse)
+        self.monkey_patch(HTTPConnection, "putheader", putheader)
+        self.monkey_patch(HTTPConnection, "connect", do_nothing)
+        self.monkey_patch(HTTPConnection, "send", do_nothing)
+        self.monkey_patch(HTTPConnection, "close", do_nothing)
+        self.monkey_patch(HTTPConnection, "getresponse", getresponse)
 
     def test_add_host_header(self):
         headers = []
