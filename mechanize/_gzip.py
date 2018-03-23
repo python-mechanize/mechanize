@@ -5,6 +5,12 @@ import zlib
 from io import DEFAULT_BUFFER_SIZE
 
 from ._urllib2_fork import BaseHandler
+from .polyglot import is_py2
+
+
+CRC_MASK = 0xffffffff
+if is_py2:
+    CRC_MASK = long(CRC_MASK)
 
 
 def gzip_prefix():
@@ -37,7 +43,7 @@ def compress_readable_output(src_file, compress_level=6):
             prefix_written = True
             data = gzip_prefix() + data
         yield data
-    yield zobj.flush() + struct.pack(b"<LL", crc & 0xffffffffL, size)
+    yield zobj.flush() + struct.pack(b"<LL", crc & CRC_MASK, size)
 
 
 def read_amt(f, amt):
@@ -54,7 +60,7 @@ class UnzipWrapper:
     def __init__(self, fp):
         self.__decoder = zlib.decompressobj(-zlib.MAX_WBITS)
         self.__data = b''
-        self.__crc = zlib.crc32(self.__data) & 0xffffffffL
+        self.__crc = zlib.crc32(self.__data) & CRC_MASK
         self.__fp = fp
         self.__size = 0
         self.__is_fully_read = False
@@ -98,7 +104,7 @@ class UnzipWrapper:
                 self.__fp.read()
                 # check CRC, ignore size mismatch
                 crc, size = struct.unpack(b'<LL', tail)
-                if (crc & 0xffffffffL) != (self.__crc & 0xffffffffL):
+                if (crc & CRC_MASK) != (self.__crc & CRC_MASK):
                     raise ValueError(
                         'gzip stream is corrupted, CRC does not match')
                 self.__is_fully_read = True

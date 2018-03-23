@@ -8,6 +8,7 @@ from ._form import parse_forms
 from ._headersutil import is_html as _is_html
 from ._headersutil import split_header_words
 from ._rfc3986 import clean_url, urljoin
+from .polyglot import is_string
 
 DEFAULT_ENCODING = "utf-8"
 
@@ -25,7 +26,7 @@ def elem_text(elem):
 def iterlinks(root, base_url):
     link_tags = {"a": "href", "area": "href", "iframe": "src"}
     for tag in root.iter('*'):
-        if not isinstance(tag.tag, basestring):
+        if not is_string(tag.tag):
             continue
         q = tag.tag.lower()
         attr = link_tags.get(q)

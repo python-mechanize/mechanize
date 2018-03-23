@@ -13,14 +13,13 @@ from __future__ import absolute_import
 import copy
 import os
 import re
-import urllib
-import urllib2
 
 from . import _request, _response, _rfc3986, _sockettimeout, _urllib2_fork
 from ._clientcookie import Cookie
 from ._headersutil import normalize_header_name
 from ._html import Factory
 from ._useragent import UserAgentBase
+from .polyglot import pathname2url, HTTPError, is_string, iteritems
 
 
 class BrowserStateError(Exception):
@@ -36,7 +35,7 @@ class FormNotFoundError(Exception):
 
 
 def sanepathname2url(path):
-    urlpath = urllib.pathname2url(path)
+    urlpath = pathname2url(path)
     if os.name == "nt" and urlpath.startswith("///"):
         urlpath = urlpath[2:]
     # XXX don't ask me about the mac...
@@ -282,7 +281,7 @@ class Browser(UserAgentBase):
         success = True
         try:
             response = UserAgentBase.open(self, request, data)
-        except urllib2.HTTPError as error:
+        except HTTPError as error:
             success = False
             if error.fp is None:  # not a response
                 raise
@@ -625,16 +624,16 @@ class Browser(UserAgentBase):
             return
 
         def attr_selector(q):
-            if isinstance(q, basestring):
+            if is_string(q):
                 return lambda x: x == q
             if callable(q):
                 return q
             return lambda x: q.match(x) is not None
         attrsq = {aname.rstrip('_').replace('_', '-'): attr_selector(v)
-                  for aname, v in attrs.iteritems()}
+                  for aname, v in iteritems(attrs)}
 
         def form_attrs_match(form_attrs):
-            for aname, q in attrsq.iteritems():
+            for aname, q in iteritems(attrsq):
                 val = form_attrs.get(aname)
                 if val is None or not q(val):
                     return False
@@ -663,7 +662,7 @@ class Browser(UserAgentBase):
             if orig_nr is not None:
                 description.append("nr %d" % orig_nr)
             if attrs:
-                for k, v in attrs.iteritems():
+                for k, v in iteritems(attrs):
                     description.append('%s = %r' % (k, v))
             description = ", ".join(description)
             raise FormNotFoundError("no form matching " + description)
@@ -770,9 +769,9 @@ class Browser(UserAgentBase):
 
         """
         try:
-            return self._filter_links(self._factory.links(), text, text_regex,
-                                      name, name_regex, url, url_regex, tag,
-                                      predicate, nr).next()
+            return next(self._filter_links(
+                self._factory.links(), text, text_regex, name, name_regex, url,
+                url_regex, tag, predicate, nr))
         except StopIteration:
             raise LinkNotFoundError()
 

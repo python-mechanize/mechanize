@@ -15,10 +15,9 @@ COPYING.txt included with the distribution).
 from __future__ import absolute_import
 
 import logging
-import robotparser
 import socket
 import time
-from cStringIO import StringIO
+from io import BytesIO
 
 from . import _rfc3986, _sockettimeout
 from ._headersutil import is_html
@@ -26,6 +25,7 @@ from ._request import Request
 from ._response import response_seek_wrapper
 from ._urllib2_fork import BaseHandler, HTTPError
 from ._equiv import HTTPEquivParser
+from .polyglot import HTTPMessage, RobotFileParser
 
 debug = logging.getLogger("mechanize").debug
 debug_robots = logging.getLogger("mechanize.robots").debug
@@ -68,10 +68,10 @@ class HTTPEquivProcessor(BaseHandler):
     https_response = http_response
 
 
-class MechanizeRobotFileParser(robotparser.RobotFileParser):
+class MechanizeRobotFileParser(RobotFileParser):
 
     def __init__(self, url='', opener=None):
-        robotparser.RobotFileParser.__init__(self, url)
+        RobotFileParser.__init__(self, url)
         self._opener = opener
         self._timeout = _sockettimeout._GLOBAL_DEFAULT_TIMEOUT
 
@@ -118,21 +118,14 @@ class MechanizeRobotFileParser(robotparser.RobotFileParser):
 class RobotExclusionError(HTTPError):
 
     def __init__(self, request, *args):
-        apply(HTTPError.__init__, (self,) + args)
+        HTTPError.__init__(self, *args)
         self.request = request
 
 
 class HTTPRobotRulesProcessor(BaseHandler):
     # before redirections, after everything else
     handler_order = 800
-
-    try:
-        from httplib import HTTPMessage
-    except:
-        from mimetools import Message
-        http_response_class = Message
-    else:
-        http_response_class = HTTPMessage
+    http_response_class = HTTPMessage
 
     def __init__(self, rfp_class=MechanizeRobotFileParser):
         self.rfp_class = rfp_class
@@ -178,12 +171,12 @@ class HTTPRobotRulesProcessor(BaseHandler):
             return request
         else:
             # XXX This should really have raised URLError.  Too late now...
-            msg = "request disallowed by robots.txt"
+            msg = b"request disallowed by robots.txt"
             raise RobotExclusionError(
                 request,
                 request.get_full_url(),
                 403, msg,
-                self.http_response_class(StringIO()), StringIO(msg))
+                self.http_response_class(BytesIO()), BytesIO(msg))
 
     https_request = http_request
 
