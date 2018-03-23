@@ -105,12 +105,12 @@ class OpenerTests(unittest.TestCase):
                                                 open=fs.open)
         except mechanize.URLError:
             pass
-        fs.verify(self.assertEquals)
+        fs.verify(self.assertEqual)
 
     def test_retrieve_closes_on_success(self):
         response_verifier = ResponseCloseVerifier()
         self._check_retrieve(urlopen=response_verifier.open)
-        response_verifier.verify(self.assertEquals)
+        response_verifier.verify(self.assertEqual)
 
     def test_retrieve_closes_on_failure(self):
         def fail_to_open():
@@ -122,7 +122,7 @@ class OpenerTests(unittest.TestCase):
             raise mechanize.URLError("dummy reason")
         response_verifier = ResponseCloseVerifier(read=fail_to_read)
         self._check_retrieve(urlopen=response_verifier.open)
-        response_verifier.verify(self.assertEquals)
+        response_verifier.verify(self.assertEqual)
 
     def test_retrieve(self):
         # The .retrieve() method deals with a number of different cases.  In
@@ -184,7 +184,7 @@ class OpenerTests(unittest.TestCase):
             self.assertEqual(verif.count, math.ceil(op.nr_blocks) + 1)
             op.close()
             # .close()ing the opener does NOT remove non-temporary files
-            self.assert_(os.path.isfile(filename))
+            self.assertTrue(os.path.isfile(filename))
         finally:
             killfile(filename)
 
@@ -201,9 +201,9 @@ class OpenerTests(unittest.TestCase):
         self.assertEqual(open(filename, "rb").read(), op.data)
         self.assertEqual(len(op.calls), 1)
         # .close()ing the opener removes temporary files
-        self.assert_(os.path.exists(filename))
+        self.assertTrue(os.path.exists(filename))
         op.close()
-        self.failIf(os.path.exists(filename))
+        self.assertFalse(os.path.exists(filename))
         self.assertEqual(verif.count, math.ceil(op.nr_blocks) + 1)
 
         # case 3: "file:" URL with no filename supplied
@@ -227,7 +227,7 @@ class OpenerTests(unittest.TestCase):
             self.assertEqual(verif.count, 0)
             op.close()
             # .close()ing the opener does NOT remove the file!
-            self.assert_(os.path.isfile(tifn))
+            self.assertTrue(os.path.isfile(tifn))
         finally:
             killfile(tifn)
 
@@ -252,7 +252,7 @@ class OpenerTests(unittest.TestCase):
                 self.assertEqual(verif.count, math.ceil(op.nr_blocks) + 1)
                 op.close()
                 # .close()ing the opener does NOT remove non-temporary files
-                self.assert_(os.path.isfile(tfn))
+                self.assertTrue(os.path.isfile(tfn))
             finally:
                 killfile(tfn)
         finally:
@@ -276,9 +276,9 @@ class OpenerTests(unittest.TestCase):
                 self.assertEqual(len(op.calls), 1)
                 self.assertEqual(verif.count, math.ceil(op.nr_blocks) + 1)
                 # cleanup should still take place
-                self.assert_(os.path.isfile(filename))
+                self.assertTrue(os.path.isfile(filename))
                 op.close()
-                self.failIf(os.path.isfile(filename))
+                self.assertFalse(os.path.isfile(filename))
             else:
                 self.fail()
         finally:

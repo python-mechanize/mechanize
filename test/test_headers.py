@@ -35,10 +35,12 @@ class HeaderTests(TestCase):
         from mechanize._headersutil import parse_ns_headers
 
         # quotes should be stripped
-        assert parse_ns_headers(['foo=bar; expires=01 Jan 2040 22:23:32 GMT']) == \
-            [[('foo', 'bar'), ('expires', 2209069412L), ('version', '0')]]
-        assert parse_ns_headers(['foo=bar; expires="01 Jan 2040 22:23:32 GMT"']) == \
-            [[('foo', 'bar'), ('expires', 2209069412L), ('version', '0')]]
+        self.assertEqual(
+            parse_ns_headers(['foo=bar; expires=01 Jan 2040 22:23:32 GMT']),
+            [[('foo', 'bar'), ('expires', 2209069412), ('version', '0')]])
+        self.assertEqual(
+            parse_ns_headers(['foo=bar; expires="01 Jan 2040 22:23:32 GMT"']),
+            [[('foo', 'bar'), ('expires', 2209069412), ('version', '0')]])
 
     def test_parse_ns_headers_version(self):
         from mechanize._headersutil import parse_ns_headers
@@ -49,7 +51,7 @@ class HeaderTests(TestCase):
             'foo=bar; version="1"',
             'foo=bar; Version="1"',
         ]:
-            self.assertEquals(parse_ns_headers([hdr]), expected)
+            self.assertEqual(parse_ns_headers([hdr]), expected)
 
     def test_parse_ns_headers_special_names(self):
         # names such as 'expires' are not special in first name=value pair
@@ -60,7 +62,7 @@ class HeaderTests(TestCase):
         hdr = 'expires=01 Jan 2040 22:23:32 GMT'
         expected = [
             [("expires", "01 Jan 2040 22:23:32 GMT"), ("version", "0")]]
-        self.assertEquals(parse_ns_headers([hdr]), expected)
+        self.assertEqual(parse_ns_headers([hdr]), expected)
 
     def test_join_header_words(self):
         from mechanize._headersutil import join_header_words
@@ -96,10 +98,10 @@ class HeaderTests(TestCase):
         for arg, expect in tests:
             try:
                 result = split_header_words([arg])
-            except:
+            except Exception:
                 import traceback
-                import StringIO
-                f = StringIO.StringIO()
+                from io import StringIO
+                f = StringIO()
                 traceback.print_exc(None, f)
                 result = "(error -- traceback follows)\n\n%s" % f.getvalue()
             assert result == expect, """
@@ -109,7 +111,8 @@ Got:          '%s'
 """ % (arg, expect, result)
 
     def test_roundtrip(self):
-        from mechanize._headersutil import split_header_words, join_header_words
+        from mechanize._headersutil import (
+                split_header_words, join_header_words)
 
         tests = [
             ("foo", "foo"),
