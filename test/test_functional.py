@@ -13,19 +13,21 @@ import socket
 import subprocess
 import sys
 import unittest
-import urllib
-import urllib2
 
 import mechanize
-from mechanize import CookieJar, HTTPCookieProcessor, \
-    HTTPRefreshProcessor, \
-    HTTPEquivProcessor, HTTPRedirectHandler
+from mechanize import (
+        CookieJar, HTTPCookieProcessor, HTTPRefreshProcessor,
+        HTTPEquivProcessor, HTTPRedirectHandler)
 from mechanize._rfc3986 import urljoin
 from mechanize._util import read_file, write_file
 import mechanize._opener
 import mechanize._rfc3986
 import mechanize._sockettimeout
 import mechanize._testcase
+from mechanize.polyglot import (
+        install_opener, build_opener, ProxyHandler, pathname2url, quote_plus,
+        urlopen
+)
 
 
 # from cookielib import CookieJar
@@ -72,20 +74,19 @@ class TestCase(mechanize._testcase.TestCase):
         self.server = self.get_cached_fixture("server")
         if self.no_proxies:
             old_opener_m = mechanize._opener._opener
-            old_opener_u = urllib2._opener
             mechanize.install_opener(mechanize.build_opener(
                 mechanize.ProxyHandler(proxies={})))
-            urllib2.install_opener(urllib2.build_opener(
-                urllib2.ProxyHandler(proxies={})))
+            install_opener(build_opener(
+                ProxyHandler(proxies={})))
 
             def revert_install():
                 mechanize.install_opener(old_opener_m)
-                urllib2.install_opener(old_opener_u)
+                install_opener(None)
             self.add_teardown(revert_install)
 
 
 def sanepathname2url(path):
-    urlpath = urllib.pathname2url(path)
+    urlpath = pathname2url(path)
     if os.name == "nt" and urlpath.startswith("///"):
         urlpath = urlpath[2:]
     # XXX don't ask me about the mac...
@@ -122,7 +123,7 @@ class SocketTimeoutTest(TestCase):
             def __getattr__(self, name):
                 return getattr(self._delegate, name)
 
-        assertEquals = self.assertEquals
+        assertEquals = self.assertEqual
 
         class TimeoutLog(object):
             AnyValue = object()
@@ -235,7 +236,7 @@ class SimpleTests(SocketTimeoutTest):
         req = mechanize.Request(urljoin(self.test_uri, "test_fixtures"),
                                 timeout=timeout)
         r = self.browser.open(req)
-        self.assert_("GeneralFAQ.html" in r.read(2048))
+        self.assertTrue("GeneralFAQ.html" in r.read(2048))
         timeout_log.verify(timeout)
 
     def test_302_and_404(self):
@@ -281,7 +282,7 @@ class SimpleTests(SocketTimeoutTest):
         for br in self.browser, copy.copy(self.browser):
             r = br.open(urljoin(self.uri, "redirected_good"))
             self.assertEqual(r.code, 200)
-            self.assert_("GeneralFAQ.html" in r.read(2048))
+            self.assertTrue("GeneralFAQ.html" in r.read(2048))
             self.assertEqual([
                 [c for c in h.codes if c == 302]
                 for h in br.handlers_by_class(ObservingHandler)], [[302]])
@@ -289,7 +290,7 @@ class SimpleTests(SocketTimeoutTest):
     def test_refresh(self):
         def refresh_request(seconds):
             uri = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
-            val = urllib.quote_plus('%d; url="%s"' % (seconds, self.uri))
+            val = quote_plus('%d; url="%s"' % (seconds, self.uri))
             return uri + ("?refresh=%s" % val)
         self.browser.set_handle_refresh(True, honor_time=False)
         r = self.browser.open(refresh_request(5))
@@ -311,7 +312,7 @@ class SimpleTests(SocketTimeoutTest):
         url = "file://%s" % sanepathname2url(
             os.path.abspath(os.path.join("test", "test_functional.py")))
         r = self.browser.open(url)
-        self.assert_("this string appears in this file ;-)" in r.read())
+        self.assertTrue("this string appears in this file ;-)" in r.read())
 
     def test_open_local_file(self):
         # Since the file: URL scheme is not well standardised, Browser has a
@@ -323,20 +324,20 @@ class SimpleTests(SocketTimeoutTest):
 
     def test_open_novisit(self):
         def test_state(br):
-            self.assert_(br.request is None)
-            self.assert_(br.response() is None)
+            self.assertTrue(br.request is None)
+            self.assertTrue(br.response() is None)
             self.assertRaises(mechanize.BrowserStateError, br.back)
         test_state(self.browser)
         uri = urljoin(self.uri, "test_fixtures")
         # note this involves a redirect, which should itself be non-visiting
         r = self.browser.open_novisit(uri)
         test_state(self.browser)
-        self.assert_("GeneralFAQ.html" in r.read(2048))
+        self.assertTrue("GeneralFAQ.html" in r.read(2048))
 
         # Request argument instead of URL
         r = self.browser.open_novisit(mechanize.Request(uri))
         test_state(self.browser)
-        self.assert_("GeneralFAQ.html" in r.read(2048))
+        self.assertTrue("GeneralFAQ.html" in r.read(2048))
 
     def test_non_seekable(self):
         # check everything still works without response_seek_wrapper and
@@ -345,9 +346,9 @@ class SimpleTests(SocketTimeoutTest):
         ua.set_seekable_responses(False)
         ua.set_handle_equiv(False)
         response = ua.open(self.test_uri)
-        self.failIf(hasattr(response, "seek"))
+        self.assertFalse(hasattr(response, "seek"))
         data = response.read()
-        self.assert_("Python bits" in data)
+        self.assertTrue("Python bits" in data)
 
 
 class ResponseTests(TestCase):
@@ -376,17 +377,17 @@ class ResponseTests(TestCase):
         try:
             opener.open(urljoin(self.uri, "nonexistent"))
         except mechanize.HTTPError as exc:
-            self.assert_("HTTPError instance" in repr(exc))
+            self.assertTrue("HTTPError instance" in repr(exc))
 
     def test_no_seek(self):
         # should be possible to turn off UserAgent's .seek() functionality
         def check_no_seek(opener):
             r = opener.open(urljoin(self.uri, "test_fixtures/cctest2.txt"))
-            self.assert_(not hasattr(r, "seek"))
+            self.assertTrue(not hasattr(r, "seek"))
             try:
                 opener.open(urljoin(self.uri, "nonexistent"))
             except mechanize.HTTPError as exc:
-                self.assert_(not hasattr(exc, "seek"))
+                self.assertTrue(not hasattr(exc, "seek"))
 
         # mechanize.UserAgent
         opener = self.make_user_agent()
@@ -416,7 +417,7 @@ class ResponseTests(TestCase):
                     exc.seek(0)
                     self.assertEqual(data, exc.read(), exc.get_data())
             else:
-                self.assert_(False)
+                self.assertTrue(False)
 
         opener = self.make_user_agent()
         opener.set_debug_http(False)
@@ -500,11 +501,11 @@ class FunctionalTests(SocketTimeoutTest):
         referer = urljoin(self.uri, "test_fixtures/referertest.html")
         info = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
         r = br.open(info)
-        self.assert_(referer not in r.get_data())
+        self.assertTrue(referer not in r.get_data())
 
         br.open(referer)
         r = br.follow_link(text="Here")
-        self.assert_(referer in r.get_data())
+        self.assertTrue(referer in r.get_data())
 
     def test_cookies(self):
         # this test page depends on cookies, and an http-equiv refresh
@@ -524,14 +525,14 @@ class FunctionalTests(SocketTimeoutTest):
         opener = self.build_opener(handlers)
         r = opener.open(urljoin(self.uri, "/cgi-bin/cookietest.cgi"))
         data = r.read()
-        self.assert_(data.find("Your browser supports cookies!") >= 0)
-        self.assertEquals(len(cj), 2)
+        self.assertTrue(data.find("Your browser supports cookies!") >= 0)
+        self.assertEqual(len(cj), 2)
 
         # test response.seek() (added by HTTPEquivProcessor)
         r.seek(0)
         samedata = r.read()
         r.close()
-        self.assertEquals(samedata, data)
+        self.assertEqual(samedata, data)
 
     def test_robots(self):
         plain_opener = self.build_opener(
@@ -544,7 +545,6 @@ class FunctionalTests(SocketTimeoutTest):
                 opener.open, urljoin(self.uri, "norobots"))
 
     def _check_retrieve(self, url, filename, headers):
-        from urllib import urlopen
         self.assertEqual(headers.get('Content-Type'), 'text/html')
         if self.no_proxies:
             proxies = {}
@@ -561,7 +561,7 @@ class FunctionalTests(SocketTimeoutTest):
         filename, headers = opener.retrieve(url, test_filename, verif.callback)
         self.assertEqual(filename, test_filename)
         self._check_retrieve(url, filename, headers)
-        self.assert_(os.path.isfile(filename))
+        self.assertTrue(os.path.isfile(filename))
 
     def test_retrieve(self):
         # not passing an explicit filename downloads to a temporary file
@@ -571,11 +571,11 @@ class FunctionalTests(SocketTimeoutTest):
         verif = CallbackVerifier(self)
         request = mechanize.Request(url)
         filename, headers = opener.retrieve(request, reporthook=verif.callback)
-        self.assertEquals(request.visit, False)
+        self.assertEqual(request.visit, False)
         self._check_retrieve(url, filename, headers)
         opener.close()
         # closing the opener removed the temporary file
-        self.failIf(os.path.isfile(filename))
+        self.assertFalse(os.path.isfile(filename))
 
     def test_urlretrieve(self):
         timeout_log = self._monkey_patch_socket()
@@ -596,7 +596,7 @@ class FunctionalTests(SocketTimeoutTest):
         # if we don't do anything and go straight to another page, most of the
         # last page's response won't be .read()...
         browser.open(urljoin(self.uri, "mechanize"))
-        self.assert_(len(r1.get_data()) < 4097)  # we only .read() a little bit
+        self.assertTrue(len(r1.get_data()) < 4097)  # we only .read() a little bit
         # ...so if we then go back, .follow_link() for a link near the end (a
         # few kb in, past the point that always gets read in HTML files because
         # of HEAD parsing) will only work if it causes a .reload()...
@@ -656,8 +656,8 @@ class CookieJarTests(TestCase):
         url = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
         # no cookie was set on the first request
         html = br.open(url).read()
-        self.assertEquals(html.find("Your browser supports cookies!"), -1)
-        self.assertEquals(len(cookiejar), 2)
+        self.assertEqual(html.find("Your browser supports cookies!"), -1)
+        self.assertEqual(len(cookiejar), 2)
         # ... but now we have the cookie
         html = br.open(url).read()
         self.assertIn("Your browser supports cookies!", html)
