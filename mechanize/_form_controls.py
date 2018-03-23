@@ -5,12 +5,16 @@ from __future__ import absolute_import
 import random
 import re
 import sys
-import urllib
-import urlparse
 import warnings
-from cStringIO import StringIO
+from io import BytesIO
 
 from . import _request
+from .polyglot import urlparse, urlunparse, urlencode, is_py2, iteritems
+
+if is_py2:
+    from cStringIO import StringIO
+else:
+    from io import StringIO  # 2to3: probably broken when writing bytes
 
 
 class Missing:
@@ -51,7 +55,7 @@ def compress_whitespace(text):
 def isstringlike(x):
     try:
         x + ""
-    except:
+    except Exception:
         return False
     else:
         return True
@@ -60,7 +64,7 @@ def isstringlike(x):
 def choose_boundary():
     """Return a string usable as a multipart boundary."""
     # follow IE and firefox
-    nonce = "".join([str(random.randint(0, sys.maxint - 1)) for i in 0, 1, 2])
+    nonce = "".join(str(random.randint(0, sys.maxsize - 1)) for i in (0, 1, 2))
     return "-" * 27 + nonce
 
 
@@ -398,8 +402,8 @@ class ScalarControl(Control):
 
         self._clicked = False
 
-        self._urlparse = urlparse.urlparse
-        self._urlunparse = urlparse.urlunparse
+        self._urlparse = urlparse
+        self._urlunparse = urlunparse
 
     def __getattr__(self, name):
         if name == "value":
@@ -530,7 +534,7 @@ class FileControl(ScalarControl):
         # assert _name == self.name and _value == ''
         if len(self._upload_data) < 2:
             if len(self._upload_data) == 0:
-                file_object = StringIO()
+                file_object = BytesIO()
                 content_type = "application/octet-stream"
                 filename = ""
             else:
@@ -690,14 +694,15 @@ class Item:
     def __repr__(self):
         # XXX appending the attrs without distinguishing them from name and id
         # is silly
-        attrs = [("name", self.name), ("id", self.id)] + self.attrs.items()
+        attrs = [("name", self.name), ("id", self.id)] + list(
+                iteritems(self.attrs))
         return "<%s %s>" % (self.__class__.__name__,
                             " ".join(["%s=%r" % (k, v) for k, v in attrs]))
 
 
 def disambiguate(items, nr, **kwds):
     msgs = []
-    for key, value in kwds.items():
+    for key, value in iteritems(kwds):
         msgs.append("%s=%r" % (key, value))
     msg = " ".join(msgs)
     if not items:
@@ -1164,11 +1169,8 @@ class ListControl(Control):
         ]
         names = {}
         for nn in value:
-            if nn in names.keys():
-                names[nn] += 1
-            else:
-                names[nn] = 1
-        for name, count in names.items():
+            names[nn] = names.setdefault(nn, 0) + 1
+        for name, count in iteritems(names):
             on, off = self._get_items(name, count)
             for i in range(count):
                 if on:
@@ -1853,8 +1855,8 @@ class HTMLForm:
         self._labels = labels  # this is a semi-public API!
         self._id_to_labels = id_to_labels  # this is a semi-public API!
 
-        self._urlunparse = urlparse.urlunparse
-        self._urlparse = urlparse.urlparse
+        self._urlunparse = urlunparse
+        self._urlparse = urlparse
 
     def new_control(self,
                     type,
@@ -2492,7 +2494,7 @@ class HTMLForm:
 
         def encode_query():
             p = [(as_utf8(k), as_utf8(v)) for k, v in self._pairs()]
-            return urllib.urlencode(p)
+            return urlencode(p)
 
         if method == "GET":
             if self.enctype != "application/x-www-form-urlencoded":

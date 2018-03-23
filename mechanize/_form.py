@@ -2,10 +2,10 @@ from __future__ import absolute_import
 
 import re
 from collections import defaultdict
-from urlparse import urljoin
 
 from ._form_controls import HTMLForm, Label
 from ._request import Request
+from .polyglot import urljoin, is_string
 
 
 class SkipControl(ValueError):
@@ -84,7 +84,7 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
     form_elems = []
     form_id_map = {}
     all_elems = tuple(
-        e for e in root.iter('*') if isinstance(e.tag, basestring))
+        e for e in root.iter('*') if is_string(e.tag))
     parent_map = {c: p for p in all_elems for c in p}
     id_to_labels = defaultdict(list)
     for e in all_elems:
@@ -97,9 +97,9 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
         elif q == 'label':
             for_id = e.get('for')
             if for_id is not None:
-                l = Label(label_text(e), for_id)
-                labels.append(l)
-                id_to_labels[for_id].append(l)
+                label = Label(label_text(e), for_id)
+                labels.append(label)
+                id_to_labels[for_id].append(label)
         elif q == 'base':
             base_url = e.get('href') or base_url
 
