@@ -4,28 +4,31 @@
 
 import mimetools
 import threading
-import urlparse
 import mechanize
-import BaseHTTPServer
 import unittest
 
 from mechanize._testcase import TestCase
 from mechanize._urllib2_fork import md5_digest
+from mechanize.polyglot import is_py2, urlparse
 
 import testprogram
 
 
+if is_py2:
+    from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+else:
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+
 # Loopback http server infrastructure
 
-class LoopbackHttpServer(BaseHTTPServer.HTTPServer):
+
+class LoopbackHttpServer(HTTPServer):
     """HTTP server w/ a few modifications that make it useful for
     loopback testing purposes.
     """
 
     def __init__(self, server_address, RequestHandlerClass):
-        BaseHTTPServer.HTTPServer.__init__(self,
-                                           server_address,
-                                           RequestHandlerClass)
+        HTTPServer.__init__(self, server_address, RequestHandlerClass)
 
         # Set the timeout of our listening socket really low so
         # that we can stop the server easily.
@@ -153,7 +156,7 @@ class DigestAuthHandler:
             (self._realm_name, self._qop, self._generate_nonce()))
         # XXX: Not sure if we're supposed to add this next header or
         # not.
-        #request_handler.send_header('Connection', 'close')
+        # request_handler.send_header('Connection', 'close')
         request_handler.end_headers()
         request_handler.wfile.write("Proxy Authentication Required.")
         return False
@@ -204,7 +207,7 @@ class DigestAuthHandler:
 # Proxy test infrastructure
 
 
-class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class FakeProxyHandler(BaseHTTPRequestHandler):
     """This is a 'fake proxy' that makes it look like the entire
     internet has gone down due to a sudden zombie invasion.  It main
     utility is in providing us with authentication support for
@@ -217,15 +220,15 @@ class FakeProxyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         # This has to be set before calling our parent's __init__(), which will
         # try to call do_GET().
         self.digest_auth_handler = digest_auth_handler
-        BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
+        BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
     def log_message(self, format, *args):
         # Uncomment the next line for debugging.
-        #sys.stderr.write(format % args)
+        # sys.stderr.write(format % args)
         pass
 
     def do_GET(self):
-        (scm, netloc, path, params, query, fragment) = urlparse.urlparse(
+        (scm, netloc, path, params, query, fragment) = urlparse(
             self.path, 'http')
         self.short_path = path
         if self.digest_auth_handler.handle_request(self):
@@ -259,6 +262,7 @@ class ProxyAuthTests(TestCase):
         digest_auth_handler.set_users({self.USER: self.PASSWD})
         digest_auth_handler.set_realm(self.REALM)
         digest_auth_handler.set_qop(qop)
+
         def create_fake_proxy_handler(*args, **kwargs):
             return FakeProxyHandler(digest_auth_handler, *args, **kwargs)
         return make_started_server(create_fake_proxy_handler)
@@ -314,7 +318,7 @@ class ProxyAuthTests(TestCase):
             result.close()
 
 
-class RecordingHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class RecordingHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "TestHTTP/"
     protocol_version = "HTTP/1.0"
@@ -326,7 +330,7 @@ class RecordingHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self._get_next_response = get_next_response
         self._record_request = record_request
         self._record_received_headers = record_received_headers
-        BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *args, **kwds)
+        BaseHTTPRequestHandler.__init__(self, *args, **kwds)
 
     def do_GET(self):
         body = self.send_head()
@@ -420,8 +424,8 @@ class TestUrlopen(TestCase):
         data = f.read()
         f.close()
 
-        self.assertEquals(data, expected_response)
-        self.assertEquals(handler.requests, ['/', '/somewhere_else'])
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ['/', '/somewhere_else'])
 
     def test_404(self):
         expected_response = 'Bad bad bad...'
@@ -437,8 +441,8 @@ class TestUrlopen(TestCase):
         data = f.read()
         f.close()
 
-        self.assertEquals(data, expected_response)
-        self.assertEquals(handler.requests, ['/weeble'])
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ['/weeble'])
 
     def test_200(self):
         expected_response = 'pycon 2008...'
@@ -448,8 +452,8 @@ class TestUrlopen(TestCase):
         data = f.read()
         f.close()
 
-        self.assertEquals(data, expected_response)
-        self.assertEquals(handler.requests, ['/bizarre'])
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ['/bizarre'])
 
     def test_200_with_parameters(self):
         expected_response = 'pycon 2008...'
@@ -460,8 +464,8 @@ class TestUrlopen(TestCase):
         data = f.read()
         f.close()
 
-        self.assertEquals(data, expected_response)
-        self.assertEquals(handler.requests, ['/bizarre', 'get=with_feeling'])
+        self.assertEqual(data, expected_response)
+        self.assertEqual(handler.requests, ['/bizarre', 'get=with_feeling'])
 
     def test_sending_headers(self):
         handler = self._make_request_handler([(200, [], "we don't care")])

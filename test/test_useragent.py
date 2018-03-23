@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import mechanize
 
-from test_browser import make_mock_handler
+from .test_browser import make_mock_handler
 
 
 class UserAgentTests(TestCase):
