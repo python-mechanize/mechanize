@@ -1,5 +1,6 @@
 """Tests for ClientCookie._HTTPDate."""
 
+from __future__ import print_function
 import re
 import time
 from unittest import TestCase
@@ -95,8 +96,8 @@ class DateTimeTests(TestCase):
             bad = False
 
             if http2time(test) is not None:
-                print "http2time(%s) is not None" % (test,)
-                print "http2time(test)", http2time(test)
+                print("http2time(%s) is not None" % (test,))
+                print("http2time(test)", http2time(test))
                 bad = True
 
             assert not bad
