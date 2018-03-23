@@ -11,7 +11,7 @@ is_py2 = sys.version_info.major < 3
 
 if is_py2:
     import types
-    from urllib import urlencode, pathname2url
+    from urllib import urlencode, pathname2url, quote
     from urllib2 import HTTPError, URLError
     from robotparser import RobotFileParser
     from urlparse import urlsplit, urljoin, urlparse, urlunparse
@@ -40,7 +40,7 @@ else:
     from urllib.error import HTTPError, URLError
     from urllib.robotparser import RobotFileParser
     from urllib.parse import urlsplit, urljoin, urlparse, urlunparse, urlencode
-    from urllib.request import pathname2url
+    from urllib.request import pathname2url, quote
     from http.client import HTTPMessage
     from http.cookiejar import (
             DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
@@ -63,7 +63,7 @@ else:
 
 if False:
     HTTPError, urlsplit, urljoin, urlparse, urlunparse, urlencode, HTTPMessage
-    pathname2url, RobotFileParser, URLError
+    pathname2url, RobotFileParser, URLError, quote
     (DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
      FileCookieJar, LoadError, LWPCookieJar, _debug,
      domain_match, eff_request_host, escape_path, is_HDN,

@@ -18,10 +18,10 @@ Opening a new response should close the old one.
 >>> br = TestHttpBrowser()
 >>> r = br.open("http://example.com")
 >>> print response_impl(r)
-StringI
+BytesIO
 >>> r2 = br.open("http://example.com")
 >>> print response_impl(r2)
-StringI
+BytesIO
 >>> print response_impl(r)
 eofresponse
 
@@ -38,7 +38,7 @@ eofresponse
 >>> r = br.open("http://example.com")
 >>> r2 = test_response(url="http://example.com/2")
 >>> print response_impl(r2)
-StringI
+BytesIO
 >>> br.visit_response(r2)
 >>> print response_impl(r)
 eofresponse

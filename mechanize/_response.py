@@ -17,12 +17,13 @@ included with the distribution).
 """
 
 from __future__ import absolute_import
+from functools import partial
 import copy
 import mimetools
-import urllib2
-from cStringIO import StringIO
+from io import BytesIO
 
 from ._headersutil import normalize_header_name
+from .polyglot import HTTPError
 
 
 def len_of_seekable(file_):
@@ -72,7 +73,7 @@ class seek_wrapper:
     """
 
     # General strategy is to check that cache is full enough, then delegate to
-    # the cache (self.__cache, which is a cStringIO.StringIO instance).  A seek
+    # the cache (self.__cache, which is a BytesIO instance).  A seek
     # position (self.__pos) is maintained independently of the cache, in order
     # that a single cache may be shared between multiple seek_wrapper objects.
     # Copying using module copy shares the cache in this way.
@@ -82,7 +83,7 @@ class seek_wrapper:
         self.__read_complete_state = [False]
         self.__is_closed_state = [False]
         self.__have_readline = hasattr(self.wrapped, "readline")
-        self.__cache = StringIO()
+        self.__cache = BytesIO()
         self.__pos = 0  # seek position
 
     def invariant(self):
@@ -250,11 +251,12 @@ class seek_wrapper:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         line = self.readline()
         if line == "":
             raise StopIteration
         return line
+    next = __next__
 
     xreadlines = __iter__
 
@@ -295,7 +297,7 @@ class response_seek_wrapper(seek_wrapper):
         self.seek(0)
         self.read()
         self.close()
-        cache = self._seek_wrapper__cache = StringIO()
+        cache = self._seek_wrapper__cache = BytesIO()
         cache.write(data)
         self.seek(0)
 
@@ -312,8 +314,9 @@ class eoffile:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         return ""
+    next = __next__
 
     def close(self):
         pass
@@ -380,7 +383,7 @@ class closeable_response:
         else:
             self.fileno = lambda: None
         self.__iter__ = self.fp.__iter__
-        self.next = self.fp.next
+        self.next = partial(next, self.fp)
 
     def __repr__(self):
         return '<%s at %s whose fp = %r>' % (self.__class__.__name__,
@@ -471,7 +474,7 @@ def make_response(data, headers, url, code, msg):
 
     """
     mime_headers = make_headers(headers)
-    r = closeable_response(StringIO(data), mime_headers, url, code, msg)
+    r = closeable_response(BytesIO(data), mime_headers, url, code, msg)
     return response_seek_wrapper(r)
 
 
@@ -482,7 +485,7 @@ def make_headers(headers):
     hdr_text = []
     for name_value in headers:
         hdr_text.append("%s: %s" % name_value)
-    return mimetools.Message(StringIO("\n".join(hdr_text)))
+    return mimetools.Message(BytesIO("\n".join(hdr_text)))
 
 
 # Rest of this module is especially horrible, but needed, at least until fork
@@ -492,7 +495,7 @@ def make_headers(headers):
 def get_seek_wrapper_class(response):
     # in order to wrap response objects that are also exceptions, we must
     # dynamically subclass the exception :-(((
-    if (isinstance(response, urllib2.HTTPError) and
+    if (isinstance(response, HTTPError) and
             not hasattr(response, "seek")):
         if response.__class__.__module__ == "__builtin__":
             exc_class_name = response.__class__.__name__

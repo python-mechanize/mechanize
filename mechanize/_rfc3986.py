@@ -14,8 +14,8 @@ included with the distribution).
 
 from __future__ import absolute_import
 import re
-import urllib
 
+from .polyglot import quote
 # def chr_range(a, b):
 # return "".join(map(chr, range(ord(a), ord(b)+1)))
 
@@ -43,7 +43,7 @@ def clean_url(url, encoding='utf-8'):
     url = url.strip()
     # for second param to urllib.quote(), we want URI_CHARS, minus the
     # 'always_safe' characters that urllib.quote() never percent-encodes
-    ans = urllib.quote(url.encode(encoding), "!*'();:@&=+$,/?%#[]~")
+    ans = quote(url.encode(encoding), "!*'();:@&=+$,/?%#[]~")
     if is_unicode:
         ans = ans.decode(encoding)
     return ans
@@ -111,19 +111,19 @@ def urljoin(base_uri, uri_reference):
 
 # oops, this doesn't do the same thing as the literal translation
 # from the RFC below
-## import posixpath
+# import posixpath
 # def urljoin_parts(base_parts, reference_parts):
-##     scheme, authority, path, query, fragment = base_parts
-##     rscheme, rauthority, rpath, rquery, rfragment = reference_parts
+#     scheme, authority, path, query, fragment = base_parts
+#     rscheme, rauthority, rpath, rquery, rfragment = reference_parts
 
 # compute target URI path
 # if rpath == "":
-##         tpath = path
+#         tpath = path
 # else:
-##         tpath = rpath
+#         tpath = rpath
 # if not tpath.startswith("/"):
-##             tpath = merge(authority, path, tpath)
-##         tpath = posixpath.normpath(tpath)
+#             tpath = merge(authority, path, tpath)
+#         tpath = posixpath.normpath(tpath)
 
 # if rscheme is not None:
 # return (rscheme, rauthority, tpath, rquery, rfragment)
@@ -131,9 +131,9 @@ def urljoin(base_uri, uri_reference):
 # return (scheme, rauthority, tpath, rquery, rfragment)
 # elif rpath == "":
 # if rquery is not None:
-##             tquery = rquery
+#             tquery = rquery
 # else:
-##             tquery = query
+#             tquery = query
 # return (scheme, authority, tpath, tquery, rfragment)
 # else:
 # return (scheme, authority, tpath, rquery, rfragment)
@@ -178,8 +178,8 @@ def urljoin_parts(base_parts, reference_parts):
 # def remove_dot_segments(path):
 # if path == '':
 # return ''
-##     comps = path.split('/')
-##     new_comps = []
+#     comps = path.split('/')
+#     new_comps = []
 # for comp in comps:
 # if comp in ['.', '']:
 # if not new_comps or new_comps[-1]:
