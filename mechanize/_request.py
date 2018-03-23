@@ -10,19 +10,21 @@ COPYING.txt included with the distribution).
 
 from __future__ import absolute_import
 import logging
-from urllib import urlencode
 
 from . import _rfc3986
 from . import _sockettimeout
 from . import _urllib2_fork
+from .polyglot import urlencode, is_string, unicode_type, iteritems
 
 warn = logging.getLogger("mechanize").warning
 
 
 def as_utf8(x):
-    if not isinstance(x, basestring):
-        x = unicode(x)
-    if isinstance(x, type(u'')):
+    if isinstance(x, bytes):
+        return x
+    if not is_string(x):
+        x = unicode_type(x)
+    if isinstance(x, unicode_type):
         x = x.encode('utf-8')
     return x
 
@@ -63,7 +65,7 @@ class Request(_urllib2_fork.Request):
             warn("url argument is not a URI "
                  "(contains illegal characters) %r" % url)
         if isinstance(data, dict):
-            data = {as_utf8(k): as_utf8(v) for k, v in data.iteritems()}
+            data = {as_utf8(k): as_utf8(v) for k, v in iteritems(data)}
             data = urlencode(data)
             data = data or None
             if data and method == 'GET':
