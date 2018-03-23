@@ -30,6 +30,9 @@ if is_py2:
     def iteritems(x):
         return x.iteritems()
 
+    def itervalues(x):
+        return x.itervalues()
+
     def is_class(obj):
         return isinstance(obj, (types.ClassType, type))
 
@@ -59,6 +62,9 @@ else:
 
     def iteritems(x):
         return x.items()
+
+    def itervalues(x):
+        return x.values()
 
     def is_class(obj):
         return isinstance(obj, type)

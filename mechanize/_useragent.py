@@ -16,6 +16,7 @@ from __future__ import absolute_import
 import copy
 
 from . import _auth, _gzip, _opener, _response, _sockettimeout, _urllib2
+from .polyglot import iteritems, itervalues
 
 
 class UserAgentBase(_opener.OpenerDirector):
@@ -100,7 +101,7 @@ class UserAgentBase(_opener.OpenerDirector):
                        self.default_features):
             klass = self.handler_classes[scheme]
             ua_handlers[scheme] = klass()
-        for handler in ua_handlers.itervalues():
+        for handler in tuple(itervalues(ua_handlers)):
             self.add_handler(handler)
 
         # Yuck.
@@ -155,7 +156,7 @@ class UserAgentBase(_opener.OpenerDirector):
             want[scheme] = None
 
         # get rid of scheme handlers we don't want
-        for scheme, oldhandler in self._ua_handlers.items():
+        for scheme, oldhandler in tuple(iteritems(self._ua_handlers)):
             if scheme.startswith("_"):
                 continue  # not a scheme handler
             if scheme not in want:
@@ -163,7 +164,7 @@ class UserAgentBase(_opener.OpenerDirector):
             else:
                 del want[scheme]  # already got it
         # add the scheme handlers that are missing
-        for scheme in want.keys():
+        for scheme in want:
             self._set_handler(scheme, True)
 
     def set_cookiejar(self, cookiejar):
@@ -362,7 +363,7 @@ class UserAgentBase(_opener.OpenerDirector):
         if self._ua_handlers is None:
             raise ValueError('Cannot copy state from a closed UserAgentBase')
         other.addheaders = self.addheaders[:]
-        rmap = {v: k for k, v in self._ua_handlers.iteritems()}
+        rmap = {v: k for k, v in iteritems(self._ua_handlers)}
 
         def clone_handler(h):
             ans = copy.copy(h)
