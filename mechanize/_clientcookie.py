@@ -2,15 +2,12 @@ from __future__ import absolute_import
 
 import re
 import time
-from cookielib import Cookie as _Cookie
-from cookielib import CookieJar as CJ
-from cookielib import MozillaCookieJar as MCJ
-from cookielib import request_host as request_host_lc
-from cookielib import (DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
-                       FileCookieJar, LoadError, LWPCookieJar, _debug,
-                       domain_match, eff_request_host, escape_path, is_HDN,
-                       lwp_cookie_str, reach, request_path, request_port,
-                       user_domain_match)
+from .polyglot import (
+    Cookie as _Cookie, CookieJar as CJ, MozillaCookieJar as MCJ, request_host
+    as request_host_lc, DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
+    FileCookieJar, LoadError, LWPCookieJar, _debug, domain_match,
+    eff_request_host, escape_path, is_HDN, lwp_cookie_str, reach, request_path,
+    request_port, user_domain_match, iteritems)
 
 __all__ = [
     'DEFAULT_HTTP_PORT', 'CookiePolicy', 'DefaultCookiePolicy',
@@ -60,7 +57,7 @@ class CookieJar(CJ):
         return ans
 
     def __setstate__(self, val):
-        for k, v in val.iteritems():
+        for k, v in iteritems(val):
             setattr(self, k, v)
 
     def cookies_for_request(self, request):

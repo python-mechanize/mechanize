@@ -9,6 +9,7 @@ import re
 import string
 
 from ._entities import html5_entities
+from .polyglot import codepoint_to_chr
 
 space_chars = frozenset(("\t", "\n", "\u000C", " ", "\r"))
 space_chars_bytes = frozenset(item.encode("ascii") for item in space_chars)
@@ -24,7 +25,7 @@ head_elems = frozenset(("html", "head", "title", "base", "script", "style",
 
 def my_unichr(num):
     try:
-        return unichr(num)
+        return codepoint_to_chr(num)
     except (ValueError, OverflowError):
         return '?'
 
