@@ -2516,7 +2516,7 @@ class HTMLForm:
                 mw.startmultipartbody(
                     "form-data", add_to_http_hdrs=True, prefix=0)
                 for ii, k, v, control_index in self._pairs_and_controls():
-                    self.controls[control_index]._write_mime_data(mw, k, v)
+                    self.controls[control_index]._write_mime_data(mw, as_utf8(k), as_utf8(v))
                 mw.lastpart()
                 return uri, data.getvalue(), http_hdrs
             else:
