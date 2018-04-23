@@ -63,7 +63,7 @@ Cookies
 Which HTTP cookie protocols does mechanize support?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Netscape and [RFC 2965](http://www.ietf.org/rfc/rfc2965.txt).  RFC 2965
+Netscape and `RFC 2965 <http://www.ietf.org/rfc/rfc2965.txt>`_.  RFC 2965
 handling is switched off by default.
 
 What about RFC 2109?
