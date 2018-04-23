@@ -211,15 +211,19 @@ content that was not present in the page at load time, submitting or
 filling in parts of forms in response to user actions, setting cookies,
 etc.  mechanize does not provide any support for JavaScript.
 
-If you come across this in a page you want to automate, you have four
-options.  Here they are, roughly in order of simplicity.
+If you come across this in a page you want to automate, you have a few
+options.  Here they are, roughly in order of simplicity:
 
-Figure out what the JavaScript is doing and emulate it in your Python
-code. The simplest case is if the JavaScript is setting some cookies.
-In that case you can inspect the cookies in your browser and emulate
-setting them in mechanize with :meth:`mechanize.Browser.set_simple_cookie()`.
+  * Figure out what the JavaScript is doing and emulate it in your Python
+    code. The simplest case is if the JavaScript is setting some cookies.
+    In that case you can inspect the cookies in your browser and emulate
+    setting them in mechanize with :meth:`mechanize.Browser.set_simple_cookie()`.
 
-More complex is to use your browser developer tools to see exactly what
-requests are sent by the browser and emulate them in mechanize
-by using :class:`mechanize.Request` to create the request manually
-and open it with :meth:`mechanize.Browser.open()`.
+  * More complex is to use your browser developer tools to see exactly what
+    requests are sent by the browser and emulate them in mechanize
+    by using :class:`mechanize.Request` to create the request manually
+    and open it with :meth:`mechanize.Browser.open()`.
+
+  * Third is to use some browser automation framework/library to scrape the
+    site instead of using mechanize. These libraries typically drive a headless
+    version of a full browser that can execute all JavaScript.
