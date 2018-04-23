@@ -74,7 +74,7 @@ For example, the `User-Agent` header may need to be set
 browser.
 
 Check that the browser is able to do manually what you're trying to achieve
-programatically.  Make sure that what you do manually is *exactly* the same as
+programmatically.  Make sure that what you do manually is *exactly* the same as
 what you're trying to do from Python -- you may simply be hitting a server bug
 that only gets revealed if you view pages in a particular order, for example.
 

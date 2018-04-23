@@ -97,7 +97,7 @@ You may control the browser's policy by using the methods of
     br.set_request_gzip(True)
     # Log information about HTTP redirects and Refreshes.
     br.set_debug_redirects(True)
-    # Log HTTP response bodies (ie. the HTML, most of the time).
+    # Log HTTP response bodies (i.e. the HTML, most of the time).
     br.set_debug_responses(True)
     # Print HTTP headers.
     br.set_debug_http(True)

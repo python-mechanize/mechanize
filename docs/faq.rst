@@ -63,7 +63,7 @@ Cookies
 Which HTTP cookie protocols does mechanize support?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Netscape and [RFC 2965](http://www.ietf.org/rfc/rfc2965.txt).  RFC 2965
+Netscape and `RFC 2965 <http://www.ietf.org/rfc/rfc2965.txt>`_.  RFC 2965
 handling is switched off by default.
 
 What about RFC 2109?
@@ -134,7 +134,7 @@ Why doesn't `<some control>` turn up in the data returned by `.click*()` when th
 
 Either the control is disabled, or it is not successful for some other
 reason. 'Successful' (see `HTML 4
-specification <http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13.2>`_.
+specification <http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13.2>`_)
 means that the control will cause data to get sent to the server.
 
 Why does mechanize not follow the HTML 4.0 / RFC 1866 standards for `RADIO` and multiple-selection `SELECT` controls?
@@ -219,7 +219,7 @@ code. The simplest case is if the JavaScript is setting some cookies.
 In that case you can inspect the cookies in your browser and emulate
 setting them in mechanize with :meth:`mechanize.Browser.set_simple_cookie()`.
 
-More complex is to use your browser developer tool sto see exactly what
+More complex is to use your browser developer tools to see exactly what
 requests are sent by the browser and emulate them in mechanize
 by using :class:`mechanize.Request` to create the request manually
 and open it with :meth:`mechanize.Browser.open()`.

@@ -325,8 +325,8 @@ class UserAgentBase(_opener.OpenerDirector):
 
         Other logger names relevant to this module:
 
-        `"mechanize.http_responses"`
-        `"mechanize.cookies"`
+        * `mechanize.http_responses`
+        * `mechanize.cookies`
 
         To turn on everything:
 

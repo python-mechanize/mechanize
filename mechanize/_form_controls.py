@@ -1003,7 +1003,7 @@ class ListControl(Control):
     def set_item_disabled(self, disabled, name, by_label=False, nr=None):
         """Set disabled state of named list item in a ListControl.
 
-        disabled: boolean disabled state
+        :arg disabled: boolean disabled state
 
         """
         deprecation("control.get(...).disabled = <boolean>")
@@ -1012,7 +1012,7 @@ class ListControl(Control):
     def set_all_items_disabled(self, disabled):
         """Set disabled state of all list items in a ListControl.
 
-        disabled: boolean disabled state
+        :arg disabled: boolean disabled state
 
         """
         for o in self.items:
@@ -1963,7 +1963,9 @@ class HTMLForm:
 
         If only name and value arguments are supplied, equivalent to
 
-        form[name]
+        .. code-block:: python
+
+            form[name]
 
         """
         if by_label:
@@ -1994,7 +1996,9 @@ class HTMLForm:
 
         If only name and value arguments are supplied, equivalent to
 
-        form[name] = value
+        .. code-block:: python
+
+            form[name] = value
 
         """
         if by_label:
@@ -2100,7 +2104,7 @@ class HTMLForm:
             label=None):
         """Select / deselect named list item.
 
-        selected: boolean selected state
+        :arg selected: boolean selected state
 
         """
         self._find_list_control(name, type, kind, id, label, nr).set(
@@ -2141,8 +2145,10 @@ class HTMLForm:
         For example, if a checkbox has a single item named "on", the following
         two calls are equivalent:
 
-        control.toggle("on")
-        control.toggle_single()
+        .. code-block:: python
+
+            control.toggle("on")
+            control.toggle_single()
 
         """  # by_label ignored and deprecated
         self._find_list_control(name, type, kind, id, label,
@@ -2192,12 +2198,11 @@ class HTMLForm:
         Note the following useful HTML attributes of file upload controls (see
         HTML 4.01 spec, section 17):
 
-        accept: comma-separated list of content types that the server will
-         handle correctly; you can use this to filter out non-conforming files
-        size: XXX IIRC, this is indicative of whether form wants multiple or
-         single files
-
-        maxlength: XXX hint of max content length in bytes?
+          * `accept`: comma-separated list of content types that the server will
+             handle correctly; you can use this to filter out non-conforming files
+          * `size`: XXX IIRC, this is indicative of whether form wants multiple or
+             single files
+          * `maxlength`: XXX hint of max content length in bytes?
 
         """
         self.find_control(
