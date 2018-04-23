@@ -219,7 +219,7 @@ code. The simplest case is if the JavaScript is setting some cookies.
 In that case you can inspect the cookies in your browser and emulate
 setting them in mechanize with :meth:`mechanize.Browser.set_simple_cookie()`.
 
-More complex is to use your browser developer tool sto see exactly what
+More complex is to use your browser developer tools to see exactly what
 requests are sent by the browser and emulate them in mechanize
 by using :class:`mechanize.Request` to create the request manually
 and open it with :meth:`mechanize.Browser.open()`.
