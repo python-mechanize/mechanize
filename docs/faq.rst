@@ -226,4 +226,6 @@ options.  Here they are, roughly in order of simplicity:
 
   * Third is to use some browser automation framework/library to scrape the
     site instead of using mechanize. These libraries typically drive a headless
-    version of a full browser that can execute all JavaScript.
+    version of a full browser that can execute all JavaScript. They are
+    typically much slower than using mechanize and far more resource intensive,
+    but do work as a last resort.
