@@ -134,7 +134,7 @@ Why doesn't `<some control>` turn up in the data returned by `.click*()` when th
 
 Either the control is disabled, or it is not successful for some other
 reason. 'Successful' (see `HTML 4
-specification <http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13.2>`_.
+specification <http://www.w3.org/TR/REC-html40/interact/forms.html#h-17.13.2>`_)
 means that the control will cause data to get sent to the server.
 
 Why does mechanize not follow the HTML 4.0 / RFC 1866 standards for `RADIO` and multiple-selection `SELECT` controls?

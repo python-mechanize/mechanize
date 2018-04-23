@@ -758,14 +758,14 @@ class Browser(UserAgentBase):
             as this argument, if supplied
         :param name: as for text and text_regex, but matched
             against the name HTML attribute of the link tag
-        :url: as for text and text_regex, but matched against the
+        :param url: as for text and text_regex, but matched against the
             URL of the link tag (note this matches against Link.url, which is a
             relative or absolute URL according to how it was written in the
             HTML)
         :param tag: element name of opening tag, e.g. "a"
         :param predicate: a function taking a Link object as its single
             argument, returning a boolean result, indicating whether the links
-        :nr: matches the nth link that matches all other criteria (default 0)
+        :param nr: matches the nth link that matches all other criteria (default 0)
 
         """
         try:
