@@ -41,7 +41,7 @@ if is_py2:
         return isinstance(obj, (types.ClassType, type))
 
     def raise_with_traceback(exc):
-        raise exc, None, sys.exc_info[2]  # noqa
+        exec('raise exc, None, sys.exc_info()[2]')
 
     codepoint_to_chr = unichr
     unicode_type = unicode
