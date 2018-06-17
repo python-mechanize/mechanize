@@ -44,7 +44,6 @@ import re
 import socket
 import sys
 import time
-from future_builtins import map
 from functools import partial
 # support for FileHandler, proxies via environment variables
 from urllib import (addinfourl, ftpwrapper, getproxies, splitattr, splitpasswd,
@@ -59,7 +58,7 @@ from ._headersutil import normalize_header_name
 from .polyglot import (
         HTTPError, URLError, HTTPConnection, HTTPSConnection, urlparse,
         urlsplit, is_class, iteritems, is_string, raise_with_traceback,
-        StringIO
+        StringIO, map
 )
 
 

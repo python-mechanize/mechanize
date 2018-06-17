@@ -3,7 +3,6 @@
 import copy
 from io import BytesIO
 from unittest import TestCase
-from future_builtins import map
 from functools import partial
 
 

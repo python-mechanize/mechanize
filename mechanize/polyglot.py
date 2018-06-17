@@ -27,6 +27,7 @@ if is_py2:
             request_path, request_port, user_domain_match, Cookie, CookieJar,
             MozillaCookieJar, request_host)
     from cStringIO import StringIO
+    from future_builtins import map  # noqa
 
     def is_string(x):
         return isinstance(x, basestring)
