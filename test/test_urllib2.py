@@ -766,8 +766,8 @@ class OpenerDirectorTests(unittest.TestCase):
                     self.assertTrue(isinstance(args[0], Request))
                     # response from opener.open is None, because there's no
                     # handler that defines http_open to handle it
-                    self.assertTrue(args[1] is None or
-                                 isinstance(args[1], MockResponse))
+                    self.assertTrue(args[1] is None or isinstance(
+                        args[1], MockResponse))
 
 
 class MockRobotFileParserClass:
@@ -1280,7 +1280,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         h.parent = MockOpener()
 
         data = ('<html><head>'
-                '<meta http-equiv="Refresh" content="spam&amp;eggs">'
+                '<meta httP-equiv="RefResh" coNtent="spam&amp;Eggs">'
                 '</head></html>')
         headers = [
             ("Foo", "Bar"),
@@ -1294,9 +1294,9 @@ class HandlerTests(mechanize._testcase.TestCase):
 
         new_headers = newr.info()
         self.assertEqual(new_headers["Foo"], "Bar")
-        self.assertEqual(new_headers["Refresh"], "spam&eggs")
+        self.assertEqual(new_headers["Refresh"], "spam&Eggs")
         self.assertEqual(
-            new_headers.getheaders("Refresh"), ["blah", "spam&eggs"])
+            new_headers.getheaders("Refresh"), ["blah", "spam&Eggs"])
 
     def test_refresh(self):
         # XXX test processor constructor optional args
