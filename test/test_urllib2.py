@@ -1280,8 +1280,8 @@ class HandlerTests(mechanize._testcase.TestCase):
         h.parent = MockOpener()
 
         data = ('<html><head>'
-                '<meta httP-equiv="RefResh" coNtent="spam&amp;Eggs">'
-                '</head></html>')
+                '<Meta httP-equiv="RefResh" coNtent="spam&amp;Eggs">'
+                '</Head></html>')
         headers = [
             ("Foo", "Bar"),
             ("Content-type", "text/html"),
