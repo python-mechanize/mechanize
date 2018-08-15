@@ -7,7 +7,6 @@ from __future__ import (absolute_import, division, print_function,
 
 import re
 import string
-from functools import partial
 
 from ._entities import html5_entities
 from .polyglot import codepoint_to_chr
@@ -172,20 +171,20 @@ class HTTPEquivParser(object):
     def __call__(self):
         mb, mbp = self.data.match_bytes, self.data.match_bytes_pat
         dispatch = (
-                (partial(mb, b"<!--"), self.handle_comment),
-                (partial(mbp, re.compile(b"<meta", flags=re.IGNORECASE)),
+                (mb, b"<!--", self.handle_comment),
+                (mbp, re.compile(b"<meta", flags=re.IGNORECASE),
                     self.handle_meta),
-                (partial(mbp, re.compile(b"</head", flags=re.IGNORECASE)),
+                (mbp, re.compile(b"</head", flags=re.IGNORECASE),
                     lambda: False),
-                (partial(mb, b"</"), self.handle_possible_end_tag),
-                (partial(mb, b"<!"), self.handle_other),
-                (partial(mb, b"<?"), self.handle_other),
-                (partial(mb, b"<"), self.handle_possible_start_tag)
+                (mb, b"</", self.handle_possible_end_tag),
+                (mb, b"<!", self.handle_other),
+                (mb, b"<?", self.handle_other),
+                (mb, b"<", self.handle_possible_start_tag)
         )
         for byte in self.data:
             keep_parsing = True
-            for matcher, method in dispatch:
-                if matcher():
+            for matcher, key, method in dispatch:
+                if matcher(key):
                     try:
                         keep_parsing = method()
                         break
