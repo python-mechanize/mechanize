@@ -126,6 +126,7 @@ class Bytes(bytes):
                 return self[pos:p], c
             p += 1
         self._position = p
+        return b'', b''
 
     def match_bytes(self, bytes):
         """Look for a sequence of bytes at the start of a string. If the bytes
