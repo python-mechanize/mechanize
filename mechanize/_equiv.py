@@ -150,8 +150,9 @@ class Bytes(bytes):
     def jump_to(self, bytes):
         """Look for the next sequence of bytes matching a given sequence. If
         a match is found advance the position to the last byte of the match"""
-        new_pos = self[self.position:].find(bytes)
+        new_pos = self.find(bytes, max(0, self.position))
         if new_pos > -1:
+            new_pos -= self.position
             if self._position == -1:
                 self._position = 0
             self._position += (new_pos + len(bytes) - 1)
@@ -262,6 +263,7 @@ class HTTPEquivParser(object):
             return True
 
         tag_name, c = data.skip_until(spaces_angle_brackets)
+        tag_name = tag_name.lower()
         if not end_tag and tag_name not in head_elems:
             return False
         if c == b"<":

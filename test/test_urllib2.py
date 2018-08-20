@@ -1279,7 +1279,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         h = HTTPEquivProcessor()
         h.parent = MockOpener()
 
-        data = ('<html><head>'
+        data = ('<html><HEad>'
                 '<Meta httP-equiv="RefResh" coNtent="spam&amp;Eggs">'
                 '</Head></html>')
         headers = [
