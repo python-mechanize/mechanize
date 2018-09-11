@@ -64,7 +64,16 @@ except NameError:
     myinput = input
 
 
+def has_executable(exe):
+    for path in os.environ['PATH'].split(os.pathsep):
+        if os.access(os.path.join(path, exe), os.X_OK):
+            return True
+    return False
+
+
 def main():
+    if not has_executable('twine'):
+        raise SystemExit('Need to install twine to upload to PyPI')
     if myinput('Publish version {} [y/n]? '.format(red(VERSION))) != 'y':
         raise SystemExit(1)
     build_release()
