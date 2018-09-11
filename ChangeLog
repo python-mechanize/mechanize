@@ -1,6 +1,11 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2018-09-11 Kovid Goyal
+	* 0.3.7 release
+	* Fix processing of http-equiv meta tags incorrectly lower casing the content
+	* Fix error when a textbox contained within a form contains unicode characters
+
 2017-10-13 Kovid Goyal
 	* 0.3.6 release.
 	* Use html5-parser for parsing HTML, when available instead of html5lib
