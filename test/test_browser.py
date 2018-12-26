@@ -13,7 +13,7 @@ import mechanize._testcase
 from mechanize._gzip import HTTPGzipProcessor, compress_readable_output
 from mechanize._response import test_html_response
 from mechanize.polyglot import (
-        HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type, mime_message)
+        HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type, mime_message,StringIO)
 
 from six import string_types
 
@@ -219,8 +219,8 @@ class BrowserTests(TestCase):
             ("Content-Type: text/html; charset=UTF-8\r\n"
              "Content-Type: text/html; charset=KOI8-R\r\n\r\n", "UTF-8"),
         ]:
-            msg = mime_message(BytesIO(s))
-            r = addinfourl(BytesIO(""), msg, "http://www.example.com/")
+            msg = mime_message(s)
+            r = addinfourl("", msg, "http://www.example.com/")
             b.set_response(r)
             self.assertEqual(b.encoding(), ct)
 
@@ -842,9 +842,9 @@ class ResponseTests(TestCase):
         br = TestBrowser()
         self.assertEqual(str(br), "<TestBrowser (not visiting a URL)>")
 
-        fp = BytesIO('<html><form name="f"><input /></form></html>')
+        fp = StringIO('<html><form name="f"><input /></form></html>')
         headers = mime_message(
-            BytesIO("Content-type: text/html"))
+            "Content-type: text/html")
         response = _response.response_seek_wrapper(
             _response.closeable_response(fp, headers, "http://example.com/",
                                          200, "OK"))
@@ -875,7 +875,7 @@ class HttplibTests(mechanize._testcase.TestCase):
 
         def getresponse(self_):
             class Response(object):
-                msg = mime_message(BytesIO(""))
+                msg = mime_message("")
                 status = 200
                 reason = "OK"
 

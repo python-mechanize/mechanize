@@ -277,7 +277,7 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
                     reporthook(blocknum, bs, size)
                 while 1:
                     block = fp.read(bs)
-                    if block == "":
+                    if not block:
                         break
                     read += len(block)
                     tfp.write(block)

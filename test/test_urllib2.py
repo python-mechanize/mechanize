@@ -297,7 +297,7 @@ def http_message(mapping):
 
 class MockResponse(BytesIO):
     def __init__(self, code, msg, headers, data, url=None):
-        BytesIO.__init__(self, data)
+        BytesIO.__init__(self, bytes(data, 'utf-8'))
         self.code, self.msg, self.headers, self.url = code, msg, headers, url
 
     def info(self):
@@ -448,7 +448,7 @@ class MockHTTPHandler(mechanize.BaseHandler):
         if self._count == 0:
             self._count = self._count + 1
             name = "Not important"
-            msg = Message(BytesIO(self.headers))
+            msg = Message(self.headers)
             return self.parent.error("http", req,
                                      test_response(), self.code, name, msg)
         else:

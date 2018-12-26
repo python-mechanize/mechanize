@@ -52,7 +52,7 @@ def read_file(filename):
 
 
 def write_file(filename, data):
-    f = open(filename, "wb")
+    f = open(filename, "w")
     try:
         f.write(data)
     finally:

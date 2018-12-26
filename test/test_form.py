@@ -21,7 +21,7 @@ from mechanize import (AmbiguityError, ControlNotFoundError, ItemCountError,
                        ItemNotFoundError)
 from mechanize._html import content_parser
 from mechanize._util import get1
-from mechanize.polyglot import codepoint_to_chr
+from mechanize.polyglot import codepoint_to_chr, StringIO
 
 # XXX
 # HTMLForm.set/get_value_by_label()
@@ -86,12 +86,12 @@ parse_file = partial(parse_file_ex, add_global=False)
 
 
 def first_form(text, base_uri="http://example.com/"):
-    return parse_file_ex(BytesIO(text), base_uri)[0]
+    return parse_file_ex(StringIO(text), base_uri)[0]
 
 
 class UnescapeTests(unittest.TestCase):  # {{{
     def test_unescape_parsing(self):
-        file = BytesIO("""<form action="&amp;amp;&mdash;&#x2014;&#8212;">
+        file = StringIO("""<form action="&amp;amp;&mdash;&#x2014;&#8212;">
 <textarea name="name&amp;amp;&mdash;&#x2014;&#8212;">val&amp;amp;&mdash;\
 &#x2014;&#8212;</textarea>
 </form>
@@ -109,7 +109,7 @@ class UnescapeTests(unittest.TestCase):  # {{{
         self.assertEqual(control.name, "name" + test_string)
 
     def test_unescape_parsing_select(self):
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
 <select name="a">
     <option>1&amp;amp;&mdash;&#x2014;&#8212;</option>
@@ -128,7 +128,7 @@ class UnescapeTests(unittest.TestCase):  # {{{
             # XXX label
 
     def test_unescape_parsing_data(self):
-        file = BytesIO("""\
+        file = StringIO("""\
 <form>
     <label for="foo">Blah &#x201d; &rdquo; blah</label>
     <input type="text" id="foo" name="foo">
@@ -150,11 +150,11 @@ class LWPFormTests(unittest.TestCase):
 
     def testEmptyParse(self):
         forms = parse_file(
-            BytesIO(""), "http://localhost", backwards_compat=False)
+            StringIO(""), "http://localhost", backwards_compat=False)
         self.assertTrue(len(forms) == 0)
 
     def _forms(self):
-        file = BytesIO("""<form action="abc">
+        file = StringIO("""<form action="abc">
 
         <input name="firstname" value="Gisle">
 
@@ -216,7 +216,7 @@ class MockResponse:
 
 class ParseTests(unittest.TestCase):  # {{{
     def test_unknown_control(self):
-        f = BytesIO("""<form action="abc">
+        f = StringIO("""<form action="abc">
 <input type="bogus">
 <input>
 </form>
@@ -228,7 +228,7 @@ class ParseTests(unittest.TestCase):  # {{{
             self.assertTrue(isinstance(ctl, _form_controls.TextControl))
 
     def test_form_attribute(self):
-        f = BytesIO(
+        f = StringIO(
             '''<form id="f"><input name="a"><input name="c" form="o"></form>
             <input name="b" form="f"></input>
             <form id="o"><input name="d"></form>''')
@@ -244,7 +244,7 @@ class ParseTests(unittest.TestCase):  # {{{
     def test_ParseFileEx(self):
         # empty "outer form" (where the "outer form" is the form consisting of
         # all controls outside of any form)
-        f = BytesIO("""<form action="abc">
+        f = StringIO("""<form action="abc">
 <input type="text"></input>
 </form>
 """)
@@ -260,7 +260,7 @@ class ParseTests(unittest.TestCase):  # {{{
         self.assertEqual(outer.attrs, {})
 
         # non-empty outer form
-        f = BytesIO("""
+        f = StringIO("""
 <input type="text" name="a"></input>
 <form action="abc">
   <input type="text" name="b"></input>
@@ -284,7 +284,7 @@ class ParseTests(unittest.TestCase):  # {{{
 
     def test_base_uri(self):
         # BASE element takes priority over document URI
-        file = BytesIO("""<base HREF="http://example.com">
+        file = StringIO("""<base HREF="http://example.com">
 <form action="abc">
 <input type="submit"></input>
 </form>
@@ -293,7 +293,7 @@ class ParseTests(unittest.TestCase):  # {{{
         form = forms[0]
         self.assertEqual(form.action, "http://example.com/abc")
 
-        file = BytesIO("""<form action="abc">
+        file = StringIO("""<form action="abc">
 <input type="submit"></input>
 </form>
 """)
@@ -302,7 +302,7 @@ class ParseTests(unittest.TestCase):  # {{{
         self.assertTrue(form.action == "http://localhost/abc")
 
     def testTextarea(self):
-        file = BytesIO("""<form action="abc&amp;amp;&mdash;d">
+        file = StringIO("""<form action="abc&amp;amp;&mdash;d">
 
 <input name="firstname" value="Gisle">
 <textarea>blah, blah,
@@ -342,7 +342,7 @@ users!</textarea>
         self.assertEqual(entity_ctl.value, "Hello testers &amp; users!")
 
     def testSelect(self):
-        file = BytesIO("""<form action="abc">
+        file = StringIO("""<form action="abc">
 
 <select name="foo">
  <option>Hello testers &amp; &blah; users!</option>
@@ -368,7 +368,7 @@ users!</textarea>
         self.assertEqual(opt["contents"], "Hello testers & &blah; users!")
 
     def testButton(self):
-        file = BytesIO("""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <input type="text" value="cow" name="moo">
 
@@ -393,7 +393,7 @@ Rhubarb.</button>
         self.assertTrue(pairs == [("moo", "cow"), ("b", "")])
 
     def testEmptySelect(self):
-        file = BytesIO("""<form action="abc">
+        file = StringIO("""<form action="abc">
 <select name="foo"></select>
 
 <select name="bar" multiple></select>
@@ -497,7 +497,7 @@ Rhubarb.</button>
 # """
 
     def testUnnamedControl(self):
-        file = BytesIO("""
+        file = StringIO("""
 <form action="./weird.html">
 
 <input type="checkbox" value="foo"></input>
@@ -511,7 +511,7 @@ Rhubarb.</button>
     def testNamelessListItems(self):
         # XXX SELECT
         # these controls have no item names
-        file = BytesIO("""<form action="./weird.html">
+        file = StringIO("""<form action="./weird.html">
 
 <input type="checkbox" name="foo"></input>
 
@@ -551,7 +551,7 @@ Rhubarb.</button>
         # up selected.
         # In fact, testing really obscure stuff here, which follows Firefox
         # 1.0.7 -- IE doesn't even support disabled OPTIONs.
-        file = BytesIO("""<form action="./bad.html">
+        file = StringIO("""<form action="./bad.html">
 
 <select name="spam">
   <option selected>1</option>
@@ -592,7 +592,7 @@ Rhubarb.</button>
         self.assertEqual([ii.name for ii in moo.items if ii.selected], ["2"])
 
     def testSelectDefault(self):
-        file = BytesIO("""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <select name="a" multiple>
  <option>1</option>
@@ -634,7 +634,7 @@ Rhubarb.</button>
         # stripped by browsers, but not one immediately before an end tag.
         # TEXTAREA content is converted to the DOS newline convention.
         forms = parse_file(
-            BytesIO("<form><textarea>\n\nblah\n</textarea></form>"),
+            StringIO("<form><textarea>\n\nblah\n</textarea></form>"),
             "http://example.com/",
             backwards_compat=False, )
         ctl = forms[0].find_control(type="textarea")
@@ -645,7 +645,7 @@ Rhubarb.</button>
         # parser's .handle_data() method must not be trimmed unless they also
         # follow immediately after a start tag
         forms = parse_file(
-            BytesIO(
+            StringIO(
                 "<form><textarea>\n\nspam&amp;\neggs\n</textarea></form>"),
             "http://example.com/",
             backwards_compat=False, )
@@ -657,7 +657,7 @@ Rhubarb.</button>
         # represent a single control (unlike RADIO and CHECKBOX elements), so
         # don't merge them.
         forms = parse_file(
-            BytesIO("""\
+            StringIO("""\
 <form>
     <select name="a">
         <option>b</option>
@@ -683,7 +683,7 @@ Rhubarb.</button>
         # ignored, causing a ParseError due to incorrect tag nesting
 
         parse_file_ex(
-            BytesIO("""\
+            StringIO("""\
 <select name="a">
     <option>b</option>
     <option>c</option>
@@ -696,7 +696,7 @@ Rhubarb.</button>
             "http://example.com/", )
 
         parse_file(
-            BytesIO("""\
+            StringIO("""\
 <textarea></textarea>
 <textarea></textarea>
 """),
@@ -704,14 +704,14 @@ Rhubarb.</button>
             backwards_compat=False, )
 
     def test_empty_document(self):
-        forms = parse_file_ex(BytesIO(""), "http://example.com/")
+        forms = parse_file_ex(StringIO(""), "http://example.com/")
         self.assertEqual(len(forms), 1)  # just the "global form"
 
     def test_missing_closing_body_tag(self):
         # Even if there is no closing form or body tag, the last form on the
         # page should be returned.
         forms = parse_file_ex(
-            BytesIO('<form name="spam">'),
+            StringIO('<form name="spam">'),
             "http://example.com/", )
         self.assertEqual(len(forms), 2)
         self.assertEqual(forms[1].name, "spam")
@@ -722,7 +722,7 @@ Rhubarb.</button>
 
 class DisabledTests(unittest.TestCase):  # {{{
     def testOptgroup(self):
-        file = BytesIO("""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <select name="foo" multiple>
  <option>1</option>
@@ -940,7 +940,7 @@ class DisabledTests(unittest.TestCase):  # {{{
             self._testDisabledSelect(compat)
 
     def _testDisabledSelect(self, compat):
-        file = BytesIO("""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <select name="foo" multiple>
  <option label="a">1</option>
@@ -1023,7 +1023,7 @@ class DisabledTests(unittest.TestCase):  # {{{
             self._testDisabledRadio(compat)
 
     def _testDisabledRadio(self, compat):
-        file = BytesIO("""<form>
+        file = StringIO("""<form>
 <input type="checkbox" name="foo" value="1" disabled></input>
 <input type="checkbox" name="foo" value="2" disabled></input>
 <input type="checkbox" name="foo" value="3" disabled></input>
@@ -1045,7 +1045,7 @@ class DisabledTests(unittest.TestCase):  # {{{
             self._testDisabledCheckbox(compat)
 
     def _testDisabledCheckbox(self, compat):
-        file = BytesIO("""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <label><input type="checkbox" name="foo" value="1"></input> a</label>
 <input type="checkbox" name="foo" value="2"></input>
@@ -2121,7 +2121,7 @@ class FormTests(unittest.TestCase):  # {{{
         return open(path)
 
     def test_find_control(self):
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
     <label for="form.title"> Book Title </label></td>
     <input type="text" id="form.title" name="form.title"
@@ -2174,7 +2174,7 @@ class FormTests(unittest.TestCase):  # {{{
   <input type="checkbox" id="a" onclick="blah()"/>
 </form>
 """
-        f = BytesIO(data)
+        f = StringIO(data)
         form = parse_file(f, "http://example.com/", backwards_compat=False)[0]
         self.assertRaises(
             AmbiguityError,
@@ -2192,7 +2192,7 @@ class FormTests(unittest.TestCase):  # {{{
             form.backwards_compat = compat
             return form
 
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
     <input type="checkbox" name="p" value="a" disabled checked></input>
     <input type="checkbox" name="p" value="b"></input>
@@ -2250,7 +2250,7 @@ class FormTests(unittest.TestCase):  # {{{
                 self.assertRaises(AttributeError, setattr, ctl, "value",
                                   ["a", "b"])
 
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
     <input type="radio" name="p" value="a" disabled checked></input>
     <input type="radio" name="p" value="b"></input>
@@ -2297,7 +2297,7 @@ class FormTests(unittest.TestCase):  # {{{
                                   ["a", "b"])
 
     def test_click(self):
-        file = BytesIO("""<form action="abc" name="myform">
+        file = StringIO("""<form action="abc" name="myform">
 
 <input type="submit" name="foo"></input>
 <input type="submit" name="bar"></input>
@@ -2310,7 +2310,7 @@ class FormTests(unittest.TestCase):  # {{{
             form.click(name="bar").get_full_url() == "http://blah/abc?bar=")
 
         for method in ["GET", "POST"]:
-            file = BytesIO(
+            file = StringIO(
                 """<form method="%s" action="abc?bang=whizz#doh" name="myform">
 
 <input type="submit" name="foo"></input>
@@ -2544,7 +2544,7 @@ class FormTests(unittest.TestCase):  # {{{
     def testSetValueByLabelIgnoringAmbiguity(self):
         # regression test: follow ClientForm 0.1 behaviour
         # also test that backwards_compat argument to ParseFile works
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
     <select multiple name="form.grocery">
         <option value="bread" id="1">Loaf of Bread</option>
@@ -2594,7 +2594,7 @@ class FormTests(unittest.TestCase):  # {{{
     def testClearValue(self):
         # regression test: follow ClientForm 0.1 behaviour
         # assigning [] to value is implemented as a special case
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
     <select multiple name="s">
         <option disabled selected>a</option>
@@ -2625,7 +2625,7 @@ class FormTests(unittest.TestCase):  # {{{
                                  ["a"])
 
     def testSearchByLabel(self):
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
 <table>
   <tr>
@@ -2894,19 +2894,19 @@ class FormTests(unittest.TestCase):  # {{{
 
 
 def make_form(html):
-    global_form, form = parse_file_ex(BytesIO(html), "http://example.com/")
+    global_form, form = parse_file_ex(StringIO(html), "http://example.com/")
     assert len(global_form.controls) == 0
     return form
 
 
 def make_form_global(html):
-    return get1(parse_file_ex(BytesIO(html), "http://example.com/"))
+    return get1(parse_file_ex(StringIO(html), "http://example.com/"))
 
 
 class MoreFormTests(unittest.TestCase):  # {{{
     def test_interspersed_controls(self):
         # must preserve item ordering even across controls
-        f = BytesIO("""\
+        f = StringIO("""\
 <form name="formname">
     <input type="checkbox" name="murphy" value="a"></input>
     <input type="checkbox" name="woof" value="d"></input>
@@ -2943,7 +2943,7 @@ class MoreFormTests(unittest.TestCase):  # {{{
         ])
 
     def make_form(self):
-        f = BytesIO("""\
+        f = """\
 <form blah="nonsense" name="formname">
   <label><input type="checkbox" name="a" value="1" id="1a" blah="spam"></input>
       One</label>
@@ -2973,8 +2973,8 @@ class MoreFormTests(unittest.TestCase):  # {{{
 
   <input type="checkbox" name="e" value="1"></input>
 </form>
-""")
-        return parse_file(f, "http://blah/", backwards_compat=False)[0]
+"""
+        return parse_file(StringIO(f), "http://blah/", backwards_compat=False)[0]
 
     def test_value(self):
         form = self.make_form()
@@ -3095,7 +3095,7 @@ class MoreFormTests(unittest.TestCase):  # {{{
             self._test_select_control_nr_and_label(compat)
 
     def _test_select_control_nr_and_label(self, compat):
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
     <select multiple name="form.grocery">
         <option value="p" label="a" id="1">a</option>
@@ -3133,7 +3133,7 @@ class MoreFormTests(unittest.TestCase):  # {{{
         self.assertRaises(ItemNotFoundError, ctl.get, id="4")
 
     def test_label_whitespace(self):
-        f = BytesIO("""\
+        f = StringIO("""\
 <form>
 <select multiple name="eg">
     <option value="p"> a b  c  </option>
@@ -3174,7 +3174,7 @@ class MoreFormTests(unittest.TestCase):  # {{{
 </form>
 """,
         ]:
-            f = BytesIO(data)
+            f = StringIO(data)
             form = parse_file(
                 f, "http://example.com/", backwards_compat=False)[0]
             bar = form.find_control(type="checkbox", id="a")
@@ -3187,7 +3187,7 @@ class MoreFormTests(unittest.TestCase):  # {{{
         for method in ["GET", "POST"]:
             data = ('<form action="" method="%s">'
                     '<input type="submit" name="s"/></form>' % method)
-            f = BytesIO(data)
+            f = StringIO(data)
             form = parse_file(
                 f, "http://example.com/", backwards_compat=False)[0]
             self.assertEqual(
@@ -3303,7 +3303,7 @@ class UploadTests(_testcase.TestCase):  # {{{
 """
 
         return parse_file(
-            BytesIO(html),
+            StringIO(html),
             "http://localhost/cgi-bin/upload.cgi",
             backwards_compat=False)[0]
 
@@ -3315,7 +3315,7 @@ class UploadTests(_testcase.TestCase):  # {{{
         form["user"] = "john"
         data_control = form.find_control("data")
         data = "blah\nbaz\n"
-        data_control.add_file(BytesIO(data))
+        data_control.add_file(StringIO(data))
         # print "data_control._upload_data", data_control._upload_data
         req = form.click()
         self.assertTrue(
@@ -3326,7 +3326,7 @@ class UploadTests(_testcase.TestCase):  # {{{
 
         # ...and check the resulting request is understood by cgi module
         fs = cgi.FieldStorage(
-            BytesIO(req.get_data()),
+            StringIO(req.get_data()),
             CaseInsensitiveDict(header_items(req)),
             environ={"REQUEST_METHOD": "POST"})
         self.assertTrue(fs["user"].value == "john")
@@ -3401,7 +3401,7 @@ class UploadTests(_testcase.TestCase):  # {{{
     def test_empty_upload(self):
         # no controls except for INPUT/SUBMIT
         forms = parse_file(
-            BytesIO("""<html>
+            StringIO("""<html>
 <form method="POST" action="./weird.html" enctype="multipart/form-data">
 <input type="submit" name="submit"></input>
 </form></html>"""),
@@ -3421,7 +3421,7 @@ class UploadTests(_testcase.TestCase):  # {{{
         # no files uploaded
         self.monkey_patch(_form_controls, "choose_boundary", lambda: "123")
         forms = parse_file_ex(
-            BytesIO("""<html>
+            StringIO("""<html>
 <form method="POST" action="spam" enctype="multipart/form-data">
 <INPUT type="file" name="spam" />
 </form></html>"""), ".")
