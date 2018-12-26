@@ -156,6 +156,9 @@ class CookieJarInterfaceTests(unittest.TestCase):
             def getheaders(self, name):
                 return ["foo=bar; port=443"]
 
+            def get(self, name):
+                return ["foo=bar; port=443"]
+
         class StubResponse(object):
 
             def info(self):

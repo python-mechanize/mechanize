@@ -15,7 +15,7 @@ included with the distribution).
 from __future__ import absolute_import
 import re
 
-from .polyglot import quote
+from .polyglot import quote, is_py2
 # def chr_range(a, b):
 # return "".join(map(chr, range(ord(a), ord(b)+1)))
 
@@ -44,7 +44,7 @@ def clean_url(url, encoding='utf-8'):
     # for second param to urllib.quote(), we want URI_CHARS, minus the
     # 'always_safe' characters that urllib.quote() never percent-encodes
     ans = quote(url.encode(encoding), "!*'();:@&=+$,/?%#[]~")
-    if is_unicode:
+    if is_unicode and is_py2:
         ans = ans.decode(encoding)
     return ans
 
