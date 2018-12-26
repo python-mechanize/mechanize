@@ -29,8 +29,8 @@ import sys
 if sys.version_info < (2, 7):
     raise SystemExit('mechanize requires python >= 2.7')
 
-if sys.version_info.major > 2:
-    raise SystemExit('mechanize only works on python 2.x')
+#if sys.version_info.major > 2:
+#    raise SystemExit('mechanize only works on python 2.x')
 
 VERSION = open(os.path.join("mechanize", "_version.py")).\
     readlines()[0].strip(' "\n')

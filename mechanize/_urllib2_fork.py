@@ -35,7 +35,6 @@ import bisect
 import copy
 import hashlib
 import logging
-import mimetools
 import os
 import platform
 import posixpath
@@ -46,11 +45,6 @@ import sys
 import time
 from functools import partial
 # support for FileHandler, proxies via environment variables
-from urllib import (addinfourl, ftpwrapper, getproxies, splitattr, splitpasswd,
-                    splitport, splittype, splituser, splitvalue, unquote,
-                    unwrap, url2pathname, proxy_bypass as urllib_proxy_bypass,
-                    splithost as urllib_splithost)
-
 from . import _rfc3986
 from ._clientcookie import CookieJar
 from ._response import closeable_response
@@ -58,9 +52,12 @@ from ._headersutil import normalize_header_name
 from .polyglot import (
         HTTPError, URLError, HTTPConnection, HTTPSConnection, urlparse,
         urlsplit, is_class, iteritems, is_string, raise_with_traceback,
-        StringIO, map
+        StringIO, mime_message, is_py2, addinfourl, getproxies, splitattr, splitpasswd,
+        splitport, splittype, splituser, splitvalue, unquote, unwrap, url2pathname, urllib_proxy_bypass,
+        urllib_splithost, ftpwrapper
 )
-
+if is_py2:
+    from .polyglot import map
 
 def sha1_digest(bytes):
     return hashlib.sha1(bytes).hexdigest()
@@ -1352,7 +1349,7 @@ class FileHandler(BaseHandler):
             size = stats.st_size
             modified = emailutils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(file)[0]
-            headers = mimetools.Message(StringIO(
+            headers = mime_message(StringIO(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified)))
             if host:
@@ -1418,7 +1415,7 @@ class FTPHandler(BaseHandler):
             if retrlen is not None and retrlen >= 0:
                 headers += "Content-length: %d\n" % retrlen
             sf = StringIO(headers)
-            headers = mimetools.Message(sf)
+            headers = mime_message(sf)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
             raise_with_traceback(URLError('ftp error: %s' % msg))

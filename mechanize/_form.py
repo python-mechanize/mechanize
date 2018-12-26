@@ -13,7 +13,8 @@ class SkipControl(ValueError):
 
 
 def normalize_line_endings(text):
-    return re.sub(ur"(?:(?<!\r)\n)|(?:\r(?!\n))", u"\r\n", text)
+    #return re.sub(ur"(?:(?<!\r)\n)|(?:\r(?!\n))", u"\r\n", text) # TODO: Check that on python 2.7
+    return re.sub(u"(?:(?<!\r)\n)|(?:\r(?!\n))", u"\r\n", text)
 
 
 def label_text(elem):

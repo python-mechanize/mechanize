@@ -2327,6 +2327,7 @@ class FormTests(unittest.TestCase):  # {{{
     def testAuth(self):
         fh = self._get_test_file("Auth.html")
         forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        fh.close()
         self.assertTrue(len(forms) == 1)
         form = forms[0]
         self.assertTrue(form.action == "http://auth.athensams.net/"
@@ -2367,6 +2368,7 @@ class FormTests(unittest.TestCase):  # {{{
     def testSearchType(self):
         fh = self._get_test_file("SearchType.html")
         forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        fh.close()
         self.assertTrue(len(forms) == 1)
         form = forms[0]
 
@@ -2400,6 +2402,7 @@ class FormTests(unittest.TestCase):  # {{{
     def testGeneralSearch(self):
         fh = self._get_test_file("GeneralSearch.html")
         forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        fh.close()
         self.assertTrue(len(forms) == 1)
         form = forms[0]
 
@@ -2817,6 +2820,7 @@ class FormTests(unittest.TestCase):  # {{{
     def testResults(self):
         fh = self._get_test_file("Results.html")
         forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        fh.close()
         self.assertTrue(len(forms) == 1)
         form = forms[0]
 
@@ -2868,6 +2872,7 @@ class FormTests(unittest.TestCase):  # {{{
     def testMarkedResults(self):
         fh = self._get_test_file("MarkedResults.html")
         forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        fh.close()
         self.assertTrue(len(forms) == 1)
         form = forms[0]
 

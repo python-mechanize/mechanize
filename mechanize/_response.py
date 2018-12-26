@@ -19,7 +19,7 @@ included with the distribution).
 from __future__ import absolute_import
 from functools import partial
 import copy
-import mimetools
+from .polyglot import (mime_message)
 from io import BytesIO
 
 from ._headersutil import normalize_header_name
@@ -485,7 +485,7 @@ def make_headers(headers):
     hdr_text = []
     for name_value in headers:
         hdr_text.append("%s: %s" % name_value)
-    return mimetools.Message(BytesIO("\n".join(hdr_text)))
+    return mime_message(BytesIO("\n".join(hdr_text)))
 
 
 # Rest of this module is especially horrible, but needed, at least until fork

@@ -10,15 +10,12 @@ COPYING.txt included with the distribution).
 """
 
 from __future__ import absolute_import
-
+import six
 import os
 import re
-from types import StringType, UnicodeType
 
 from . import _rfc3986
 from ._util import http2time
-
-STRING_TYPES = StringType, UnicodeType
 
 
 def is_html_file_extension(url, allow_xhtml):
@@ -111,7 +108,7 @@ def split_header_words(header_values):
     [[('Basic', None), ('realm', '"foobar"')]]
 
     """
-    assert type(header_values) not in STRING_TYPES
+    assert not isinstance(header_values, six.string_types)
     result = []
     for text in header_values:
         orig_text = text

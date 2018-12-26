@@ -12,7 +12,9 @@ is_py2 = sys.version_info.major < 3
 if is_py2:
     import types
     from urllib import (
-            urlencode, pathname2url, quote, addinfourl, quote_plus, urlopen
+            urlencode, pathname2url, quote, addinfourl, quote_plus, urlopen, getproxies, splitattr, splitpasswd,
+            splitport, splittype, splituser, splitvalue, unquote, unwrap, url2pathname,
+            proxy_bypass as urllib_proxy_bypass, splithost as urllib_splithost, ftpwrapper
     )
     from urllib2 import (
             HTTPError, URLError, install_opener, build_opener, ProxyHandler
@@ -28,7 +30,7 @@ if is_py2:
             MozillaCookieJar, request_host)
     from cStringIO import StringIO
     from future_builtins import map  # noqa
-
+    from mimetools import Message as mime_message
     def is_string(x):
         return isinstance(x, basestring)
 
@@ -52,11 +54,14 @@ else:
     from urllib.error import HTTPError, URLError
     from urllib.robotparser import RobotFileParser
     from urllib.parse import (
-            urlsplit, urljoin, urlparse, urlunparse, urlencode, quote_plus
+            urlsplit, urljoin, urlparse, urlunparse, urlencode, quote_plus, splitattr, splitpasswd,
+                    splitport, splittype, splituser, splitvalue, unquote
     )
     from urllib.request import (
             pathname2url, quote, addinfourl, install_opener, build_opener,
-            ProxyHandler, urlopen)
+            ProxyHandler, urlopen, getproxies, unwrap, url2pathname, proxy_bypass as urllib_proxy_bypass,
+            splithost as urllib_splithost, ftpwrapper
+    )
     from http.client import HTTPMessage, HTTPConnection, HTTPSConnection
     from http.cookiejar import (
             DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
@@ -65,6 +70,7 @@ else:
             request_path, request_port, user_domain_match, Cookie, CookieJar,
             MozillaCookieJar, request_host)
     from io import StringIO
+    from email import message_from_string as mime_message
 
     def is_string(x):
         return isinstance(x, str)
