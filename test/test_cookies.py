@@ -2,7 +2,6 @@
 
 import errno
 import inspect
-import mimetools
 import os
 import re
 import sys
@@ -16,16 +15,23 @@ from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings
 from mechanize import Request
 from mechanize.polyglot import codepoint_to_chr
+if sys.version_info.major < 3:
+    from mimetools import Message
+    from cStringIo import StringIO
+else:
+    from email import message_from_string as Message
+    from io import StringIO
 
 
-class FakeResponse:
+class FakeResponse(object):
 
     def __init__(self, headers=[], url=None):
         """
         headers: list of RFC822-style 'Key: value' strings
         """
-        f = BytesIO("\n".join(headers))
-        self._headers = mimetools.Message(f)
+        #f = StringIO("\n".join(headers))
+        f = "\n".join(headers)
+        self._headers = Message(f)
         self._url = url
 
     def info(self):

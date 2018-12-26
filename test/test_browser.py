@@ -15,12 +15,14 @@ from mechanize._response import test_html_response
 from mechanize.polyglot import (
         HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type, mime_message)
 
+from six import string_types
+
 em_dash = codepoint_to_chr(0x2014)
 
 
 # XXX these 'mock' classes are badly in need of simplification / removal
 # (note this stuff is also used by test_useragent.py and test_browser.doctest)
-class MockMethod:
+class MockMethod(object):
     def __init__(self, meth_name, action, handle):
         self.meth_name = meth_name
         self.handle = handle
@@ -35,6 +37,9 @@ class MockHeaders(dict):
         name = name.lower()
         return [v for k, v in iteritems(self) if name == k.lower()]
 
+    def get(self, name, default):
+        return self.getheaders(name) or default
+
     def __delitem__(self, k):
         kmap = {q.lower(): q for q in self}
         k = kmap.get(k.lower())
@@ -42,12 +47,15 @@ class MockHeaders(dict):
             dict.__delitem__(self, k)
 
 
-class MockResponse:
+class MockResponse(object):
     closeable_response = None
 
     def __init__(self, url="http://example.com/", data=None, info=None):
         self.url = self._url = url
-        self.fp = BytesIO(bytes(data, 'utf-8'))
+
+        if isinstance(data, string_types):
+            data = bytes(data, 'utf-8')
+        self.fp = BytesIO(data)
         if info is None:
             info = {}
         self._info = self._headers = MockHeaders(info)
@@ -807,13 +815,13 @@ class ResponseTests(TestCase):
     def test_select_form(self):
         from mechanize import _response
         br = TestBrowser()
-        fp = BytesIO('''<html>
+        fp = BytesIO(bytes('''<html>
             <form name="a"></form>
             <form name="b" data-ac="123"></form>
             <form name="c" class="x"></form>
-            </html>''')
+            </html>''', 'utf-8'))
         headers = mime_message(
-            BytesIO("Content-type: text/html"))
+            "Content-type: text/html")
         response = _response.response_seek_wrapper(
             _response.closeable_response(fp, headers, "http://example.com/",
                                          200, "OK"))

@@ -52,7 +52,7 @@ def get_encoding_from_response(response, verify=True):
     # headers may be in the response.  HTTP-EQUIV headers come last,
     # so try in order from first to last.
     if response:
-        for ct in response.info().getheaders("content-type"):
+        for ct in response.info().get("content-type", {}):
             for k, v in split_header_words([ct])[0]:
                 if k == "charset":
                     if not verify:
@@ -77,7 +77,7 @@ class ResponseTypeFinder:
         self._allow_xhtml = allow_xhtml
 
     def is_html(self, response, encoding):
-        ct_hdrs = response.info().getheaders("content-type")
+        ct_hdrs = response.info().get("content-type", {})
         url = response.geturl()
         # XXX encoding
         return _is_html(ct_hdrs, url, self._allow_xhtml)

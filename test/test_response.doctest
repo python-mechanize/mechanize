@@ -8,9 +8,12 @@ I've noted here the various cases where .read_complete may be set.
 
 >>> text = "To err is human, to moo, bovine.\n"*10
 >>> def get_wrapper():
-...     import cStringIO
+...     if sys.version_info.major < 3:
+...         from cStringIO import StringIO
+...     else:
+...         from io import StringIO
 ...     from mechanize._response import seek_wrapper
-...     f = cStringIO.StringIO(text)
+...     f = StringIO(text)
 ...     wr = seek_wrapper(f)
 ...     return wr
 
@@ -124,7 +127,11 @@ Tests for the truly horrendous upgrade_response()
 ...             return False
 ...     return r.get_data() == "test data"
 
->>> from cStringIO import StringIO
+>>> if sys.version_info.major < 3:
+>>>     from cStringIO import StringIO
+>>> else:
+>>>     from io import StringIO
+
 >>> from mechanize._response import upgrade_response, make_headers, \
 ...     make_response, closeable_response, seek_wrapper
 >>> data="test data"; url="http://example.com/"; code=200; msg="OK"

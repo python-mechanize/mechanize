@@ -279,6 +279,7 @@ class Browser(UserAgentBase):
             self._visit_request(request, update_history)
 
         success = True
+        _error = None
         try:
             response = UserAgentBase.open(self, request, data)
         except HTTPError as error:
@@ -286,6 +287,7 @@ class Browser(UserAgentBase):
             if error.fp is None:  # not a response
                 raise
             response = error
+            _error = error
 
 #         except (IOError, socket.error, OSError) as error:
 #             Yes, urllib2 really does raise all these :-((
@@ -306,7 +308,7 @@ class Browser(UserAgentBase):
             response = _response.upgrade_response(response)
 
         if not success:
-            raise response
+            raise _error
         return response
 
     def __str__(self):

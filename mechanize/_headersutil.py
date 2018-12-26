@@ -108,7 +108,11 @@ def split_header_words(header_values):
     [[('Basic', None), ('realm', '"foobar"')]]
 
     """
-    assert not isinstance(header_values, six.string_types)
+    if type(header_values) in six.string_types:
+        header_values = [header_values]
+
+    assert isinstance(header_values, list)
+
     result = []
     for text in header_values:
         orig_text = text

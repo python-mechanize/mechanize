@@ -19,11 +19,9 @@ included with the distribution).
 from __future__ import absolute_import
 from functools import partial
 import copy
-from .polyglot import (mime_message)
-from io import BytesIO
-
 from ._headersutil import normalize_header_name
-from .polyglot import HTTPError
+from .polyglot import HTTPError, StringIO, mime_message
+from io import BytesIO
 
 
 def len_of_seekable(file_):
@@ -197,7 +195,7 @@ class seek_wrapper:
         # no, so read sufficient data from wrapped file and cache it
         self.__cache.seek(0, 2)
         if size == -1:
-            self.__cache.write(self.wrapped.read())
+            self.__cache.write(bytes(self.wrapped.read(), 'utf-8'))
             self.read_complete = True
         else:
             to_read = size - available
@@ -206,7 +204,7 @@ class seek_wrapper:
             if not data:
                 self.read_complete = True
             else:
-                self.__cache.write(data)
+                self.__cache.write(bytes(data, 'utf-8'))
         self.__cache.seek(pos)
 
         data = self.__cache.read(size)
@@ -336,7 +334,7 @@ class eofresponse(eoffile):
         return self._headers
 
 
-class closeable_response:
+class closeable_response(object):
     """Avoids unnecessarily clobbering urllib.addinfourl methods on .close().
 
     Only supports responses returned by mechanize.HTTPHandler.
@@ -361,7 +359,7 @@ class closeable_response:
     it: http://python.org/sf/1144636).
 
     """
-    # presence of this attr indicates is useable after .close()
+    # presence of this attr indicates is usable after .close()
     closeable_response = None
 
     def __init__(self, fp, headers, url, code, msg, http_version=None):
@@ -396,7 +394,7 @@ class closeable_response:
         return self.code
 
     def get_header_values(self, name):
-        return self._headers.getheaders(name)
+        return self._headers.get(name, {})
 
     def get_all_header_names(self, normalize=True):
         ans = []
@@ -474,7 +472,7 @@ def make_response(data, headers, url, code, msg):
 
     """
     mime_headers = make_headers(headers)
-    r = closeable_response(BytesIO(data), mime_headers, url, code, msg)
+    r = closeable_response(StringIO(data), mime_headers, url, code, msg)
     return response_seek_wrapper(r)
 
 
@@ -485,7 +483,7 @@ def make_headers(headers):
     hdr_text = []
     for name_value in headers:
         hdr_text.append("%s: %s" % name_value)
-    return mime_message(BytesIO("\n".join(hdr_text)))
+    return mime_message("\n".join(hdr_text))
 
 
 # Rest of this module is especially horrible, but needed, at least until fork

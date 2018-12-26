@@ -2,7 +2,6 @@
 
 """Functional tests from the Python standard library test suite."""
 
-import mimetools
 import threading
 import mechanize
 import unittest
@@ -16,7 +15,9 @@ import testprogram
 
 if is_py2:
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+    from mimetools import Message
 else:
+    from email import message_from_string as Message
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Loopback http server infrastructure
@@ -492,7 +493,7 @@ class TestUrlopen(TestCase):
 
         open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
         info_obj = open_url.info()
-        self.assertTrue(isinstance(info_obj, mimetools.Message),
+        self.assertTrue(isinstance(info_obj, Message),
                         "object returned by 'info' is not an instance of "
                         "mimetools.Message")
         self.assertEqual(info_obj.getsubtype(), "plain")

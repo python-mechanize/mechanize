@@ -7,7 +7,6 @@ from io import DEFAULT_BUFFER_SIZE
 from ._urllib2_fork import BaseHandler
 from .polyglot import is_py2
 
-
 CRC_MASK = 0xffffffff
 if is_py2:
     CRC_MASK = long(CRC_MASK)
@@ -153,10 +152,14 @@ def create_gzip_decompressor(zipped_file):
     if prefix[:2] != b'\x1f\x8b':
         raise ValueError('gzip stream has incorrect magic bytes: %r' %
                          prefix[:2])
-    if prefix[2] != b'\x08':
+    if bytes([prefix[2]]) != b'\x08':
         raise ValueError('gzip stream has unknown compression method: %r' %
                          prefix[2])
-    flag = ord(prefix[3])
+    if not isinstance(prefix[3], int):
+        flag = ord(prefix[3])
+    else:
+        flag = prefix[3]
+
     if flag & 4:  # extra
         extra_amt = read_amt(zipped_file, 2)
         extra_amt = ord(extra_amt[0]) + 256 * ord(extra_amt[1])

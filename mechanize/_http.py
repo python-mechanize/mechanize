@@ -47,7 +47,7 @@ class HTTPEquivProcessor(BaseHandler):
             response = response_seek_wrapper(response)
         http_message = response.info()
         url = response.geturl()
-        ct_hdrs = http_message.getheaders("content-type")
+        ct_hdrs = http_message.get("content-type", {})
         if is_html(ct_hdrs, url, True):
             try:
                 try:

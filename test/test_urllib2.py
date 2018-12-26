@@ -438,13 +438,17 @@ class MockHTTPHandler(mechanize.BaseHandler):
         self.requests = []
 
     def http_open(self, req):
-        import mimetools
+        import sys
+        if sys.version_info.major < 3:
+            from mimetools import Message
+        else:
+            from email import message_from_string as Message
         import copy
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
             name = "Not important"
-            msg = mimetools.Message(BytesIO(self.headers))
+            msg = Message(BytesIO(self.headers))
             return self.parent.error("http", req,
                                      test_response(), self.code, name, msg)
         else:
@@ -866,7 +870,8 @@ class HandlerTests(mechanize._testcase.TestCase):
             self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):
-        import rfc822
+
+        from email.utils import formatdate
         import socket
         h = mechanize.FileHandler()
         o = h.parent = MockOpener()
@@ -892,7 +897,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             finally:
                 r.close()
             stats = os.stat(temp_file)
-            modified = rfc822.formatdate(stats.st_mtime)
+            modified = formatdate(stats.st_mtime)
             self.assertEqual(data, towrite)
             self.assertEqual(headers["Content-type"], "text/plain")
             self.assertEqual(headers["Content-length"], "13")

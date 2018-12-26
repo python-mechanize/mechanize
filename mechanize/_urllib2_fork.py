@@ -667,11 +667,11 @@ class ProxyHandler(BaseHandler):
         if proxies is None:
             proxies = getproxies()
 
-        assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
+        assert isinstance(proxies, dict), "proxies must be a mapping"
         self.proxies = proxies
-        for type, url in iteritems(proxies):
+        for _type, url in iteritems(proxies):
             setattr(self, '%s_open' % type,
-                    lambda r, proxy=url, type=type, meth=self.proxy_open:
+                    lambda r, proxy=url, type=_type, meth=self.proxy_open:
                     meth(r, proxy, type))
         if proxy_bypass is None:
             proxy_bypass = urllib_proxy_bypass
