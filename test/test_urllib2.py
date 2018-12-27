@@ -4,7 +4,6 @@ This is urllib2's tests (most of which came from mechanize originally), plus
 some extra tests added, and modifications from bug fixes and feature additions
 to mechanize.
 """
-
 # TODO:
 # Request
 # CacheFTPHandler (hard to write)
@@ -31,7 +30,7 @@ import mechanize._sockettimeout as _sockettimeout
 import mechanize._testcase
 import mechanize._urllib2_fork
 from mechanize._mechanize import sanepathname2url
-from mechanize.polyglot import HTTPMessage, iteritems
+from mechanize.polyglot import HTTPMessage, iteritems, StringIO
 
 # from logging import getLogger, DEBUG
 # l = getLogger("mechanize")
@@ -291,7 +290,7 @@ def http_message(mapping):
     for kv in iteritems(mapping):
         f.append("%s: %s" % kv)
     f.append("")
-    msg = HTTPMessage(BytesIO("\r\n".join(f)))
+    msg = HTTPMessage(StringIO("\r\n".join(f)))
     return msg
 
 
@@ -1709,7 +1708,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         self.assertEqual(len(http_handler.requests), 2)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
         userpass = '%s:%s' % (user, password)
-        auth_hdr_value = 'Basic ' + base64.encodestring(userpass).strip()
+        auth_hdr_value = 'Basic %s' % base64.encodebytes(userpass.encode()).strip()
         self.assertEqual(http_handler.requests[1].get_header(auth_header),
                          auth_hdr_value)
 

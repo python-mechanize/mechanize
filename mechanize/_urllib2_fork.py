@@ -66,16 +66,20 @@ def sha1_digest(bytes):
 def md5_digest(bytes):
     return hashlib.md5(bytes).hexdigest()
 
-
-if platform.python_implementation() == 'PyPy':
-    def create_readline_wrapper(fh):
-        if not hasattr(fh, '_drop'):
-            fh._drop = lambda: None
-            fh._reuse = lambda: None
-        return socket._fileobject(fh, close=True)
+if is_py2:
+    if platform.python_implementation() == 'PyPy':
+        def create_readline_wrapper(fh):
+            if not hasattr(fh, '_drop'):
+                fh._drop = lambda: None
+                fh._reuse = lambda: None
+            return socket._fileobject(fh, close=True)
+    else:
+        def create_readline_wrapper(fh):
+            return socket._fileobject(fh, close=True)
 else:
     def create_readline_wrapper(fh):
-        return socket._fileobject(fh, close=True)
+        from socket import SocketIO
+        return SocketIO(fh, 'r')
 
 
 splithost = urllib_splithost
@@ -120,6 +124,23 @@ def request_host(request):
     return host.lower()
 
 
+def request_port(url):
+    """Return port
+    """
+    url = urlparse(url)
+    port = url.port
+    if not port:
+        if url.scheme == 'http':
+            port = 80
+        elif url.scheme == 'https':
+            port = 443
+        else:
+            port = 80
+    return port
+
+
+
+
 class Request:
 
     def __init__(self, url, data=None, headers={},
@@ -129,8 +150,8 @@ class Request:
         self.type = None
         self._method = method and str(method)
         # self.__r_type is what's left after doing the splittype
-        self.host = None
-        self.port = None
+        self.host = request_host(self)
+        self.port = request_port(url)
         self._tunnel_host = None
         self.data = data
         self.headers = {}
@@ -824,7 +845,7 @@ class AbstractBasicAuthHandler:
         user, pw = self.passwd.find_user_password(realm, host)
         if pw is not None:
             raw = "%s:%s" % (user, pw)
-            auth = 'Basic %s' % base64.b64encode(raw).strip()
+            auth = 'Basic %s' % base64.b64encode(raw.encode()).strip()
             if req.headers.get(self.auth_header, None) == auth:
                 return None
             newreq = copy.copy(req)

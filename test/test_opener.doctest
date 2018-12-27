@@ -1,15 +1,14 @@
->>> import StringIO
->>> from mechanize import _opener, HTTPError
+>>> from mechanize import _opener, HTTPError, polyglot
 
 Normal case.  Response goes through hook function and is returned.
 
 >>> def urlopen(fullurl, data=None, timeout=None):
-...     print "fullurl %r" % fullurl
-...     print "data %r" % data
+...     print("fullurl %r" % fullurl)
+...     print("data %r" % data)
 ...     return "response"
 >>> def response_hook(response):
-...     print "response %r" % response
-...     return "processed response"
+...     print("response %r" % response)
+...     return("processed response")
 >>> _opener.wrapped_open(urlopen, response_hook,
 ...                      "http://example.com", "data"
 ...                      )
@@ -23,19 +22,19 @@ Raised HTTPError exceptions still go through the response hook but
 the result is raised rather than returned.
 
 >>> def urlopen(fullurl, data=None, timeout=None):
-...     print "fullurl %r" % fullurl
-...     print "data %r" % data
+...     print("fullurl %r" % fullurl)
+...     print("data %r" % data)
 ...     raise HTTPError(
-...         "http://example.com", 200, "OK", {}, StringIO.StringIO())
+...         "http://example.com", 200, "OK", {}, polyglot.StringIO())
 >>> def response_hook(response):
-...     print "response class", response.__class__.__name__
+...     print("response class", response.__class__.__name__)
 ...     return Exception("processed response")
 >>> try:
 ...     _opener.wrapped_open(urlopen, response_hook,
 ...                          "http://example.com", "data"
 ...                          )
 ... except Exception as exc:
-...     print exc
+...     print(exc)
 fullurl 'http://example.com'
 data 'data'
 response class HTTPError
@@ -44,15 +43,15 @@ processed response
 Other exceptions get ignored, since they're not response objects.
 
 >>> def urlopen(fullurl, data=None, timeout=None):
-...     print "fullurl %r" % fullurl
-...     print "data %r" % data
+...     print("fullurl %r" % fullurl)
+...     print("data %r" % data)
 ...     raise Exception("not caught")
 >>> try:
 ...     _opener.wrapped_open(urlopen, response_hook,
 ...                          "http://example.com", "data"
 ...                          )
 ... except Exception as exc:
-...     print exc
+...     print(exc)
 fullurl 'http://example.com'
 data 'data'
 not caught

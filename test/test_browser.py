@@ -220,7 +220,7 @@ class BrowserTests(TestCase):
              "Content-Type: text/html; charset=KOI8-R\r\n\r\n", "UTF-8"),
         ]:
             msg = mime_message(s)
-            r = addinfourl("", msg, "http://www.example.com/")
+            r = addinfourl(StringIO(""), msg, "http://www.example.com/")
             b.set_response(r)
             self.assertEqual(b.encoding(), ct)
 

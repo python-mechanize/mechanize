@@ -48,7 +48,7 @@ def len_of_seekable(file_):
 # http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/436834
 # from ipdbc import ContractBase
 # class seek_wrapper(ContractBase):
-class seek_wrapper:
+class seek_wrapper(object):
     """Adds a seek method to a file object.
 
     This is only designed for seeking on readonly file-like objects.
@@ -298,7 +298,7 @@ class response_seek_wrapper(seek_wrapper):
         self.seek(0)
         self.read()
         self.close()
-        cache = self._seek_wrapper__cache = BytesIO()
+        cache = self._seek_wrapper__cache = StringIO()
         cache.write(data)
         self.seek(0)
 

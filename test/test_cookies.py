@@ -141,8 +141,7 @@ class CookieJarInterfaceTests(unittest.TestCase):
                           "foo=bar; port=443; secure")
         request = MockRequest()
         jar.add_cookie_header(request)
-        expect_called = attribute_names(MockRequest) - set(
-            ["port", "get_header", "header_items", "log_called"])
+        expect_called = attribute_names(MockRequest) - {"port", "get_header", "header_items", "log_called"}
         self.assertEqual(request.called, expect_called)
         self.assertEqual(request.added_headers, [("Cookie", "foo=bar")])
 

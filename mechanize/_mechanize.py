@@ -19,7 +19,7 @@ from ._clientcookie import Cookie
 from ._headersutil import normalize_header_name
 from ._html import Factory
 from ._useragent import UserAgentBase
-from .polyglot import pathname2url, HTTPError, is_string, iteritems
+from .polyglot import pathname2url, HTTPError, is_string, iteritems, addinfourl
 
 
 class BrowserStateError(Exception):
@@ -351,7 +351,7 @@ class Browser(UserAgentBase):
         if not (response is None or
                 (hasattr(response, "info") and hasattr(response, "geturl") and
                  hasattr(response, "read"))):
-            raise ValueError("not a response object")
+            raise ValueError("not a response object: %s" % type(response))
 
         self.form = None
         if response is not None:

@@ -258,13 +258,13 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
                 return None, headers
                 # return urllib.url2pathname(req.get_selector()), headers
             if filename:
-                tfp = open(filename, 'wb')
+                tfp = open(filename, 'w')
             else:
                 path = _rfc3986.urlsplit(req.get_full_url())[2]
                 suffix = os.path.splitext(path)[1]
                 fd, filename = tempfile.mkstemp(suffix)
                 self._tempfiles.append(filename)
-                tfp = os.fdopen(fd, 'wb')
+                tfp = os.fdopen(fd, 'w')
             try:
                 result = filename, headers
                 bs = self.BLOCK_SIZE

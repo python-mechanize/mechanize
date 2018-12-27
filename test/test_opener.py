@@ -179,7 +179,8 @@ class OpenerTests(unittest.TestCase):
         try:
             self.assertEqual(filename, tfn)
             self.assertEqual(headers["foo"], 'Bar')
-            self.assertEqual(open(filename, "rb").read(), op.data)
+            with open(filename, 'r') as f:
+                self.assertEqual(f.read(), op.data)
             self.assertEqual(len(op.calls), 1)
             self.assertEqual(verif.count, math.ceil(op.nr_blocks) + 1)
             op.close()
@@ -198,7 +199,8 @@ class OpenerTests(unittest.TestCase):
         filename, headers = op.retrieve(url, reporthook=verif.callback)
         self.assertNotEqual(filename, tfn)  # (some temp filename instead)
         self.assertEqual(headers["foo"], 'Bar')
-        self.assertEqual(open(filename, "rb").read(), op.data)
+        with open(filename, 'r') as f:
+            self.assertEqual(f.read(), op.data)
         self.assertEqual(len(op.calls), 1)
         # .close()ing the opener removes temporary files
         self.assertTrue(os.path.exists(filename))
@@ -212,7 +214,7 @@ class OpenerTests(unittest.TestCase):
         verif = CallbackVerifier(self, -1, op.block_size)
         tifn = "input_for_" + tfn
         try:
-            f = open(tifn, 'wb')
+            f = open(tifn, 'w')
             try:
                 f.write(op.data)
             finally:
@@ -221,7 +223,8 @@ class OpenerTests(unittest.TestCase):
             filename, headers = op.retrieve(url, reporthook=verif.callback)
             self.assertEqual(filename, None)  # this may change
             self.assertEqual(headers["foo"], 'Bar')
-            self.assertEqual(open(tifn, "rb").read(), op.data)
+            with open(tifn, 'r') as f:
+                self.assertEqual(f.read(), op.data)
             # no .read()s took place, since we already have the disk file,
             # and we weren't asked to write it to another filename
             self.assertEqual(verif.count, 0)
@@ -237,7 +240,7 @@ class OpenerTests(unittest.TestCase):
         verif = CallbackVerifier(self, -1, op.block_size)
         tifn = "input_for_" + tfn
         try:
-            f = open(tifn, 'wb')
+            f = open(tifn, 'w')
             try:
                 f.write(op.data)
             finally:
@@ -248,7 +251,8 @@ class OpenerTests(unittest.TestCase):
                     url, tfn, reporthook=verif.callback)
                 self.assertEqual(filename, tfn)
                 self.assertEqual(headers["foo"], 'Bar')
-                self.assertEqual(open(tifn, "rb").read(), op.data)
+                with open(tifn, 'r') as f:
+                    self.assertEqual(f.read(), op.data)
                 self.assertEqual(verif.count, math.ceil(op.nr_blocks) + 1)
                 op.close()
                 # .close()ing the opener does NOT remove non-temporary files
@@ -272,7 +276,8 @@ class OpenerTests(unittest.TestCase):
                 self.assertEqual(headers["foo"], 'Bar')
                 # We still read and wrote to disk everything available, despite
                 # the exception.
-                self.assertEqual(open(filename, "rb").read(), op.data)
+                with open(filename, 'r') as f:
+                    self.assertEqual(f.read(), op.data)
                 self.assertEqual(len(op.calls), 1)
                 self.assertEqual(verif.count, math.ceil(op.nr_blocks) + 1)
                 # cleanup should still take place

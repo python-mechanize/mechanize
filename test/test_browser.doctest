@@ -17,18 +17,18 @@ Opening a new response should close the old one.
 
 >>> br = TestHttpBrowser()
 >>> r = br.open("http://example.com")
->>> print response_impl(r)
+>>> print(response_impl(r))
 BytesIO
 >>> r2 = br.open("http://example.com")
->>> print response_impl(r2)
+>>> print(response_impl(r2))
 BytesIO
->>> print response_impl(r)
+>>> print(response_impl(r))
 eofresponse
 
 So should .set_response()
 
 >>> br.set_response(test_response())
->>> print response_impl(r2)
+>>> print(response_impl(r2))
 eofresponse
 
 
@@ -37,10 +37,10 @@ eofresponse
 >>> br = TestHttpBrowser()
 >>> r = br.open("http://example.com")
 >>> r2 = test_response(url="http://example.com/2")
->>> print response_impl(r2)
+>>> print(response_impl(r2))
 BytesIO
 >>> br.visit_response(r2)
->>> print response_impl(r)
+>>> print(response_impl(r))
 eofresponse
 >>> br.geturl() == br.request.get_full_url() == "http://example.com/2"
 True
@@ -174,7 +174,7 @@ True
 >>> test_state(br)
 True
 >>> req = Request("http://example.com")
->>> print req.visit
+>>> print(req.visit)
 None
 >>> r = br.open_novisit(req)
 >>> test_state(br)
