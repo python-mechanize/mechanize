@@ -147,12 +147,14 @@ def content_parser(data,
         from html5_parser import parse
     except ImportError:
         from html5lib import parse
-        if not is_py2:
-            transport_encoding = default_encoding
+        if is_py2:
+            return parse(
+                data,
+                transport_encoding=transport_encoding,
+                namespaceHTMLElements=False)
         return parse(
-            data,
-            transport_encoding=transport_encoding,
-            namespaceHTMLElements=False)
+                data,
+                namespaceHTMLElements=False)
     else:
         return parse(data, transport_encoding=transport_encoding)
 
