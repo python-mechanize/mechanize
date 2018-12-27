@@ -124,10 +124,10 @@ def request_host(request):
     return host.lower()
 
 
-def request_port(url):
+def request_port(request):
     """Return port
     """
-    url = urlparse(url)
+    url = urlparse(request.get_host())
     port = url.port
     if not port:
         if url.scheme == 'http':
@@ -150,8 +150,8 @@ class Request:
         self.type = None
         self._method = method and str(method)
         # self.__r_type is what's left after doing the splittype
-        self.host = request_host(self)
-        self.port = request_port(url)
+        self.host = None
+        self.port = request_port(self)
         self._tunnel_host = None
         self.data = data
         self.headers = {}

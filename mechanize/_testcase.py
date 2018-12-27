@@ -101,6 +101,11 @@ class FixtureFactory(object):
 
 
 class TestCase(unittest.TestCase):
+
+    def __init__(self, *args, **kwargs):
+        unittest.TestCase.__init__(self, *args, **kwargs)
+        self.fixture_factory = FixtureFactory()
+
     def setUp(self):
         self._setup_stack = SetupStack()
         self._monkey_patcher = MonkeyPatcher(self._setup_stack)

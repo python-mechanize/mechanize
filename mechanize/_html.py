@@ -8,7 +8,7 @@ from ._form import parse_forms
 from ._headersutil import is_html as _is_html
 from ._headersutil import split_header_words
 from ._rfc3986 import clean_url, urljoin
-from .polyglot import is_string
+from .polyglot import is_string, is_py2
 
 DEFAULT_ENCODING = "utf-8"
 
@@ -147,6 +147,8 @@ def content_parser(data,
         from html5_parser import parse
     except ImportError:
         from html5lib import parse
+        if not is_py2:
+            transport_encoding = default_encoding
         return parse(
             data,
             transport_encoding=transport_encoding,

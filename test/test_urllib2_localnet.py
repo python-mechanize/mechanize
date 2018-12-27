@@ -336,6 +336,8 @@ class RecordingHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         body = self.send_head()
         if body:
+            if isinstance(body, str):
+                body = body.encode()
             self.wfile.write(body)
 
     def do_POST(self):

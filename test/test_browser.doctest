@@ -1,5 +1,6 @@
 >>> import mechanize
 >>> from mechanize._response import test_response
+>>> from mechanize.polygrolt import StringIO
 >>> from test_browser import TestBrowser2, make_mock_handler
 
 
@@ -69,13 +70,12 @@ True
 
 Warn early about some mistakes setting a response object
 
->>> import StringIO
 >>> br = TestBrowser2()
 >>> br.set_response("blah")
 Traceback (most recent call last):
 ...
 ValueError: not a response object
->>> br.set_response(StringIO.StringIO())
+>>> br.set_response(StringIO())
 Traceback (most recent call last):
 ...
 ValueError: not a response object
