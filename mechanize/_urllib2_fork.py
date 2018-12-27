@@ -283,7 +283,7 @@ class Request:
         return list(iteritems(hdrs))
 
 
-class OpenerDirector:
+class OpenerDirector(object):
 
     def __init__(self):
         client_version = "Python-urllib/%s" % __version__
@@ -1370,15 +1370,15 @@ class FileHandler(BaseHandler):
             size = stats.st_size
             modified = emailutils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(file)[0]
-            headers = mime_message(StringIO(
+            headers = mime_message(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
-                (mtype or 'text/plain', size, modified)))
+                (mtype or 'text/plain', size, modified))
             if host:
                 host, port = splitport(host)
             if not host or (
                     not port and socket.gethostbyname(host) in self.get_names()
             ):
-                return addinfourl(open(localfile, 'rb'),
+                return addinfourl(open(localfile, 'r'),
                                   headers, 'file:' + file)
         except OSError as msg:
             # urllib2 users shouldn't expect OSErrors coming from urlopen()

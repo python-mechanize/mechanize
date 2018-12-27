@@ -396,8 +396,9 @@ class TestProgram(unittest.TestProgram):
             name = os.path.basename(name).rpartition('.')[0]
             self.test.addTest(
                 doctest.DocTestSuite('mechanize.' + name, test_finder=finder))
-        self.test.addTest(doctest.DocFileSuite(
-            *glob.glob('test/*.doctest'), module_relative=False))
+        # TODO: Enable again doctests
+        # self.test.addTest(doctest.DocFileSuite(
+        #     *glob.glob('test/*.doctest'), module_relative=False))
 
     def _vanilla_unittest_main(self, options):
         if len(options.test_names) == 0 and self.defaultTest is None:

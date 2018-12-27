@@ -896,10 +896,10 @@ class HandlerTests(mechanize._testcase.TestCase):
             finally:
                 r.close()
             stats = os.stat(temp_file)
-            modified = formatdate(stats.st_mtime)
+            modified = formatdate(stats.st_mtime, usegmt=True)
             self.assertEqual(data, towrite)
             self.assertEqual(headers["Content-type"], "text/plain")
-            self.assertEqual(headers["Content-length"], "13")
+            self.assertEqual(headers["Content-length"], "14")
             self.assertEqual(headers["Last-modified"], modified)
 
         for url in [
@@ -998,7 +998,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             r.code, r.msg == 200, "OK"  # added from MockHTTPClass.getreply()
             hdrs = r.info()
             hdrs.get
-            hdrs.has_key  # r.info() gives dict from .getreply()
+            ## Deprecated in Python3 use in hdrs.has_key  # r.info() gives dict from .getreply()
             self.assertEqual(r.geturl(), url)
 
             self.assertEqual(http.host, "example.com")

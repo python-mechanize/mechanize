@@ -267,7 +267,7 @@ BrowserStateError: not viewing any document
 'a'
 >>> len(list(br.forms()))
 1
->>> str(iter(br.forms()).next().find_control(nr=0).name)
+>>> str(next(iter(br.forms())).find_control(nr=0).name)
 'b'
 
 
