@@ -3340,12 +3340,12 @@ class UploadTests(_testcase.TestCase):  # {{{
         form = self.make_form()
         form["user"] = "john"
         data_control = form.find_control("data")
-        data = "blah\nbaz\n"
+        data = b"blah\nbaz\n"
         data_control.add_file(BytesIO(data), filename="afilename")
         req = form.click()
         self.assertTrue(
-            get_header(req, "Content-type").startswith(
-                "multipart/form-data; boundary="))
+            get_header(req, b"Content-type").startswith(
+                b"multipart/form-data; boundary="))
 
         # ...and check the resulting request is understood by cgi module
         fs = cgi.FieldStorage(
@@ -3363,8 +3363,8 @@ class UploadTests(_testcase.TestCase):  # {{{
         form = self.make_form()
         form["user"] = "john"
         data_control = form.find_control("data")
-        data = "blah\nbaz\n"
-        data_control.add_file(BytesIO(data), filename="filenamea")
+        data = b"blah\nbaz\n"
+        data_control.add_file(BytesIO(data), filename=b"filenamea")
         more_data = "rhubarb\nrhubarb\n"
         data_control.add_file(BytesIO(more_data))
         yet_more_data = "rheum\nrhaponicum\n"
@@ -3396,7 +3396,7 @@ class UploadTests(_testcase.TestCase):  # {{{
     def test_upload_data(self):
         form = self.make_form()
         data = form.click().get_data()
-        self.assertTrue(data.startswith("--"))
+        self.assertTrue(data.startswith(b"--"))
 
     def test_empty_upload(self):
         # no controls except for INPUT/SUBMIT

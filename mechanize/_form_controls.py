@@ -158,20 +158,20 @@ class MimeWriter:
         """
         prefix is ignored if add_to_http_hdrs is true.
         """
-        lines = value.split("\r\n")
+        lines = value.split(b"\r\n")
         while lines and not lines[-1]:
             del lines[-1]
         while lines and not lines[0]:
             del lines[0]
         if add_to_http_hdrs:
-            value = "".join(lines)
+            value = b"".join(lines)
             # 2.2 urllib2 doesn't normalize header case
             self._http_hdrs.append((key.capitalize(), value))
         else:
             for i in range(1, len(lines)):
                 lines[i] = "    " + lines[i].strip()
-            value = "\r\n".join(lines) + "\r\n"
-            line = key.title() + ": " + value
+            value = b"\r\n".join(lines) + b"\r\n"
+            line = "{}: {}".format(key.title(), value).encode('utf-8')
             if prefix:
                 self._headers.insert(0, line)
             else:
@@ -194,13 +194,13 @@ class MimeWriter:
             for name, value in plist:
                 ctype = ctype + ';\r\n %s=%s' % (name, value)
             self.addheader(
-                "Content-Type",
-                ctype,
+                b"Content-Type",
+                ctype.encode('utf-8'),
                 prefix=prefix,
                 add_to_http_hdrs=add_to_http_hdrs)
         self.flushheaders()
         if not add_to_http_hdrs:
-            self._fp.write("\r\n")
+            self._fp.write(b"\r\n")
         self._first_part = True
         return self._fp
 
@@ -224,15 +224,15 @@ class MimeWriter:
         if self._first_part:
             self._first_part = False
         else:
-            self._fp.write("\r\n")
-        self._fp.write("--" + boundary + "\r\n")
+            self._fp.write(b"\r\n")
+        self._fp.write(("--" + boundary + "\r\n").encode('UTF-8'))
         return self.__class__(self._fp)
 
     def lastpart(self):
         if self._first_part:
             self.nextpart()
         boundary = self._boundary.pop()
-        self._fp.write("\r\n--" + boundary + "--\r\n")
+        self._fp.write(("\r\n--" + boundary + "--\r\n").encode('UTF-8'))
 
 
 class Label:
@@ -352,7 +352,7 @@ class Control:
         """Write data for a subitem of this control to a MimeWriter."""
         # called by HTMLForm
         mw2 = mw.nextpart()
-        mw2.addheader("Content-Disposition", 'form-data; name="%s"' % name, 1)
+        mw2.addheader(b"Content-Disposition", 'form-data; name="{}"'.format(name).encode('utf-8'), 1)
         f = mw2.startbody(prefix=0)
         f.write(value)
 
@@ -544,23 +544,24 @@ class FileControl(ScalarControl):
                     filename = ""
             mw2 = mw.nextpart()
             fn_part = '; filename="%s"' % filename
-            disp = 'form-data; name="%s"%s' % (self.name, fn_part)
-            mw2.addheader("Content-Disposition", disp, prefix=1)
+            disp = 'form-data; name="{}"{}'.format(self.name, fn_part).encode('utf-8')
+            mw2.addheader(b"Content-Disposition", disp, prefix=1)
             fh = mw2.startbody(content_type, prefix=0)
+            file_object.read()
             fh.write(file_object.read())
         else:
             # multiple files
             mw2 = mw.nextpart()
-            disp = 'form-data; name="%s"' % self.name
-            mw2.addheader("Content-Disposition", disp, prefix=1)
+            disp = 'form-data; name="{}"'.format(self.name).encode('utf-8')
+            mw2.addheader(b"Content-Disposition", disp, prefix=1)
             fh = mw2.startmultipartbody("mixed", prefix=0)
             for file_object, content_type, filename in self._upload_data:
                 mw3 = mw2.nextpart()
                 if filename is None:
                     filename = ""
                 fn_part = '; filename="%s"' % filename
-                disp = "file%s" % fn_part
-                mw3.addheader("Content-Disposition", disp, prefix=1)
+                disp = "file%s".format(fn_part).encode('utf-8')
+                mw3.addheader(b"Content-Disposition", disp, prefix=1)
                 fh2 = mw3.startbody(content_type, prefix=0)
                 fh2.write(file_object.read())
             mw2.lastpart()
@@ -2479,7 +2480,7 @@ class HTMLForm:
         for control_index in range(len(self.controls)):
             control = self.controls[control_index]
             for ii, key, val in control._totally_ordered_pairs():
-                pairs.append((ii, key, val, control_index))
+                pairs.append((ii, key.encode('utf-8'), val.encode('utf-8'), control_index))
 
         # stable sort by ONLY first item in tuple
         pairs.sort()
@@ -2516,13 +2517,13 @@ class HTMLForm:
                 return (uri, encode_query(),
                         [("Content-Type", self.enctype)])
             elif self.enctype == "multipart/form-data":
-                data = StringIO()
+                data = BytesIO()
                 http_hdrs = []
                 mw = MimeWriter(data, http_hdrs)
                 mw.startmultipartbody(
                     "form-data", add_to_http_hdrs=True, prefix=0)
                 for ii, k, v, control_index in self._pairs_and_controls():
-                    self.controls[control_index]._write_mime_data(mw, as_utf8(k), as_utf8(v))
+                    self.controls[control_index]._write_mime_data(mw, k, v)
                 mw.lastpart()
                 return uri, data.getvalue(), http_hdrs
             else:

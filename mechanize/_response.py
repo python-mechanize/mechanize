@@ -81,7 +81,7 @@ class seek_wrapper(object):
         self.__read_complete_state = [False]
         self.__is_closed_state = [False]
         self.__have_readline = hasattr(self.wrapped, "readline")
-        self.__cache = StringIO()
+        self.__cache = BytesIO()
         self.__pos = 0  # seek position
 
     def invariant(self):
@@ -196,14 +196,14 @@ class seek_wrapper(object):
         self.__cache.seek(0, 2)
         if size == -1:
             read_info = self.wrapped.read()
-            if not isinstance(read_info,str):
-                read_info = read_info.decode('utf-8')
+            #if not isinstance(read_info, str):
+            #    read_info = read_info.decode('utf-8')
             self.__cache.write(read_info)
             self.read_complete = True
         else:
             to_read = size - available
             assert to_read > 0
-            data = self.wrapped.read(to_read)
+            data = self.wrapped.read(to_read).encode('utf-8')
             if not data:
                 self.read_complete = True
             else:

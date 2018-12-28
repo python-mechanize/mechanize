@@ -261,13 +261,15 @@ uppercase_headers = {'WWW', 'TE'}
 
 
 def normalize_header_name(name):
-    parts = [x.capitalize() for x in name.split('-')]
+    if isinstance(name, str):
+        name = name.encode('utf-8')
+    parts = [x.capitalize() for x in name.split(b'-')]
     q = parts[0].upper()
     if q in uppercase_headers:
         parts[0] = q
     if len(parts) == 3 and parts[1] == 'Websocket':
         parts[1] = 'WebSocket'
-    return '-'.join(parts)
+    return b'-'.join(parts)
 
 
 def _test():
