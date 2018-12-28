@@ -7,6 +7,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import sys
 from email import message_from_string as mime_message
+from six import string_types
 
 is_py2 = sys.version_info.major < 3
 

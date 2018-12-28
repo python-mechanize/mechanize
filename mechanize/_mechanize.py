@@ -13,13 +13,12 @@ from __future__ import absolute_import
 import copy
 import os
 import re
-
 from . import _request, _response, _rfc3986, _sockettimeout, _urllib2_fork
 from ._clientcookie import Cookie
 from ._headersutil import normalize_header_name
 from ._html import Factory
 from ._useragent import UserAgentBase
-from .polyglot import pathname2url, HTTPError, is_string, iteritems, addinfourl
+from .polyglot import pathname2url, HTTPError, is_string, iteritems, string_types
 
 
 class BrowserStateError(Exception):
@@ -261,6 +260,9 @@ class Browser(UserAgentBase):
         try:
             url.get_full_url
         except AttributeError:
+            #Convert to byte the first input if string
+            if isinstance(url, string_types):
+                url = url.encode('utf-8')
             # string URL -- convert to absolute URL if required
             scheme, authority = _rfc3986.urlsplit(url)[:2]
             if scheme is None:

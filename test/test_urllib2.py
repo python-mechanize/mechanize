@@ -296,7 +296,7 @@ def http_message(mapping):
 
 class MockResponse(BytesIO):
     def __init__(self, code, msg, headers, data, url=None):
-        BytesIO.__init__(self, bytes(data, 'utf-8'))
+        BytesIO.__init__(self, data.encode('utf-8'))
         self.code, self.msg, self.headers, self.url = code, msg, headers, url
 
     def info(self):
