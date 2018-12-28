@@ -29,14 +29,16 @@ class LoopbackHttpServer(HTTPServer):
     """
 
     def __init__(self, server_address, RequestHandlerClass):
-        HTTPServer.__init__(self, server_address, RequestHandlerClass)
+        HTTPServer.__init__(self,
+                                        server_address,
+                                        RequestHandlerClass)
 
         # Set the timeout of our listening socket really low so
         # that we can stop the server easily.
-        self.socket.settimeout(1.0)
+        self.socket.settimeout(0.1)
 
     def get_request(self):
-        """BaseHTTPServer method, overridden."""
+        """HTTPServer method, overridden."""
 
         request, client_address = self.socket.accept()
 
@@ -51,17 +53,27 @@ class LoopbackHttpServer(HTTPServer):
 class LoopbackHttpServerThread(threading.Thread):
     """Stoppable thread that runs a loopback http server."""
 
-    def __init__(self, handle_request=None):
+    def __init__(self, request_handler):
         threading.Thread.__init__(self)
-        self._stop = False
+        self._stop_server = False
         self.ready = threading.Event()
-        self._request_handler = None
-        if handle_request is None:
-            handle_request = self._handle_request
-        self.httpd = LoopbackHttpServer(('127.0.0.1', 0), handle_request)
-        # print "Serving HTTP on %s port %s" % (self.httpd.server_name,
-        #                                      self.httpd.server_port)
+        request_handler.protocol_version = "HTTP/1.0"
+        self.httpd = LoopbackHttpServer(("127.0.0.1", 0),
+                                        request_handler)
         self.port = self.httpd.server_port
+
+    def stop(self):
+        """Stops the webserver if it's currently running."""
+
+        self._stop_server = True
+
+        self.join()
+        self.httpd.server_close()
+
+    def run(self):
+        self.ready.set()
+        while not self._stop_server:
+            self.httpd.handle_request()
 
     def set_request_handler(self, request_handler):
         self._request_handler = request_handler
@@ -69,19 +81,6 @@ class LoopbackHttpServerThread(threading.Thread):
     def _handle_request(self, *args, **kwds):
         self._request_handler.handle_request(*args, **kwds)
         return self._request_handler
-
-    def stop(self):
-        """Stops the webserver if it's currently running."""
-
-        # Set the stop flag.
-        self._stop = True
-
-        self.join()
-
-    def run(self):
-        self.ready.set()
-        while not self._stop:
-            self.httpd.handle_request()
 
 # Authentication infrastructure
 

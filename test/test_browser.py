@@ -13,7 +13,7 @@ import mechanize._testcase
 from mechanize._gzip import HTTPGzipProcessor, compress_readable_output
 from mechanize._response import test_html_response
 from mechanize.polyglot import (
-        HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type, mime_message,StringIO)
+        HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type, mime_message, StringIO, bytes)
 
 from six import string_types
 

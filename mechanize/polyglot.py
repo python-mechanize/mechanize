@@ -6,6 +6,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import sys
+from email import message_from_string as mime_message
 
 is_py2 = sys.version_info.major < 3
 
@@ -28,9 +29,9 @@ if is_py2:
             eff_request_host, escape_path, is_HDN, lwp_cookie_str, reach,
             request_path, request_port, user_domain_match, Cookie, CookieJar,
             MozillaCookieJar, request_host)
-    from cStringIO import StringIO
+    from StringIO import StringIO
     from future_builtins import map  # noqa
-    from mimetools import Message as mime_message
+    from builtins import bytes
     def is_string(x):
         return isinstance(x, basestring)
 
