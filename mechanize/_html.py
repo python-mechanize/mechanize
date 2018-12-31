@@ -80,7 +80,7 @@ class ResponseTypeFinder:
         self._allow_xhtml = allow_xhtml
 
     def is_html(self, response, encoding):
-        ct_hdrs = response.info().get("content-type", {}).encode('utf-8')
+        ct_hdrs = response.info().get("Content-Type", {})
         url = response.geturl()
         # XXX encoding
         return _is_html(ct_hdrs, url, self._allow_xhtml)

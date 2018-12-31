@@ -99,10 +99,10 @@ class MechanizeRobotFileParser(RobotFileParser):
                          (self.url, exc))
             return
         lines = []
-        line = f.readline()
+        line = f.readline().decode('utf-8')
         while line:
             lines.append(line.strip())
-            line = f.readline()
+            line = f.readline().decode('utf-8')
         status = f.code
         if status == 401 or status == 403:
             self.disallow_all = True
@@ -137,11 +137,11 @@ class HTTPRobotRulesProcessor(BaseHandler):
 
     def http_request(self, request):
         scheme = request.get_type()
-        if scheme not in [b"http", b"https"]:
+        if scheme not in ["http", "https"]:
             # robots exclusion only applies to HTTP
             return request
 
-        if request.get_selector() == "/robots.txt":
+        if request.get_selector() == b"/robots.txt":
             # /robots.txt is always OK to fetch
             return request
 

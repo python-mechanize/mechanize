@@ -185,7 +185,7 @@ def join_header_words(lists):
             attr.append(k)
         if attr:
             headers.append(b"; ".join(attr))
-    return ", ".join(headers)
+    return b", ".join(headers)
 
 
 def strip_quotes(text):

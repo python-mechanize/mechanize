@@ -78,8 +78,12 @@ if is_py2:
             return socket._fileobject(fh, close=True)
 else:
     def create_readline_wrapper(fh):
-        from socket import SocketIO
-        return SocketIO(fh, 'r')
+        # Ugly hack to create the wrapper in python3
+        import codecs
+        import io
+        reader = codecs.getreader("utf-8")
+        return io.BytesIO(reader(fh).read().encode('utf-8'))
+
 
 
 splithost = urllib_splithost
@@ -1161,7 +1165,7 @@ class AbstractHTTPHandler(BaseHandler):
         headers[b"Connection"] = b"close"
         # httplib in python 2 needs str() not unicode() for all request
         # parameters
-        headers = {str(name.title()): str(val)
+        headers = {(name.title()).decode('utf-8'): str(val)
                    for name, val in iteritems(headers)}
 
         if req._tunnel_host:
@@ -1176,7 +1180,7 @@ class AbstractHTTPHandler(BaseHandler):
             set_tunnel(req._tunnel_host, headers=tunnel_headers)
 
         try:
-            h.request(str(req.get_method()), str(req.get_selector()), req.data,
+            h.request(req.get_method(), req.get_selector().decode('utf-8'), req.data,
                       headers)
             r = h.getresponse()
         except socket.error as err:  # XXX what error?

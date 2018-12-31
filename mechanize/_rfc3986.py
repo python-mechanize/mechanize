@@ -75,6 +75,8 @@ SPLIT_MATCH = re.compile(
 
 def urlsplit(absolute_uri):
     """Return scheme, authority, path, query, fragment."""
+    if not isinstance(absolute_uri, bytes):
+        absolute_uri = absolute_uri.encode('utf-8')
     match = SPLIT_MATCH(absolute_uri)
     if match:
         g = match.groups()

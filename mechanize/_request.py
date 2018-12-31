@@ -14,7 +14,7 @@ import logging
 from . import _rfc3986
 from . import _sockettimeout
 from . import _urllib2_fork
-from .polyglot import urlencode, is_string, unicode_type, iteritems
+from .polyglot import urlencode, is_string, unicode_type, iteritems, string_types
 
 warn = logging.getLogger("mechanize").warning
 
@@ -61,6 +61,9 @@ class Request(_urllib2_fork.Request):
         # contain characters which are legal), because that might break working
         # code (who knows what bytes some servers want to see, especially with
         # browser plugins for internationalised URIs).
+        if isinstance(url, string_types):
+            url = url.encode('utf-8')
+
         if not _rfc3986.is_clean_uri(url):
             warn("url argument is not a URI "
                  "(contains illegal characters) %r" % url)
