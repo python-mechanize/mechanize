@@ -45,53 +45,53 @@ class UserAgentBase(_opener.OpenerDirector):
 
     handler_classes = {
         # scheme handlers
-        "http": _urllib2.HTTPHandler,
+        b"http": _urllib2.HTTPHandler,
         # CacheFTPHandler is buggy, at least in 2.3, so we don't use it
-        "ftp": _urllib2.FTPHandler,
-        "file": _urllib2.FileHandler,
+        b"ftp": _urllib2.FTPHandler,
+        b"file": _urllib2.FileHandler,
 
         # other handlers
-        "_unknown": _urllib2.UnknownHandler,
+        b"_unknown": _urllib2.UnknownHandler,
         # HTTP{S,}Handler depend on HTTPErrorProcessor too
-        "_http_error": _urllib2.HTTPErrorProcessor,
-        "_http_default_error": _urllib2.HTTPDefaultErrorHandler,
+        b"_http_error": _urllib2.HTTPErrorProcessor,
+        b"_http_default_error": _urllib2.HTTPDefaultErrorHandler,
 
         # feature handlers
-        "_basicauth": _urllib2.HTTPBasicAuthHandler,
-        "_digestauth": _urllib2.HTTPDigestAuthHandler,
-        "_redirect": _urllib2.HTTPRedirectHandler,
-        "_cookies": _urllib2.HTTPCookieProcessor,
-        "_refresh": _urllib2.HTTPRefreshProcessor,
-        "_equiv": _urllib2.HTTPEquivProcessor,
-        "_proxy": _urllib2.ProxyHandler,
-        "_proxy_basicauth": _urllib2.ProxyBasicAuthHandler,
-        "_proxy_digestauth": _urllib2.ProxyDigestAuthHandler,
-        "_robots": _urllib2.HTTPRobotRulesProcessor,
-        "_gzip": _gzip.HTTPGzipProcessor,
+        b"_basicauth": _urllib2.HTTPBasicAuthHandler,
+        b"_digestauth": _urllib2.HTTPDigestAuthHandler,
+        b"_redirect": _urllib2.HTTPRedirectHandler,
+        b"_cookies": _urllib2.HTTPCookieProcessor,
+        b"_refresh": _urllib2.HTTPRefreshProcessor,
+        b"_equiv": _urllib2.HTTPEquivProcessor,
+        b"_proxy": _urllib2.ProxyHandler,
+        b"_proxy_basicauth": _urllib2.ProxyBasicAuthHandler,
+        b"_proxy_digestauth": _urllib2.ProxyDigestAuthHandler,
+        b"_robots": _urllib2.HTTPRobotRulesProcessor,
+        b"_gzip": _gzip.HTTPGzipProcessor,
 
         # debug handlers
-        "_debug_redirect": _urllib2.HTTPRedirectDebugProcessor,
-        "_debug_response_body": _urllib2.HTTPResponseDebugProcessor,
+        b"_debug_redirect": _urllib2.HTTPRedirectDebugProcessor,
+        b"_debug_response_body": _urllib2.HTTPResponseDebugProcessor,
     }
 
-    default_schemes = ["http", "ftp", "file"]
-    default_others = ["_unknown", "_http_error", "_http_default_error"]
+    default_schemes = [b"http", b"ftp", b"file"]
+    default_others = [b"_unknown", b"_http_error", b"_http_default_error"]
     default_features = [
-        "_gzip",
-        "_redirect",
-        "_cookies",
-        "_refresh",
-        "_equiv",
-        "_basicauth",
-        "_digestauth",
-        "_proxy",
-        "_proxy_basicauth",
-        "_proxy_digestauth",
-        "_robots",
+        b"_gzip",
+        b"_redirect",
+        b"_cookies",
+        b"_refresh",
+        b"_equiv",
+        b"_basicauth",
+        b"_digestauth",
+        b"_proxy",
+        b"_proxy_basicauth",
+        b"_proxy_digestauth",
+        b"_robots",
     ]
     if hasattr(_urllib2, 'HTTPSHandler'):
-        handler_classes["https"] = _urllib2.HTTPSHandler
-        default_schemes.append("https")
+        handler_classes[b"https"] = _urllib2.HTTPSHandler
+        default_schemes.append(b"https")
 
     def __init__(self):
         _opener.OpenerDirector.__init__(self)
@@ -107,21 +107,21 @@ class UserAgentBase(_opener.OpenerDirector):
         # Yuck.
         # Ensure correct default constructor args were passed to
         # HTTPRefreshProcessor and HTTPEquivProcessor.
-        if "_refresh" in ua_handlers:
+        if b"_refresh" in ua_handlers:
             self.set_handle_refresh(True)
-        if "_equiv" in ua_handlers:
+        if b"_equiv" in ua_handlers:
             self.set_handle_equiv(True)
         # Ensure default password managers are installed.
         pm = ppm = None
-        if "_basicauth" in ua_handlers or "_digestauth" in ua_handlers:
+        if b"_basicauth" in ua_handlers or b"_digestauth" in ua_handlers:
             pm = _urllib2.HTTPPasswordMgrWithDefaultRealm()
-        if ("_proxy_basicauth" in ua_handlers or
-                "_proxy_digestauth" in ua_handlers):
+        if (b"_proxy_basicauth" in ua_handlers or
+                b"_proxy_digestauth" in ua_handlers):
             ppm = _auth.HTTPProxyPasswordMgr()
         self.set_password_manager(pm)
         self.set_proxy_password_manager(ppm)
         # set default certificate manager
-        if "https" in ua_handlers:
+        if b"https" in ua_handlers:
             cm = _urllib2.HTTPSClientCertMgr()
             self.set_client_cert_manager(cm)
 
@@ -232,18 +232,18 @@ class UserAgentBase(_opener.OpenerDirector):
     def set_password_manager(self, password_manager):
         """Set a mechanize.HTTPPasswordMgrWithDefaultRealm, or None."""
         self._password_manager = password_manager
-        self._set_handler("_basicauth", obj=password_manager)
-        self._set_handler("_digestauth", obj=password_manager)
+        self._set_handler(b"_basicauth", obj=password_manager)
+        self._set_handler(b"_digestauth", obj=password_manager)
 
     def set_proxy_password_manager(self, password_manager):
         """Set a mechanize.HTTPProxyPasswordMgr, or None."""
         self._proxy_password_manager = password_manager
-        self._set_handler("_proxy_basicauth", obj=password_manager)
-        self._set_handler("_proxy_digestauth", obj=password_manager)
+        self._set_handler(b"_proxy_basicauth", obj=password_manager)
+        self._set_handler(b"_proxy_digestauth", obj=password_manager)
 
     def set_client_cert_manager(self, cert_manager):
         """Set a mechanize.HTTPClientCertMgr, or None."""
-        handler = self._ua_handlers["https"]
+        handler = self._ua_handlers[b"https"]
         self._client_cert_manager = handler.client_cert_manager = cert_manager
 
     def set_ca_data(self, cafile=None, capath=None, cadata=None, context=None):
@@ -271,16 +271,16 @@ class UserAgentBase(_opener.OpenerDirector):
     # these methods all take a boolean parameter
     def set_handle_robots(self, handle):
         """Set whether to observe rules from robots.txt."""
-        self._set_handler("_robots", handle)
+        self._set_handler(b"_robots", handle)
 
     def set_handle_redirect(self, handle):
         """Set whether to handle HTTP 30x redirections."""
-        self._set_handler("_redirect", handle)
+        self._set_handler(b"_redirect", handle)
 
     def set_handle_refresh(self, handle, max_time=None, honor_time=True):
         """Set whether to handle HTTP Refresh headers."""
         self._set_handler(
-            "_refresh",
+            b"_refresh",
             handle,
             constructor_kwds={"max_time": max_time,
                               "honor_time": honor_time})
@@ -296,7 +296,7 @@ class UserAgentBase(_opener.OpenerDirector):
             constructor_kwds = {"head_parser_class": head_parser_class}
         else:
             constructor_kwds = {}
-        self._set_handler("_equiv", handle, constructor_kwds=constructor_kwds)
+        self._set_handler(b"_equiv", handle, constructor_kwds=constructor_kwds)
 
     def set_request_gzip(self, handle):
         """Add header indicating to server that we handle gzip
@@ -305,7 +305,7 @@ class UserAgentBase(_opener.OpenerDirector):
 
         """
         self._set_handler(
-            "_gzip", True, constructor_kwds={'request_gzip': bool(handle)})
+            b"_gzip", True, constructor_kwds={'request_gzip': bool(handle)})
     set_handle_gzip = set_request_gzip  # legacy
 
     def set_debug_redirects(self, handle):
@@ -338,7 +338,7 @@ class UserAgentBase(_opener.OpenerDirector):
             logger.setLevel(logging.INFO)
 
         """
-        self._set_handler("_debug_redirect", handle)
+        self._set_handler(b"_debug_redirect", handle)
 
     def set_debug_responses(self, handle):
         """Log HTTP response bodies.
@@ -349,12 +349,12 @@ class UserAgentBase(_opener.OpenerDirector):
         responses are, raised HTTPError exception responses are not).
 
         """
-        self._set_handler("_debug_response_body", handle)
+        self._set_handler(b"_debug_response_body", handle)
 
     def set_debug_http(self, handle):
         """Print HTTP headers to sys.stdout."""
         level = int(bool(handle))
-        for scheme in "http", "https":
+        for scheme in b"http", b"https":
             h = self._ua_handlers.get(scheme)
             if h is not None:
                 h.set_http_debuglevel(level)

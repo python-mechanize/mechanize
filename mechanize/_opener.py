@@ -154,7 +154,8 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
 
     def _request(self, url_or_req, data, visit,
                  timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
-        if isstringlike(url_or_req):
+        #if isstringlike(url_or_req):
+        if isinstance(url_or_req, bytes):
             req = Request(url_or_req, data, visit=visit, timeout=timeout)
         else:
             # already a mechanize.Request instance
@@ -206,6 +207,7 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
         return response
 
     def error(self, proto, *args):
+        orig_args = None
         if proto in ['http', 'https']:
             # XXX http[s] protocols are special-cased
             # https is not different than http

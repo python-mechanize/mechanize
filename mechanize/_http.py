@@ -47,7 +47,7 @@ class HTTPEquivProcessor(BaseHandler):
             response = response_seek_wrapper(response)
         http_message = response.info()
         url = response.geturl()
-        ct_hdrs = http_message.get("content-type", {})
+        ct_hdrs = http_message.get("content-type", {}).encode('utf-8')
         if is_html(ct_hdrs, url, True):
             try:
                 try:
@@ -137,7 +137,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
 
     def http_request(self, request):
         scheme = request.get_type()
-        if scheme not in ["http", "https"]:
+        if scheme not in [b"http", b"https"]:
             # robots exclusion only applies to HTTP
             return request
 
@@ -294,7 +294,7 @@ class HTTPRefreshProcessor(BaseHandler):
                 hdrs["location"] = newurl
                 # hardcoded http is NOT a bug
                 response = self.parent.error(
-                    "http", request, response,
+                    b"http", request, response,
                     "refresh", msg, hdrs)
             else:
                 debug("Refresh header ignored: %r" % refresh)

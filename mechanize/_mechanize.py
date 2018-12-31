@@ -203,13 +203,13 @@ class Browser(UserAgentBase):
             return request
         scheme = request.get_type()
         original_scheme = self.request.get_type()
-        if scheme not in ["http", "https"]:
+        if scheme not in [b"http", b"https"]:
             return request
         if not origin_request and not self.request.has_header("Referer"):
             return request
 
-        if (self._handle_referer and original_scheme in ["http", "https"] and
-                not (original_scheme == "https" and scheme != "https")):
+        if (self._handle_referer and original_scheme in [b"http", b"https"] and
+                not (original_scheme == b"https" and scheme != b"https")):
             # strip URL fragment (RFC 2616 14.36)
             parts = _rfc3986.urlsplit(self.request.get_full_url())
             parts = parts[:-1] + (None, )
@@ -305,7 +305,11 @@ class Browser(UserAgentBase):
 
         if visit:
             self._set_response(response, False)
-            response = copy.copy(self._response)
+            try:
+                response = copy.copy(self._response)
+            except TypeError:
+                # Error in python 3
+                response = self._response
         elif response is not None:
             response = _response.upgrade_response(response)
 
@@ -450,7 +454,7 @@ class Browser(UserAgentBase):
         """
         if self._response is None:
             raise BrowserStateError("not viewing any document")
-        if self.request.get_type() not in ["http", "https"]:
+        if self.request.get_type() not in [b"http", b"https"]:
             raise BrowserStateError("can't set cookie for non-HTTP/HTTPS "
                                     "transactions")
         cookiejar = self._ua_handlers["_cookies"].cookiejar

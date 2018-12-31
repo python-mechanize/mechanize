@@ -52,7 +52,10 @@ def get_encoding_from_response(response, verify=True):
     # headers may be in the response.  HTTP-EQUIV headers come last,
     # so try in order from first to last.
     if response:
-        for ct in response.info().get("content-type", {}):
+        headers = {k.lower(): v for k, v in response.info().items()}
+        ct = headers.get("Content-Type", {})
+        #for ct in response.info().get("Content-Type", {}):
+        if ct:
             for k, v in split_header_words([ct])[0]:
                 if k == "charset":
                     if not verify:
@@ -77,7 +80,7 @@ class ResponseTypeFinder:
         self._allow_xhtml = allow_xhtml
 
     def is_html(self, response, encoding):
-        ct_hdrs = response.info().get("content-type", {})
+        ct_hdrs = response.info().get("content-type", {}).encode('utf-8')
         url = response.geturl()
         # XXX encoding
         return _is_html(ct_hdrs, url, self._allow_xhtml)
@@ -236,7 +239,11 @@ class Factory:
         objects returned by mechanize.urlopen().
 
         """
-        self._response = copy.copy(response)
+        try:
+            self._response = copy.copy(response)
+        except TypeError:
+            # Python 3 error with copy
+            self._response = response
         self._current_forms = self._current_links = self._current_title = lazy
         self._current_global_form = self._root = lazy
         self.encoding = self._encoding_finder.encoding(self._response)

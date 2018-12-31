@@ -200,7 +200,7 @@ class HTTPGzipProcessor(BaseHandler):
     def http_response(self, request, response):
         # post-process response
         h = response.info()
-        enc_hdrs = h.getheaders("Content-encoding")
+        enc_hdrs = h.get("Content-encoding", ())
         for enc_hdr in enc_hdrs:
             if "gzip" in enc_hdr:
                 response._set_fp(create_gzip_decompressor(response.fp))

@@ -53,7 +53,7 @@ from .polyglot import (
         HTTPError, URLError, HTTPConnection, HTTPSConnection, urlparse,
         urlsplit, is_class, iteritems, is_string, raise_with_traceback,
         StringIO, mime_message, is_py2, addinfourl, getproxies, splitattr, splitpasswd,
-        splitport, splittype, splituser, splitvalue, unquote, unwrap, url2pathname, urllib_proxy_bypass,
+        splitport, splittype, splituser, splitvalue, unquote, url2pathname, urllib_proxy_bypass,
         urllib_splithost, ftpwrapper
 )
 if is_py2:
@@ -101,6 +101,15 @@ def urlopen(url, data=None):
 def install_opener(opener):
     global _opener
     _opener = opener
+
+
+def unwrap(url):
+    """unwrap('<URL:type://host/path>') --> 'type://host/path'."""
+    url = url.decode('utf-8').strip()
+    if url[:1] == '<' and url[-1:] == '>':
+        url = url[1:-1].strip()
+    if url[:4] == 'URL:': url = url[4:].strip()
+    return url
 
 
 # copied from cookielib.py
@@ -215,7 +224,7 @@ class Request:
 
     def get_selector(self):
         scheme, authority, path, query, fragment = _rfc3986.urlsplit(
-            self.__r_host)
+            self.__r_host.encode('utf-8'))
         if path == "":
             path = "/"  # RFC 2616, section 3.2.2
         fragment = None  # RFC 3986, section 3.5
@@ -772,8 +781,8 @@ class HTTPPasswordMgr:
             path = '/'
         host, port = splitport(authority)
         if default_port and port is None and scheme is not None:
-            dport = {"http": 80,
-                     "https": 443,
+            dport = {b"http": 80,
+                     b"https": 443,
                      }.get(scheme)
             if dport is not None:
                 authority = "%s:%d" % (host, dport)
@@ -1352,11 +1361,7 @@ class FileHandler(BaseHandler):
 
     # not entirely sure what the rules are here
     def open_local_file(self, req):
-        try:
-            import email.utils as emailutils
-        except ImportError:
-            # python 2.4
-            import email.Utils as emailutils
+        import email.utils as emailutils
         import mimetypes
         host = req.get_host()
         file = req.get_selector()

@@ -20,9 +20,9 @@ from ._util import http2time
 
 def is_html_file_extension(url, allow_xhtml):
     ext = os.path.splitext(_rfc3986.urlsplit(url)[2])[1]
-    html_exts = [".htm", ".html"]
+    html_exts = [b".htm", b".html"]
     if allow_xhtml:
-        html_exts += [".xhtml"]
+        html_exts += [b".xhtml"]
     return ext in html_exts
 
 
@@ -40,13 +40,13 @@ def is_html(ct_headers, url, allow_xhtml=False):
     first_header = headers[0]
     first_parameter = first_header[0]
     ct = first_parameter[0]
-    html_types = ["text/html"]
+    html_types = [b"text/html"]
     if allow_xhtml:
         html_types += [
-            "text/xhtml",
-            "text/xml",
-            "application/xml",
-            "application/xhtml+xml",
+            b"text/xhtml",
+            b"text/xml",
+            b"application/xml",
+            b"application/xhtml+xml",
         ]
     return ct in html_types
 
@@ -57,10 +57,10 @@ def unmatched(match):
     return match.string[:start] + match.string[end:]
 
 
-token_re = re.compile(r"^\s*([^=\s;,]+)")
-quoted_value_re = re.compile(r"^\s*=\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"")
-value_re = re.compile(r"^\s*=\s*([^\s;,]*)")
-escape_re = re.compile(r"\\(.)")
+token_re = re.compile(br"^\s*([^=\s;,]+)")
+quoted_value_re = re.compile(br"^\s*=\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"")
+value_re = re.compile(br"^\s*=\s*([^\s;,]*)")
+escape_re = re.compile(br"\\(.)")
 
 
 def split_header_words(header_values):
@@ -108,7 +108,7 @@ def split_header_words(header_values):
     [[('Basic', None), ('realm', '"foobar"')]]
 
     """
-    if type(header_values) in six.string_types:
+    if isinstance(header_values, bytes):
         header_values = [header_values]
 
     assert isinstance(header_values, list)
@@ -126,7 +126,7 @@ def split_header_words(header_values):
                 if m:  # quoted value
                     text = unmatched(m)
                     value = m.group(1)
-                    value = escape_re.sub(r"\1", value)
+                    value = escape_re.sub(br"\1", value)
                 else:
                     m = value_re.search(text)
                     if m:  # unquoted value
@@ -137,7 +137,7 @@ def split_header_words(header_values):
                         # no value, a lone token
                         value = None
                 pairs.append((name, value))
-            elif text.lstrip().startswith(","):
+            elif text.lstrip().startswith(b","):
                 # concatenated headers, as per RFC 2616 section 4.2
                 text = text.lstrip()[1:]
                 if pairs:
@@ -145,7 +145,7 @@ def split_header_words(header_values):
                 pairs = []
             else:
                 # skip junk
-                non_junk, nr_junk_chars = re.subn("^[=\s;]*", "", text)
+                non_junk, nr_junk_chars = re.subn(b"^[=\s;]*", b"", text)
                 assert nr_junk_chars > 0, (
                     "split_header_words bug: '%s', '%s', %s" %
                     (orig_text, text, pairs))
@@ -155,7 +155,7 @@ def split_header_words(header_values):
     return result
 
 
-join_escape_re = re.compile(r"([\"\\])")
+join_escape_re = re.compile(br"([\"\\])")
 
 
 def join_header_words(lists):
@@ -175,23 +175,23 @@ def join_header_words(lists):
         attr = []
         for k, v in pairs:
             if v is not None:
-                if not re.search(r"^\w+$", v):
-                    v = join_escape_re.sub(r"\\\1", v)  # escape " and \
-                    v = '"%s"' % v
+                if not re.search(br"^\w+$", v):
+                    v = join_escape_re.sub(br"\\\1", v)  # escape " and \
+                    v = b'"%s"' % v
                 if k is None:  # Netscape cookies may have no name
                     k = v
                 else:
-                    k = "%s=%s" % (k, v)
+                    k = b"%s=%s" % (k, v)
             attr.append(k)
         if attr:
-            headers.append("; ".join(attr))
+            headers.append(b"; ".join(attr))
     return ", ".join(headers)
 
 
 def strip_quotes(text):
-    if text.startswith('"'):
+    if text.startswith(b'"'):
         text = text[1:]
-    if text.endswith('"'):
+    if text.endswith(b'"'):
         text = text[:-1]
     return text
 
@@ -212,52 +212,52 @@ def parse_ns_headers(ns_headers):
 
     """
     known_attrs = (
-        "expires",
-        "domain",
-        "path",
-        "secure",
+        b"expires",
+        b"domain",
+        b"path",
+        b"secure",
         # RFC 2109 attrs (may turn up in Netscape cookies, too)
-        "version",
-        "port",
-        "max-age")
+        b"version",
+        b"port",
+        b"max-age")
 
     result = []
     for ns_header in ns_headers:
         pairs = []
         version_set = False
-        params = re.split(r";\s*", ns_header)
+        params = re.split(br";\s*", ns_header)
         for ii in range(len(params)):
             param = params[ii]
             param = param.rstrip()
-            if param == "":
+            if param == b"":
                 continue
-            if "=" not in param:
+            if b"=" not in param:
                 k, v = param, None
             else:
-                k, v = re.split(r"\s*=\s*", param, 1)
+                k, v = re.split(br"\s*=\s*", param, 1)
                 k = k.lstrip()
             if ii != 0:
                 lc = k.lower()
                 if lc in known_attrs:
                     k = lc
-                if k == "version":
+                if k == b"version":
                     # This is an RFC 2109 cookie.
                     v = strip_quotes(v)
                     version_set = True
-                if k == "expires":
+                if k == b"expires":
                     # convert expires date to seconds since epoch
                     v = http2time(strip_quotes(v))  # None if invalid
             pairs.append((k, v))
 
         if pairs:
             if not version_set:
-                pairs.append(("version", "0"))
+                pairs.append((b"version", b"0"))
             result.append(pairs)
 
     return result
 
 
-uppercase_headers = {'WWW', 'TE'}
+uppercase_headers = {b'WWW', b'TE'}
 
 
 def normalize_header_name(name):
@@ -267,8 +267,8 @@ def normalize_header_name(name):
     q = parts[0].upper()
     if q in uppercase_headers:
         parts[0] = q
-    if len(parts) == 3 and parts[1] == 'Websocket':
-        parts[1] = 'WebSocket'
+    if len(parts) == 3 and parts[1] == b'Websocket':
+        parts[1] = b'WebSocket'
     return b'-'.join(parts)
 
 

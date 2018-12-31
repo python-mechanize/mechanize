@@ -26,7 +26,7 @@ from .polyglot import quote, is_py2
 # RESERVED_URI_CHARS = "!*'();:@&=+$,/?#[]"
 # URI_CHARS = RESERVED_URI_CHARS+UNRESERVED_URI_CHARS+'%'
 # this re matches any character that's not in URI_CHARS
-BAD_URI_CHARS_RE = re.compile("[^A-Za-z0-9\-_.~!*'();:@&=+$,/?%#[\]]")
+BAD_URI_CHARS_RE = re.compile(b"[^A-Za-z0-9\-_.~!*'();:@&=+$,/?%#[\]]")
 
 
 def clean_url(url, encoding='utf-8'):
@@ -70,7 +70,7 @@ def is_clean_uri(uri):
 
 
 SPLIT_MATCH = re.compile(
-    r"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?").match
+    br"^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?").match
 
 
 def urlsplit(absolute_uri):
@@ -87,18 +87,18 @@ def urlunsplit(parts):
     append = r.append
     if scheme is not None:
         append(scheme)
-        append(":")
+        append(b":")
     if authority is not None:
-        append("//")
+        append(b"//")
         append(authority)
     append(path)
     if query is not None:
-        append("?")
+        append(b"?")
         append(query)
     if fragment is not None:
-        append("#")
+        append(b"#")
         append(fragment)
-    return "".join(r)
+    return b"".join(r)
 
 
 def urljoin(base_uri, uri_reference):

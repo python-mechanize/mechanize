@@ -563,7 +563,12 @@ def upgrade_response(response):
         if not hasattr(response, "seek"):
             response = wrapper_class(response)
         assert hasattr(response, "get_data")
-        return copy.copy(response)
+        try:
+            new_response = copy.copy(response)
+        except TypeError:
+            # Python 3.x problems with copy
+            new_response = response
+        return new_response
 
     # a urllib2 handler constructed the response, i.e. the response is an
     # urllib.addinfourl or a urllib2.HTTPError, instead of a
