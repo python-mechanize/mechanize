@@ -197,7 +197,7 @@ class UserAgentBase(_opener.OpenerDirector):
 
         """
         self._set_handler(
-            "_proxy",
+            b"_proxy",
             True,
             constructor_kwds=dict(proxies=proxies, proxy_bypass=proxy_bypass))
 

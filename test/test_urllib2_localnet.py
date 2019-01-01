@@ -56,9 +56,13 @@ class LoopbackHttpServerThread(threading.Thread):
         threading.Thread.__init__(self)
         self._stop_server = False
         self.ready = threading.Event()
-        request_handler.protocol_version = "HTTP/1.0"
+        if request_handler is None:
+            request_handler = self._handle_request
+
+        #request_handler.protocol_version = "HTTP/1.0"
         self.httpd = LoopbackHttpServer(("127.0.0.1", 0),
                                         request_handler)
+
         self.port = self.httpd.server_port
 
     def stop(self):
@@ -272,6 +276,7 @@ class ProxyAuthTests(TestCase):
         self.register_context_manager(fixture_name,
                                       testprogram.ServerCM(self._make_server))
         server = self.get_cached_fixture(fixture_name)
+        self.add_teardown(lambda: server.stop())
 
         proxy_url = "http://127.0.0.1:%d" % server.port
         handler = mechanize.ProxyHandler({"http": proxy_url})
@@ -413,7 +418,7 @@ class TestUrlopen(TestCase):
         return handler
 
     def test_redirection(self):
-        expected_response = 'We got here...'
+        expected_response = b'We got here...'
         responses = [
             (302, [('Location', 'http://localhost:%s/somewhere_else')], ''),
             (200, [], expected_response)
@@ -429,24 +434,23 @@ class TestUrlopen(TestCase):
         self.assertEqual(handler.requests, ['/', '/somewhere_else'])
 
     def test_404(self):
-        expected_response = 'Bad bad bad...'
+        expected_response = b'Bad bad bad...'
         handler = self._make_request_handler([(404, [], expected_response)])
-
+        data = b''
         try:
             mechanize.urlopen('http://localhost:%s/weeble' % handler.port)
         except mechanize.URLError as f:
-            pass
+            data = f.read()
+            f.close()
+
         else:
             self.fail('404 should raise URLError')
-
-        data = f.read()
-        f.close()
 
         self.assertEqual(data, expected_response)
         self.assertEqual(handler.requests, ['/weeble'])
 
     def test_200(self):
-        expected_response = 'pycon 2008...'
+        expected_response = b'pycon 2008...'
         handler = self._make_request_handler([(200, [], expected_response)])
 
         f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port)
@@ -457,7 +461,7 @@ class TestUrlopen(TestCase):
         self.assertEqual(handler.requests, ['/bizarre'])
 
     def test_200_with_parameters(self):
-        expected_response = 'pycon 2008...'
+        expected_response = b'pycon 2008...'
         handler = self._make_request_handler([(200, [], expected_response)])
 
         f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port,
@@ -466,7 +470,7 @@ class TestUrlopen(TestCase):
         f.close()
 
         self.assertEqual(data, expected_response)
-        self.assertEqual(handler.requests, ['/bizarre', 'get=with_feeling'])
+        self.assertEqual(handler.requests, [b'/bizarre', b'get=with_feeling'])
 
     def test_sending_headers(self):
         handler = self._make_request_handler([(200, [], "we don't care")])

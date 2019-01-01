@@ -20,8 +20,7 @@ from . import _rfc3986
 from . import _sockettimeout
 from . import _urllib2_fork
 from ._request import Request
-from ._util import isstringlike
-from .polyglot import HTTPError, URLError, iteritems, is_class
+from .polyglot import HTTPError, URLError, iteritems, is_class, string_types
 
 
 open_file = open
@@ -155,7 +154,7 @@ class OpenerDirector(_urllib2_fork.OpenerDirector):
     def _request(self, url_or_req, data, visit,
                  timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
         #if isstringlike(url_or_req):
-        if isinstance(url_or_req, bytes):
+        if isinstance(url_or_req, bytes) or isinstance(url_or_req, string_types):
             req = Request(url_or_req, data, visit=visit, timeout=timeout)
         else:
             # already a mechanize.Request instance

@@ -59,10 +59,10 @@ class HTTPEquivProcessor(BaseHandler):
             else:
                 for hdr, val in html_headers:
                     # add a header
-                    http_message.dict[hdr.lower()] = val
-                    text = hdr + ": " + val
-                    for line in text.split("\n"):
-                        http_message.headers.append(line + "\n")
+                    http_message.add_header(hdr.lower(), val)
+                    #text = hdr + ": " + val
+                    #for line in text.split("\n"):
+                    #    http_message.headers.append(line + "\n")
         return response
 
     https_response = http_response

@@ -66,6 +66,8 @@ def is_clean_uri(uri):
     """
     # note module re treats bytestrings as through they were decoded as latin-1
     # so this function accepts both unicode and bytestrings
+    if not isinstance(uri, bytes):
+        uri = uri.encode('utf-8')
     return not bool(BAD_URI_CHARS_RE.search(uri))
 
 
@@ -248,9 +250,9 @@ def merge(base_authority, base_path, ref_path):
     # doesn't even take base_authority as a parameter, despite the wording in
     # the RFC suggesting otherwise.  Perhaps I'm missing some obvious identity.
     # if base_authority is not None and base_path == "":
-    if base_path == "":
+    if base_path == b"":
         return "/" + ref_path
-    ii = base_path.rfind("/")
+    ii = base_path.rfind(b"/")
     if ii >= 0:
         return base_path[:ii + 1] + ref_path
     return ref_path

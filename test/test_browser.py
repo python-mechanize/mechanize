@@ -13,7 +13,7 @@ import mechanize._testcase
 from mechanize._gzip import HTTPGzipProcessor, compress_readable_output
 from mechanize._response import test_html_response
 from mechanize.polyglot import (
-        HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type, mime_message, StringIO, bytes)
+        HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type, mime_message)
 
 from six import string_types
 
@@ -457,7 +457,7 @@ class BrowserTests(TestCase):
         r = test_html_response(
             url=url,
             headers=[("content-type", "text/html")],
-            data="""\
+            data=b"""\
 <html>
 <head><title>Title</title></head>
 <body>
@@ -842,7 +842,7 @@ class ResponseTests(TestCase):
         br = TestBrowser()
         self.assertEqual(str(br), "<TestBrowser (not visiting a URL)>")
 
-        fp = StringIO('<html><form name="f"><input /></form></html>')
+        fp = BytesIO(b'<html><form name="f"><input /></form></html>')
         headers = mime_message(
             "Content-type: text/html")
         response = _response.response_seek_wrapper(

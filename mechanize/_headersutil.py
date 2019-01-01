@@ -15,7 +15,7 @@ import re
 
 from . import _rfc3986
 from ._util import http2time
-
+from .polyglot import string_types
 
 def is_html_file_extension(url, allow_xhtml):
     ext = os.path.splitext(_rfc3986.urlsplit(url)[2])[1]
@@ -99,14 +99,17 @@ def split_header_words(header_values):
 
     This is easier to describe with some examples:
 
-    >>> split_header_words(['foo="bar"; port="80,81"; discard, bar=baz'])
-    [[('foo', 'bar'), ('port', '80,81'), ('discard', None)], [('bar', 'baz')]]
-    >>> split_header_words(['text/html; charset="iso-8859-1"'])
-    [[('text/html', None), ('charset', 'iso-8859-1')]]
-    >>> split_header_words([r'Basic realm="\"foo\bar\""'])
-    [[('Basic', None), ('realm', '"foobar"')]]
+    >>> split_header_words([b'foo="bar"; port="80,81"; discard, bar=baz'])
+    [[(b'foo', b'bar'), (b'port', b'80,81'), (b'discard', None)], [(b'bar', b'baz')]]
+    >>> split_header_words([b'text/html; charset="iso-8859-1"'])
+    [[(b'text/html', None), (b'charset', b'iso-8859-1')]]
+    >>> split_header_words([br'Basic realm="\"foo\bar\""'])
+    [[(b'Basic', None), (b'realm', b'"foobar"')]]
 
     """
+    if isinstance(header_values, string_types):
+        header_values = [header_values.encode('utf-8')]
+
     if isinstance(header_values, bytes):
         header_values = [header_values]
 
@@ -163,10 +166,10 @@ def join_header_words(lists):
     Takes a list of lists of (key, value) pairs and produces a single header
     value.  Attribute values are quoted if needed.
 
-    >>> join_header_words([[("text/plain", None), ("charset", "iso-8859/1")]])
-    'text/plain; charset="iso-8859/1"'
-    >>> join_header_words([[("text/plain", None)], [("charset", "iso-8859/1")]])
-    'text/plain, charset="iso-8859/1"'
+    >>> join_header_words([[(b"text/plain", None), (b"charset", b"iso-8859/1")]])
+    b'text/plain; charset="iso-8859/1"'
+    >>> join_header_words([[(b"text/plain", None)], [(b"charset", b"iso-8859/1")]])
+    b'text/plain, charset="iso-8859/1"'
 
     """
     headers = []

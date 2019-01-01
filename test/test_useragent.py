@@ -20,7 +20,7 @@ class UserAgentTests(TestCase):
             return False
         proxies = {"http": "http://spam"}
         ua.set_proxies(proxies, proxy_bypass)
-        proxy_handler = self._get_handler_from_ua(ua, "_proxy")
+        proxy_handler = self._get_handler_from_ua(ua, b"_proxy")
         self.assertTrue(proxy_handler._proxy_bypass is proxy_bypass)
         self.assertTrue(proxy_handler.proxies, proxies)
 

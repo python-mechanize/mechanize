@@ -437,11 +437,7 @@ class MockHTTPHandler(mechanize.BaseHandler):
         self.requests = []
 
     def http_open(self, req):
-        import sys
-        if sys.version_info.major < 3:
-            from mimetools import Message
-        else:
-            from email import message_from_string as Message
+        from email import message_from_string as Message
         import copy
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
@@ -1240,12 +1236,12 @@ class HandlerTests(mechanize._testcase.TestCase):
                 self.requests = []
 
             def http_open(self, req):
-                import mimetools
+                from email import message_from_string
                 import copy
                 self.requests.append(copy.deepcopy(req))
                 if req.get_full_url() == "http://example.com/robots.txt":
                     hdr = "Location: http://example.com/en/robots.txt\r\n\r\n"
-                    msg = mimetools.Message(BytesIO(hdr))
+                    msg = message_from_string(hdr)
                     return self.parent.error("http", req,
                                              test_response(), 302, "Blah", msg)
                 else:
@@ -1258,9 +1254,9 @@ class HandlerTests(mechanize._testcase.TestCase):
         o = build_test_opener(hh, hdeh, hrh, rh)
         o.open("http://example.com/")
         self.assertEqual([req.get_full_url() for req in hh.requests], [
-            "http://example.com/robots.txt",
-            "http://example.com/en/robots.txt",
-            "http://example.com/",
+            u"http://example.com/robots.txt",
+            u"http://example.com/en/robots.txt",
+            u"http://example.com/",
         ])
 
     def test_cookies(self):
@@ -1272,7 +1268,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         r = MockResponse(200, "OK", {}, "")
         newreq = h.http_request(req)
         self.assertTrue(cj.ach_req is req is newreq)
-        self.assertEqual(req.get_origin_req_host(), "example.com")
+        self.assertEqual(u'{}'.format(req.get_origin_req_host()), "example.com")
         self.assertFalse(cj.ach_u)
         newr = h.http_response(req, r)
         self.assertTrue(cj.ec_req is req)
@@ -1707,8 +1703,8 @@ class HandlerTests(mechanize._testcase.TestCase):
         # expect one request without authorization, then one with
         self.assertEqual(len(http_handler.requests), 2)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
-        userpass = '%s:%s' % (user, password)
-        auth_hdr_value = 'Basic %s' % base64.encodebytes(userpass.encode()).strip()
+        userpass = b'%s:%s' % (user, password)
+        auth_hdr_value = 'Basic %s' % base64.urlsafe_b64encode(userpass).strip()
         self.assertEqual(http_handler.requests[1].get_header(auth_header),
                          auth_hdr_value)
 
@@ -1727,7 +1723,7 @@ class HeadParserTests(unittest.TestCase):
         htmls = [
             (
                 b"""<meta http-equiv=refresh content="1; http://example.com/">
-                """, [("refresh", "1; http://example.com/")]),
+                """, [(b"refresh", b"1; http://example.com/")]),
 
             (
                 b"""
@@ -1852,9 +1848,9 @@ class RequestTests(unittest.TestCase):
                          self.get.get_full_url())
 
     def test_selector(self):
-        self.assertEqual("/~jeremy/", self.get.get_selector())
+        self.assertEqual(b"/~jeremy/", self.get.get_selector())
         req = Request("http://www.python.org/")
-        self.assertEqual("/", req.get_selector())
+        self.assertEqual(b"/", req.get_selector())
 
     def test_get_type(self):
         self.assertEqual("http", self.get.get_type())
@@ -1870,7 +1866,7 @@ class RequestTests(unittest.TestCase):
         self.assertTrue(not self.get.has_proxy())
         self.get.set_proxy("www.perl.org", "http")
         self.assertTrue(self.get.has_proxy())
-        self.assertEqual("www.python.org", self.get.get_origin_req_host())
+        self.assertEqual(b"www.python.org", self.get.get_origin_req_host())
         self.assertEqual("www.perl.org", self.get.get_host())
 
     def test_data(self):

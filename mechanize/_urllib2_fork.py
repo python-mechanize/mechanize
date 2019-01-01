@@ -52,7 +52,7 @@ from ._headersutil import normalize_header_name
 from .polyglot import (
         HTTPError, URLError, HTTPConnection, HTTPSConnection, urlparse,
         urlsplit, is_class, iteritems, is_string, raise_with_traceback,
-        StringIO, mime_message, is_py2, addinfourl, getproxies, splitattr, splitpasswd,
+        mime_message, is_py2, addinfourl, getproxies, splitattr, splitpasswd,
         splitport, splittype, splituser, splitvalue, unquote, url2pathname, urllib_proxy_bypass,
         urllib_splithost, ftpwrapper, string_types
 )
@@ -127,12 +127,12 @@ def request_host(request):
     """
     url = request.get_full_url()
     host = urlparse(url)[1]
-    if host == "":
+    if host == b"":
         host = request.get_header("Host", "")
 
     # remove port, if present
     host = _cut_port_re.sub("", host, 1)
-    return host.lower()
+    return host.lower().encode('utf-8')
 
 
 def request_port(request):
@@ -1447,8 +1447,8 @@ class FTPHandler(BaseHandler):
                 headers += "Content-type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
                 headers += "Content-length: %d\n" % retrlen
-            sf = StringIO(headers)
-            headers = mime_message(sf)
+            #sf = StringIO(headers)
+            headers = mime_message(headers)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
             raise_with_traceback(URLError('ftp error: %s' % msg))

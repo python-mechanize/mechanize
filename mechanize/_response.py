@@ -20,7 +20,7 @@ from __future__ import absolute_import
 from functools import partial
 import copy
 from ._headersutil import normalize_header_name
-from .polyglot import HTTPError, StringIO, mime_message
+from .polyglot import HTTPError, mime_message
 from io import BytesIO
 
 
@@ -252,7 +252,7 @@ class seek_wrapper(object):
 
     def __next__(self):
         line = self.readline()
-        if line == "":
+        if line == b"":
             raise StopIteration
         return line
     next = __next__
@@ -296,7 +296,7 @@ class response_seek_wrapper(seek_wrapper):
         self.seek(0)
         self.read()
         self.close()
-        cache = self._seek_wrapper__cache = StringIO()
+        cache = self._seek_wrapper__cache = BytesIO()
         cache.write(data)
         self.seek(0)
 
