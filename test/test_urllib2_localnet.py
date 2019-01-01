@@ -8,7 +8,7 @@ import unittest
 
 from mechanize._testcase import TestCase
 from mechanize._urllib2_fork import md5_digest
-from mechanize.polyglot import is_py2, urlparse
+from mechanize.polyglot import is_py2, urlparse, HTTPMessage
 
 import testprogram
 
@@ -259,6 +259,7 @@ class ProxyAuthTests(TestCase):
     USER = "tester"
     PASSWD = "test123"
     REALM = "TestRealm"
+    fixture_name = "test_urllib2_localnet_ProxyAuthTests_server"
 
     def _make_server(self, qop="auth"):
         digest_auth_handler = DigestAuthHandler()
@@ -272,12 +273,9 @@ class ProxyAuthTests(TestCase):
 
     def setUp(self):
         TestCase.setUp(self)
-        fixture_name = "test_urllib2_localnet_ProxyAuthTests_server"
-        self.register_context_manager(fixture_name,
+        self.register_context_manager(self.fixture_name,
                                       testprogram.ServerCM(self._make_server))
-        server = self.get_cached_fixture(fixture_name)
-        self.add_teardown(lambda: server.stop())
-
+        server = self.get_cached_fixture(self.fixture_name)
         proxy_url = "http://127.0.0.1:%d" % server.port
         handler = mechanize.ProxyHandler({"http": proxy_url})
         self.proxy_digest_handler = mechanize.ProxyDigestAuthHandler()
@@ -497,7 +495,7 @@ class TestUrlopen(TestCase):
 
         open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
         info_obj = open_url.info()
-        self.assertTrue(isinstance(info_obj, Message),
+        self.assertTrue(isinstance(info_obj, HTTPMessage),
                         "object returned by 'info' is not an instance of "
                         "mimetools.Message")
         self.assertEqual(info_obj.getsubtype(), "plain")
