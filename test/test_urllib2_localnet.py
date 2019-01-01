@@ -468,7 +468,7 @@ class TestUrlopen(TestCase):
         f.close()
 
         self.assertEqual(data, expected_response)
-        self.assertEqual(handler.requests, [b'/bizarre', b'get=with_feeling'])
+        self.assertEqual(handler.requests, ['/bizarre', b'get=with_feeling'])
 
     def test_sending_headers(self):
         handler = self._make_request_handler([(200, [], "we don't care")])

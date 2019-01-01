@@ -1268,7 +1268,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         r = MockResponse(200, "OK", {}, "")
         newreq = h.http_request(req)
         self.assertTrue(cj.ach_req is req is newreq)
-        self.assertEqual(u'{}'.format(req.get_origin_req_host()), "example.com")
+        self.assertEqual(u'{}'.format(req.get_origin_req_host()), u'{}'.format('example.com'))
         self.assertFalse(cj.ach_u)
         newr = h.http_response(req, r)
         self.assertTrue(cj.ec_req is req)

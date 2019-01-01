@@ -581,9 +581,9 @@ class HTTPRedirectHandler(BaseHandler):
         # Some servers (incorrectly) return multiple Location headers
         # (so probably same goes for URI).  Use first header.
         if 'location' in headers:
-            newurl = headers.get('location')[0]
+            newurl = headers.get('location')
         elif 'uri' in headers:
-            newurl = headers.get('uri')[0]
+            newurl = headers.get('uri')
         else:
             return
         newurl = _rfc3986.clean_url(newurl)

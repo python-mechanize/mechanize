@@ -445,9 +445,9 @@ class closeable_response(object):
         return state
 
 
-def test_response(data='test data',
+def test_response(data=b'test data',
                   headers=[],
-                  url="http://example.com/",
+                  url=b"http://example.com/",
                   code=200,
                   msg="OK"):
     return make_response(data, headers, url, code, msg)

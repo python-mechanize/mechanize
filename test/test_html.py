@@ -36,7 +36,7 @@ class EncodingFinderTests(TestCase):
     def test_known_encoding(self):
         encoding_finder = mechanize._html.EncodingFinder("default")
         response = self.make_response(["utf-8"])
-        self.assertEqual(encoding_finder.encoding(response), "utf-8")
+        self.assertEqual(encoding_finder.encoding(response), b"utf-8")
 
     def test_unknown_encoding(self):
         encoding_finder = mechanize._html.EncodingFinder("default")
@@ -46,18 +46,18 @@ class EncodingFinderTests(TestCase):
     def test_precedence(self):
         encoding_finder = mechanize._html.EncodingFinder("default")
         response = self.make_response(["latin-1", "utf-8"])
-        self.assertEqual(encoding_finder.encoding(response), "latin-1")
+        self.assertEqual(encoding_finder.encoding(response), b"latin-1")
 
     def test_fallback(self):
         encoding_finder = mechanize._html.EncodingFinder("default")
         response = self.make_response(["bogus", "utf-8"])
-        self.assertEqual(encoding_finder.encoding(response), "utf-8")
+        self.assertEqual(encoding_finder.encoding(response), b"utf-8")
 
 
 class TitleTests(TestCase):
 
     def title_parsing(self):
-        html = ("""\
+        html = (b"""\
 <html><head>
 <title> Title\n Test</title>
 </head><body><p>Blah.<p></body></html>
