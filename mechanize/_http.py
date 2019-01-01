@@ -166,7 +166,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
             self.rfp.read()
             self._host = host
 
-        ua = request.get_header("User-agent", "")
+        ua = request.get_header("User-agent", "").decode('utf-8')
         if self.rfp.can_fetch(ua, request.get_full_url()):
             return request
         else:

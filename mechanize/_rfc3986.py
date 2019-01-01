@@ -163,7 +163,7 @@ def urljoin_parts(base_parts, reference_parts):
                 else:
                     tquery = query
             else:
-                if rpath.startswith("/"):
+                if rpath.startswith(b"/"):
                     tpath = remove_dot_segments(rpath)
                 else:
                     tpath = merge(authority, path, rpath)
@@ -198,49 +198,49 @@ def remove_dot_segments(path):
     r = []
     while path:
         # A
-        if path.startswith("../"):
+        if path.startswith(b"../"):
             path = path[3:]
             continue
-        if path.startswith("./"):
+        if path.startswith(b"./"):
             path = path[2:]
             continue
         # B
-        if path.startswith("/./"):
+        if path.startswith(b"/./"):
             path = path[2:]
             continue
-        if path == "/.":
-            path = "/"
+        if path == b"/.":
+            path = b"/"
             continue
         # C
-        if path.startswith("/../"):
+        if path.startswith(b"/../"):
             path = path[3:]
             if r:
                 r.pop()
             continue
-        if path == "/..":
-            path = "/"
+        if path == b"/..":
+            path = b"/"
             if r:
                 r.pop()
             continue
         # D
-        if path == ".":
+        if path == b".":
             path = path[1:]
             continue
-        if path == "..":
+        if path == b"..":
             path = path[2:]
             continue
         # E
         start = 0
-        if path.startswith("/"):
+        if path.startswith(b"/"):
             start = 1
-        ii = path.find("/", start)
+        ii = path.find(b"/", start)
         if ii < 0:
             ii = None
         r.append(path[:ii])
         if ii is None:
             break
         path = path[ii:]
-    return "".join(r)
+    return b"".join(r)
 
 
 def merge(base_authority, base_path, ref_path):

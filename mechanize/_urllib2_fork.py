@@ -54,7 +54,7 @@ from .polyglot import (
         urlsplit, is_class, iteritems, is_string, raise_with_traceback,
         StringIO, mime_message, is_py2, addinfourl, getproxies, splitattr, splitpasswd,
         splitport, splittype, splituser, splitvalue, unquote, url2pathname, urllib_proxy_bypass,
-        urllib_splithost, ftpwrapper
+        urllib_splithost, ftpwrapper, string_types
 )
 if is_py2:
     from .polyglot import map
@@ -79,10 +79,11 @@ if is_py2:
 else:
     def create_readline_wrapper(fh):
         # Ugly hack to create the wrapper in python3
-        import codecs
-        import io
-        reader = codecs.getreader("utf-8")
-        return io.BytesIO(reader(fh).read().encode('utf-8'))
+        #import codecs
+        #import io
+        #reader = codecs.getreader("utf-8")
+        #return io.BytesIO(reader(fh).read(-1).encode('utf-8'))
+        return fh
 
 
 
@@ -284,9 +285,14 @@ class Request:
         ''' Get the value of the specified header. If absent, return `default`
         '''
         header_name = normalize_header_name(header_name)
-        return self.headers.get(
+        header_value = self.headers.get(
             header_name,
             self.unredirected_hdrs.get(header_name, default))
+
+        if isinstance(header_value, string_types):
+            header_value = header_value.encode('utf-8')
+
+        return header_value
 
     def header_items(self):
         ''' Get a copy of all headers for this request as a list of 2-tuples

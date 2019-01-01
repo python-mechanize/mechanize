@@ -53,15 +53,14 @@ def get_encoding_from_response(response, verify=True):
     # so try in order from first to last.
     if response:
         headers = {k.lower(): v for k, v in response.info().items()}
-        ct = headers.get("Content-Type", {})
-        #for ct in response.info().get("Content-Type", {}):
+        ct = headers.get("content-type", "").encode('utf-8')
         if ct:
             for k, v in split_header_words([ct])[0]:
-                if k == "charset":
+                if k == b"charset":
                     if not verify:
                         return v
                     try:
-                        codecs.lookup(v)
+                        codecs.lookup(v.decode('utf-8'))
                         return v
                     except LookupError:
                         continue
@@ -80,7 +79,8 @@ class ResponseTypeFinder:
         self._allow_xhtml = allow_xhtml
 
     def is_html(self, response, encoding):
-        ct_hdrs = response.info().get("Content-Type", {})
+        headers = {k.lower(): v for k, v in response.info().items()}
+        ct_hdrs = headers.get("content-type", "").encode('utf-8')
         url = response.geturl()
         # XXX encoding
         return _is_html(ct_hdrs, url, self._allow_xhtml)

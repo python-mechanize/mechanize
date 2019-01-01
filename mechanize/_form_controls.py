@@ -10,13 +10,6 @@ from io import BytesIO
 
 from . import _request
 from .polyglot import urlparse, urlunparse, urlencode, is_py2, iteritems
-from six import string_types
-
-if is_py2:
-    from cStringIO import StringIO
-else:
-    from io import StringIO  # 2to3: probably broken when writing bytes
-
 
 class Missing:
     pass
@@ -2495,8 +2488,6 @@ class HTMLForm:
         frag
 
         def as_utf8(x):
-            if not isinstance(x, string_types):
-                x = x.encode('utf-8')
             return x
 
         def encode_query():
