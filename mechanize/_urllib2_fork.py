@@ -78,11 +78,8 @@ if is_py2:
             return socket._fileobject(fh, close=True)
 else:
     def create_readline_wrapper(fh):
-        # Ugly hack to create the wrapper in python3
-        #import codecs
-        #import io
-        #reader = codecs.getreader("utf-8")
-        #return io.BytesIO(reader(fh).read(-1).encode('utf-8'))
+        # Http response implements read and readline,
+        # no need to do something extra
         return fh
 
 

@@ -8,19 +8,13 @@ import sys
 import tempfile
 import time
 import unittest
-from io import BytesIO
+from email import message_from_string as Message
 
 import mechanize
 from mechanize._util import hide_experimental_warnings, \
     reset_experimental_warnings
 from mechanize import Request
 from mechanize.polyglot import codepoint_to_chr
-if sys.version_info.major < 3:
-    from mimetools import Message
-    from cStringIo import StringIO
-else:
-    from email import message_from_string as Message
-    from io import StringIO
 
 
 class FakeResponse(object):

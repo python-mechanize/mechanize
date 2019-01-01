@@ -54,7 +54,7 @@ class HTTPEquivProcessor(BaseHandler):
                     html_headers = parse_head(response)
                 finally:
                     response.seek(0)
-            except Exception:
+            except Exception as ex:
                 pass
             else:
                 for hdr, val in html_headers:
@@ -279,7 +279,7 @@ class HTTPRefreshProcessor(BaseHandler):
         code, msg, hdrs = response.code, response.msg, response.info()
 
         if code == 200 and 'refresh' in hdrs:
-            refresh = hdrs.getheaders("refresh")[0]
+            refresh = hdrs.get("refresh", "")
             try:
                 pause, newurl = parse_refresh_header(refresh)
             except ValueError:

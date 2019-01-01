@@ -1300,7 +1300,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         self.assertEqual(new_headers["Foo"], "Bar")
         self.assertEqual(new_headers["Refresh"], "spam&Eggs")
         self.assertEqual(
-            new_headers.getheaders("Refresh"), ["blah", "spam&Eggs"])
+            new_headers.get("Refresh"), ["blah", "spam&Eggs"])
 
     def test_refresh(self):
         # XXX test processor constructor optional args

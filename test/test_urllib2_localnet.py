@@ -12,12 +12,11 @@ from mechanize.polyglot import is_py2, urlparse
 
 import testprogram
 
+from email import message_from_string as Message
 
 if is_py2:
     from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-    from mimetools import Message
 else:
-    from email import message_from_string as Message
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Loopback http server infrastructure

@@ -141,6 +141,7 @@ class OpenerTests(unittest.TestCase):
                                 self.nr_blocks) * "01234567"
                 self.total_size = len(self.data)
                 self._content_length = content_length
+
             def open(self, fullurl, data=None,
                      timeout=_sockettimeout._GLOBAL_DEFAULT_TIMEOUT):
                 self.calls.append((fullurl, data, timeout))
@@ -160,6 +161,7 @@ class OpenerTests(unittest.TestCase):
                 self._testcase = testcase
                 self._total_size = total_size
                 self._block_size = block_size
+
             def callback(self, block_nr, block_size, total_size):
                 self._testcase.assertEqual(block_nr, self.count)
                 self._testcase.assertEqual(block_size, self._block_size)

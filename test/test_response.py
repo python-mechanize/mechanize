@@ -3,17 +3,14 @@
 import copy
 from unittest import TestCase
 from functools import partial
-import sys
-if sys.version_info.major < 3:
-    from cStringIo import StringIO
-else:
-    from io import StringIO
+
+from io import BytesIO
 
 
 class TestUnSeekable:
 
     def __init__(self, text):
-        self._file = StringIO(text)
+        self._file = BytesIO(text)
         self.log = []
 
     def tell(self): return self._file.tell()
@@ -54,14 +51,14 @@ class TestUnSeekableResponse(TestUnSeekable):
 
 class SeekableTests(TestCase):
 
-    text = """\
+    text = b"""\
 The quick brown fox
 jumps over the lazy
 
 dog.
 
 """
-    text_lines = list(map(lambda l: l + "\n", text.split("\n")[:-1]))
+    text_lines = list(map(lambda l: l + b"\n", text.split(b"\n")[:-1]))
 
     def testSeekable(self):
         from mechanize._response import seek_wrapper

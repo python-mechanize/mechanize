@@ -196,14 +196,12 @@ class seek_wrapper(object):
         self.__cache.seek(0, 2)
         if size == -1:
             read_info = self.wrapped.read()
-            #if not isinstance(read_info, str):
-            #    read_info = read_info.decode('utf-8')
             self.__cache.write(read_info)
             self.read_complete = True
         else:
             to_read = size - available
             assert to_read > 0
-            data = self.wrapped.read(to_read).encode('utf-8')
+            data = self.wrapped.read(to_read)
             if not data:
                 self.read_complete = True
             else:
