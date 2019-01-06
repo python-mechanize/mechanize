@@ -163,7 +163,8 @@ def join_header_words(lists):
 
     >>> join_header_words([[("text/plain", None), ("charset", "iso-8859/1")]])
     'text/plain; charset="iso-8859/1"'
-    >>> join_header_words([[("text/plain", None)], [("charset", "iso-8859/1")]])
+    >>> join_header_words([[(\
+            "text/plain", None)], [("charset", "iso-8859/1")]])
     'text/plain, charset="iso-8859/1"'
 
     """
