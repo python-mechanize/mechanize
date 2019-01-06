@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from ._form_controls import HTMLForm, Label
 from ._request import Request
-from .polyglot import urljoin, is_string
+from .polyglot import urljoin, is_string, as_unicode
 
 
 class SkipControl(ValueError):
@@ -13,7 +13,7 @@ class SkipControl(ValueError):
 
 
 def normalize_line_endings(text):
-    return re.sub(ur"(?:(?<!\r)\n)|(?:\r(?!\n))", u"\r\n", text)
+    return re.sub(as_unicode(r"(?:(?<!\r)\n)|(?:\r(?!\n))"), u"\r\n", text)
 
 
 def label_text(elem):

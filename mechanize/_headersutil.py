@@ -13,12 +13,10 @@ from __future__ import absolute_import
 
 import os
 import re
-from types import StringType, UnicodeType
 
 from . import _rfc3986
 from ._util import http2time
-
-STRING_TYPES = StringType, UnicodeType
+from .polyglot import is_string
 
 
 def is_html_file_extension(url, allow_xhtml):
@@ -111,7 +109,7 @@ def split_header_words(header_values):
     [[('Basic', None), ('realm', '"foobar"')]]
 
     """
-    assert type(header_values) not in STRING_TYPES
+    assert not is_string(header_values)
     result = []
     for text in header_values:
         orig_text = text
@@ -144,7 +142,7 @@ def split_header_words(header_values):
                 pairs = []
             else:
                 # skip junk
-                non_junk, nr_junk_chars = re.subn("^[=\s;]*", "", text)
+                non_junk, nr_junk_chars = re.subn(r"^[=\s;]*", "", text)
                 assert nr_junk_chars > 0, (
                     "split_header_words bug: '%s', '%s', %s" %
                     (orig_text, text, pairs))
@@ -165,7 +163,8 @@ def join_header_words(lists):
 
     >>> join_header_words([[("text/plain", None), ("charset", "iso-8859/1")]])
     'text/plain; charset="iso-8859/1"'
-    >>> join_header_words([[("text/plain", None)], [("charset", "iso-8859/1")]])
+    >>> join_header_words([[
+        ("text/plain", None)], [("charset", "iso-8859/1")]])
     'text/plain, charset="iso-8859/1"'
 
     """

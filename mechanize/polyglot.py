@@ -91,6 +91,14 @@ else:
 
     codepoint_to_chr = chr
     unicode_type = str
+    map = map
+
+
+def as_unicode(x):
+    if isinstance(x, bytes):
+        x = x.decode('utf-8')
+    return x
+
 
 if False:
     (HTTPError, urlsplit, urljoin, urlparse, urlunparse, urlencode,
