@@ -35,7 +35,6 @@ import bisect
 import copy
 import hashlib
 import logging
-import mimetools
 import os
 import platform
 import posixpath
@@ -46,20 +45,20 @@ import sys
 import time
 from functools import partial
 # support for FileHandler, proxies via environment variables
-from urllib import (addinfourl, ftpwrapper, getproxies, splitattr, splitpasswd,
-                    splitport, splittype, splituser, splitvalue, unquote,
-                    unwrap, url2pathname, proxy_bypass as urllib_proxy_bypass,
-                    splithost as urllib_splithost)
+from urllib import addinfourl, ftpwrapper, getproxies
+from urllib import proxy_bypass as urllib_proxy_bypass
+from urllib import splitattr
+from urllib import splithost as urllib_splithost
+from urllib import (splitpasswd, splitport, splittype, splituser, splitvalue,
+                    unquote, unwrap, url2pathname)
 
 from . import _rfc3986
 from ._clientcookie import CookieJar
-from ._response import closeable_response
 from ._headersutil import normalize_header_name
-from .polyglot import (
-        HTTPError, URLError, HTTPConnection, HTTPSConnection, urlparse,
-        urlsplit, is_class, iteritems, is_string, raise_with_traceback,
-        StringIO, map
-)
+from ._response import closeable_response
+from .polyglot import (HTTPConnection, HTTPError, HTTPMessage, HTTPSConnection,
+                       StringIO, URLError, is_class, is_string, iteritems, map,
+                       raise_with_traceback, urlparse, urlsplit)
 
 
 def sha1_digest(bytes):
@@ -1112,7 +1111,7 @@ class AbstractHTTPHandler(BaseHandler):
         http_class must implement the HTTPConnection API from httplib.
         The addinfourl return value is a file-like object.  It also
         has methods and attributes including:
-            - info(): return a mimetools.Message object for the headers
+            - info(): return a HTTPMessage object for the headers
             - geturl(): return the original request URL
             - code: HTTP status code
         """
@@ -1352,7 +1351,7 @@ class FileHandler(BaseHandler):
             size = stats.st_size
             modified = emailutils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(file)[0]
-            headers = mimetools.Message(StringIO(
+            headers = HTTPMessage(StringIO(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified)))
             if host:
@@ -1418,7 +1417,7 @@ class FTPHandler(BaseHandler):
             if retrlen is not None and retrlen >= 0:
                 headers += "Content-length: %d\n" % retrlen
             sf = StringIO(headers)
-            headers = mimetools.Message(sf)
+            headers = HTTPMessage(sf)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
             raise_with_traceback(URLError('ftp error: %s' % msg))

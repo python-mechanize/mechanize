@@ -2,7 +2,6 @@
 
 import errno
 import inspect
-import mimetools
 import os
 import re
 import sys
@@ -12,10 +11,10 @@ import unittest
 from io import BytesIO
 
 import mechanize
-from mechanize._util import hide_experimental_warnings, \
-    reset_experimental_warnings
 from mechanize import Request
-from mechanize.polyglot import codepoint_to_chr
+from mechanize._util import (hide_experimental_warnings,
+                             reset_experimental_warnings)
+from mechanize.polyglot import HTTPMessage, codepoint_to_chr
 
 
 class FakeResponse:
@@ -25,7 +24,7 @@ class FakeResponse:
         headers: list of RFC822-style 'Key: value' strings
         """
         f = BytesIO("\n".join(headers))
-        self._headers = mimetools.Message(f)
+        self._headers = HTTPMessage(f)
         self._url = url
 
     def info(self):

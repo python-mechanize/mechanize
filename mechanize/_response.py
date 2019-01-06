@@ -19,11 +19,10 @@ included with the distribution).
 from __future__ import absolute_import
 from functools import partial
 import copy
-import mimetools
 from io import BytesIO
 
 from ._headersutil import normalize_header_name
-from .polyglot import HTTPError
+from .polyglot import HTTPError, HTTPMessage
 
 
 def len_of_seekable(file_):
@@ -485,7 +484,7 @@ def make_headers(headers):
     hdr_text = []
     for name_value in headers:
         hdr_text.append("%s: %s" % name_value)
-    return mimetools.Message(BytesIO("\n".join(hdr_text)))
+    return HTTPMessage(BytesIO("\n".join(hdr_text)))
 
 
 # Rest of this module is especially horrible, but needed, at least until fork

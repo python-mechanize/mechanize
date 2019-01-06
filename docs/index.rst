@@ -18,7 +18,7 @@ Quickstart
 ------------
 
 The examples below are written for a website that does not exist
-(`example.com`), so cannot be run.  
+(`example.com`), so cannot be run.
 
 .. code-block:: python
 
@@ -109,7 +109,7 @@ You may control the browser's policy by using the methods of
 
     # Sometimes it's useful to process bad headers or bad HTML:
     response = br.response()  # this is a copy of response
-    headers = response.info()  # currently, this is a mimetools.Message
+    headers = response.info()  # this is a HTTPMessage
     headers["Content-type"] = "text/html; charset=utf-8"
     response.set_data(response.get_data().replace("<!---", "<!--"))
     br.set_response(response)

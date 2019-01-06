@@ -438,13 +438,12 @@ class MockHTTPHandler(mechanize.BaseHandler):
         self.requests = []
 
     def http_open(self, req):
-        import mimetools
         import copy
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
             name = "Not important"
-            msg = mimetools.Message(BytesIO(self.headers))
+            msg = HTTPMessage(BytesIO(self.headers))
             return self.parent.error("http", req,
                                      test_response(), self.code, name, msg)
         else:
@@ -1236,12 +1235,11 @@ class HandlerTests(mechanize._testcase.TestCase):
                 self.requests = []
 
             def http_open(self, req):
-                import mimetools
                 import copy
                 self.requests.append(copy.deepcopy(req))
                 if req.get_full_url() == "http://example.com/robots.txt":
                     hdr = "Location: http://example.com/en/robots.txt\r\n\r\n"
-                    msg = mimetools.Message(BytesIO(hdr))
+                    msg = HTTPMessage(BytesIO(hdr))
                     return self.parent.error("http", req,
                                              test_response(), 302, "Blah", msg)
                 else:

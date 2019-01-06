@@ -2,14 +2,13 @@
 
 """Functional tests from the Python standard library test suite."""
 
-import mimetools
 import threading
 import mechanize
 import unittest
 
 from mechanize._testcase import TestCase
 from mechanize._urllib2_fork import md5_digest
-from mechanize.polyglot import is_py2, urlparse
+from mechanize.polyglot import is_py2, urlparse, HTTPMessage
 
 import testprogram
 
@@ -492,9 +491,9 @@ class TestUrlopen(TestCase):
 
         open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
         info_obj = open_url.info()
-        self.assertTrue(isinstance(info_obj, mimetools.Message),
+        self.assertTrue(isinstance(info_obj, HTTPMessage),
                         "object returned by 'info' is not an instance of "
-                        "mimetools.Message")
+                        "HTTPMessage")
         self.assertEqual(info_obj.getsubtype(), "plain")
 
     def test_geturl(self):

@@ -2,7 +2,6 @@
 """Tests for mechanize.Browser."""
 
 import copy
-import mimetools
 import os
 import re
 from io import BytesIO
@@ -13,8 +12,8 @@ import mechanize._response
 import mechanize._testcase
 from mechanize._gzip import HTTPGzipProcessor, compress_readable_output
 from mechanize._response import test_html_response
-from mechanize.polyglot import (
-        HTTPConnection, iteritems, addinfourl, codepoint_to_chr, unicode_type)
+from mechanize.polyglot import (HTTPConnection, HTTPMessage, addinfourl,
+                                codepoint_to_chr, iteritems, unicode_type)
 
 em_dash = codepoint_to_chr(0x2014)
 
@@ -212,7 +211,7 @@ class BrowserTests(TestCase):
             ("Content-Type: text/html; charset=UTF-8\r\n"
              "Content-Type: text/html; charset=KOI8-R\r\n\r\n", "UTF-8"),
         ]:
-            msg = mimetools.Message(BytesIO(s))
+            msg = HTTPMessage(BytesIO(s))
             r = addinfourl(BytesIO(""), msg, "http://www.example.com/")
             b.set_response(r)
             self.assertEqual(b.encoding(), ct)
@@ -813,7 +812,7 @@ class ResponseTests(TestCase):
             <form name="b" data-ac="123"></form>
             <form name="c" class="x"></form>
             </html>''')
-        headers = mimetools.Message(
+        headers = HTTPMessage(
             BytesIO("Content-type: text/html"))
         response = _response.response_seek_wrapper(
             _response.closeable_response(fp, headers, "http://example.com/",
@@ -836,7 +835,7 @@ class ResponseTests(TestCase):
         self.assertEqual(str(br), "<TestBrowser (not visiting a URL)>")
 
         fp = BytesIO('<html><form name="f"><input /></form></html>')
-        headers = mimetools.Message(
+        headers = HTTPMessage(
             BytesIO("Content-type: text/html"))
         response = _response.response_seek_wrapper(
             _response.closeable_response(fp, headers, "http://example.com/",
@@ -868,7 +867,7 @@ class HttplibTests(mechanize._testcase.TestCase):
 
         def getresponse(self_):
             class Response(object):
-                msg = mimetools.Message(BytesIO(""))
+                msg = HTTPMessage(BytesIO(""))
                 status = 200
                 reason = "OK"
 

@@ -134,7 +134,7 @@ def content_parser(data,
     :param bytes data: The data to parse
     :param url: The URL of the document being parsed or None
     :param response_info: Information about the document
-        (contains all HTTP headers as :class:`mimetools.Message`)
+        (contains all HTTP headers as :class:`HTTPMessage`)
     :param transport_encoding: The character encoding for the document being
         parsed as specified in the HTTP headers or None.
     :param default_encoding: The character encoding to use if no encoding
