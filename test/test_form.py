@@ -56,6 +56,25 @@ def raise_deprecations():
     warnings.filterwarnings('error', category=DeprecationWarning)
 
 
+def compare_multipart(self, req, filename=''):
+    boundary = dict(header_items(req))['Content-Type'].partition(
+            ' ')[2].partition('=')[2]
+    self.assertEqual(req.get_data().decode('ascii'), '''\
+--{BOUNDARY}\r
+Content-Disposition: form-data; name="data"; filename="{filename}"\r
+Content-Type: application/octet-stream\r
+\r
+blah
+baz
+\r
+--{BOUNDARY}\r
+Content-Disposition: form-data; name="user"\r
+\r
+john\r
+--{BOUNDARY}--\r
+'''.format(filename=filename, BOUNDARY=boundary))
+
+
 class DummyForm:
     def __init__(self):
         self._forms = []
@@ -3280,6 +3299,24 @@ def CaseInsensitiveDict(items):
 
 
 class UploadTests(_testcase.TestCase):  # {{{
+
+    def setUp(self):
+        _testcase.TestCase.setUp(self)
+        import mechanize._form_controls as fc
+
+        def mock_choose_boundary():
+            self.boundary_count += 1
+            return str(self.boundary_count)
+
+        self.choose_boundary = fc.choose_boundary
+        fc.choose_boundary = mock_choose_boundary
+        self.boundary_count = 0
+
+    def tearDown(self):
+        import mechanize._form_controls as fc
+        fc.choose_boundary = self.choose_boundary
+        _testcase.TestCase.tearDown(self)
+
     def test_choose_boundary(self):
         bndy = _form_controls.choose_boundary()
         ii = bndy.find('.')
@@ -3301,8 +3338,6 @@ class UploadTests(_testcase.TestCase):  # {{{
             backwards_compat=False)[0]
 
     def test_file_request(self):
-        import cgi
-
         # fill in a file upload form...
         form = self.make_form()
         form["user"] = "john"
@@ -3314,22 +3349,9 @@ class UploadTests(_testcase.TestCase):  # {{{
         self.assertTrue(
             get_header(req, "Content-type").startswith(
                 "multipart/form-data; boundary="))
-
-        # print "req.get_data()\n>>%s<<" % req.get_data()
-
-        # ...and check the resulting request is understood by cgi module
-        fs = cgi.FieldStorage(
-            BytesIO(req.get_data()),
-            CaseInsensitiveDict(header_items(req)),
-            environ={"REQUEST_METHOD": "POST"}, strict_parsing=True)
-        self.assertIn('user', fs)
-        self.assertTrue(fs["user"].value == "john")
-        self.assertTrue(fs["data"].value == data)
-        self.assertEqual(fs["data"].filename, "")
+        compare_multipart(self, req)
 
     def test_file_request_with_filename(self):
-        import cgi
-
         # fill in a file upload form...
         form = self.make_form()
         form["user"] = "john"
@@ -3340,20 +3362,9 @@ class UploadTests(_testcase.TestCase):  # {{{
         self.assertTrue(
             get_header(req, "Content-type").startswith(
                 "multipart/form-data; boundary="))
-
-        # ...and check the resulting request is understood by cgi module
-        fs = cgi.FieldStorage(
-            BytesIO(req.get_data()),
-            CaseInsensitiveDict(header_items(req)),
-            environ={"REQUEST_METHOD": "POST"}, strict_parsing=True)
-        self.assertIn('user', fs)
-        self.assertTrue(fs["user"].value == "john")
-        self.assertTrue(fs["data"].value == data)
-        self.assertTrue(fs["data"].filename == "afilename")
+        compare_multipart(self, req, filename='afilename')
 
     def test_multipart_file_request(self):
-        import cgi
-
         # fill in a file upload form...
         form = self.make_form()
         form["user"] = "john"
@@ -3368,26 +3379,41 @@ class UploadTests(_testcase.TestCase):  # {{{
         self.assertTrue(
             get_header(req, "Content-type").startswith(
                 "multipart/form-data; boundary="))
-
-        # print "req.get_data()\n>>%s<<" % req.get_data()
-
-        # ...and check the resulting request is understood by cgi module
-        fs = cgi.FieldStorage(
-            BytesIO(req.get_data()),
-            CaseInsensitiveDict(header_items(req)),
-            environ={"REQUEST_METHOD": "POST"}, strict_parsing=True)
-        self.assertIn('user', fs)
-        self.assertTrue(fs["user"].value == "john")
-
-        fss = fs["data"][None]
-        filenames = "filenamea", "", "filenamec"
-        datas = data, more_data, yet_more_data
-        for i in range(len(fss)):
-            fs = fss[i]
-            filename = filenames[i]
-            data = datas[i]
-            self.assertTrue(fs.filename == filename)
-            self.assertTrue(fs.value == data)
+        self.assertMultiLineEqual(req.get_data().decode('ascii'), '''\
+--1\r
+Content-Disposition: form-data; name="data"\r
+Content-Type: multipart/mixed;\r
+    boundary=2\r
+\r
+--2\r
+Content-Disposition: file; filename="filenamea"\r
+Content-Type: application/octet-stream\r
+\r
+blah
+baz
+\r
+--2\r
+Content-Disposition: file; filename=""\r
+Content-Type: application/octet-stream\r
+\r
+rhubarb
+rhubarb
+\r
+--2\r
+Content-Disposition: file; filename="filenamec"\r
+Content-Type: application/octet-stream\r
+\r
+rheum
+rhaponicum
+\r
+--2--\r
+\r
+--1\r
+Content-Disposition: form-data; name="user"\r
+\r
+john\r
+--1--\r
+''')
 
     def test_upload_data(self):
         form = self.make_form()
