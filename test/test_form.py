@@ -10,7 +10,7 @@ import os
 import string
 import unittest
 import warnings
-from io import BytesIO
+import io
 from functools import partial
 
 import mechanize
@@ -31,6 +31,12 @@ from mechanize.polyglot import codepoint_to_chr
 # XHTML
 
 em_dash = codepoint_to_chr(0x2014)
+
+
+def BytesIO(x=b''):
+    if not isinstance(x, bytes):
+        x = x.encode('utf-8')
+    return io.BytesIO(x)
 
 
 def hide_deprecations():
@@ -543,7 +549,8 @@ Rhubarb.</button>
         form["foo"] = ["on"]
         form["bar"] = ["on"]
         pairs = form.click_pairs()
-        self.assertTrue(pairs == [("foo", "on"), ("bar", "on"), ("submit", "")])
+        self.assertEqual(
+            pairs, [("foo", "on"), ("bar", "on"), ("submit", "")])
 
     def testSingleSelectFixup(self):
         # HTML 4.01 section 17.6.1: single selection SELECT controls shouldn't
@@ -1274,8 +1281,9 @@ class ControlTests(unittest.TestCase):  # {{{
         data = c._click(form, (1, 1), "request_data")
         self.assertTrue(c.pairs() == [])
         self.assertTrue(pairs == [("name_value", "value_value")])
-        self.assertTrue(request.get_full_url() ==
-                     "http://foo.bar.com/?name_value=value_value")
+        self.assertEqual(
+            request.get_full_url(),
+            "http://foo.bar.com/?name_value=value_value")
         self.assertTrue(
             data == ("http://foo.bar.com/?name_value=value_value", None, []))
         c.disabled = True
@@ -1337,8 +1345,9 @@ class ControlTests(unittest.TestCase):  # {{{
         self.assertTrue(c.pairs() == [])
         request = c._click(form, (0, 55), "request")
         self.assertTrue(c.pairs() == [])
-        self.assertTrue(request.get_full_url() ==
-                     "http://foo.bar.com/?name_value.x=0&name_value.y=55")
+        self.assertEqual(
+            request.get_full_url(),
+            "http://foo.bar.com/?name_value.x=0&name_value.y=55")
         self.assertTrue(
             c._click(form, (0, 55), return_type="request_data") == (
                 "http://foo.bar.com/?name_value.x=0&name_value.y=55", None,
@@ -2328,9 +2337,10 @@ class FormTests(unittest.TestCase):  # {{{
         forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assertTrue(len(forms) == 1)
         form = forms[0]
-        self.assertTrue(form.action == "http://auth.athensams.net/"
-                     "?ath_returl=%22http%3A%2F%2Ftame.mimas.ac.uk%2Fisicgi"
-                     "%2FWOS-login.cgi%22&ath_dspid=MIMAS.WOS")
+        self.assertEqual(
+            form.action, "http://auth.athensams.net/"
+            "?ath_returl=%22http%3A%2F%2Ftame.mimas.ac.uk%2Fisicgi"
+            "%2FWOS-login.cgi%22&ath_dspid=MIMAS.WOS")
 
         self.assertRaises(
             ControlNotFoundError,
@@ -2360,8 +2370,9 @@ class FormTests(unittest.TestCase):  # {{{
         form["ath_uname"] = "jbloggs"
         form["ath_passwd"] = "foobar"
 
-        self.assertTrue(form.click_pairs() == [("ath_uname", "jbloggs"),
-                                            ("ath_passwd", "foobar")])
+        self.assertEqual(form.click_pairs(), [
+            ("ath_uname", "jbloggs"),
+            ("ath_passwd", "foobar")])
 
     def testSearchType(self):
         fh = self._get_test_file("SearchType.html")
@@ -2860,9 +2871,10 @@ class FormTests(unittest.TestCase):  # {{{
             self.assertTrue(control.type == types[i])
 
         pairs = form.click_pairs("Add all records retrieved to list")
-        self.assertTrue(pairs == [("Add all records retrieved to list.x", "1"),
-                               ("Add all records retrieved to list.y", "1"),
-                               ("marked_list_candidates", pvs[0])])
+        self.assertEqual(pairs, [
+            ("Add all records retrieved to list.x", "1"),
+            ("Add all records retrieved to list.y", "1"),
+            ("marked_list_candidates", pvs[0])])
 
     def testMarkedResults(self):
         fh = self._get_test_file("MarkedResults.html")
