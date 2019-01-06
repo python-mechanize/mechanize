@@ -2198,10 +2198,11 @@ class HTMLForm:
         Note the following useful HTML attributes of file upload controls (see
         HTML 4.01 spec, section 17):
 
-          * `accept`: comma-separated list of content types that the server will
-             handle correctly; you can use this to filter out non-conforming files
-          * `size`: XXX IIRC, this is indicative of whether form wants multiple or
-             single files
+          * `accept`: comma-separated list of content types
+             that the server will handle correctly;
+             you can use this to filter out non-conforming files
+          * `size`: XXX IIRC, this is indicative of whether form
+             wants multiple or single files
           * `maxlength`: XXX hint of max content length in bytes?
 
         """
@@ -2521,7 +2522,8 @@ class HTMLForm:
                 mw.startmultipartbody(
                     "form-data", add_to_http_hdrs=True, prefix=0)
                 for ii, k, v, control_index in self._pairs_and_controls():
-                    self.controls[control_index]._write_mime_data(mw, as_utf8(k), as_utf8(v))
+                    self.controls[control_index]._write_mime_data(
+                            mw, as_utf8(k), as_utf8(v))
                 mw.lastpart()
                 return uri, data.getvalue(), http_hdrs
             else:
