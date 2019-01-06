@@ -3321,7 +3321,8 @@ class UploadTests(_testcase.TestCase):  # {{{
         fs = cgi.FieldStorage(
             BytesIO(req.get_data()),
             CaseInsensitiveDict(header_items(req)),
-            environ={"REQUEST_METHOD": "POST"})
+            environ={"REQUEST_METHOD": "POST"}, strict_parsing=True)
+        self.assertIn('user', fs)
         self.assertTrue(fs["user"].value == "john")
         self.assertTrue(fs["data"].value == data)
         self.assertEqual(fs["data"].filename, "")
@@ -3344,7 +3345,8 @@ class UploadTests(_testcase.TestCase):  # {{{
         fs = cgi.FieldStorage(
             BytesIO(req.get_data()),
             CaseInsensitiveDict(header_items(req)),
-            environ={"REQUEST_METHOD": "POST"})
+            environ={"REQUEST_METHOD": "POST"}, strict_parsing=True)
+        self.assertIn('user', fs)
         self.assertTrue(fs["user"].value == "john")
         self.assertTrue(fs["data"].value == data)
         self.assertTrue(fs["data"].filename == "afilename")
@@ -3373,7 +3375,8 @@ class UploadTests(_testcase.TestCase):  # {{{
         fs = cgi.FieldStorage(
             BytesIO(req.get_data()),
             CaseInsensitiveDict(header_items(req)),
-            environ={"REQUEST_METHOD": "POST"})
+            environ={"REQUEST_METHOD": "POST"}, strict_parsing=True)
+        self.assertIn('user', fs)
         self.assertTrue(fs["user"].value == "john")
 
         fss = fs["data"][None]
