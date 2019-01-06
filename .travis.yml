@@ -17,4 +17,4 @@ install:
     - pip install -r requirements.txt
     - if [[ $TRAVIS_PYTHON_VERSION != 'pypy' ]]; then pip install --no-binary lxml html5-parser; fi
 
-script: ./run_tests.py
+script: ./setup.py test

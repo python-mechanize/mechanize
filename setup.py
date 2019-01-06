@@ -26,6 +26,8 @@ import os
 import setuptools
 import sys
 
+from setuptools.command.test import test
+
 if sys.version_info < (2, 7):
     raise SystemExit('mechanize requires python >= 2.7')
 
@@ -67,12 +69,26 @@ Topic :: Text Processing :: Markup :: XML
 """
 
 
+class Test(test):
+
+    def run(self):
+        import importlib
+        orig = sys.path[:]
+        try:
+            sys.path.insert(0, os.getcwd())
+            m = importlib.import_module('run_tests')
+            m.main(self._argv)
+        finally:
+            sys.path = orig
+
+
 def main():
     setuptools.setup(
         name="mechanize",
         version=VERSION,
         license="BSD",
         platforms=["any"],
+        cmdclass={'test': Test},
         install_requires=['html5lib>=0.999999999'],
         extras_require={'fast': ['html5-parser>=0.4.4']},
         classifiers=[c for c in CLASSIFIERS.split("\n") if c],

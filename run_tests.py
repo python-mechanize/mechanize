@@ -17,6 +17,10 @@ def mutate_sys_path():
     sys.path.insert(0, os.path.join(this_dir, "mechanize"))
 
 
+def run_tests(test_names=()):
+    pass
+
+
 def main(argv):
     # test-tools/ dir includes a bundled Python 2.5 doctest / linecache, and a
     # bundled & modified Python trunk (2.7 vintage) unittest.  This is only for
