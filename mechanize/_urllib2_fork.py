@@ -44,21 +44,18 @@ import socket
 import sys
 import time
 from functools import partial
-# support for FileHandler, proxies via environment variables
-from urllib import addinfourl, ftpwrapper, getproxies
-from urllib import proxy_bypass as urllib_proxy_bypass
-from urllib import splitattr
-from urllib import splithost as urllib_splithost
-from urllib import (splitpasswd, splitport, splittype, splituser, splitvalue,
-                    unquote, unwrap, url2pathname)
 
 from . import _rfc3986
 from ._clientcookie import CookieJar
 from ._headersutil import normalize_header_name
 from ._response import closeable_response
 from .polyglot import (HTTPConnection, HTTPError, HTTPMessage, HTTPSConnection,
-                       StringIO, URLError, is_class, is_string, iteritems, map,
-                       raise_with_traceback, urlparse, urlsplit)
+                       StringIO, URLError, addinfourl, ftpwrapper, getproxies,
+                       is_class, is_string, iteritems, map,
+                       raise_with_traceback, splitattr, splitpasswd, splitport,
+                       splittype, splituser, splitvalue, unquote, unwrap,
+                       url2pathname, urllib_proxy_bypass, urllib_splithost,
+                       urlparse, urlsplit)
 
 
 def sha1_digest(bytes):

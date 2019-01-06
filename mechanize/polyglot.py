@@ -12,7 +12,11 @@ is_py2 = sys.version_info.major < 3
 if is_py2:
     import types
     from urllib import (
-            urlencode, pathname2url, quote, addinfourl, quote_plus, urlopen
+            urlencode, pathname2url, quote, addinfourl, quote_plus,
+            urlopen, splitattr, splithost as urllib_splithost, getproxies,
+            ftpwrapper, proxy_bypass as urllib_proxy_bypass, splitpasswd,
+            splitport, splittype, splituser, splitvalue,
+            unquote, unwrap, url2pathname
     )
     from urllib2 import (
             HTTPError, URLError, install_opener, build_opener, ProxyHandler
@@ -52,11 +56,15 @@ else:
     from urllib.error import HTTPError, URLError
     from urllib.robotparser import RobotFileParser
     from urllib.parse import (
-            urlsplit, urljoin, urlparse, urlunparse, urlencode, quote_plus
+            urlsplit, urljoin, urlparse, urlunparse,
+            urlencode, quote_plus, splitattr, splithost as urllib_splithost,
+            splitpasswd, splitport, splittype, splituser, splitvalue,
+            unquote, unwrap
     )
     from urllib.request import (
             pathname2url, quote, addinfourl, install_opener, build_opener,
-            ProxyHandler, urlopen)
+            ProxyHandler, urlopen, getproxies, ftpwrapper,
+            proxy_bypass as urllib_proxy_bypass, url2pathname)
     from http.client import HTTPMessage, HTTPConnection, HTTPSConnection
     from http.cookiejar import (
             DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
@@ -85,7 +93,10 @@ else:
     unicode_type = str
 
 if False:
-    HTTPError, urlsplit, urljoin, urlparse, urlunparse, urlencode, HTTPMessage
+    (HTTPError, urlsplit, urljoin, urlparse, urlunparse, urlencode,
+     HTTPMessage, splitattr, urllib_splithost, getproxies, ftpwrapper,
+     urllib_proxy_bypass, splituser, splitpasswd, splitport,
+     splitvalue, splittype, unquote, unwrap, url2pathname)
     pathname2url, RobotFileParser, URLError, quote, HTTPConnection
     HTTPSConnection, StringIO, addinfourl, install_opener, build_opener
     ProxyHandler, quote_plus, urlopen
