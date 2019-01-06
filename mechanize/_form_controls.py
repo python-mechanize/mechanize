@@ -9,12 +9,18 @@ import warnings
 from io import BytesIO
 
 from . import _request
-from .polyglot import urlparse, urlunparse, urlencode, is_py2, iteritems
+from .polyglot import (as_unicode, is_py2, iteritems, urlencode, urlparse,
+                       urlunparse)
 
 if is_py2:
     from cStringIO import StringIO
 else:
-    from io import StringIO  # 2to3: probably broken when writing bytes
+    class StringIO(BytesIO):
+
+        def write(self, x):
+            if isinstance(x, str):
+                x = x.encode('utf-8')
+            BytesIO.write(self, x)
 
 
 class Missing:
@@ -177,7 +183,8 @@ class MimeWriter:
                 self._headers.append(line)
 
     def flushheaders(self):
-        self._fp.writelines(self._headers)
+        for line in self._headers:
+            self._fp.write(line)
         self._headers = []
 
     def startbody(self,
@@ -351,7 +358,9 @@ class Control:
         """Write data for a subitem of this control to a MimeWriter."""
         # called by HTMLForm
         mw2 = mw.nextpart()
-        mw2.addheader("Content-Disposition", 'form-data; name="%s"' % name, 1)
+        mw2.addheader(
+            "Content-Disposition", 'form-data; name="%s"' % as_unicode(name),
+            1)
         f = mw2.startbody(prefix=0)
         f.write(value)
 

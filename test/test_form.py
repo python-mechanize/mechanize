@@ -7,7 +7,6 @@
 # Copyright 1998-2000 Gisle Aas.
 
 import os
-import string
 import unittest
 import warnings
 import io
@@ -2333,8 +2332,8 @@ class FormTests(unittest.TestCase):  # {{{
             self.assertTrue(form.click().get_full_url() == url)
 
     def testAuth(self):
-        fh = self._get_test_file("Auth.html")
-        forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        with self._get_test_file("Auth.html") as fh:
+            forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assertTrue(len(forms) == 1)
         form = forms[0]
         self.assertEqual(
@@ -2375,8 +2374,8 @@ class FormTests(unittest.TestCase):  # {{{
             ("ath_passwd", "foobar")])
 
     def testSearchType(self):
-        fh = self._get_test_file("SearchType.html")
-        forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        with self._get_test_file("SearchType.html") as fh:
+            forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assertTrue(len(forms) == 1)
         form = forms[0]
 
@@ -2408,8 +2407,8 @@ class FormTests(unittest.TestCase):  # {{{
         pass  # XXX
 
     def testGeneralSearch(self):
-        fh = self._get_test_file("GeneralSearch.html")
-        forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        with self._get_test_file("GeneralSearch.html") as fh:
+            forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assertTrue(len(forms) == 1)
         form = forms[0]
 
@@ -2825,8 +2824,8 @@ class FormTests(unittest.TestCase):  # {{{
             reset_deprecations()
 
     def testResults(self):
-        fh = self._get_test_file("Results.html")
-        forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        with self._get_test_file("Results.html") as fh:
+            forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assertTrue(len(forms) == 1)
         form = forms[0]
 
@@ -2877,8 +2876,8 @@ class FormTests(unittest.TestCase):  # {{{
             ("marked_list_candidates", pvs[0])])
 
     def testMarkedResults(self):
-        fh = self._get_test_file("MarkedResults.html")
-        forms = parse_file(fh, self.base_uri, backwards_compat=False)
+        with self._get_test_file("MarkedResults.html") as fh:
+            forms = parse_file(fh, self.base_uri, backwards_compat=False)
         self.assertTrue(len(forms) == 1)
         form = forms[0]
 
@@ -2934,18 +2933,18 @@ class MoreFormTests(unittest.TestCase):  # {{{
         form.method = "POST"
         form.enctype = "multipart/form-data"
         lines = [
-            line for line in form.click_request_data()[1].split("\r\n")
-            if line != '' and not line.startswith("--")
+            line for line in form.click_request_data()[1].split(b"\r\n")
+            if line and not line.startswith(b"--")
         ]
         self.assertEqual(lines, [
-            'Content-Disposition: form-data; name="murphy"',
-            'a',
-            'Content-Disposition: form-data; name="woof"',
-            'd',
-            'Content-Disposition: form-data; name="murphy"',
-            'b',
-            'Content-Disposition: form-data; name="murphy"',
-            'c',
+            b'Content-Disposition: form-data; name="murphy"',
+            b'a',
+            b'Content-Disposition: form-data; name="woof"',
+            b'd',
+            b'Content-Disposition: form-data; name="murphy"',
+            b'b',
+            b'Content-Disposition: form-data; name="murphy"',
+            b'c',
         ])
 
     def make_form(self):
@@ -3276,26 +3275,14 @@ class FunctionTests(unittest.TestCase):  # {{{
 # }}}
 
 
-class CaseInsensitiveDict:  # {{{
-    def __init__(self, items):
-        self._dict = {}
-        for key, val in items:
-            self._dict[string.lower(key)] = val
-
-    def __getitem__(self, key):
-        return self._dict[key]
-
-    def __getattr__(self, name):
-        return getattr(self._dict, name)
-
-
-# }}}
+def CaseInsensitiveDict(items):
+    return {k.lower(): value for k, value in items}
 
 
 class UploadTests(_testcase.TestCase):  # {{{
     def test_choose_boundary(self):
         bndy = _form_controls.choose_boundary()
-        ii = string.find(bndy, '.')
+        ii = bndy.find('.')
         self.assertTrue(ii < 0)
 
     def make_form(self):
@@ -3402,7 +3389,7 @@ class UploadTests(_testcase.TestCase):  # {{{
     def test_upload_data(self):
         form = self.make_form()
         data = form.click().get_data()
-        self.assertTrue(data.startswith("--"))
+        self.assertTrue(data.startswith(b"--"))
 
     def test_empty_upload(self):
         # no controls except for INPUT/SUBMIT
@@ -3415,13 +3402,13 @@ class UploadTests(_testcase.TestCase):  # {{{
             backwards_compat=False)
         form = forms[0]
         data = form.click().get_data()
-        lines = string.split(data, "\r\n")
-        self.assertTrue(lines[0].startswith("--"))
+        lines = data.split(b"\r\n")
+        self.assertTrue(lines[0].startswith(b"--"))
         self.assertEqual(lines[1],
-                         'Content-Disposition: form-data; name="submit"')
-        self.assertEqual(lines[2], "")
-        self.assertEqual(lines[3], "")
-        self.assertTrue(lines[4].startswith("--"))
+                         b'Content-Disposition: form-data; name="submit"')
+        self.assertEqual(lines[2], b"")
+        self.assertEqual(lines[3], b"")
+        self.assertTrue(lines[4].startswith(b"--"))
 
     def test_no_files(self):
         # no files uploaded
@@ -3433,7 +3420,7 @@ class UploadTests(_testcase.TestCase):  # {{{
 </form></html>"""), ".")
         form = forms[1]
         data = form.click().get_data()
-        self.assertEqual(data, """\
+        self.assertEqual(data, b"""\
 --123\r
 Content-Disposition: form-data; name="spam"; filename=""\r
 Content-Type: application/octet-stream\r
