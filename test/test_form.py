@@ -2115,8 +2115,7 @@ class FormTests(unittest.TestCase):  # {{{
     base_uri = "http://auth.athensams.net/"
 
     def _get_test_file(self, filename):
-        from . import test_form
-        this_dir = os.path.dirname(test_form.__file__)
+        this_dir = os.path.dirname(os.path.abspath(__file__))
         path = os.path.join(this_dir, "test_form_data", filename)
         return open(path)
 
