@@ -47,6 +47,8 @@ class MockResponse:
 
     def __init__(self, url="http://example.com/", data=None, info=None):
         self.url = self._url = url
+        if isinstance(data, type(u'')):
+            data = data.encode('utf-8')
         self.fp = BytesIO(data)
         if info is None:
             info = {}
@@ -214,7 +216,7 @@ class BrowserTests(TestCase):
             if not isinstance(s, bytes):
                 s = s.encode('ascii')
             msg = create_response_info(BytesIO(s))
-            r = addinfourl(BytesIO(""), msg, "http://www.example.com/")
+            r = addinfourl(BytesIO(b""), msg, "http://www.example.com/")
             b.set_response(r)
             self.assertEqual(b.encoding(), ct)
 
@@ -782,7 +784,7 @@ class ResponseTests(TestCase):
 
         br = TestBrowser()
         url = "http://example.com/"
-        html = """<html><body><a href="spam">click me</a></body></html>"""
+        html = b"""<html><body><a href="spam">click me</a></body></html>"""
         headers = {"content-type": "text/html"}
         r = response_seek_wrapper(MockResponse(url, html, headers))
         br.add_handler(make_mock_handler()([("http_open", r)]))
@@ -793,7 +795,7 @@ class ResponseTests(TestCase):
         self.assertEqual(copy.copy(r).read(), html)
         self.assertEqual(list(br.links())[0].url, "spam")
 
-        newhtml = """<html><body><a href="eggs">click me</a></body></html>"""
+        newhtml = b"""<html><body><a href="eggs">click me</a></body></html>"""
 
         r.set_data(newhtml)
         self.assertEqual(r.read(), newhtml)
@@ -873,6 +875,7 @@ class HttplibTests(mechanize._testcase.TestCase):
                 msg = create_response_info(BytesIO(b""))
                 status = 200
                 reason = "OK"
+                fp = BytesIO(b'')
 
                 def read(self__, sz=-1):
                     return ""
