@@ -93,6 +93,11 @@ else:
     unicode_type = str
     map = map
 
+    # Legacy code expects HTTPMessage.getheaders()
+    def getheaders(self, name):
+        return self.get_all(name, failobj=[])
+    HTTPMessage.getheaders = getheaders
+
 
 def as_unicode(x):
     if isinstance(x, bytes):

@@ -32,6 +32,7 @@ from __future__ import absolute_import
 
 import base64
 import bisect
+import collections
 import copy
 import hashlib
 import logging
@@ -666,7 +667,8 @@ class ProxyHandler(BaseHandler):
         if proxies is None:
             proxies = getproxies()
 
-        assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
+        assert isinstance(
+            proxies, collections.Mapping), "proxies must be a mapping"
         self.proxies = proxies
         for type, url in iteritems(proxies):
             setattr(self, '%s_open' % type,
