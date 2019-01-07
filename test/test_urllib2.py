@@ -1728,7 +1728,7 @@ class HeadParserTests(unittest.TestCase):
         htmls = [
             (
                 b"""<meta http-equiv=refresh content="1; http://example.com/">
-                """, [("refresh", "1; http://example.com/")]),
+                """, [(b"refresh", b"1; http://example.com/")]),
 
             (
                 b"""
@@ -1740,7 +1740,10 @@ class HeadParserTests(unittest.TestCase):
                 <meta http-equiv="moo" content="cow">
                 </html>
                 """,
-                [("refresh", "1; http://example.com/"), ("f\noo", "b\\ar")]),
+                [
+                    (b"refresh", b"1; http://example.com/"),
+                    (b"f\noo", b"b\\ar")
+                ]),
 
             (
                 b"""<meta http-equiv="refresh">
