@@ -105,6 +105,12 @@ else:
         return self.get_all(name, failobj=[])
     HTTPMessage.getheaders = getheaders
 
+    # We want __getitem__ to return the last header not the first
+    def getitem(self, name):
+        vals = self.get_all(name, [None])
+        return vals[-1]
+    HTTPMessage.__getitem__ = getitem
+
     def is_mapping(x):
         return isinstance(x, collections.abc.Mapping)
 
@@ -112,7 +118,7 @@ else:
         return parse_headers(fp)
 
 
-def as_unicode(x):
+def as_unicode(x, encoding='utf-8'):
     if isinstance(x, bytes):
         x = x.decode('utf-8')
     return x

@@ -928,7 +928,7 @@ class CookieTests(unittest.TestCase):
         url = "http://foo.bar.com/"
         interact_2965(c, url, "spam=eggs; Version=1; Port")
         h = interact_2965(c, url)
-        assert re.search("\$Port([^=]|$)", h), \
+        assert re.search(r"\$Port([^=]|$)", h), \
             "port with no value not returned with no value"
 
         c = CookieJar(pol)
@@ -1514,7 +1514,7 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
 
         assert (re.search(r'^\$Version="?1"?;', cookie) and re.search(
             r'Part_Number="?Rocket_Launcher_0001"?;'
-            '\s*\$Path="\/acme"', cookie) and re.search(
+            r'\s*\$Path="\/acme"', cookie) and re.search(
                 r'Customer="?WILE_E_COYOTE"?;\s*\$Path="\/acme"', cookie))
 
         #

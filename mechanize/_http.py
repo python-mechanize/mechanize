@@ -25,7 +25,7 @@ from ._request import Request
 from ._response import response_seek_wrapper
 from ._urllib2_fork import BaseHandler, HTTPError
 from ._equiv import HTTPEquivParser
-from .polyglot import create_response_info, RobotFileParser
+from .polyglot import create_response_info, RobotFileParser, is_py2, as_unicode
 
 debug = logging.getLogger("mechanize").debug
 debug_robots = logging.getLogger("mechanize.robots").debug
@@ -58,11 +58,15 @@ class HTTPEquivProcessor(BaseHandler):
                 pass
             else:
                 for hdr, val in html_headers:
-                    # add a header
-                    http_message.dict[hdr.lower()] = val
-                    text = hdr + ": " + val
-                    for line in text.split("\n"):
-                        http_message.headers.append(line + "\n")
+                    if is_py2:
+                        # add a header
+                        http_message.dict[hdr.lower()] = val
+                        text = hdr + b": " + val
+                        for line in text.split(b"\n"):
+                            http_message.headers.append(line + b"\n")
+                    else:
+                        hdr = hdr.decode('iso-8859-1')
+                        http_message[hdr] = val.decode('iso-8859-1')
         return response
 
     https_response = http_response
@@ -112,7 +116,10 @@ class MechanizeRobotFileParser(RobotFileParser):
             debug_robots("allow all")
         elif status == 200 and lines:
             debug_robots("parse lines")
-            self.parse(lines)
+            if is_py2:
+                self.parse(lines)
+            else:
+                self.parse(map(as_unicode, lines))
 
 
 class RobotExclusionError(HTTPError):
@@ -125,7 +132,7 @@ class RobotExclusionError(HTTPError):
 class HTTPRobotRulesProcessor(BaseHandler):
     # before redirections, after everything else
     handler_order = 800
-    http_response_class = create_response_info
+    http_response_class = None
 
     def __init__(self, rfp_class=MechanizeRobotFileParser):
         self.rfp_class = rfp_class
@@ -171,12 +178,13 @@ class HTTPRobotRulesProcessor(BaseHandler):
             return request
         else:
             # XXX This should really have raised URLError.  Too late now...
+            factory = self.http_response_class or create_response_info
             msg = b"request disallowed by robots.txt"
             raise RobotExclusionError(
                 request,
                 request.get_full_url(),
                 403, msg,
-                self.http_response_class(BytesIO()), BytesIO(msg))
+                factory(BytesIO()), BytesIO(msg))
 
     https_request = http_request
 

@@ -38,11 +38,6 @@ from mechanize.polyglot import create_response_info, iteritems
 # l.setLevel(DEBUG)
 
 
-class AlwaysEqual:
-    def __cmp__(self, other):
-        return 0
-
-
 class TrivialTests(mechanize._testcase.TestCase):
     def test_trivial(self):
         # A couple trivial tests
@@ -452,7 +447,8 @@ class MockHTTPHandler(mechanize.BaseHandler):
         if self._count == 0:
             self._count = self._count + 1
             name = "Not important"
-            msg = create_response_info(BytesIO(self.headers))
+            msg = create_response_info(BytesIO(
+                self.headers.encode('iso-8859-1')))
             return self.parent.error("http", req,
                                      test_response(), self.code, name, msg)
         else:
@@ -675,12 +671,16 @@ class OpenerDirectorTests(unittest.TestCase):
         req = Request("http://example.com/")
         o.open(req)
         assert len(o.calls) == 2
+        ignore = object()
         calls = [(handlers[0], "http_open", (req, )), (
-            handlers[2], "http_error_302", (req, AlwaysEqual(), 302, "", {}))]
+            handlers[2], "http_error_302", (req, ignore, 302, "", {}))]
         for expected, got in zip(calls, o.calls):
             handler, method_name, args = expected
             self.assertEqual((handler, method_name), got[:2])
-            self.assertEqual(args, got[2])
+            self.assertEqual(len(args), len(got[2]))
+            for a, b in zip(args, got[2]):
+                if a is not ignore:
+                    self.assertEqual(a, b)
 
     def test_http_error_raised(self):
         # should get an HTTPError if an HTTP handler raises a non-200 response
@@ -828,7 +828,9 @@ class HandlerTests(mechanize._testcase.TestCase):
 
             def retrfile(self, filename, filetype):
                 self.filename, self.filetype = filename, filetype
-                return BytesIO(self.data), len(self.data)
+                data = self.data if isinstance(
+                        self.data, bytes) else self.data.encode('utf-8')
+                return BytesIO(data), len(self.data)
 
         class NullFTPHandler(mechanize.FTPHandler):
             def __init__(self, data):
@@ -874,14 +876,14 @@ class HandlerTests(mechanize._testcase.TestCase):
             self.assertEqual(int(headers["Content-length"]), len(data))
 
     def test_file(self):
-        import rfc822
+        from email.utils import formatdate
         import socket
         h = mechanize.FileHandler()
         o = h.parent = MockOpener()
 
         temp_file = os.path.join(self.make_temp_dir(), "test.txt")
         urlpath = sanepathname2url(os.path.abspath(temp_file))
-        towrite = "hello, world\n"
+        towrite = b"hello, world\n"
         try:
             fqdn = socket.gethostbyname(socket.gethostname())
         except socket.gaierror:
@@ -900,7 +902,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             finally:
                 r.close()
             stats = os.stat(temp_file)
-            modified = rfc822.formatdate(stats.st_mtime)
+            modified = formatdate(stats.st_mtime, usegmt=True)
             self.assertEqual(data, towrite)
             self.assertEqual(headers["Content-type"], "text/plain")
             self.assertEqual(headers["Content-length"], "13")
@@ -1096,7 +1098,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         r = mechanize._response.test_response(code=502, msg="Bad gateway")
         self.assertTrue(h.http_response(req, r) is None)
         self.assertEqual(o.proto, "http")  # o.error called
-        self.assertEqual(o.args, (req, r, 502, "Bad gateway", AlwaysEqual()))
+        self.assertEqual(o.args[:4], (req, r, 502, "Bad gateway"))
 
     def test_referer(self):
         h = HTTPRefererProcessor()
@@ -1711,10 +1713,10 @@ class HandlerTests(mechanize._testcase.TestCase):
         # expect one request without authorization, then one with
         self.assertEqual(len(http_handler.requests), 2)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
-        userpass = '%s:%s' % (user, password)
-        auth_hdr_value = 'Basic ' + base64.encodestring(userpass).strip()
+        userpass = ('%s:%s' % (user, password)).encode('utf-8')
+        auth_hdr_value = b'Basic ' + base64.b64encode(userpass).strip()
         self.assertEqual(http_handler.requests[1].get_header(auth_header),
-                         auth_hdr_value)
+                         auth_hdr_value.decode('ascii'))
 
         # if the password manager can't find a password, the handler won't
         # handle the HTTP auth error

@@ -51,12 +51,13 @@ from ._clientcookie import CookieJar
 from ._headersutil import normalize_header_name
 from ._response import closeable_response
 from .polyglot import (HTTPConnection, HTTPError, HTTPSConnection, URLError,
-                       addinfourl, create_response_info, ftpwrapper,
-                       getproxies, is_class, is_mapping, is_string, iteritems,
-                       map, raise_with_traceback, splitattr, splitpasswd,
-                       splitport, splittype, splituser, splitvalue, unquote,
-                       unwrap, url2pathname, urllib_proxy_bypass,
-                       urllib_splithost, urlparse, urlsplit)
+                       addinfourl, as_unicode, create_response_info,
+                       ftpwrapper, getproxies, is_class, is_mapping, is_py2,
+                       is_string, iteritems, map, raise_with_traceback,
+                       splitattr, splitpasswd, splitport, splittype, splituser,
+                       splitvalue, unquote, unwrap, url2pathname,
+                       urllib_proxy_bypass, urllib_splithost, urlparse,
+                       urlsplit)
 
 
 def sha1_digest(bytes):
@@ -824,7 +825,8 @@ class AbstractBasicAuthHandler:
         user, pw = self.passwd.find_user_password(realm, host)
         if pw is not None:
             raw = "%s:%s" % (user, pw)
-            auth = 'Basic %s' % base64.b64encode(raw).strip()
+            auth = str('Basic %s' % base64.b64encode(
+                    raw.encode('utf-8')).strip().decode('ascii'))
             if req.headers.get(self.auth_header, None) == auth:
                 return None
             newreq = copy.copy(req)
@@ -1131,14 +1133,19 @@ class AbstractHTTPHandler(BaseHandler):
         headers[b"Connection"] = b"close"
         # httplib in python 2 needs str() not unicode() for all request
         # parameters
-        headers = {str(name.title()): str(val)
-                   for name, val in iteritems(headers)}
+        if is_py2:
+            headers = {str(name.title()): str(val)
+                       for name, val in iteritems(headers)}
+        else:
+            headers = {as_unicode(name, 'iso-8859-1').title():
+                       as_unicode(val, 'iso-8859-1')
+                       for name, val in iteritems(headers)}
 
         if req._tunnel_host:
             set_tunnel = h.set_tunnel if hasattr(
                 h, "set_tunnel") else h._set_tunnel
             tunnel_headers = {}
-            proxy_auth_hdr = b"Proxy-Authorization"
+            proxy_auth_hdr = "Proxy-Authorization"
             if proxy_auth_hdr in headers:
                 tunnel_headers[proxy_auth_hdr] = headers[proxy_auth_hdr]
                 # Proxy-Authorization should not be sent to origin server.
