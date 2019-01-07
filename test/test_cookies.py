@@ -23,7 +23,7 @@ class FakeResponse:
         """
         headers: list of RFC822-style 'Key: value' strings
         """
-        f = BytesIO("\n".join(headers).encode('latin1'))
+        f = BytesIO("\n".join(headers).encode('iso-8859-1'))
         self._headers = create_response_info(f)
         self._url = url
 

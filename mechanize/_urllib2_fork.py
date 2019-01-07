@@ -1351,7 +1351,8 @@ class FileHandler(BaseHandler):
             mtype = mimetypes.guess_type(file)[0]
             headers = create_response_info(BytesIO(
                 ('Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
-                    (mtype or 'text/plain', size, modified)).encode('latin1')))
+                    (mtype or 'text/plain', size, modified)).encode(
+                        'iso-8859-1')))
             if host:
                 host, port = splitport(host)
             if not host or (
@@ -1414,7 +1415,7 @@ class FTPHandler(BaseHandler):
                 headers += "Content-type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
                 headers += "Content-length: %d\n" % retrlen
-            sf = BytesIO(headers.encode('latin1'))
+            sf = BytesIO(headers.encode('iso-8859-1'))
             headers = create_response_info(sf)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:

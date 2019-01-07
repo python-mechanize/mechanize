@@ -293,7 +293,7 @@ def http_message(mapping):
     f.append("")
     msg = "\r\n".join(f)
     if not isinstance(msg, bytes):
-        msg = msg.encode('latin1')
+        msg = msg.encode('iso-8859-1')
     msg = create_response_info(BytesIO(msg))
     return msg
 

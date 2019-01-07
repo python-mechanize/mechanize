@@ -488,7 +488,7 @@ def make_headers(headers):
         hdr_text.append("%s: %s" % name_value)
     ans = "\n".join(hdr_text)
     if not isinstance(ans, bytes):
-        ans = ans.encode('latin1')
+        ans = ans.encode('iso-8859-1')
     return create_response_info(BytesIO(ans))
 
 
