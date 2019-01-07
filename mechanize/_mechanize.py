@@ -785,6 +785,16 @@ class Browser(UserAgentBase):
                 ".select_form()?)" % (self.__class__, name))
         return getattr(form, name)
 
+    def __getitem__(self, name):
+        if self.form is None:
+            raise BrowserStateError('No form selected')
+        return self.form[name]
+
+    def __setitem__(self, name, val):
+        if self.form is None:
+            raise BrowserStateError('No form selected')
+        self.form[name] = val
+
     def _filter_links(self,
                       links,
                       text=None,
