@@ -44,18 +44,19 @@ import socket
 import sys
 import time
 from functools import partial
+from io import BytesIO
 
 from . import _rfc3986
 from ._clientcookie import CookieJar
 from ._headersutil import normalize_header_name
 from ._response import closeable_response
-from .polyglot import (HTTPConnection, HTTPError, HTTPMessage, HTTPSConnection,
-                       StringIO, URLError, addinfourl, ftpwrapper, getproxies,
-                       is_class, is_mapping, is_string, iteritems, map,
-                       raise_with_traceback, splitattr, splitpasswd, splitport,
-                       splittype, splituser, splitvalue, unquote, unwrap,
-                       url2pathname, urllib_proxy_bypass, urllib_splithost,
-                       urlparse, urlsplit)
+from .polyglot import (HTTPConnection, HTTPError, HTTPSConnection, URLError,
+                       addinfourl, create_response_info, ftpwrapper,
+                       getproxies, is_class, is_mapping, is_string, iteritems,
+                       map, raise_with_traceback, splitattr, splitpasswd,
+                       splitport, splittype, splituser, splitvalue, unquote,
+                       unwrap, url2pathname, urllib_proxy_bypass,
+                       urllib_splithost, urlparse, urlsplit)
 
 
 def sha1_digest(bytes):
@@ -1348,9 +1349,9 @@ class FileHandler(BaseHandler):
             size = stats.st_size
             modified = emailutils.formatdate(stats.st_mtime, usegmt=True)
             mtype = mimetypes.guess_type(file)[0]
-            headers = HTTPMessage(StringIO(
-                'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
-                (mtype or 'text/plain', size, modified)))
+            headers = create_response_info(BytesIO(
+                ('Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
+                    (mtype or 'text/plain', size, modified)).encode('latin1')))
             if host:
                 host, port = splitport(host)
             if not host or (
@@ -1413,8 +1414,8 @@ class FTPHandler(BaseHandler):
                 headers += "Content-type: %s\n" % mtype
             if retrlen is not None and retrlen >= 0:
                 headers += "Content-length: %d\n" % retrlen
-            sf = StringIO(headers)
-            headers = HTTPMessage(sf)
+            sf = BytesIO(headers.encode('latin1'))
+            headers = create_response_info(sf)
             return addinfourl(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
             raise_with_traceback(URLError('ftp error: %s' % msg))

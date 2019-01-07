@@ -765,7 +765,8 @@ class Browser(UserAgentBase):
         :param tag: element name of opening tag, e.g. "a"
         :param predicate: a function taking a Link object as its single
             argument, returning a boolean result, indicating whether the links
-        :param nr: matches the nth link that matches all other criteria (default 0)
+        :param nr: matches the nth link that matches all other
+            criteria (default 0)
 
         """
         try:

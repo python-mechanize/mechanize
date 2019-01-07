@@ -54,6 +54,7 @@ if is_py2:
 
     codepoint_to_chr = unichr
     unicode_type = unicode
+    create_response_info = HTTPMessage
 
 
 else:
@@ -69,7 +70,9 @@ else:
             pathname2url, quote, addinfourl, install_opener, build_opener,
             ProxyHandler, urlopen, getproxies, ftpwrapper,
             proxy_bypass as urllib_proxy_bypass, url2pathname)
-    from http.client import HTTPMessage, HTTPConnection, HTTPSConnection
+    from http.client import (
+            HTTPMessage, parse_headers, HTTPConnection,
+            HTTPSConnection)
     from http.cookiejar import (
             DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
             FileCookieJar, LoadError, LWPCookieJar, _debug, domain_match,
@@ -104,6 +107,9 @@ else:
 
     def is_mapping(x):
         return isinstance(x, collections.abc.Mapping)
+
+    def create_response_info(fp):
+        return parse_headers(fp)
 
 
 def as_unicode(x):

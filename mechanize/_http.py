@@ -25,7 +25,7 @@ from ._request import Request
 from ._response import response_seek_wrapper
 from ._urllib2_fork import BaseHandler, HTTPError
 from ._equiv import HTTPEquivParser
-from .polyglot import HTTPMessage, RobotFileParser
+from .polyglot import create_response_info, RobotFileParser
 
 debug = logging.getLogger("mechanize").debug
 debug_robots = logging.getLogger("mechanize.robots").debug
@@ -125,7 +125,7 @@ class RobotExclusionError(HTTPError):
 class HTTPRobotRulesProcessor(BaseHandler):
     # before redirections, after everything else
     handler_order = 800
-    http_response_class = HTTPMessage
+    http_response_class = create_response_info
 
     def __init__(self, rfp_class=MechanizeRobotFileParser):
         self.rfp_class = rfp_class

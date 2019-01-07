@@ -14,7 +14,7 @@ import mechanize
 from mechanize import Request
 from mechanize._util import (hide_experimental_warnings,
                              reset_experimental_warnings)
-from mechanize.polyglot import HTTPMessage, codepoint_to_chr
+from mechanize.polyglot import create_response_info, codepoint_to_chr
 
 
 class FakeResponse:
@@ -23,8 +23,8 @@ class FakeResponse:
         """
         headers: list of RFC822-style 'Key: value' strings
         """
-        f = BytesIO("\n".join(headers))
-        self._headers = HTTPMessage(f)
+        f = BytesIO("\n".join(headers).encode('latin1'))
+        self._headers = create_response_info(f)
         self._url = url
 
     def info(self):

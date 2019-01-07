@@ -31,7 +31,7 @@ import mechanize._sockettimeout as _sockettimeout
 import mechanize._testcase
 import mechanize._urllib2_fork
 from mechanize._mechanize import sanepathname2url
-from mechanize.polyglot import HTTPMessage, iteritems
+from mechanize.polyglot import create_response_info, iteritems
 
 # from logging import getLogger, DEBUG
 # l = getLogger("mechanize")
@@ -291,7 +291,10 @@ def http_message(mapping):
     for kv in iteritems(mapping):
         f.append("%s: %s" % kv)
     f.append("")
-    msg = HTTPMessage(BytesIO("\r\n".join(f)))
+    msg = "\r\n".join(f)
+    if not isinstance(msg, bytes):
+        msg = msg.encode('latin1')
+    msg = create_response_info(BytesIO(msg))
     return msg
 
 
@@ -443,7 +446,7 @@ class MockHTTPHandler(mechanize.BaseHandler):
         if self._count == 0:
             self._count = self._count + 1
             name = "Not important"
-            msg = HTTPMessage(BytesIO(self.headers))
+            msg = create_response_info(BytesIO(self.headers))
             return self.parent.error("http", req,
                                      test_response(), self.code, name, msg)
         else:
@@ -1238,8 +1241,8 @@ class HandlerTests(mechanize._testcase.TestCase):
                 import copy
                 self.requests.append(copy.deepcopy(req))
                 if req.get_full_url() == "http://example.com/robots.txt":
-                    hdr = "Location: http://example.com/en/robots.txt\r\n\r\n"
-                    msg = HTTPMessage(BytesIO(hdr))
+                    hdr = b"Location: http://example.com/en/robots.txt\r\n\r\n"
+                    msg = create_response_info(BytesIO(hdr))
                     return self.parent.error("http", req,
                                              test_response(), 302, "Blah", msg)
                 else:

@@ -26,7 +26,7 @@ from .polyglot import quote
 # RESERVED_URI_CHARS = "!*'();:@&=+$,/?#[]"
 # URI_CHARS = RESERVED_URI_CHARS+UNRESERVED_URI_CHARS+'%'
 # this re matches any character that's not in URI_CHARS
-BAD_URI_CHARS_RE = re.compile("[^A-Za-z0-9\-_.~!*'();:@&=+$,/?%#[\]]")
+BAD_URI_CHARS_RE = re.compile(r"[^A-Za-z0-9\-_.~!*'();:@&=+$,/?%#[\]]")
 
 
 def clean_url(url, encoding='utf-8'):
@@ -44,7 +44,7 @@ def clean_url(url, encoding='utf-8'):
     # for second param to urllib.quote(), we want URI_CHARS, minus the
     # 'always_safe' characters that urllib.quote() never percent-encodes
     ans = quote(url.encode(encoding), "!*'();:@&=+$,/?%#[]~")
-    if is_unicode:
+    if is_unicode and isinstance(ans, bytes):
         ans = ans.decode(encoding)
     return ans
 

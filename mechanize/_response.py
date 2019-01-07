@@ -22,7 +22,7 @@ import copy
 from io import BytesIO
 
 from ._headersutil import normalize_header_name
-from .polyglot import HTTPError, HTTPMessage
+from .polyglot import HTTPError, create_response_info
 
 
 def len_of_seekable(file_):
@@ -473,6 +473,8 @@ def make_response(data, headers, url, code, msg):
 
     """
     mime_headers = make_headers(headers)
+    if not isinstance(data, bytes):
+        data = data.encode('utf-8')
     r = closeable_response(BytesIO(data), mime_headers, url, code, msg)
     return response_seek_wrapper(r)
 
@@ -484,7 +486,10 @@ def make_headers(headers):
     hdr_text = []
     for name_value in headers:
         hdr_text.append("%s: %s" % name_value)
-    return HTTPMessage(BytesIO("\n".join(hdr_text)))
+    ans = "\n".join(hdr_text)
+    if not isinstance(ans, bytes):
+        ans = ans.encode('latin1')
+    return create_response_info(BytesIO(ans))
 
 
 # Rest of this module is especially horrible, but needed, at least until fork
