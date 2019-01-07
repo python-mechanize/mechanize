@@ -75,7 +75,7 @@ if platform.python_implementation() == 'PyPy':
         return socket._fileobject(fh, close=True)
 else:
     def create_readline_wrapper(fh):
-        return socket._fileobject(fh, close=True)
+        return fh.fp
 
 
 splithost = urllib_splithost

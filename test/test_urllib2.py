@@ -280,6 +280,10 @@ class MockFile:
     def close(self):
         pass
 
+    def __iter__(self):
+        for i in ():
+            yield i
+
 
 def http_message(mapping):
     """
