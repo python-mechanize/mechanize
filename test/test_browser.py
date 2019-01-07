@@ -585,55 +585,56 @@ class BrowserTests(TestCase):
             self.assertEqual(got, expect)
         self.assertEqual(len(links), len(exp_links))
         # nr
-        l = b.find_link()
-        self.assertEqual(l.url, "http://example.com/foo/bar.html")
-        l = b.find_link(nr=1)
-        self.assertEqual(l.url, "spam")
+        lnk = b.find_link()
+        self.assertEqual(lnk.url, "http://example.com/foo/bar.html")
+        lnk = b.find_link(nr=1)
+        self.assertEqual(lnk.url, "spam")
         # text
-        l = b.find_link(text="yada yada")
-        self.assertEqual(l.url, "one")
+        lnk = b.find_link(text="yada yada")
+        self.assertEqual(lnk.url, "one")
         self.assertRaises(
             mechanize.LinkNotFoundError, b.find_link, text="da ya")
-        l = b.find_link(text_regex=re.compile("da ya"))
-        self.assertEqual(l.url, "one")
-        l = b.find_link(text_regex="da ya")
-        self.assertEqual(l.url, "one")
+        lnk = b.find_link(text_regex=re.compile("da ya"))
+        self.assertEqual(lnk.url, "one")
+        lnk = b.find_link(text_regex="da ya")
+        self.assertEqual(lnk.url, "one")
         # name
-        l = b.find_link(name="name3")
-        self.assertEqual(l.url, "one")
-        l = b.find_link(name_regex=re.compile("oo"))
-        self.assertEqual(l.url, "blah")
-        l = b.find_link(name_regex="oo")
-        self.assertEqual(l.url, "blah")
+        lnk = b.find_link(name="name3")
+        self.assertEqual(lnk.url, "one")
+        lnk = b.find_link(name_regex=re.compile("oo"))
+        self.assertEqual(lnk.url, "blah")
+        lnk = b.find_link(name_regex="oo")
+        self.assertEqual(lnk.url, "blah")
         # url
-        l = b.find_link(url="spam")
-        self.assertEqual(l.url, "spam")
-        l = b.find_link(url_regex=re.compile("pam"))
-        self.assertEqual(l.url, "spam")
-        l = b.find_link(url_regex="pam")
-        self.assertEqual(l.url, "spam")
+        lnk = b.find_link(url="spam")
+        self.assertEqual(lnk.url, "spam")
+        lnk = b.find_link(url_regex=re.compile("pam"))
+        self.assertEqual(lnk.url, "spam")
+        lnk = b.find_link(url_regex="pam")
+        self.assertEqual(lnk.url, "spam")
         # tag
-        l = b.find_link(tag="area")
-        self.assertEqual(l.url, "blah")
+        lnk = b.find_link(tag="area")
+        self.assertEqual(lnk.url, "blah")
         # predicate
-        l = b.find_link(
-            predicate=lambda l: dict(l.attrs).get("weird") == "stuff")
-        self.assertEqual(l.url, "two")
+        lnk = b.find_link(
+            predicate=lambda lnk: dict(lnk.attrs).get("weird") == "stuff")
+        self.assertEqual(lnk.url, "two")
         # combinations
-        l = b.find_link(name="pears", nr=1)
-        self.assertEqual(l.text, "rhubarb")
-        l = b.find_link(url="src", nr=0, name="name2")
-        self.assertEqual(l.tag, "iframe")
-        self.assertEqual(l.url, "src")
+        lnk = b.find_link(name="pears", nr=1)
+        self.assertEqual(lnk.text, "rhubarb")
+        lnk = b.find_link(url="src", nr=0, name="name2")
+        self.assertEqual(lnk.tag, "iframe")
+        self.assertEqual(lnk.url, "src")
         self.assertRaises(
             mechanize.LinkNotFoundError,
             b.find_link,
             url="src",
             nr=1,
             name="name2")
-        l = b.find_link(
-            tag="a", predicate=lambda l: dict(l.attrs).get("weird") == "stuff")
-        self.assertEqual(l.url, "two")
+        lnk = b.find_link(
+            tag="a", predicate=lambda lnk: dict(lnk.attrs).get(
+                "weird") == "stuff")
+        self.assertEqual(lnk.url, "two")
 
         # .links()
         self.assertEqual(
@@ -834,9 +835,9 @@ class ResponseTests(TestCase):
         br = TestBrowser()
         self.assertEqual(str(br), "<TestBrowser (not visiting a URL)>")
 
-        fp = BytesIO('<html><form name="f"><input /></form></html>')
+        fp = BytesIO(b'<html><form name="f"><input /></form></html>')
         headers = HTTPMessage(
-            BytesIO("Content-type: text/html"))
+            BytesIO(b"Content-type: text/html"))
         response = _response.response_seek_wrapper(
             _response.closeable_response(fp, headers, "http://example.com/",
                                          200, "OK"))
