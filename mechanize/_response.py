@@ -499,8 +499,10 @@ def make_headers(headers):
 def get_seek_wrapper_class(response):
     # in order to wrap response objects that are also exceptions, we must
     # dynamically subclass the exception :-(((
-    if (isinstance(response, HTTPError) and
-            not hasattr(response, "seek")):
+    if (
+            isinstance(response, HTTPError) and
+            not isinstance(response, response_seek_wrapper)
+    ):
         if response.__class__.__module__ == "__builtin__":
             exc_class_name = response.__class__.__name__
         else:
