@@ -50,7 +50,7 @@ class TrivialTests(mechanize._testcase.TestCase):
         self.assertRaises(ValueError, mechanize.urlopen, 'bogus url')
 
         fname = os.path.join(self.make_temp_dir(), "test.txt")
-        write_file(fname, "data")
+        write_file(fname, b"data")
         if fname[1:2] == ":":
             fname = fname[2:]
         # And more hacking to get it to work on MacOS. This assumes
@@ -304,6 +304,8 @@ def http_message(mapping):
 
 class MockResponse(BytesIO):
     def __init__(self, code, msg, headers, data, url=None):
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
         BytesIO.__init__(self, data)
         self.code, self.msg, self.headers, self.url = code, msg, headers, url
 
@@ -1000,7 +1002,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             r.code, r.msg == 200, "OK"  # added from MockHTTPClass.getreply()
             hdrs = r.info()
             hdrs.get
-            hdrs.has_key  # r.info() gives dict from .getreply()
+            hdrs.__contains__  # r.info() gives dict from .getreply()
             self.assertEqual(r.geturl(), url)
 
             self.assertEqual(http.host, "example.com")
@@ -1486,7 +1488,7 @@ class HandlerTests(mechanize._testcase.TestCase):
                 CookieJar, HTTPCookieProcessor, HTTPDefaultErrorHandler,
                 HTTPRedirectHandler)
 
-        from .test_cookies import interact_netscape
+        from test.test_cookies import interact_netscape
 
         cj = CookieJar()
         interact_netscape(cj, "http://www.example.com/", "spam=eggs")
@@ -1623,10 +1625,11 @@ class HandlerTests(mechanize._testcase.TestCase):
         # Verify Proxy-Authorization gets tunneled to request.
         # httpsconn req_headers do not have the Proxy-Authorization header but
         # the req will have.
-        self.assertFalse(("Proxy-Authorization",
-                          "FooBar") in https_handler.httpconn.req_headers)
-        self.assertTrue(
-            ("User-Agent", "Grail") in https_handler.httpconn.req_headers)
+        self.assertNotIn(
+            ("Proxy-Authorization", "FooBar"),
+            https_handler.httpconn.req_headers)
+        self.assertIn(
+            ("User-Agent", "Grail"), https_handler.httpconn.req_headers)
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.get_host(), "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
