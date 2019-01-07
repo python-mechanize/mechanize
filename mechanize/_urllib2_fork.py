@@ -32,7 +32,6 @@ from __future__ import absolute_import
 
 import base64
 import bisect
-import collections
 import copy
 import hashlib
 import logging
@@ -52,7 +51,7 @@ from ._headersutil import normalize_header_name
 from ._response import closeable_response
 from .polyglot import (HTTPConnection, HTTPError, HTTPMessage, HTTPSConnection,
                        StringIO, URLError, addinfourl, ftpwrapper, getproxies,
-                       is_class, is_string, iteritems, map,
+                       is_class, is_mapping, is_string, iteritems, map,
                        raise_with_traceback, splitattr, splitpasswd, splitport,
                        splittype, splituser, splitvalue, unquote, unwrap,
                        url2pathname, urllib_proxy_bypass, urllib_splithost,
@@ -667,8 +666,7 @@ class ProxyHandler(BaseHandler):
         if proxies is None:
             proxies = getproxies()
 
-        assert isinstance(
-            proxies, collections.Mapping), "proxies must be a mapping"
+        assert is_mapping(proxies), "proxies must be a mapping"
         self.proxies = proxies
         for type, url in iteritems(proxies):
             setattr(self, '%s_open' % type,

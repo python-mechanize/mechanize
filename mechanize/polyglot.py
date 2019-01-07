@@ -6,6 +6,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import sys
+import collections
 
 is_py2 = sys.version_info.major < 3
 
@@ -47,6 +48,9 @@ if is_py2:
 
     def raise_with_traceback(exc):
         exec('raise exc, None, sys.exc_info()[2]')
+
+    def is_mapping(x):
+        return isinstance(x, collections.Mapping)
 
     codepoint_to_chr = unichr
     unicode_type = unicode
@@ -97,6 +101,9 @@ else:
     def getheaders(self, name):
         return self.get_all(name, failobj=[])
     HTTPMessage.getheaders = getheaders
+
+    def is_mapping(x):
+        return isinstance(x, collections.abc.Mapping)
 
 
 def as_unicode(x):
