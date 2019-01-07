@@ -153,10 +153,10 @@ def create_gzip_decompressor(zipped_file):
     if prefix[:2] != b'\x1f\x8b':
         raise ValueError('gzip stream has incorrect magic bytes: %r' %
                          prefix[:2])
-    if prefix[2] != b'\x08':
+    if prefix[2:3] != b'\x08':
         raise ValueError('gzip stream has unknown compression method: %r' %
                          prefix[2])
-    flag = ord(prefix[3])
+    flag = ord(prefix[3:4])
     if flag & 4:  # extra
         extra_amt = read_amt(zipped_file, 2)
         extra_amt = ord(extra_amt[0]) + 256 * ord(extra_amt[1])
