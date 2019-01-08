@@ -219,14 +219,14 @@ class SimpleTests(SocketTimeoutTest):
     def test_urlopen_with_default_timeout(self):
         timeout_log = self._monkey_patch_socket()
         response = mechanize.urlopen(self.test_uri)
-        self.assert_contains(response.read(), "Python bits")
+        self.assert_contains(response.read(), b"Python bits")
         timeout_log.verify_default()
 
     def test_urlopen_with_timeout(self):
         timeout_log = self._monkey_patch_socket()
         timeout = 10.
         response = mechanize.urlopen(self.test_uri, timeout=timeout)
-        self.assert_contains(response.read(), "Python bits")
+        self.assert_contains(response.read(), b"Python bits")
         timeout_log.verify(timeout)
 
     def test_redirect_with_timeout(self):
@@ -236,7 +236,7 @@ class SimpleTests(SocketTimeoutTest):
         req = mechanize.Request(urljoin(self.test_uri, "test_fixtures"),
                                 timeout=timeout)
         r = self.browser.open(req)
-        self.assertTrue("GeneralFAQ.html" in r.read(2048))
+        self.assertIn(b"GeneralFAQ.html", r.read(2048))
         timeout_log.verify(timeout)
 
     def test_302_and_404(self):
@@ -332,12 +332,12 @@ class SimpleTests(SocketTimeoutTest):
         # note this involves a redirect, which should itself be non-visiting
         r = self.browser.open_novisit(uri)
         test_state(self.browser)
-        self.assertTrue("GeneralFAQ.html" in r.read(2048))
+        self.assertIn(b"GeneralFAQ.html", r.read(2048))
 
         # Request argument instead of URL
         r = self.browser.open_novisit(mechanize.Request(uri))
         test_state(self.browser)
-        self.assertTrue("GeneralFAQ.html" in r.read(2048))
+        self.assertIn(b"GeneralFAQ.html", r.read(2048))
 
     def test_non_seekable(self):
         # check everything still works without response_seek_wrapper and
@@ -348,7 +348,7 @@ class SimpleTests(SocketTimeoutTest):
         response = ua.open(self.test_uri)
         self.assertFalse(hasattr(response, "seek"))
         data = response.read()
-        self.assertTrue("Python bits" in data)
+        self.assertIn(b"Python bits", data)
 
 
 class ResponseTests(TestCase):
