@@ -71,6 +71,7 @@ def md5_digest(bytes):
 
 if platform.python_implementation() == 'PyPy':
     def create_readline_wrapper(fh):
+        fh.recv = fh.read
         if not hasattr(fh, '_drop'):
             fh._drop = lambda: None
             fh._reuse = lambda: None
