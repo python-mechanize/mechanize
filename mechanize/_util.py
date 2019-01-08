@@ -44,11 +44,8 @@ def reset_deprecations():
 
 
 def read_file(filename):
-    fh = open(filename)
-    try:
-        return fh.read()
-    finally:
-        fh.close()
+    with open(filename, 'rb') as f:
+        return f.read()
 
 
 def write_file(filename, data):
@@ -67,21 +64,13 @@ def get1(sequence):
 def isstringlike(x):
     try:
         x + ""
-    except:
+    except Exception:
         return False
     else:
         return True
 
-# def caller():
-# try:
-##         raise SyntaxError
-# except:
-##         import sys
-# return sys.exc_traceback.tb_frame.f_back.f_back.f_code.co_name
-
-
-
 # Date/time conversion routines for formats used by the HTTP protocol.
+
 
 EPOCH = 1970
 
@@ -93,6 +82,7 @@ def my_timegm(tt):
         return timegm(tt)
     else:
         return None
+
 
 days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -299,7 +289,7 @@ def http2time(text):
 
 
 iso_re = re.compile(
-    """^
+    r"""^
     (\d{4})              # year
        [-\/]?
     (\d\d?)              # numerical month
