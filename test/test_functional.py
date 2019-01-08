@@ -458,8 +458,8 @@ class ResponseTests(TestCase):
 
     def test_new_response(self):
         br = self.make_browser()
-        data = ("<html><head><title>Test</title></head>"
-                "<body><p>Hello.</p></body></html>")
+        data = (b"<html><head><title>Test</title></head>"
+                b"<body><p>Hello.</p></body></html>")
         response = mechanize.make_response(
             data,
             [("Content-type", "text/html")],
@@ -468,29 +468,6 @@ class ResponseTests(TestCase):
             "OK")
         br.set_response(response)
         self.assertEqual(br.response().get_data(), data)
-
-    def hidden_test_close_pickle_load(self):
-        print ("Test test_close_pickle_load is expected to fail unless Python "
-               "standard library patch http://python.org/sf/1144636 has been "
-               "applied")
-        import pickle
-
-        b = self.make_browser()
-        r = b.open(urljoin(self.uri, "test_fixtures/cctest2.txt"))
-        r.read()
-
-        r.close()
-        r.seek(0)
-        self.assertEqual(r.read(),
-                         "Hello ClientCookie functional test suite.\n")
-
-        HIGHEST_PROTOCOL = -1
-        p = pickle.dumps(b, HIGHEST_PROTOCOL)
-        b = pickle.loads(p)
-        r = b.response()
-        r.seek(0)
-        self.assertEqual(r.read(),
-                         "Hello ClientCookie functional test suite.\n")
 
 
 class FunctionalTests(SocketTimeoutTest):
