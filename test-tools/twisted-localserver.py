@@ -152,14 +152,14 @@ class Page(resource.Resource):
         resource.Resource.__init__(self)
 
     def getChild(self, path, request):
-        if path == '':
+        if not path:
             return self
         return resource.Resource.getChild(self, path, request)
 
     def render(self, request):
         request.setResponseCode(http.OK)
         request.setHeader('content-type', self.content_type)
-        return bytes(self.text)
+        return self.text.encode('utf-8')
 
 
 class Dir(resource.Resource):
@@ -177,6 +177,7 @@ class Dir(resource.Resource):
 
 def make_dir(parent, name):
     dir_ = Dir()
+    name = name.encode('utf-8')
     parent.putChild(name, dir_)
     return dir_
 
@@ -184,6 +185,7 @@ def make_dir(parent, name):
 def _make_page(parent, name, text, content_type, wrapper,
                leaf=False):
     page = Page(text=text, leaf=leaf, content_type=content_type)
+    name = name.encode('utf-8')
     parent.putChild(name, wrapper(page))
     return page
 
@@ -233,7 +235,7 @@ def parse_options(args):
     parser = optparse.OptionParser()
     parser.add_option("--log", action="store_true")
     options, remaining_args = parser.parse_args(args)
-    options.port = int(remaining_args[0])
+    options.port = int(remaining_args[0]) if remaining_args else 8000
     return options
 
 
