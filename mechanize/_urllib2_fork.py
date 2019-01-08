@@ -77,7 +77,10 @@ if platform.python_implementation() == 'PyPy':
         return socket._fileobject(fh, close=True)
 else:
     def create_readline_wrapper(fh):
-        return fh.fp
+        ans = fh.fp
+        fh.fp = None
+        fh.close()
+        return ans
 
 
 splithost = urllib_splithost
@@ -1164,16 +1167,6 @@ class AbstractHTTPHandler(BaseHandler):
 
         # Pick apart the HTTPResponse object to get the addinfourl
         # object initialized properly.
-
-        # Wrap the HTTPResponse object in socket's file object adapter
-        # for Windows.  That adapter calls recv(), so delegate recv()
-        # to read().  This weird wrapping allows the returned object to
-        # have readline() and readlines() methods.
-
-        # XXX It might be better to extract the read buffering code
-        # out of socket._fileobject() and into a base class.
-
-        r.recv = r.read
         fp = create_readline_wrapper(r)
 
         resp = closeable_response(

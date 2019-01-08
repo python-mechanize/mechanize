@@ -878,7 +878,10 @@ class HttplibTests(mechanize._testcase.TestCase):
                 fp = BytesIO(b'')
 
                 def read(self__, sz=-1):
-                    return ""
+                    return b""
+
+                def close(self):
+                    self.fp = None
 
             return Response()
 

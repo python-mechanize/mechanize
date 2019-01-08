@@ -464,7 +464,10 @@ class MockHTTPResponse:
         self.reason = reason
 
     def read(self):
-        return ''
+        return b''
+
+    def close(self):
+        self.fp = None
 
 
 class MockHTTPClass:
@@ -954,7 +957,10 @@ class HandlerTests(mechanize._testcase.TestCase):
                 self.reason = reason
 
             def read(self):
-                return ''
+                return b''
+
+            def close(self):
+                self.fp = None
 
         class MockHTTPClass:
             def __init__(self):
