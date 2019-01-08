@@ -422,28 +422,6 @@ class closeable_response:
                                   self.msg)
         self._set_fp(new_wrapped)
 
-    def __getstate__(self):
-        # There are three obvious options here:
-        # 1. truncate
-        # 2. read to end
-        # 3. close socket, pickle state including read position, then open
-        #    again on unpickle and use Range header
-        # XXXX um, 4. refuse to pickle unless .close()d.  This is better,
-        #  actually ("errors should never pass silently").  Pickling doesn't
-        #  work anyway ATM, because of http://python.org/sf/1144636 so fix
-        #  this later
-
-        # 2 breaks pickle protocol, because one expects the original object
-        # to be left unscathed by pickling.  3 is too complicated and
-        # surprising (and too much work ;-) to happen in a sane __getstate__.
-        # So we do 1.
-
-        state = self.__dict__.copy()
-        new_wrapped = eofresponse(self._url, self._headers, self.code,
-                                  self.msg)
-        state["wrapped"] = new_wrapped
-        return state
-
 
 def test_response(data='test data',
                   headers=[],
