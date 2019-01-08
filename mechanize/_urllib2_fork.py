@@ -1322,11 +1322,7 @@ class FileHandler(BaseHandler):
 
     # not entirely sure what the rules are here
     def open_local_file(self, req):
-        try:
-            import email.utils as emailutils
-        except ImportError:
-            # python 2.4
-            import email.Utils as emailutils
+        import email.utils as emailutils
         import mimetypes
         host = req.get_host()
         file = req.get_selector()
@@ -1349,8 +1345,9 @@ class FileHandler(BaseHandler):
             if not host or (
                     not port and socket.gethostbyname(host) in self.get_names()
             ):
-                return addinfourl(open(localfile, 'rb'),
-                                  headers, 'file:' + file)
+                fp = open(localfile, 'rb')
+                return closeable_response(
+                    fp, headers, 'file:' + file, 200, 'OK')
         except OSError as msg:
             # urllib2 users shouldn't expect OSErrors coming from urlopen()
             raise URLError(msg)
