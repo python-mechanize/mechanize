@@ -16,16 +16,16 @@ import optparse
 import os
 import re
 import sys
+import time
 
-from twisted.cred import portal, checkers
+from twisted.cred import checkers, portal
 from twisted.internet import reactor
 from twisted.python import log
-from twisted.web import (server, http, resource, twcgi)
-from twisted.web.resource import IResource
-from twisted.web.guard import (DigestCredentialFactory, BasicCredentialFactory,
+from twisted.web import http, resource, server, twcgi
+from twisted.web.guard import (BasicCredentialFactory, DigestCredentialFactory,
                                HTTPAuthSessionWrapper)
+from twisted.web.resource import IResource
 from twisted.web.util import Redirect
-
 from zope.interface import implementer
 
 
@@ -76,7 +76,7 @@ REFERER_TEST_HTML = """\
 <body>
 <p>This page exists to test the Referer functionality of \
 <a href="/mechanize">mechanize</a>.
-<p><a href="/cgi-bin/cookietest.cgi">Here</a>\
+<p><a href="/dynamic">Here</a>\
 is a link to a page that displays the Referer header.
 </body>
 </html>"""
@@ -162,24 +162,44 @@ class Page(resource.Resource):
         return self.text.encode('utf-8')
 
 
-class Dir(resource.Resource):
+class DynamicPage(resource.Resource):
 
-    isLeaf = False
+    isLeaf = True
 
-    def locateChild(self, request, segments):
-        # import pdb; pdb.set_trace()
-        return resource.Resource.locateChild(self, request, segments)
+    def getChild(self, path, request):
+        if not path:
+            return self
+        return resource.Resource.getChild(self, path, request)
 
     def render(self, request):
-        request.setResponseCode(http.FORBIDDEN)
-        return 'You are not allowed to list directories'
+        request.setResponseCode(http.OK)
+        request.setHeader('content-type', 'text/html')
+        year_plus_one = time.localtime(time.time())[0] + 1
+        expires = "09-Nov-%d 23:12:40 GMT" % (year_plus_one,)
+        request.addCookie('foo', 'bar', expires=expires)
+        request.addCookie('sessioncookie', 'spam\n')
+        html = (
+            "<html><head><title>Cookies/form submission parameters</title>")
+        if request.args.get('refresh'):
+            html += '<meta http-equiv="refresh" content=\'%s\'>' % tuple(
+                request.args.get('refresh'))
+        elif not request.getCookie('foo'):
+            html += '<meta http-equiv="refresh" content="1">'
+        html += "</head><body>"
+        if request.getHeader('referer'):
+            html += "<p>Referer:</p><pre>{}</pre>".format(
+                    request.getHeader('referer'))
+        html += "<p>Received cookies:</p>"
+        html += "<pre>"
+        html += request.getHeader('cookie') or ''
+        html += "</pre>"
+        if request.getCookie('foo'):
+            html += "<p>Your browser supports cookies!"
+        if request.getCookie('sessioncookie'):
+            html += "<p>Received session cookie"
 
-
-def make_dir(parent, name):
-    dir_ = Dir()
-    name = name.encode('utf-8')
-    parent.putChild(name, dir_)
-    return dir_
+        html += '</body></html>'
+        return html.encode('utf-8')
 
 
 def _make_page(parent, name, text, content_type, wrapper,
@@ -254,6 +274,7 @@ def main(argv):
                    "text/plain")
     make_leaf_page(root, "robots", "Hello, robots.", "text/plain")
     make_leaf_page(root, "norobots", "Hello, non-robots.", "text/plain")
+    root.putChild(b'dynamic', DynamicPage())
     test_fixtures = make_page(root, "test_fixtures",
                               # satisfy stupid assertions in functional tests
                               html("Python bits",
@@ -266,15 +287,9 @@ def main(argv):
                    RELOAD_TEST_HTML)
     make_redirect(root, "redirected", "/doesnotexist")
     make_redirect(root, "redirected_good", "/test_fixtures")
-    cgi_bin = make_dir(root, "cgi-bin")
-    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    make_cgi_script(cgi_bin, "cookietest.cgi",
-                    os.path.join(project_dir, "test-tools", "cookietest.cgi"))
     example_html = open(os.path.join(
         "examples", "forms", "example.html")).read()
     make_leaf_page(mechanize, "example.html", example_html)
-    make_cgi_script(cgi_bin, "echo.cgi",
-                    os.path.join(project_dir, "examples", "forms", "echo.cgi"))
     make_page(root, "basic_auth", BASIC_AUTH_PAGE, wrapper=require_basic_auth)
     make_page(root, "digest_auth", DIGEST_AUTH_PAGE,
               wrapper=require_digest_auth)

@@ -294,7 +294,7 @@ class SimpleTests(SocketTimeoutTest):
 
     def test_refresh(self):
         def refresh_request(seconds):
-            uri = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
+            uri = urljoin(self.uri, "/dynamic")
             val = quote_plus('%d; url="%s"' % (seconds, self.uri))
             return uri + ("?refresh=%s" % val)
         self.browser.set_handle_refresh(True, honor_time=False)
@@ -477,17 +477,24 @@ class ResponseTests(TestCase):
 
 class FunctionalTests(SocketTimeoutTest):
 
+    def test_404(self):
+        br = self.make_browser()
+        self.assertRaises(
+            mechanize.HTTPError,
+            br.open, urljoin(self.uri, "/does-not-exist"),
+        )
+
     def test_referer(self):
         br = self.make_browser()
         br.set_handle_refresh(True, honor_time=False)
         referer = urljoin(self.uri, "test_fixtures/referertest.html")
-        info = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
+        info = urljoin(self.uri, "/dynamic")
         r = br.open(info)
-        self.assertTrue(referer not in r.get_data())
+        self.assertNotIn(referer, r.get_data())
 
         br.open(referer)
         r = br.follow_link(text="Here")
-        self.assertTrue(referer in r.get_data())
+        self.assertIn(referer, r.get_data())
 
     def test_cookies(self):
         # this test page depends on cookies, and an http-equiv refresh
@@ -505,9 +512,9 @@ class FunctionalTests(SocketTimeoutTest):
         ]
 
         opener = self.build_opener(handlers)
-        r = opener.open(urljoin(self.uri, "/cgi-bin/cookietest.cgi"))
+        r = opener.open(urljoin(self.uri, "/dynamic"))
         data = r.read()
-        self.assertTrue(data.find("Your browser supports cookies!") >= 0)
+        self.assertIn(b"Your browser supports cookies!", data)
         self.assertEqual(len(cj), 2)
 
         # test response.seek() (added by HTTPEquivProcessor)
@@ -636,23 +643,23 @@ class CookieJarTests(TestCase):
         # br.set_debug_http(True)
         br.set_cookiejar(cookiejar)
         br.set_handle_refresh(False)
-        url = urljoin(self.uri, "/cgi-bin/cookietest.cgi")
+        url = urljoin(self.uri, "/dynamic")
         # no cookie was set on the first request
         html = br.open(url).read()
-        self.assertEqual(html.find("Your browser supports cookies!"), -1)
+        self.assertNotIn(b"Your browser supports cookies!", html)
         self.assertEqual(len(cookiejar), 2)
         # ... but now we have the cookie
         html = br.open(url).read()
-        self.assertIn("Your browser supports cookies!", html)
-        self.assertIn("Received session cookie", html)
+        self.assertIn(b"Your browser supports cookies!", html)
+        self.assertIn(b"Received session cookie", html)
         commit(cookiejar)
 
         # should still have the cookie when we load afresh
         cookiejar = make_cookiejar()
         br.set_cookiejar(cookiejar)
         html = br.open(url).read()
-        self.assertIn("Your browser supports cookies!", html)
-        self.assertNotIn("Received session cookie", html)
+        self.assertIn(b"Your browser supports cookies!", html)
+        self.assertNotIn(b"Received session cookie", html)
 
     def test_mozilla_cookiejar(self):
         filename = os.path.join(self.make_temp_dir(), "cookies.txt")
