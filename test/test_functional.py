@@ -596,7 +596,8 @@ class FunctionalTests(SocketTimeoutTest):
         # if we don't do anything and go straight to another page, most of the
         # last page's response won't be .read()...
         browser.open(urljoin(self.uri, "mechanize"))
-        self.assertTrue(len(r1.get_data()) < 4097)  # we only .read() a little bit
+        # we only .read() a little bit
+        self.assertLessEqual(len(r1.get_data()), 4096)
         # ...so if we then go back, .follow_link() for a link near the end (a
         # few kb in, past the point that always gets read in HTML files because
         # of HEAD parsing) will only work if it causes a .reload()...

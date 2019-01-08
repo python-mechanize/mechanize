@@ -128,6 +128,7 @@ def kill_posix(pid, report_hook):
     timeout = 10.
     starttime = time.time()
     report_hook("waiting for exit")
+
     def do_nothing(*args):
         pass
     old_handler = signal.signal(signal.SIGCHLD, do_nothing)
@@ -162,9 +163,9 @@ class TwistedServerProcess(ServerProcess):
         if port is None:
             port = "80"
         self.port = int(port)
-        # def report(msg):
-        #     print "%s: %s" % (name, msg)
-        report = lambda msg: None
+
+        def report(msg):
+            pass
         self.report_hook = report
         self._log = log
         self._start()
@@ -185,7 +186,9 @@ class TwistedFtpServerProcess(ServerProcess):
         self._temp_maker = mechanize._testcase.TempDirMaker()
         self.root_path = self._temp_maker.make_temp_dir()
         self.port = port
-        report = lambda msg: None
+
+        def report(msg):
+            pass
         self.report_hook = report
         self._log = log
         self._start()
@@ -239,13 +242,10 @@ class TrivialCM(object):
 def add_attributes_to_test_cases(suite, attributes):
     for test in suite:
         if isinstance(test, unittest.TestCase):
-            for name, value in attributes.iteritems():
+            for name, value in attributes.items():
                 setattr(test, name, value)
         else:
-            try:
-                add_attributes_to_test_cases(test, attributes)
-            except AttributeError:
-                pass
+            add_attributes_to_test_cases(test, attributes)
 
 
 class FixtureCacheSuite(unittest.TestSuite):
@@ -284,6 +284,7 @@ def make_http_server_cm(uri, log):
     except ImportError:
         warnings.warn("Skipping functional tests: Failed to import "
                       "twisted.web and/or zope.interface")
+
         def skip():
             raise unittest.SkipTest
         cm = ServerCM(skip)
@@ -302,6 +303,7 @@ def make_ftp_server_cm(log):
     except ImportError:
         warnings.warn("Skipping functional tests: Failed to import "
                       "twisted.protocols.ftp and/or zope.interface")
+
         def skip():
             raise unittest.SkipTest
         cm = ServerCM(skip)
