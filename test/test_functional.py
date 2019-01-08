@@ -182,11 +182,16 @@ class SimpleTests(SocketTimeoutTest):
         super(SimpleTests, self).setUp()
         self.browser = self.make_browser()
 
+    def tearDown(self):
+        super(SimpleTests, self).tearDown()
+        self.browser.close()
+        del self.browser
+
     def test_simple(self):
         self.browser.open(self.test_uri)
         self.assertEqual(self.browser.title(), 'Python bits')
         # relative URL
-        self.browser.open('/mechanize/')
+        self.browser.open('/mechanize/').close()
         self.assertEqual(self.browser.title(), 'mechanize')
 
     def test_basic_auth(self):

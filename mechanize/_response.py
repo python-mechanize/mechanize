@@ -305,16 +305,16 @@ class eoffile:
     # file-like object that always claims to be at end-of-file...
 
     def read(self, size=-1):
-        return ""
+        return b""
 
     def readline(self, size=-1):
-        return ""
+        return b""
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        return ""
+        return b""
     next = __next__
 
     def close(self):
