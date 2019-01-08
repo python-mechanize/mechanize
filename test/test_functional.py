@@ -100,7 +100,7 @@ class FtpTestCase(TestCase):
         browser = self.make_browser()
         path = self.make_temp_dir(dir_=server.root_path)
         file_path = os.path.join(path, "stuff")
-        data = "data\nmore data"
+        data = b"data\nmore data"
         write_file(file_path, data)
         relative_path = os.path.join(os.path.basename(path), "stuff")
         r = browser.open("ftp://anon@localhost:%s/%s" %
@@ -314,17 +314,16 @@ class SimpleTests(SocketTimeoutTest):
         self.assertEqual(r.geturl(), self.uri)
 
     def test_file_url(self):
-        url = "file://%s" % sanepathname2url(
-            os.path.abspath(os.path.join("test", "test_functional.py")))
+        url = "file://%s" % sanepathname2url(os.path.abspath(__file__))
         r = self.browser.open(url)
-        self.assertTrue("this string appears in this file ;-)" in r.read())
+        self.assertIn(b"this string appears in this file ;-)", r.read())
 
     def test_open_local_file(self):
         # Since the file: URL scheme is not well standardised, Browser has a
         # special method to open files by name, for convenience:
-        path = os.path.join("test", "test_functional.py")
+        path = os.path.abspath(__file__)
         response = self.browser.open_local_file(path)
-        self.assertIn("this string appears in this file ;-)",
+        self.assertIn(b"this string appears in this file ;-)",
                       response.get_data())
 
     def test_open_novisit(self):
