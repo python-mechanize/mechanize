@@ -976,7 +976,6 @@ class HandlerTests(mechanize._testcase.TestCase):
                 self.method = method
                 self.selector = url
                 self.req_headers += list(iteritems(headers))
-                self.req_headers.sort()
                 if body:
                     self.data = body
                 if self.raise_on_endheaders:
@@ -992,6 +991,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         url = "http://example.com/"
         for method, data in [("GET", None), ("POST", "blah")]:
             req = Request(url, data, {"Foo": "bar"})
+            req.add_header('Order', '1')
             req.add_unredirected_header("Spam", "eggs")
             http = MockHTTPClass()
             r = h.do_open(http, req)
@@ -1011,9 +1011,11 @@ class HandlerTests(mechanize._testcase.TestCase):
             self.assertEqual(http.level, 0)
             self.assertEqual(http.method, method)
             self.assertEqual(http.selector, "/")
-            self.assertEqual(http.req_headers,
-                             [("Connection", "close"), ("Foo", "bar"),
-                              ("Spam", "eggs")])
+            self.assertEqual(
+                http.req_headers,
+                [('Foo', 'bar'), ('Order', '1'),
+                    ('Spam', 'eggs'), ('Connection', 'close')]
+            )
             self.assertEqual(http.data, data)
 
         # check socket.error converted to URLError

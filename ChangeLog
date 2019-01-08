@@ -1,6 +1,11 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+future Kovid Goyal
+	* 0.4.0 release
+	* Python 3 compatibility
+	* Preserve header ordering when making HTTP requests
+
 2018-09-11 Kovid Goyal
 	* 0.3.7 release
 	* Fix processing of http-equiv meta tags incorrectly lower casing the content

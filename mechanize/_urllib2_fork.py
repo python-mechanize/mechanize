@@ -43,6 +43,7 @@ import re
 import socket
 import sys
 import time
+from collections import OrderedDict
 from functools import partial
 from io import BytesIO
 
@@ -134,10 +135,10 @@ class Request:
         self.port = None
         self._tunnel_host = None
         self.data = data
-        self.headers = {}
+        self.headers = OrderedDict()
         for key, value in iteritems(headers):
             self.add_header(key, value)
-        self.unredirected_hdrs = {}
+        self.unredirected_hdrs = OrderedDict()
         if origin_req_host is None:
             origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
@@ -1122,7 +1123,7 @@ class AbstractHTTPHandler(BaseHandler):
         h = http_class(host_port, timeout=req.timeout)
         h.set_debuglevel(self._debuglevel)
 
-        headers = dict(req.headers)
+        headers = OrderedDict(req.headers)
         headers.update(req.unredirected_hdrs)
         # We want to make an HTTP/1.1 request, but the addinfourl
         # class isn't prepared to deal with a persistent connection.
@@ -1130,16 +1131,18 @@ class AbstractHTTPHandler(BaseHandler):
         # which will block while the server waits for the next request.
         # So make sure the connection gets closed after the (only)
         # request.
-        headers[b"Connection"] = b"close"
+        headers["Connection"] = "close"
         # httplib in python 2 needs str() not unicode() for all request
         # parameters
         if is_py2:
-            headers = {str(name.title()): str(val)
-                       for name, val in iteritems(headers)}
+            headers = OrderedDict(
+                    (str(name.title()), str(val))
+                    for name, val in iteritems(headers))
         else:
-            headers = {as_unicode(name, 'iso-8859-1').title():
-                       as_unicode(val, 'iso-8859-1')
-                       for name, val in iteritems(headers)}
+            headers = OrderedDict(
+                    (as_unicode(name, 'iso-8859-1').title(),
+                     as_unicode(val, 'iso-8859-1'))
+                    for name, val in iteritems(headers))
 
         if req._tunnel_host:
             set_tunnel = h.set_tunnel if hasattr(
