@@ -38,7 +38,6 @@ import logging
 import os
 import platform
 import posixpath
-import random
 import re
 import socket
 import sys
@@ -875,19 +874,7 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
         return AbstractBasicAuthHandler.__copy__(self)
 
 
-def randombytes(n):
-    """Return n random bytes."""
-    # Use /dev/urandom if it is available.  Fall back to random module
-    # if not.  It might be worthwhile to extend this function to use
-    # other platform-specific mechanisms for getting random bytes.
-    if os.path.exists("/dev/urandom"):
-        f = open("/dev/urandom")
-        s = f.read(n)
-        f.close()
-        return s
-    else:
-        L = [chr(random.randrange(0, 256)) for i in range(n)]
-        return "".join(L)
+randombytes = os.urandom
 
 
 class AbstractDigestAuthHandler:
