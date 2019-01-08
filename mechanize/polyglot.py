@@ -68,8 +68,8 @@ else:
     )
     from urllib.request import (
             pathname2url, quote, addinfourl, install_opener, build_opener,
-            ProxyHandler, urlopen, getproxies, ftpwrapper,
-            proxy_bypass as urllib_proxy_bypass, url2pathname)
+            ProxyHandler, urlopen as _urlopen, getproxies, ftpwrapper,
+            proxy_bypass as urllib_proxy_bypass, url2pathname, Request)
     from http.client import (
             HTTPMessage, parse_headers, HTTPConnection,
             HTTPSConnection)
@@ -116,6 +116,15 @@ else:
 
     def create_response_info(fp):
         return parse_headers(fp)
+
+    def urlopen(*a, **kw):
+        proxies = kw.pop('proxies', None)
+        if proxies is None:
+            return _urlopen(*a, **kw)
+        r = Request(a[0])
+        for k, v in proxies.items():
+            r.set_proxy(v, k)
+        return _urlopen(r, *a[1:], **kw)
 
 
 def as_unicode(x, encoding='utf-8'):
