@@ -8,7 +8,7 @@ import twisted.internet
 import twisted.protocols.ftp
 from twisted.python import filepath, log
 
-from zope.interface import implements
+from zope.interface import implementer
 
 
 def make_ftp_shell(avatar_id, root_path):
@@ -18,9 +18,8 @@ def make_ftp_shell(avatar_id, root_path):
         return twisted.protocols.ftp.FTPShell(root_path)
 
 
+@implementer(twisted.cred.portal.IRealm)
 class FTPRealm(object):
-
-    implements(twisted.cred.portal.IRealm)
 
     def __init__(self, root_path):
         self._root_path = filepath.FilePath(root_path)

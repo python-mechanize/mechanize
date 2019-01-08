@@ -26,7 +26,7 @@ from twisted.web.guard import (DigestCredentialFactory, BasicCredentialFactory,
                                HTTPAuthSessionWrapper)
 from twisted.web.util import Redirect
 
-from zope.interface import implements
+from zope.interface import implementer
 
 
 def html(title=None, extra_content=""):
@@ -46,6 +46,7 @@ def html(title=None, extra_content=""):
     if title is not None:
         html = re.sub("<title>(.*)</title>", "<title>%s</title>" % title, html)
     return html
+
 
 MECHANIZE_HTML = html()
 ROOT_HTML = html("mechanize")
@@ -73,8 +74,10 @@ REFERER_TEST_HTML = """\
 <title>mechanize Referer (sic) test page</title>
 </head>
 <body>
-<p>This page exists to test the Referer functionality of <a href="/mechanize">mechanize</a>.
-<p><a href="/cgi-bin/cookietest.cgi">Here</a> is a link to a page that displays the Referer header.
+<p>This page exists to test the Referer functionality of \
+<a href="/mechanize">mechanize</a>.
+<p><a href="/cgi-bin/cookietest.cgi">Here</a>\
+is a link to a page that displays the Referer header.
 </body>
 </html>"""
 
@@ -109,7 +112,6 @@ class TestHTTPUser(object):
     """
     Test avatar implementation for http auth with cred
     """
-    implements(IResource)
     isLeaf = True
 
     def render(self, request):
@@ -120,12 +122,11 @@ class TestHTTPUser(object):
         self.username = username
 
 
+@implementer(portal.IRealm)
 class TestAuthRealm(object):
     """
     Test realm that supports the IHTTPUser interface
     """
-
-    implements(portal.IRealm)
 
     def __init__(self, template=BASIC_AUTH_PAGE):
         self.template = template
@@ -166,7 +167,7 @@ class Dir(resource.Resource):
     isLeaf = False
 
     def locateChild(self, request, segments):
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         return resource.Resource.locateChild(self, request, segments)
 
     def render(self, request):

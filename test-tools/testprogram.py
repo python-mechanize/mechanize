@@ -9,7 +9,6 @@ import subprocess
 import sys
 import time
 import unittest
-import urllib
 
 import mechanize
 import mechanize._rfc3986
@@ -159,7 +158,7 @@ class TwistedServerProcess(ServerProcess):
         ServerProcess.__init__(self, path, name)
         self.uri = uri
         authority = mechanize._rfc3986.urlsplit(uri)[1]
-        host, port = urllib.splitport(authority)
+        host, port = mechanize.polyglot.splitport(authority)
         if port is None:
             port = "80"
         self.port = int(port)
