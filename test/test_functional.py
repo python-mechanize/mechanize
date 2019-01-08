@@ -379,10 +379,12 @@ class ResponseTests(TestCase):
     def test_seek_wrapper_class_name(self):
         opener = self.make_user_agent()
         opener.set_seekable_responses(True)
+        rexec = ''
         try:
             opener.open(urljoin(self.uri, "nonexistent"))
         except mechanize.HTTPError as exc:
-            self.assertTrue("HTTPError instance" in repr(exc))
+            rexec = repr(exc)
+        self.assertIn("HTTPError instance", rexec)
 
     def test_no_seek(self):
         # should be possible to turn off UserAgent's .seek() functionality

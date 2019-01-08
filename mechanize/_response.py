@@ -479,7 +479,7 @@ def get_seek_wrapper_class(response):
     # dynamically subclass the exception :-(((
     if (
             isinstance(response, HTTPError) and
-            not isinstance(response, response_seek_wrapper)
+            not isinstance(response, seek_wrapper)
     ):
         if response.__class__.__module__ == "__builtin__":
             exc_class_name = response.__class__.__name__
@@ -512,6 +512,15 @@ def get_seek_wrapper_class(response):
     return wrapper_class
 
 
+def needs_seek_wrapper(obj):
+    return (
+            not isinstance(obj, seek_wrapper) and (
+                hasattr(obj, 'seek') or isinstance(obj, HTTPError)
+                or not hasattr(obj, 'get_data')
+                )
+            )
+
+
 def seek_wrapped_response(response):
     """Return a copy of response that supports seekable response interface.
 
@@ -521,7 +530,7 @@ def seek_wrapped_response(response):
     can't be simply wrapped due to the requirement of preserving the exception
     base class).
     """
-    if not hasattr(response, "seek"):
+    if needs_seek_wrapper(response):
         wrapper_class = get_seek_wrapper_class(response)
         response = wrapper_class(response)
     assert hasattr(response, "get_data")
@@ -543,7 +552,7 @@ def upgrade_response(response):
     """
     wrapper_class = get_seek_wrapper_class(response)
     if hasattr(response, "closeable_response"):
-        if not hasattr(response, "seek"):
+        if needs_seek_wrapper(response):
             response = wrapper_class(response)
         assert hasattr(response, "get_data")
         return copy.copy(response)
