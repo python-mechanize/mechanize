@@ -907,6 +907,189 @@ class HttplibTests(mechanize._testcase.TestCase):
         browser.open(request)
         self.assertIn(("Host", "myway.example.com"), headers)
 
+    def test_misc_browser_tests(self):
+
+        class TestHttpHandler(mechanize.BaseHandler):
+            def http_open(self, request):
+                return mechanize._response.test_response(
+                        url=request.get_full_url())
+
+        class TestHttpBrowser(TestBrowser2):
+            handler_classes = TestBrowser2.handler_classes.copy()
+            handler_classes["http"] = TestHttpHandler
+            default_schemes = ["http"]
+
+        def response_impl(response):
+            return response.wrapped.fp.__class__.__name__
+
+        br = TestHttpBrowser()
+        r = br.open("http://example.com")
+        self.assertEqual('BytesIO', response_impl(r))
+        r2 = br.open("http://example.com")
+        self.assertEqual('BytesIO', response_impl(r2))
+        self.assertEqual('eofresponse', response_impl(r))
+        br.set_response(mechanize._response.test_response())
+        self.assertEqual('eofresponse', response_impl(r2))
+
+        br = TestHttpBrowser()
+        r = br.open("http://example.com")
+        r2 = mechanize._response.test_response(url="http://example.com/2")
+        self.assertEqual(response_impl(r2), 'BytesIO')
+        br.visit_response(r2)
+        self.assertEqual(response_impl(r), 'eofresponse')
+        self.assertEqual(br.geturl(), br.request.get_full_url())
+        self.assertEqual(br.geturl(), "http://example.com/2")
+        br.back()
+        self.assertEqual(br.geturl(), br.request.get_full_url())
+        self.assertEqual(br.geturl(), "http://example.com")
+
+        class ReloadCheckBrowser(TestHttpBrowser):
+            reloaded = False
+
+            def reload(self):
+                self.reloaded = True
+                return TestHttpBrowser.reload(self)
+
+        br = ReloadCheckBrowser()
+        old = br.open("http://example.com")
+        br.open("http://example.com/2")
+        new = br.back()
+        self.assertTrue(br.reloaded)
+        self.assertIsNot(new.wrapped, old.wrapped)
+
+        br = TestBrowser2()
+        self.assertRaises(ValueError, br.set_response, 'blah')
+        self.assertRaises(ValueError, br.set_response, BytesIO())
+        self.assertRaises(mechanize.URLError, br.open, "http://example.com")
+        self.assertRaises(mechanize.URLError, br.reload)
+
+        br = TestBrowser2()
+        br.add_handler(make_mock_handler(mechanize._response.test_response)([("http_open", None)]))
+
+        self.assertIsNone(br.response())
+        self.assertEqual(len(br._history._history), 0)
+        br.open("http://example.com/1")
+        self.assertIsNotNone(br.response())
+        self.assertEqual(len(br._history._history), 0)
+        br.clear_history()
+        self.assertIsNotNone(br.response())
+        self.assertEqual(len(br._history._history), 0)
+        br.open("http://example.com/2")
+        br.response() is not None
+        self.assertIsNotNone(br.response())
+        self.assertEqual(len(br._history._history), 1)
+        br.clear_history()
+        self.assertIsNotNone(br.response())
+        self.assertEqual(len(br._history._history), 0)
+
+        from test.test_urllib2 import MockHTTPHandler
+
+        def make_browser_with_redirect():
+            br = TestBrowser2()
+            hh = MockHTTPHandler(302, "Location: http://example.com/\r\n\r\n")
+            br.add_handler(hh)
+            br.add_handler(mechanize.HTTPRedirectHandler())
+            return br
+
+        def test_state(br):
+            self.assertIsNone(br.request)
+            self.assertIsNone(br.response())
+            self.assertRaises(mechanize.BrowserStateError, br.back)
+
+        br = make_browser_with_redirect()
+        test_state(br)
+        req = mechanize.Request("http://example.com")
+        req.visit = False
+        br.open(req)
+        test_state(br)
+
+        br = make_browser_with_redirect()
+        test_state(br)
+
+        req = mechanize.Request("http://example.com")
+        self.assertIsNone(req.visit)
+        br.open_novisit(req)
+        test_state(br)
+        self.assertFalse(req.visit)
+
+        def test_one_visit(handlers):
+            br = TestBrowser2()
+            for handler in handlers:
+                br.add_handler(handler)
+            req = mechanize.Request("http://example.com")
+            req.visit = True
+            br.open(req)
+            return br
+
+        def test_state(br):
+            # XXX the _history._history check is needed because of the weird
+            # throwing-away of history entries by .back() where response is
+            # None, which makes the .back() check insufficient to tell if a
+            # history entry was .add()ed.  I don't want to change this until
+            # post-stable.
+            self.assertTrue(br.response())
+            self.assertTrue(br.request)
+            self.assertEqual(len(br._history._history), 0)
+            self.assertRaises(mechanize.BrowserStateError, br.back)
+
+        from test.test_urllib2 import HTTPRedirectHandler
+        hh = MockHTTPHandler(302, "Location: http://example.com/\r\n\r\n")
+        br = test_one_visit([hh, HTTPRedirectHandler()])
+        test_state(br)
+
+        class MockPasswordManager:
+
+            def add_password(self, realm, uri, user, password):
+                pass
+
+            def find_user_password(self, realm, authuri):
+                return '', ''
+
+        ah = mechanize.HTTPBasicAuthHandler(MockPasswordManager())
+        hh = MockHTTPHandler(
+            401, 'WWW-Authenticate: Basic realm="realm"\r\n\r\n')
+        test_state(test_one_visit([hh, ah]))
+        ph = mechanize.ProxyHandler(dict(http="proxy.example.com:3128"))
+        ah = mechanize.ProxyBasicAuthHandler(MockPasswordManager())
+        hh = MockHTTPHandler(
+            407, 'Proxy-Authenticate: Basic realm="realm"\r\n\r\n')
+        test_state(test_one_visit([ph, hh, ah]))
+
+        from mechanize._response import test_response
+        br = TestBrowser2()
+        html = b"""\
+        <html><body>
+        <input type="text" name="a" />
+        <form><input type="text" name="b" /></form>
+        </body></html>
+        """
+        response = test_response(html, headers=[("Content-type", "text/html")])
+        self.assertRaises(mechanize.BrowserStateError, br.global_form)
+        br.set_response(response)
+        self.assertEqual(str(br.global_form().find_control(nr=0).name), 'a')
+        self.assertEqual(len(list(br.forms())), 1)
+        self.assertEqual(str(next(iter(br.forms())).find_control(nr=0).name), 'b')
+
+        from mechanize._response import test_html_response
+        br = TestBrowser2()
+        br.visit_response(test_html_response(b"""\
+<html><head><title></title></head><body>
+<input type="text" name="a" value="b"></input>
+<form>
+    <input type="text" name="p" value="q"></input>
+</form>
+</body></html>"""))
+
+        def has_a(form):
+            try:
+                form.find_control(name="a")
+            except mechanize.ControlNotFoundError:
+                return False
+            else:
+                return True
+        br.select_form(predicate=has_a)
+        self.assertEqual(str(br.form.find_control(name="a").value), 'b')
+
 
 if __name__ == "__main__":
     import unittest
