@@ -51,7 +51,7 @@ class LoopbackHttpServerThread(threading.Thread):
 
     def __init__(self, handle_request=None):
         threading.Thread.__init__(self)
-        self._stop = False
+        self._keep_going = True
         self.ready = threading.Event()
         self._request_handler = None
         if handle_request is None:
@@ -72,13 +72,13 @@ class LoopbackHttpServerThread(threading.Thread):
         """Stops the webserver if it's currently running."""
 
         # Set the stop flag.
-        self._stop = True
+        self._keep_going = False
 
         self.join()
 
     def run(self):
         self.ready.set()
-        while not self._stop:
+        while self._keep_going:
             self.httpd.handle_request()
 
 # Authentication infrastructure
@@ -146,7 +146,7 @@ class DigestAuthHandler:
         return response == auth_dict["response"]
 
     def _return_auth_challenge(self, request_handler):
-        request_handler.send_response(407, "Proxy Authentication Required")
+        request_handler.send_response(407, b"Proxy Authentication Required")
         request_handler.send_header("Content-Type", "text/html")
         request_handler.send_header(
             'Proxy-Authenticate', 'Digest realm="%s", '
@@ -157,7 +157,7 @@ class DigestAuthHandler:
         # not.
         # request_handler.send_header('Connection', 'close')
         request_handler.end_headers()
-        request_handler.wfile.write("Proxy Authentication Required.")
+        request_handler.wfile.write(b"Proxy Authentication Required.")
         return False
 
     def handle_request(self, request_handler):
@@ -234,9 +234,9 @@ class FakeProxyHandler(BaseHTTPRequestHandler):
             self.send_response(200, "OK")
             self.send_header("Content-Type", "text/html")
             self.end_headers()
-            self.wfile.write("You've reached %s!<BR>" % self.path)
-            self.wfile.write("Our apologies, but our server is down due to "
-                             "a sudden zombie invasion.")
+            self.wfile.write(("You've reached %s!<BR>" % self.path).encode('utf-8'))
+            self.wfile.write(b"Our apologies, but our server is down due to "
+                             b"a sudden zombie invasion.")
 
 
 def make_started_server(make_request_handler=None):
@@ -334,6 +334,8 @@ class RecordingHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         body = self.send_head()
         if body:
+            if not isinstance(body, bytes):
+                body = body.encode('utf-8')
             self.wfile.write(body)
 
     def do_POST(self):
@@ -411,7 +413,7 @@ class TestUrlopen(TestCase):
         return handler
 
     def test_redirection(self):
-        expected_response = 'We got here...'
+        expected_response = b'We got here...'
         responses = [
             (302, [('Location', 'http://localhost:%s/somewhere_else')], ''),
             (200, [], expected_response)
@@ -427,13 +429,14 @@ class TestUrlopen(TestCase):
         self.assertEqual(handler.requests, ['/', '/somewhere_else'])
 
     def test_404(self):
-        expected_response = 'Bad bad bad...'
+        expected_response = b'Bad bad bad...'
         handler = self._make_request_handler([(404, [], expected_response)])
+        f = None
 
         try:
             mechanize.urlopen('http://localhost:%s/weeble' % handler.port)
-        except mechanize.URLError as f:
-            pass
+        except mechanize.URLError as e:
+            f = e
         else:
             self.fail('404 should raise URLError')
 
@@ -444,7 +447,7 @@ class TestUrlopen(TestCase):
         self.assertEqual(handler.requests, ['/weeble'])
 
     def test_200(self):
-        expected_response = 'pycon 2008...'
+        expected_response = b'pycon 2008...'
         handler = self._make_request_handler([(200, [], expected_response)])
 
         f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port)
@@ -455,7 +458,7 @@ class TestUrlopen(TestCase):
         self.assertEqual(handler.requests, ['/bizarre'])
 
     def test_200_with_parameters(self):
-        expected_response = 'pycon 2008...'
+        expected_response = b'pycon 2008...'
         handler = self._make_request_handler([(200, [], expected_response)])
 
         f = mechanize.urlopen('http://localhost:%s/bizarre' % handler.port,
@@ -464,10 +467,10 @@ class TestUrlopen(TestCase):
         f.close()
 
         self.assertEqual(data, expected_response)
-        self.assertEqual(handler.requests, ['/bizarre', 'get=with_feeling'])
+        self.assertEqual(handler.requests, ['/bizarre', b'get=with_feeling'])
 
     def test_sending_headers(self):
-        handler = self._make_request_handler([(200, [], "we don't care")])
+        handler = self._make_request_handler([(200, [], b"we don't care")])
 
         req = mechanize.Request("http://localhost:%s/" % handler.port,
                                 headers={'Range': 'bytes=20-39'})
@@ -475,7 +478,7 @@ class TestUrlopen(TestCase):
         self.assertEqual(handler.received_headers['Range'], 'bytes=20-39')
 
     def test_basic(self):
-        handler = self._make_request_handler([(200, [], "we don't care")])
+        handler = self._make_request_handler([(200, [], b"we don't care")])
 
         open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
         for attr in ("read", "close", "info", "geturl"):
@@ -487,7 +490,7 @@ class TestUrlopen(TestCase):
             open_url.close()
 
     def test_info(self):
-        handler = self._make_request_handler([(200, [], "we don't care")])
+        handler = self._make_request_handler([(200, [], b"we don't care")])
 
         open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
         info_obj = open_url.info()
@@ -498,7 +501,7 @@ class TestUrlopen(TestCase):
 
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
-        handler = self._make_request_handler([(200, [], "we don't care")])
+        handler = self._make_request_handler([(200, [], b"we don't care")])
 
         open_url = mechanize.urlopen("http://localhost:%s" % handler.port)
         url = open_url.geturl()

@@ -1254,12 +1254,12 @@ class UnknownHandler(BaseHandler):
         raise URLError('unknown url type: %s' % type)
 
 
-def parse_keqv_list(l):
+def parse_keqv_list(ln):
     """Parse list of key=value strings where keys are not duplicated."""
     parsed = {}
-    for elt in l:
+    for elt in ln:
         k, v = elt.split('=', 1)
-        if v[0] == '"' and v[-1] == '"':
+        if v[0:1] == '"' and v[-1:] == '"':
             v = v[1:-1]
         parsed[k] = v
     return parsed
@@ -1306,7 +1306,7 @@ def parse_http_list(s):
     if part:
         res.append(part)
 
-    return [part_.strip() for part_ in res]
+    return list(filter(None, (part_.strip() for part_ in res)))
 
 
 class FileHandler(BaseHandler):

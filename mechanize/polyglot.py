@@ -111,6 +111,11 @@ else:
         return vals[-1]
     HTTPMessage.__getitem__ = getitem
 
+    # Legacy method names
+    HTTPMessage.gettype = HTTPMessage.get_content_type
+    HTTPMessage.getmainttype = HTTPMessage.get_content_maintype
+    HTTPMessage.getsubtype = HTTPMessage.get_content_subtype
+
     def is_mapping(x):
         return isinstance(x, collections.abc.Mapping)
 
