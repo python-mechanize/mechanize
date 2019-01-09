@@ -466,6 +466,9 @@ class MockHTTPResponse:
     def read(self):
         return b''
 
+    def readinto(self, b):
+        pass
+
     def close(self):
         self.fp = None
 
@@ -958,6 +961,9 @@ class HandlerTests(mechanize._testcase.TestCase):
 
             def read(self):
                 return b''
+
+            def readinto(self, b):
+                pass
 
             def close(self):
                 self.fp = None

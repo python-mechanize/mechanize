@@ -44,7 +44,7 @@ import sys
 import time
 from collections import OrderedDict
 from functools import partial
-from io import BytesIO
+from io import BytesIO, BufferedReader
 
 from . import _rfc3986
 from ._clientcookie import CookieJar
@@ -77,9 +77,13 @@ if platform.python_implementation() == 'PyPy':
         return socket._fileobject(fh, close=True)
 else:
     def create_readline_wrapper(fh):
-        ans = fh.fp
-        fh.fp = None
-        fh.close()
+        fh.recv = fh.read
+        if is_py2:
+            ans = socket._fileobject(fh, close=True)
+        else:
+            fh.recv_into = fh.readinto
+            fh._decref_socketios = lambda: None
+            ans = BufferedReader(socket.SocketIO(fh, 'r'))
         return ans
 
 

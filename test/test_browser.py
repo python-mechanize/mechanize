@@ -883,6 +883,9 @@ class HttplibTests(mechanize._testcase.TestCase):
                 def close(self):
                     self.fp = None
 
+                def readinto(self__, b):
+                    pass
+
             return Response()
 
         self.monkey_patch(HTTPConnection, "putheader", putheader)
