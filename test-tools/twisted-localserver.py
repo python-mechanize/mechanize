@@ -185,22 +185,22 @@ class DynamicPage(resource.Resource):
         request.addCookie('sessioncookie', 'spam\n')
         html = (
             "<html><head><title>Cookies/form submission parameters</title>")
-        if request.args.get('refresh'):
-            html += '<meta http-equiv="refresh" content=\'%s\'>' % tuple(
-                request.args.get('refresh'))
-        elif not request.getCookie('foo'):
+        if request.args.get(b'refresh'):
+            html += '<meta http-equiv="refresh" content=\'%s\'>' % (
+                request.args.get(b'refresh')[0].decode('ascii'))
+        elif not request.getCookie(b'foo'):
             html += '<meta http-equiv="refresh" content="1">'
         html += "</head><body>"
-        if request.getHeader('referer'):
+        if request.getHeader(b'referer'):
             html += "<p>Referer:</p><pre>{}</pre>".format(
-                    request.getHeader('referer'))
+                    request.getHeader(b'referer'))
         html += "<p>Received cookies:</p>"
         html += "<pre>"
         html += request.getHeader('cookie') or ''
         html += "</pre>"
-        if request.getCookie('foo'):
+        if request.getCookie(b'foo'):
             html += "<p>Your browser supports cookies!"
-        if request.getCookie('sessioncookie'):
+        if request.getCookie(b'sessioncookie'):
             html += "<p>Received session cookie"
 
         html += '</body></html>'
