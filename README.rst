@@ -13,7 +13,7 @@ Stateful programmatic web browsing in Python
 
 - The browser class `mechanize.Browser` implements the
   interface of `urllib2.OpenerDirector`, so any URL can
-  be opened not just `http`. 
+  be opened not just `http`.
 
 - Easy HTML form filling.
 
@@ -89,7 +89,6 @@ patches.
     :target: http://travis-ci.org/python-mechanize/mechanize
     :alt: Build status of the master branch on Unix
 
-.. |windows_build|  image:: https://ci.appveyor.com/api/projects/status/github/kovidgoyal/mechanize?svg=true
-    :target: https://ci.appveyor.com/project/kovidgoyal/mechanize
+.. |windows_build|  image:: https://ci.appveyor.com/api/projects/status/github/python-mechanize/mechanize?svg=true
+    :target: https://ci.appveyor.com/project/python-mechanize/mechanize
     :alt: Build status of the master branch on Windows
-
