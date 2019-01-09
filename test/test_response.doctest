@@ -156,7 +156,7 @@ True
 addinfourl: extract .fp and wrap it with closeable_response and
 seek_wrapper
 
->>> from mechanize._urllib2_fork import addinfourl
+>>> from mechanize.polyglot import addinfourl
 >>> r1= addinfourl(StringIO(data), make_headers([]), url)
 >>> is_response(r1)
 False

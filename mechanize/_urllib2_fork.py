@@ -51,10 +51,10 @@ from ._clientcookie import CookieJar
 from ._headersutil import normalize_header_name
 from ._response import closeable_response
 from .polyglot import (HTTPConnection, HTTPError, HTTPSConnection, URLError,
-                       addinfourl, as_unicode, create_response_info,
-                       ftpwrapper, getproxies, is_class, is_mapping, is_py2,
-                       is_string, iteritems, map, raise_with_traceback,
-                       splitattr, splitpasswd, splitport, splittype, splituser,
+                       as_unicode, create_response_info, ftpwrapper,
+                       getproxies, is_class, is_mapping, is_py2, is_string,
+                       iteritems, map, raise_with_traceback, splitattr,
+                       splitpasswd, splitport, splittype, splituser,
                        splitvalue, unquote, unwrap, url2pathname,
                        urllib_proxy_bypass, urllib_splithost, urlparse,
                        urlsplit)
@@ -1347,8 +1347,7 @@ class FileHandler(BaseHandler):
                     not port and socket.gethostbyname(host) in self.get_names()
             ):
                 fp = open(localfile, 'rb')
-                return closeable_response(
-                    fp, headers, 'file:' + file, 200, 'OK')
+                return closeable_response(fp, headers, 'file:' + file)
         except OSError as msg:
             # urllib2 users shouldn't expect OSErrors coming from urlopen()
             raise URLError(msg)
@@ -1406,7 +1405,7 @@ class FTPHandler(BaseHandler):
                 headers += "Content-length: %d\n" % retrlen
             sf = BytesIO(headers.encode('iso-8859-1'))
             headers = create_response_info(sf)
-            return addinfourl(fp, headers, req.get_full_url())
+            return closeable_response(fp, headers, req.get_full_url())
         except ftplib.all_errors as msg:
             raise_with_traceback(URLError('ftp error: %s' % msg))
 

@@ -363,7 +363,8 @@ class closeable_response:
     # presence of this attr indicates is useable after .close()
     closeable_response = None
 
-    def __init__(self, fp, headers, url, code, msg, http_version=None):
+    def __init__(
+            self, fp, headers, url, code=200, msg='OK', http_version=None):
         self._set_fp(fp)
         self._headers = headers
         self._url = url
