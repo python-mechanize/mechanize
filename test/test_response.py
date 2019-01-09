@@ -4,18 +4,21 @@ import copy
 from io import BytesIO
 from unittest import TestCase
 
+import mechanize
+
 
 class TestUnSeekable:
-
     def __init__(self, text):
         if not isinstance(text, bytes):
             text = text.encode('utf-8')
         self._file = BytesIO(text)
         self.log = []
 
-    def tell(self): return self._file.tell()
+    def tell(self):
+        return self._file.tell()
 
-    def seek(self, offset, whence=0): assert False
+    def seek(self, offset, whence=0):
+        assert False
 
     def read(self, size=-1):
         self.log.append(("read", size))
@@ -31,7 +34,6 @@ class TestUnSeekable:
 
 
 class TestUnSeekableResponse(TestUnSeekable):
-
     def __init__(self, text, headers):
         TestUnSeekable.__init__(self, text)
         self.code = 200
@@ -137,8 +139,8 @@ dog.
         text_lines = self.text_lines
         sfh.read(25)
         sfh.seek(-1, 1)
-        self.assertEqual(sfh.readlines(), [
-                         b"s over the lazy\n"] + text_lines[2:])
+        self.assertEqual(sfh.readlines(),
+                         [b"s over the lazy\n"] + text_lines[2:])
         sfh.seek(0)
         assert sfh.readlines() == text_lines
 
@@ -195,7 +197,8 @@ A Seeming somwhat more than View;
         self.assertEqual(rsw.read(9), b"A Seeming")
         self.assertEqual(rsw.readline(), b" somwhat more than View;\n")
         rsw.seek(0)
-        self.assertEqual(rsw.readline(), b"A Seeming somwhat more than View;\n")
+        self.assertEqual(rsw.readline(),
+                         b"A Seeming somwhat more than View;\n")
         rsw.seek(-1, 1)
         self.assertEqual(rsw.read(7), b"\n  That")
 
@@ -215,6 +218,179 @@ A Seeming somwhat more than View;
         self._test2(rsw)
         rsw.seek(0)
         self._test4(rsw)
+
+
+class DocTests(TestCase):
+    def test_read_complete(self):
+        text = b"To err is human, to moo, bovine.\n" * 10
+
+        def get_wrapper():
+            from mechanize._response import seek_wrapper
+            f = BytesIO(text)
+            wr = seek_wrapper(f)
+            return wr
+
+        wr = get_wrapper()
+        self.assertFalse(wr.read_complete)
+        wr.read()
+        self.assertTrue(wr.read_complete)
+        wr.seek(0)
+        self.assertTrue(wr.read_complete)
+
+        wr = get_wrapper()
+        wr.read(10)
+        self.assertFalse(wr.read_complete)
+        wr.readline()
+        self.assertFalse(wr.read_complete)
+        wr.seek(0, 2)
+        self.assertTrue(wr.read_complete)
+        wr.seek(0)
+        self.assertTrue(wr.read_complete)
+
+        wr = get_wrapper()
+        wr.readlines()
+        self.assertTrue(wr.read_complete)
+        wr.seek(0)
+        self.assertTrue(wr.read_complete)
+
+        wr = get_wrapper()
+        wr.seek(10)
+        self.assertFalse(wr.read_complete)
+        wr.seek(1000000)
+
+        wr = get_wrapper()
+        wr.read(1000000)
+        # we read to the end, but don't know it yet
+        self.assertFalse(wr.read_complete)
+        wr.read(10)
+        self.assertTrue(wr.read_complete)
+
+        wr = get_wrapper()
+        wr.read(len(text) - 10)
+        self.assertFalse(wr.read_complete)
+        wr.readline()
+        # we read to the end, but don't know it yet
+        self.assertFalse(wr.read_complete)
+        wr.readline()
+        self.assertTrue(wr.read_complete)
+
+        # Test copying and sharing of .read_complete state
+
+        wr = get_wrapper()
+        wr2 = copy.copy(wr)
+        self.assertFalse(wr.read_complete)
+        self.assertFalse(wr2.read_complete)
+        wr2.read()
+        self.assertTrue(wr.read_complete)
+        self.assertTrue(wr2.read_complete)
+
+        # Fix from -r36082: .read() after .close() used to break
+        # .read_complete state
+
+        from mechanize._response import test_response
+        r = test_response(text)
+        r.read(64)
+        r.close()
+        self.assertFalse(r.read_complete)
+        self.assertFalse(r.read())
+        ''
+        self.assertFalse(r.read_complete)
+
+    def test_upgrade_response(self):
+        def is_response(r):
+            names = "get_data read readline readlines close seek code msg".split(
+            )
+            for name in names:
+                self.assertTrue(
+                    hasattr(r, name), 'No attr named: {}'.format(name))
+            self.assertEqual(r.get_data(), b"test data")
+
+        from mechanize._response import upgrade_response, make_headers, make_response, closeable_response, seek_wrapper
+        data = b"test data"
+        url = "http://example.com/"
+        code = 200
+        msg = "OK"
+
+        # Normal response (closeable_response wrapped with seek_wrapper): return a copy
+
+        r1 = make_response(data, [], url, code, msg)
+        r2 = upgrade_response(r1)
+        is_response(r2)
+        self.assertIsNot(r1, r2)
+        self.assertIs(r1.wrapped, r2.wrapped)
+
+        # closeable_response with no seek_wrapper: wrap with seek_wrapper
+
+        r1 = closeable_response(
+            BytesIO(data), make_headers([]), url, code, msg)
+        self.assertRaises(AssertionError, is_response, r1)
+        r2 = upgrade_response(r1)
+        is_response(r2)
+        self.assertIsNot(r1, r2)
+        self.assertIs(r1, r2.wrapped)
+
+        # addinfourl: extract .fp and wrap it with closeable_response and seek_wrapper
+
+        from mechanize.polyglot import addinfourl
+        r1 = addinfourl(BytesIO(data), make_headers([]), url)
+        self.assertRaises(AssertionError, is_response, r1)
+        r2 = upgrade_response(r1)
+        is_response(r2)
+        self.assertIsNot(r1, r2)
+        self.assertIsNot(r1, r2.wrapped)
+        self.assertIs(r1.fp, r2.wrapped.fp)
+
+        # addinfourl with code, msg
+
+        r1 = addinfourl(BytesIO(data), make_headers([]), url)
+        r1.code = 206
+        r1.msg = "cool"
+        r2 = upgrade_response(r1)
+        is_response(r2)
+        self.assertEqual(r2.code, r1.code)
+        self.assertEqual(r2.msg, r1.msg)
+
+        # addinfourl with seek wrapper: cached data is not lost
+
+        r1 = addinfourl(BytesIO(data), make_headers([]), url)
+        r1 = seek_wrapper(r1)
+        self.assertEqual(r1.read(4), b'test')
+        r2 = upgrade_response(r1)
+        is_response(r2)
+
+        # addinfourl wrapped with HTTPError -- remains an HTTPError of the same subclass (through horrible trickery)
+
+        hdrs = make_headers([])
+        r1 = addinfourl(BytesIO(data), hdrs, url)
+
+        class MyHTTPError(mechanize.HTTPError):
+            pass
+
+        r1 = MyHTTPError(url, code, msg, hdrs, r1)
+        self.assertRaises(AssertionError, is_response, r1)
+        r2 = upgrade_response(r1)
+        is_response(r2)
+        self.assertIsInstance(r2, MyHTTPError)
+        self.assertTrue(
+            repr(r2).startswith(
+                '<httperror_seek_wrapper (test_response.MyHTTPError instance) at'))
+
+        # The trickery does not cause double-wrapping
+
+        r3 = upgrade_response(r2)
+        is_response(r3)
+        self.assertIsNot(r3, r2)
+        self.assertIs(r3.wrapped, r2.wrapped)
+
+        # Test dynamically-created class __repr__ for case where we have the module name
+
+        r4 = addinfourl(BytesIO(data), hdrs, url)
+        r4 = mechanize.HTTPError(url, code, msg, hdrs, r4)
+        r4 = upgrade_response(r4)
+        q = '<httperror_seek_wrapper (urllib2.HTTPError instance) at'
+        if not mechanize.polyglot.is_py2:
+            q = q.replace('urllib2', 'urllib.error')
+        self.assertTrue(repr(r4).startswith(q))
 
 
 if __name__ == "__main__":
