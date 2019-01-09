@@ -1736,10 +1736,15 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
         # Try some URL encodings of the PATHs.
         # (the behaviour here has changed from libwww-perl)
         from mechanize import CookieJar, DefaultCookiePolicy
+        from mechanize.polyglot import is_py2
 
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
+        url = "http://www.acme.com/foo%2f%25/%3c%3c%0Anew%C3%A5/%E5"
+        if is_py2:
+            # in python2 latin1 encoding is used
+            url = url.replace('%C3%A5', '%E5')
 
-        interact_2965(c, "http://www.acme.com/foo%2f%25/%3c%3c%0Anew%C3%A5/%E5",
+        interact_2965(c, url,
                       "foo  =   bar; version    =   1")
 
         cookie = interact_2965(
