@@ -74,11 +74,10 @@ class CookieJar(CJ):
             cookies = self._cookies_for_request(request)
 
             # add cookies in order of most specific (i.e. longest) path first
+            def key(x):
+                return len(x.path)
 
-            def decreasing_size(a, b):
-                return cmp(len(b.path), len(a.path))
-
-            cookies.sort(decreasing_size)
+            cookies.sort(key=key, reverse=True)
             return cookies
 
     def get_policy(self):

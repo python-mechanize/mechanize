@@ -154,6 +154,10 @@ class Request:
             origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
         self.unverifiable = unverifiable
+        try:
+            self.get_host()  # in py3 cookiejar expect self.host to be not None
+        except Exception:
+            self.host = None
 
     def __getattr__(self, attr):
         # XXX this is a fallback mechanism to guard against these

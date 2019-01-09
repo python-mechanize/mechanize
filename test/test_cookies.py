@@ -125,13 +125,25 @@ class CookieJarInterfaceTests(unittest.TestCase):
                 self.log_called()
                 return False
 
+            @property
+            def unverifiable(self):
+                return self.is_unverifiable()
+
+            @property
+            def type(self):
+                return self.get_type()
+
+            @property
+            def host(self):
+                return self.get_host()
+
         jar = CookieJar()
         interact_netscape(jar, "https://example.com:443",
                           "foo=bar; port=443; secure")
         request = MockRequest()
         jar.add_cookie_header(request)
-        expect_called = attribute_names(MockRequest) - set(
-            ["port", "get_header", "header_items", "log_called"])
+        expect_called = attribute_names(MockRequest) - {
+            "port", "get_header", "header_items", "log_called", 'unverifiable', 'type', 'host'}
         self.assertEqual(request.called, expect_called)
         self.assertEqual(request.added_headers, [("Cookie", "foo=bar")])
 
@@ -141,8 +153,9 @@ class CookieJarInterfaceTests(unittest.TestCase):
         # verify only these methods are used
 
         class StubMessage(object):
-            def getheaders(self, name):
+            def getheaders(self, name, default=None):
                 return ["foo=bar; port=443"]
+            get_all = getheaders
 
         class StubResponse(object):
             def info(self):
@@ -168,12 +181,24 @@ class CookieJarInterfaceTests(unittest.TestCase):
                 self.log_called()
                 return False
 
+            @property
+            def unverifiable(self):
+                return self.is_unverifiable()
+
+            @property
+            def type(self):
+                return self.get_type()
+
+            @property
+            def host(self):
+                return self.get_host()
+
         jar = CookieJar()
         response = StubResponse()
         request = StubRequest()
         jar.extract_cookies(response, request)
         expect_called = attribute_names(StubRequest) - set(
-            ["port", "log_called"])
+            ["port", "log_called", 'unverifiable', 'type', 'host'])
         self.assertEqual(request.called, expect_called)
         self.assertEqual([(cookie.name, cookie.value) for cookie in jar],
                          [("foo", "bar")])
@@ -1247,8 +1272,12 @@ class CookieJarPersistenceTests(TempfileTestMixin, unittest.TestCase):
         assert repr(new_c).find("name='foo1', value='bar'") != -1
 
     def test_mozilla_cookiejar_embedded_tab(self):
-        import _MozillaCookieJar
-        _MozillaCookieJar._warn_unhandled_exception = lambda: None
+        try:
+            import _MozillaCookieJar
+        except ImportError:
+            pass  # py3
+        else:
+            _MozillaCookieJar._warn_unhandled_exception = lambda: None
         from mechanize import MozillaCookieJar
         filename = tempfile.mktemp()
         fh = open(filename, "w")
@@ -1710,18 +1739,19 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
 
         c = CookieJar(DefaultCookiePolicy(rfc2965=True))
 
-        interact_2965(c, "http://www.acme.com/foo%2f%25/%3c%3c%0Anew%E5/%E5",
+        interact_2965(c, "http://www.acme.com/foo%2f%25/%3c%3c%0Anew%C3%A5/%E5",
                       "foo  =   bar; version    =   1")
 
         cookie = interact_2965(
             c, "http://www.acme.com/foo%2f%25/<<%0anew\345/\346\370\345",
             'bar=baz; path="/foo/"; version=1')
         version_re = re.compile(r'^\$version=\"?1\"?', re.I)
-        assert (cookie.find("foo=bar") != -1 and version_re.search(cookie))
+        self.assertIn('foo=bar', cookie)
+        self.assertIsNotNone(version_re.search(cookie))
 
         cookie = interact_2965(
             c, "http://www.acme.com/foo/%25/<<%0anew\345/\346\370\345")
-        assert not cookie
+        self.assertFalse(cookie)
 
         # unicode URL doesn't raise exception, as it used to!
         cookie = interact_2965(c, b"http://www.acme.com/\xfc".decode('latin1'))
