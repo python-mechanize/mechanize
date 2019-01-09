@@ -3,12 +3,13 @@
 import copy
 from io import BytesIO
 from unittest import TestCase
-from functools import partial
 
 
 class TestUnSeekable:
 
     def __init__(self, text):
+        if not isinstance(text, bytes):
+            text = text.encode('utf-8')
         self._file = BytesIO(text)
         self.log = []
 
@@ -50,14 +51,14 @@ class TestUnSeekableResponse(TestUnSeekable):
 
 class SeekableTests(TestCase):
 
-    text = """\
+    text = b"""\
 The quick brown fox
 jumps over the lazy
 
 dog.
 
 """
-    text_lines = list(map(lambda l: l + "\n", text.split("\n")[:-1]))
+    text_lines = list(map(lambda l: l + b"\n", text.split(b"\n")[:-1]))
 
     def testSeekable(self):
         from mechanize._response import seek_wrapper
@@ -102,19 +103,19 @@ dog.
         lines = []
         sfh.seek(-1, 1)
         while 1:
-            l = sfh.readline()
-            if l == "":
+            ln = sfh.readline()
+            if not ln:
                 break
-            lines.append(l)
-        assert lines == ["s over the lazy\n"] + text_lines[2:]
+            lines.append(ln)
+        assert lines == [b"s over the lazy\n"] + text_lines[2:]
         assert sfh.log[2:] == [("readline", -1)] * 5
         sfh.seek(0)
         lines = []
         while 1:
-            l = sfh.readline()
-            if l == "":
+            ln = sfh.readline()
+            if not ln:
                 break
-            lines.append(l)
+            lines.append(ln)
         assert lines == text_lines
 
     def _test2(self, sfh):
@@ -122,22 +123,22 @@ dog.
         sfh.read(5)
         sfh.seek(0)
         assert sfh.read() == text
-        assert sfh.read() == ""
+        assert not sfh.read()
         sfh.seek(0)
         assert sfh.read() == text
         sfh.seek(0)
-        assert sfh.readline(5) == "The q"
+        assert sfh.readline(5) == b"The q"
         assert sfh.read() == text[5:]
         sfh.seek(0)
-        assert sfh.readline(5) == "The q"
-        assert sfh.readline() == "uick brown fox\n"
+        assert sfh.readline(5) == b"The q"
+        assert sfh.readline() == b"uick brown fox\n"
 
     def _test3(self, sfh):
         text_lines = self.text_lines
         sfh.read(25)
         sfh.seek(-1, 1)
         self.assertEqual(sfh.readlines(), [
-                         "s over the lazy\n"] + text_lines[2:])
+                         b"s over the lazy\n"] + text_lines[2:])
         sfh.seek(0)
         assert sfh.readlines() == text_lines
 
@@ -147,13 +148,13 @@ dog.
         limit = 10
         while count < limit:
             if count == 5:
-                self.assertRaises(StopIteration, partial(next, sfh))
+                self.assertIsNone(next(sfh, None))
                 break
             else:
-                next(sfh) == text_lines[count]
-            count = count + 1
+                self.assertEqual(next(sfh), text_lines[count])
+            count += 1
         else:
-            assert False, "StopIteration not raised"
+            assert False, "iterator not exhausted"
 
     def _test5(self, sfh):
         text = self.text
@@ -183,20 +184,20 @@ dog.
         from mechanize import response_seek_wrapper
         r = TestUnSeekableResponse(self.text, {'blah': 'yawn'})
         rsw = response_seek_wrapper(r)
-        rsw.set_data("""\
+        rsw.set_data(b"""\
 A Seeming somwhat more than View;
   That doth instruct the Mind
   In Things that ly behind,
 """)
-        self.assertEqual(rsw.read(9), "A Seeming")
-        self.assertEqual(rsw.read(13), " somwhat more")
+        self.assertEqual(rsw.read(9), b"A Seeming")
+        self.assertEqual(rsw.read(13), b" somwhat more")
         rsw.seek(0)
-        self.assertEqual(rsw.read(9), "A Seeming")
-        self.assertEqual(rsw.readline(), " somwhat more than View;\n")
+        self.assertEqual(rsw.read(9), b"A Seeming")
+        self.assertEqual(rsw.readline(), b" somwhat more than View;\n")
         rsw.seek(0)
-        self.assertEqual(rsw.readline(), "A Seeming somwhat more than View;\n")
+        self.assertEqual(rsw.readline(), b"A Seeming somwhat more than View;\n")
         rsw.seek(-1, 1)
-        self.assertEqual(rsw.read(7), "\n  That")
+        self.assertEqual(rsw.read(7), b"\n  That")
 
         r = TestUnSeekableResponse(self.text, {'blah': 'yawn'})
         rsw = response_seek_wrapper(r)

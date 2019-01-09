@@ -252,7 +252,7 @@ class seek_wrapper:
 
     def __next__(self):
         line = self.readline()
-        if line == "":
+        if not line:
             raise StopIteration
         return line
     next = __next__
