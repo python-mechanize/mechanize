@@ -1115,7 +1115,8 @@ class AbstractHTTPHandler(BaseHandler):
         h.set_debuglevel(self._debuglevel)
 
         headers = OrderedDict(req.headers)
-        headers.update(req.unredirected_hdrs)
+        for key, val in iteritems(req.unredirected_hdrs):
+            headers[key] = val
         # We want to make an HTTP/1.1 request, but the addinfourl
         # class isn't prepared to deal with a persistent connection.
         # It will try to read all remaining data from the socket,
