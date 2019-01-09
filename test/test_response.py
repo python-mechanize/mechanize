@@ -371,9 +371,10 @@ class DocTests(TestCase):
         r2 = upgrade_response(r1)
         is_response(r2)
         self.assertIsInstance(r2, MyHTTPError)
+        name = MyHTTPError.__module__ + '.' + MyHTTPError.__name__
         self.assertTrue(
             repr(r2).startswith(
-                '<httperror_seek_wrapper (test_response.MyHTTPError instance) at'))
+                '<httperror_seek_wrapper ({} instance) at'.format(name)))
 
         # The trickery does not cause double-wrapping
 
