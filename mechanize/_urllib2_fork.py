@@ -279,7 +279,7 @@ class Request:
         return list(iteritems(hdrs))
 
 
-class OpenerDirector:
+class OpenerDirector(object):
 
     def __init__(self):
         client_version = "Python-urllib/%s" % __version__
