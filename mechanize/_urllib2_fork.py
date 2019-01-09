@@ -60,12 +60,16 @@ from .polyglot import (HTTPConnection, HTTPError, HTTPSConnection, URLError,
                        urlsplit)
 
 
-def sha1_digest(bytes):
-    return hashlib.sha1(bytes).hexdigest()
+def sha1_digest(data):
+    if not isinstance(data, bytes):
+        data = data.encode('utf-8')
+    return hashlib.sha1(data).hexdigest()
 
 
-def md5_digest(bytes):
-    return hashlib.md5(bytes).hexdigest()
+def md5_digest(data):
+    if not isinstance(data, bytes):
+        data = data.encode('utf-8')
+    return hashlib.md5(data).hexdigest()
 
 
 if platform.python_implementation() == 'PyPy':

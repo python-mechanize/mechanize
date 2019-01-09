@@ -287,7 +287,7 @@ class SimpleTests(SocketTimeoutTest):
         for br in self.browser, copy.copy(self.browser):
             r = br.open(urljoin(self.uri, "redirected_good"))
             self.assertEqual(r.code, 200)
-            self.assertTrue("GeneralFAQ.html" in r.read(2048))
+            self.assertTrue(b"GeneralFAQ.html" in r.read(2048))
             self.assertEqual([
                 [c for c in h.codes if c == 302]
                 for h in br.handlers_by_class(ObservingHandler)], [[302]])
@@ -454,7 +454,7 @@ class ResponseTests(TestCase):
         html = r.read()
         self.assertEqual(br.title(), "Python bits")
 
-        newhtml = """<html><body><a href="spam">click me</a></body></html>"""
+        newhtml = b"""<html><body><a href="spam">click me</a></body></html>"""
 
         r.set_data(newhtml)
         self.assertEqual(r.read(), newhtml)
@@ -496,11 +496,11 @@ class FunctionalTests(SocketTimeoutTest):
         referer = urljoin(self.uri, "test_fixtures/referertest.html")
         info = urljoin(self.uri, "/dynamic")
         r = br.open(info)
-        self.assertNotIn(referer, r.get_data())
+        self.assertNotIn(referer.encode('ascii'), r.get_data())
 
         br.open(referer)
         r = br.follow_link(text="Here")
-        self.assertIn(referer, r.get_data())
+        self.assertIn(referer.encode('ascii'), r.get_data())
 
     def test_cookies(self):
         # this test page depends on cookies, and an http-equiv refresh
