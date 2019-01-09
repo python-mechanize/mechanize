@@ -354,6 +354,11 @@ class SimpleTests(SocketTimeoutTest):
         data = response.read()
         self.assertIn(b"Python bits", data)
 
+    def test_gzip(self):
+        self.browser.set_handle_gzip(True)
+        data = self.browser.open(self.uri + '/gzip').read()
+        self.assertIn(b'twisted-localserver.py', data)
+
 
 class ResponseTests(TestCase):
 

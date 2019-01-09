@@ -24,9 +24,14 @@ from twisted.python import log
 from twisted.web import http, resource, server, twcgi
 from twisted.web.guard import (BasicCredentialFactory, DigestCredentialFactory,
                                HTTPAuthSessionWrapper)
-from twisted.web.resource import IResource
+from twisted.web.resource import IResource, EncodingResourceWrapper
+from twisted.web.server import GzipEncoderFactory
 from twisted.web.util import Redirect
 from zope.interface import implementer
+
+
+def gzip_wrapper(page):
+    return EncodingResourceWrapper(page, [GzipEncoderFactory()])
 
 
 def html(title=None, extra_content=""):
@@ -293,6 +298,9 @@ def main(argv):
     make_page(root, "basic_auth", BASIC_AUTH_PAGE, wrapper=require_basic_auth)
     make_page(root, "digest_auth", DIGEST_AUTH_PAGE,
               wrapper=require_digest_auth)
+    make_leaf_page(
+        root, "gzip", open(__file__).read(),
+        "text/plain", wrapper=gzip_wrapper)
 
     site = server.Site(root)
     reactor.listenTCP(options.port, site)
