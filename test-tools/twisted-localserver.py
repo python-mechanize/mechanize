@@ -120,7 +120,7 @@ class TestHTTPUser(object):
     isLeaf = True
 
     def render(self, request):
-        return self.template
+        return self.template.encode('utf-8')
 
     def __init__(self, template, username):
         self.template = template
@@ -240,8 +240,7 @@ def make_cgi_script(parent, name, path, interpreter=sys.executable):
 
 def require_basic_auth(resource):
     p = portal.Portal(TestAuthRealm())
-    c = checkers.InMemoryUsernamePasswordDatabaseDontUse()
-    c.addUser("john", "john")
+    c = checkers.InMemoryUsernamePasswordDatabaseDontUse(john=b'john')
     p.registerChecker(c)
     cred_factory = BasicCredentialFactory("Basic Auth protected area")
     return HTTPAuthSessionWrapper(p, [cred_factory])
@@ -249,10 +248,11 @@ def require_basic_auth(resource):
 
 def require_digest_auth(resource):
     p = portal.Portal(TestAuthRealm(DIGEST_AUTH_PAGE))
-    c = checkers.InMemoryUsernamePasswordDatabaseDontUse()
-    c.addUser("digestuser", "digestuser")
+    c = checkers.InMemoryUsernamePasswordDatabaseDontUse(
+            digestuser=b'digestuser')
     p.registerChecker(c)
-    cred_factory = DigestCredentialFactory("md5", "Digest Auth protected area")
+    cred_factory = DigestCredentialFactory(
+            "md5", b"Digest Auth protected area")
     return HTTPAuthSessionWrapper(p, [cred_factory])
 
 
