@@ -1,5 +1,4 @@
 import doctest
-import errno
 import glob
 import logging
 import optparse
@@ -7,13 +6,13 @@ import os
 import socket
 import subprocess
 import sys
+import threading
 import time
 import unittest
 
 import mechanize
 import mechanize._rfc3986
 import mechanize._testcase as _testcase
-
 
 """Test runner.
 
@@ -96,10 +95,15 @@ class ServerProcess:
 
     def stop(self):
         """Kill process (forcefully if necessary)."""
+        self._process.terminate()
         if os.name == 'nt':
+            return
+        t = threading.Thread(target=self._process.wait)
+        t.start()
+        t.join(1)
+        if self._process.returncode is None:
             self._process.kill()
-        else:
-            kill_posix(self._process.pid, self.report_hook)
+        self._process.wait()
 
 
 def backoff(func, errors,
@@ -118,36 +122,6 @@ def backoff(func, errors,
             break
     else:
         raise
-
-
-def kill_posix(pid, report_hook):
-    import signal
-    os.kill(pid, signal.SIGTERM)
-
-    timeout = 10.
-    starttime = time.time()
-    report_hook("waiting for exit")
-
-    def do_nothing(*args):
-        pass
-    old_handler = signal.signal(signal.SIGCHLD, do_nothing)
-    try:
-        while time.time() < starttime + timeout - 0.01:
-            pid, sts = os.waitpid(pid, os.WNOHANG)
-            if pid != 0:
-                # exited, or error
-                break
-            newtimeout = timeout - (time.time() - starttime) - 1.
-            time.sleep(newtimeout)  # wait for signal
-        else:
-            report_hook("forcefully killing")
-            try:
-                os.kill(pid, signal.SIGKILL)
-            except OSError as exc:
-                if exc.errno != errno.ECHILD:
-                    raise
-    finally:
-        signal.signal(signal.SIGCHLD, old_handler)
 
 
 class TwistedServerProcess(ServerProcess):
