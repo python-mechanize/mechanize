@@ -105,12 +105,12 @@ class MiscTests(TestCase):
             factory.set_response(response)
             return factory.title
 
-        html = ("""\
+        html = (b"""\
         <html><head>
-        <title>T&nbsp;itle</title>
+        <title>T&gt;itle</title>
         </head><body><p>Blah.<p></body></html>
         """)
-        self.assertEqual(get_title(html), u'T\xa0itle')
+        self.assertEqual(get_title(html), u'T>itle')
 
         html = ("""\
         <html><head>
