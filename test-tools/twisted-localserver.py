@@ -21,7 +21,7 @@ import time
 from twisted.cred import checkers, portal
 from twisted.internet import reactor
 from twisted.python import log
-from twisted.web import http, resource, server, twcgi
+from twisted.web import http, resource, server
 from twisted.web.guard import (BasicCredentialFactory, DigestCredentialFactory,
                                HTTPAuthSessionWrapper)
 from twisted.web.resource import IResource, EncodingResourceWrapper
@@ -227,15 +227,9 @@ def make_leaf_page(parent, name, text,
 
 def make_redirect(parent, name, location_relative_ref):
     redirect = Redirect(location_relative_ref)
+    name = name.encode('utf-8')
     parent.putChild(name, redirect)
     return redirect
-
-
-def make_cgi_script(parent, name, path, interpreter=sys.executable):
-    cgi_script = twcgi.FilteredScript(path)
-    cgi_script.filter = interpreter
-    parent.putChild(name, cgi_script)
-    return cgi_script
 
 
 def require_basic_auth(resource):
@@ -290,8 +284,8 @@ def main(argv):
     make_leaf_page(test_fixtures, "referertest.html", REFERER_TEST_HTML)
     make_leaf_page(test_fixtures, "mechanize_reload_test.html",
                    RELOAD_TEST_HTML)
-    make_redirect(root, "redirected", "/doesnotexist")
-    make_redirect(root, "redirected_good", "/test_fixtures")
+    make_redirect(root, "redirected", b"/doesnotexist")
+    make_redirect(root, "redirected_good", b"/test_fixtures")
     example_html = open(os.path.join(
         "examples", "forms", "example.html")).read()
     make_leaf_page(mechanize, "example.html", example_html)
