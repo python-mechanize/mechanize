@@ -5,7 +5,7 @@ from unittest import TestCase
 import mechanize
 import mechanize._form
 from mechanize._response import test_html_response
-from mechanize._html import content_parser, get_title
+from mechanize._html import content_parser, get_title, Factory
 
 
 class RegressionTests(TestCase):
@@ -56,13 +56,76 @@ class EncodingFinderTests(TestCase):
 
 class TitleTests(TestCase):
 
-    def title_parsing(self):
+    def test_title_parsing(self):
         html = ("""\
 <html><head>
 <title> Title\n Test</title>
 </head><body><p>Blah.<p></body></html>
 """)
         self.assertEqual(get_title(content_parser(html)), 'Title Test')
+
+
+class MiscTests(TestCase):
+
+    def test_link_parsing(self):
+
+        def get_first_link_text(html):
+            factory = Factory()
+            response = test_html_response(html)
+            factory.set_response(response)
+            return list(factory.links())[0].text
+
+        html = ("""\
+        <html><head><title>Title</title></head><body>
+        <p><a href="http://example.com/">The  quick\tbrown fox jumps
+        over the <i><b>lazy</b></i> dog </a>
+        </body></html>
+        """)
+        self.assertEqual(
+            get_first_link_text(html), u'The quick brown fox jumps over the lazy dog')
+
+        html = ("""\
+        <html><head><title>Title</title></head><body>
+        <p><a href="http://example.com/"></a>
+        </body></html>
+        """)
+        self.assertEqual(get_first_link_text(html), '')
+
+        html = ("""\
+        <html><head><title>Title</title></head><body>
+        <p><iframe src="http://example.com/"></iframe>
+        </body></html>
+        """)
+        self.assertEqual(get_first_link_text(html), '')
+
+    def test_title_parsing(self):
+        def get_title(html):
+            factory = Factory()
+            response = test_html_response(html)
+            factory.set_response(response)
+            return factory.title
+
+        html = ("""\
+        <html><head>
+        <title>T&nbsp;itle</title>
+        </head><body><p>Blah.<p></body></html>
+        """)
+        self.assertEqual(get_title(html), u'T\xa0itle')
+
+        html = ("""\
+        <html><head>
+        <title>  Ti<script type="text/strange">alert("this is valid HTML -- yuck!")</script>
+        tle &amp;&#38;
+        </title>
+        </head><body><p>Blah.<p></body></html>
+        """)
+        self.assertEqual(
+            str(get_title(html)), 'Ti<script type="text/strange">alert("this is valid HTML -- yuck!")</script> tle &&')
+
+        html = ("""\
+        <html><head>
+        <title>""")
+        self.assertEqual(get_title(html), u'')
 
 
 if __name__ == "__main__":
