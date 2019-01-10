@@ -28,7 +28,7 @@ the result is raised rather than returned.
 ...     raise HTTPError(
 ...         "http://example.com", 200, "OK", {}, io.BytesIO())
 >>> def response_hook(response):
-...     print("response class", response.__class__.__name__)
+...     print("response class %s" % response.__class__.__name__)
 ...     return Exception("processed response")
 >>> try:
 ...     _opener.wrapped_open(urlopen, response_hook,
