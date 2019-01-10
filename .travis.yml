@@ -1,8 +1,8 @@
-dist: xenial
+dist: trusty
 language: python
 
 python:
-    - 3.7
+    - 3.6
     - 2.7
     - pypy
 
