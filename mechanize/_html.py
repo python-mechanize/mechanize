@@ -147,10 +147,10 @@ def content_parser(data,
         from html5_parser import parse
     except Exception:
         from html5lib import parse
-        return parse(
-            data,
-            transport_encoding=transport_encoding,
-            namespaceHTMLElements=False)
+        kw = {'namespaceHTMLElements': False}
+        if transport_encoding and isinstance(data, bytes):
+            kw['transport_encoding'] = transport_encoding
+        return parse(data, **kw)
     else:
         return parse(data, transport_encoding=transport_encoding)
 
