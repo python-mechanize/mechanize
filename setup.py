@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """Stateful programmatic web browsing.
 
 Stateful programmatic web browsing, after Andy Lester's Perl module
