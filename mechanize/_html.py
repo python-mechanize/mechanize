@@ -145,7 +145,7 @@ def content_parser(data,
         return
     try:
         from html5_parser import parse
-    except ImportError:
+    except Exception:
         from html5lib import parse
         return parse(
             data,
