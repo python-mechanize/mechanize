@@ -76,8 +76,10 @@ You may control the browser's policy by using the methods of
     br.add_proxy_password("joe", "password")
     # Add HTTP Basic/Digest auth username and password for website access.
     br.add_password("http://example.com/protected/", "joe", "password")
-    # Add an extra header to all outgoing requests
-    br.addheaders += [('My-Custom-Header', 'Something')]
+    # Add an extra header to all outgoing requests, you can also
+    # re-order or remove headers in this function.
+    br.finalize_request_headers = lambda request, headers: headers.__setitem__(
+      'My-Custom-Header', 'Something')
     # Don't handle HTTP-EQUIV headers (HTTP headers embedded in HTML).
     br.set_handle_equiv(False)
     # Ignore robots.txt.  Do not do this without thought and consideration.

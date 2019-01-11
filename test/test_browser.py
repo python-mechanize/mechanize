@@ -746,6 +746,7 @@ class BrowserTests(TestCase):
                       cbr._ua_handlers['_cookies'].cookiejar)
         self.assertIsNot(br.addheaders, cbr.addheaders)
         self.assertEqual(br.addheaders, cbr.addheaders)
+        self.assertIs(br.finalize_request_headers, cbr.finalize_request_headers)
         h = cbr._ua_handlers['_refresh']
         self.assertEqual((h.honor_time, h.max_time), (True, 237))
 
@@ -904,8 +905,10 @@ class HttplibTests(mechanize._testcase.TestCase):
         browser = self.make_browser()
         request = mechanize.Request("http://example.com/")
         browser.addheaders = [("Host", "myway.example.com")]
+        browser.finalize_request_headers = lambda req, headers: headers.__setitem__('Test-Header', 'Yay')
         browser.open(request)
         self.assertIn(("Host", "myway.example.com"), headers)
+        self.assertIn(("Test-Header", "Yay"), headers)
 
     def test_misc_browser_tests(self):
 

@@ -254,6 +254,7 @@ def test_password_manager_default_port(self):
 
 class MockOpener:
     addheaders = []
+    finalize_request_headers = None
 
     def open(self,
              req,

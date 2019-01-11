@@ -284,6 +284,7 @@ class OpenerDirector(object):
     def __init__(self):
         client_version = "Python-urllib/%s" % __version__
         self.addheaders = [('User-agent', client_version)]
+        self.finalize_request_headers = None
         # manage the individual handlers
         self.handlers = []
         self.handle_open = {}
@@ -1158,6 +1159,9 @@ class AbstractHTTPHandler(BaseHandler):
                 # Proxy-Authorization should not be sent to origin server.
                 del headers[proxy_auth_hdr]
             set_tunnel(req._tunnel_host, headers=tunnel_headers)
+
+        if self.parent.finalize_request_headers is not None:
+            self.parent.finalize_request_headers(req, headers)
 
         try:
             h.request(str(req.get_method()), str(req.get_selector()), req.data,
