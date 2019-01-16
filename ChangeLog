@@ -1,11 +1,11 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
-future Kovid Goyal
+2019-01-16 Kovid Goyal
 	* 0.4.0 release
 	* Python 3 compatibility
 	* Add a finalize_request_headers callback to Browser to allow users full
-	control of what headers are sent with ever request
+	control of what headers are sent with every request
 	* Preserve header ordering when making HTTP requests
 
 2018-09-11 Kovid Goyal
