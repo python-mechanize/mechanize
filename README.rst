@@ -1,7 +1,7 @@
 mechanize - Automate interaction with HTTP web servers
 ##########################################################
 
-|pypi| |unix_build| |windows_build|
+|pypi| |build|
 
 .. contents::
 
@@ -85,10 +85,6 @@ patches.
     :target: https://pypi.python.org/pypi/mechanize
     :alt: Latest version released on PyPi
 
-.. |unix_build| image:: https://api.travis-ci.org/python-mechanize/mechanize.svg
-    :target: http://travis-ci.org/python-mechanize/mechanize
-    :alt: Build status of the master branch on Unix
-
-.. |windows_build|  image:: https://ci.appveyor.com/api/projects/status/github/python-mechanize/mechanize?svg=true
-    :target: https://ci.appveyor.com/project/python-mechanize/mechanize
-    :alt: Build status of the master branch on Windows
+.. |build| image:: https://dev.azure.com/kovidgoyal/mechanize/_apis/build/status/python-mechanize.mechanize?branchName=master
+    :target: https://dev.azure.com/kovidgoyal/mechanize/_build/latest?definitionId=1&branchName=master
+    :alt: Build status of the master branch

@@ -45,22 +45,16 @@ class TrivialTests(mechanize._testcase.TestCase):
         self.assertRaises(ValueError, mechanize.urlopen, 'bogus url')
 
         fname = os.path.join(self.make_temp_dir(), "test.txt")
-        write_file(fname, b"data")
-        if fname[1:2] == ":":
-            fname = fname[2:]
-        # And more hacking to get it to work on MacOS. This assumes
-        # urllib.pathname2url works, unfortunately...
-        if os.name == 'mac':
-            fname = '/' + fname.replace(':', '/')
-        elif os.name == 'riscos':
-            import string
-            fname = os.expand(fname)
-            fname = fname.translate(string.maketrans("/.", "./"))
-
-        file_url = "file://%s" % sanepathname2url(fname)
-        f = mechanize.urlopen(file_url)
-
-        f.read()
+        data = b'data'
+        write_file(fname, data)
+        if os.sep == '\\':
+            fname = '/' + fname
+        file_url = "file://" + fname
+        try:
+            f = mechanize.urlopen(file_url)
+        except Exception as e:
+            raise ValueError('Failed to open URL: {} for fname: {} with error: {}'.format(file_url, fname, e))
+        self.assertEqual(f.read(), data)
         f.close()
 
     def test_parse_http_list(self):
@@ -1345,7 +1339,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         class SleepTester:
             def __init__(self, test, seconds):
                 self._test = test
-                if seconds is 0:
+                if seconds == 0:
                     seconds = None  # don't expect a sleep for 0 seconds
                 self._expected = seconds
                 self._got = None
