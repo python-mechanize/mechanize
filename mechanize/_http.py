@@ -96,8 +96,8 @@ class MechanizeRobotFileParser(RobotFileParser):
                       timeout=self._timeout)
         try:
             f = self._opener.open(req)
-        except HTTPError as f:
-            pass
+        except HTTPError as err:
+            f = err
         except (IOError, socket.error, OSError) as exc:
             debug_robots("ignoring error opening %r: %s" %
                          (self.url, exc))
