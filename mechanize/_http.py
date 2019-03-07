@@ -97,6 +97,10 @@ class MechanizeRobotFileParser(RobotFileParser):
         try:
             f = self._opener.open(req)
         except HTTPError as f:
+            if "404" in str(f):
+                self.allow_all = True
+                debug_robots("allow all")
+                return
             pass
         except (IOError, socket.error, OSError) as exc:
             debug_robots("ignoring error opening %r: %s" %
