@@ -195,6 +195,13 @@ class Request:
     def get_full_url(self):
         return self.__original
 
+    @property
+    def full_url(self):
+        # In python 3 this is a deleteable and settable property, which when
+        # deleted gets set to None. But this interface does not seem to be used
+        # by any stdlib code, so this should be sufficient.
+        return self.__original
+
     def get_type(self):
         if self.type is None:
             self.type, self.__r_type = splittype(self.__original)
