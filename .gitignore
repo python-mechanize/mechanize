@@ -3,3 +3,4 @@
 /docs/_*
 *.egg-info/
 *.py[co]
+/[.]venv/

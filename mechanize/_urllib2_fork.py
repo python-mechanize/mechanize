@@ -139,6 +139,7 @@ class Request:
                  origin_req_host=None, unverifiable=False, method=None):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.__original = unwrap(url)
+        self.full_url = self.__original
         self.type = None
         self._method = method and str(method)
         # self.__r_type is what's left after doing the splittype
