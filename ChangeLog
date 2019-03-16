@@ -1,6 +1,12 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2019-03-16 Kovid Goyal
+	* 0.4.1 release
+	* A couple of python 3 specific fixes for servers with misisng robots.txt
+	files and also errors when using basic/digest auth
+
+	
 2019-01-16 Kovid Goyal
 	* 0.4.0 release
 	* Python 3 compatibility
