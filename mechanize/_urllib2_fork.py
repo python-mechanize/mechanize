@@ -851,7 +851,7 @@ class AbstractBasicAuthHandler:
             raw = "%s:%s" % (user, pw)
             auth = str('Basic %s' % base64.b64encode(
                     raw.encode('utf-8')).strip().decode('ascii'))
-            if req.headers.get(self.auth_header, None) == auth:
+            if req.get_header(self.auth_header, None) == auth:
                 return None
             newreq = copy.copy(req)
             newreq.add_header(self.auth_header, auth)
@@ -943,7 +943,7 @@ class AbstractDigestAuthHandler:
         auth = self.get_authorization(req, chal)
         if auth:
             auth_val = 'Digest %s' % auth
-            if req.headers.get(self.auth_header, None) == auth_val:
+            if req.get_header(self.auth_header, None) == auth_val:
                 return None
             newreq = copy.copy(req)
             newreq.add_unredirected_header(self.auth_header, auth_val)
