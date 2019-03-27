@@ -714,8 +714,8 @@ class ProxyHandler(BaseHandler):
 
         if user and password:
             user_pass = '%s:%s' % (unquote(user), unquote(password))
-            creds = base64.b64encode(user_pass).strip()
-            req.add_header('Proxy-authorization', 'Basic ' + creds)
+            creds = base64.b64encode(bytes(user_pass, encoding='utf-8')).strip()
+            req.add_header('Proxy-authorization', 'Basic ' + creds.decode('utf-8'))
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
         if orig_type == proxy_type or orig_type == 'https':
