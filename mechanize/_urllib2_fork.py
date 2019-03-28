@@ -714,7 +714,11 @@ class ProxyHandler(BaseHandler):
 
         if user and password:
             user_pass = '%s:%s' % (unquote(user), unquote(password))
+            if not isinstance(user_pass, bytes):
+                user_pass = user_pass.encode('utf-8')
             creds = base64.b64encode(user_pass).strip()
+            if isinstance(creds, bytes):
+                creds = creds.decode('ascii')
             req.add_header('Proxy-authorization', 'Basic ' + creds)
         hostport = unquote(hostport)
         req.set_proxy(hostport, proxy_type)
