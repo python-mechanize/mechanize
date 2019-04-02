@@ -3471,6 +3471,12 @@ class MutationTests(unittest.TestCase):  # {{{
             control.add_to_form(form)
         self.assertEqual(form.controls, combined)
 
+    def test_new_control(self):
+        form = first_form('<input type="text" name="foo" value="bar" />')
+        form.new_control('hidden', 'newcontrol', {})
+        form.fixup()
+        form._request_data()
+
 
 # }}}
 

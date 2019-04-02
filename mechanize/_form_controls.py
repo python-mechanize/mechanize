@@ -2488,6 +2488,8 @@ class HTMLForm:
         for control_index in range(len(self.controls)):
             control = self.controls[control_index]
             for ii, key, val in control._totally_ordered_pairs():
+                if ii is None:
+                    ii = -1
                 pairs.append((ii, key, val, control_index))
 
         # stable sort by ONLY first item in tuple
