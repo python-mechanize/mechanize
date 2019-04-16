@@ -6,7 +6,7 @@ This is a subclass of urllib2.OpenerDirector.
 Copyright 2003-2006 John J. Lee <jjl@pobox.com>
 
 This code is free software; you can redistribute it and/or modify it under
-the terms of the BSD or ZPL 2.1 licenses (see the file COPYING.txt
+the terms of the BSD or ZPL 2.1 licenses (see the file LICENSE
 included with the distribution).
 
 """
