@@ -2,6 +2,7 @@ include LICENSE
 include COPYRIGHT
 include MANIFEST.in
 include README.rst
+include ChangeLog
 include *.py
 recursive-include examples *.py
 recursive-include examples/forms *.dat *.txt *.html *.cgi *.py
