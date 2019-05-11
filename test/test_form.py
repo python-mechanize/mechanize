@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 # Copyright 2002-2005 John J. Lee <jjl@pobox.com>
 # Copyright 2005 Gary Poster
@@ -207,6 +207,29 @@ class LWPFormTests(unittest.TestCase):
         self.assertTrue(request_method(req) == "GET")
         self.assertTrue(
             req.get_full_url() == "http://localhost/abc?firstname=Gisle+Aas")
+
+
+class EncodingTests(unittest.TestCase):
+
+    def _forms(self):
+        file = BytesIO("""<form method="POST"><input name="name" value=""></form>""")
+        return parse_file(file, "http://localhost/", backwards_compat=False)
+
+    def testFillForm(self):
+        forms = self._forms()
+        form = forms[0]
+        form["name"] = u"Räuber Hotzenplotz".encode('iso-8859-1')
+        req = form.click()
+
+        def request_method(req):
+            if req.has_data():
+                return "POST"
+            else:
+                return "GET"
+
+        print(req.get_full_url())
+        self.assertEqual(request_method(req), "POST")
+        self.assertEqual(req.get_data(), 'name=R%E4uber+Hotzenplotz')
 
 
 def get_header(req, name):

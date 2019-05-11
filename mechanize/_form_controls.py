@@ -59,6 +59,13 @@ def compress_whitespace(text):
 
 
 def isstringlike(x):
+
+    try:
+        if isinstance(x, (str, bytes)):
+            return True
+    except:
+        pass
+
     try:
         x + ""
     except Exception:
