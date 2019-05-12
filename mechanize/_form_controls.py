@@ -1837,7 +1837,8 @@ class HTMLForm:
                  request_class=_request.Request,
                  forms=None,
                  labels=None,
-                 id_to_labels=None):
+                 id_to_labels=None,
+                 encoding=None):
         """
         In the usual case, use ParseResponse (or ParseFile) to create new
         HTMLForm objects.
@@ -1852,6 +1853,7 @@ class HTMLForm:
         self.action = action
         self.method = method
         self.enctype = enctype
+        self.form_encoding = encoding or 'utf-8'
         self.name = name
         if attrs is not None:
             self.attrs = dict(attrs)
@@ -1933,6 +1935,7 @@ class HTMLForm:
         """
         for control in self.controls:
             control.fixup()
+            control.form_encoding = self.form_encoding
 
 # ---------------------------------------------------
 
@@ -2505,13 +2508,13 @@ class HTMLForm:
         rest, (query, frag) = parts[:-2], parts[-2:]
         frag
 
-        def as_utf8(x):
-            if not isinstance(x, bytes):
-                x = x.encode('utf-8')
+        def encode_data(x):
+            if isinstance(x, unicode_type):
+                x = x.encode(self.form_encoding)
             return x
 
         def encode_query():
-            p = [(as_utf8(k), as_utf8(v)) for k, v in self._pairs()]
+            p = [(encode_data(k), encode_data(v)) for k, v in self._pairs()]
             return urlencode(p)
 
         if method == "GET":
@@ -2535,7 +2538,7 @@ class HTMLForm:
                     "form-data", add_to_http_hdrs=True, prefix=0)
                 for ii, k, v, control_index in self._pairs_and_controls():
                     self.controls[control_index]._write_mime_data(
-                            mw, as_utf8(k), as_utf8(v))
+                            mw, encode_data(k), encode_data(v))
                 mw.lastpart()
                 return uri, data.getvalue(), http_hdrs
             else:

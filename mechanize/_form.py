@@ -76,10 +76,10 @@ def parse_select(elem, parent_of, *a):
     return ctype, name, {'__select': attrs}
 
 
-def parse_forms(root, base_url, request_class=None, select_default=False):
+def parse_forms(root, base_url, request_class=None, select_default=False, encoding=None):
     if request_class is None:
         request_class = Request
-    global_form = HTMLForm(base_url)
+    global_form = HTMLForm(base_url, encoding=encoding)
     forms, labels = [], []
     form_elems = []
     form_id_map = {}
@@ -124,7 +124,7 @@ def parse_forms(root, base_url, request_class=None, select_default=False):
         else:
             action = base_url
         form = HTMLForm(action, method, enctype, name, form_elem.attrib,
-                        request_class, forms, labels, id_to_labels)
+                        request_class, forms, labels, id_to_labels, encoding=encoding)
         forms_map[form_elem] = form
         forms.append(form)
 

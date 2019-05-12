@@ -18,7 +18,7 @@ import mechanize._form_controls as _form_controls
 import mechanize._testcase as _testcase
 from mechanize import (AmbiguityError, ControlNotFoundError, ItemCountError,
                        ItemNotFoundError)
-from mechanize._html import content_parser
+from mechanize._html import content_parser, find_declared_encoding
 from mechanize._util import get1
 from mechanize.polyglot import codepoint_to_chr
 
@@ -96,11 +96,12 @@ def parse_file_ex(file,
                   add_global=True):
     raw = file.read()
     root = content_parser(raw, transport_encoding=encoding)
+    form_encoding = find_declared_encoding(raw) or encoding
     forms, global_form = _form.parse_forms(
         root,
         base_uri,
         select_default=select_default,
-        request_class=request_class)
+        request_class=request_class, encoding=form_encoding)
     if not add_global:
         return list(forms)
     return [global_form] + list(forms)
@@ -212,23 +213,18 @@ class LWPFormTests(unittest.TestCase):
 class EncodingTests(unittest.TestCase):
 
     def _forms(self):
-        file = BytesIO(b"""<form method="POST"><input name="name" value=""></form>""")
+        file = BytesIO(
+            b'<meta charset="iso-8859-1"><form method="POST">'
+            b'<input name="name" value=""><input name="unicode" value=""></form>')
         return parse_file(file, "http://localhost/", backwards_compat=False)
 
-    def testFillForm(self):
+    def testFillFormEncoding(self):
         forms = self._forms()
         form = forms[0]
         form["name"] = u"Räuber Hotzenplotz".encode('iso-8859-1')
+        form["unicode"] = u"Räuber Hotzenplotz"
         req = form.click()
-
-        def request_method(req):
-            if req.has_data():
-                return "POST"
-            else:
-                return "GET"
-
-        self.assertEqual(request_method(req), "POST")
-        self.assertEqual(req.get_data(), 'name=R%E4uber+Hotzenplotz')
+        self.assertEqual(req.get_data(), 'name={0}&unicode={0}'.format('R%E4uber+Hotzenplotz'))
 
 
 def get_header(req, name):
