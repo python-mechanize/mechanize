@@ -31,7 +31,8 @@ jobs:
       python -m pip install --upgrade pip
       pip install -r requirements.txt
       pip install twisted six
-      sudo apt-get install libxml2-dev libxslt-dev
+      sudo apt-get --yes update
+      sudo apt-get --yes install libxml2-dev libxslt-dev
       pip install --no-binary lxml html5-parser
     displayName: 'Install dependencies'
 
