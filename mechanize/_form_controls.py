@@ -9,8 +9,8 @@ import warnings
 from io import BytesIO
 
 from . import _request
-from .polyglot import (as_unicode, is_py2, iteritems, urlencode, urlparse,
-                       urlunparse)
+from .polyglot import (as_unicode, is_py2, iteritems, unicode_type, urlencode,
+                       urlparse, urlunparse)
 
 if is_py2:
     from cStringIO import StringIO
@@ -59,12 +59,13 @@ def compress_whitespace(text):
 
 
 def isstringlike(x):
+    if isinstance(x, (bytes, unicode_type)):
+        return True
     try:
         x + ""
+        return True
     except Exception:
         return False
-    else:
-        return True
 
 
 def choose_boundary():
