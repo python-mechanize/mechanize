@@ -7,6 +7,7 @@ import re
 import sys
 import warnings
 from io import BytesIO
+from mimetypes import guess_type
 
 from . import _request
 from .polyglot import (as_unicode, is_py2, iteritems, unicode_type, urlencode,
@@ -526,7 +527,9 @@ class FileControl(ScalarControl):
         if filename is not None and not isstringlike(filename):
             raise TypeError("filename must be None or string-like")
         if content_type is None:
-            content_type = "application/octet-stream"
+            if getattr(file_object, 'name', None):
+                content_type = guess_type(file_object.name)[0]
+            content_type = content_type or "application/octet-stream"
         self._upload_data.append((file_object, content_type, filename))
 
     def _totally_ordered_pairs(self):
