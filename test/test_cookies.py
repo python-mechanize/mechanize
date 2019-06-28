@@ -1931,7 +1931,7 @@ class LWPCookieTests(unittest.TestCase, TempfileTestMixin):
             counter[key] = counter[key] + 1
 
         assert not (
-            # a permanent cookie got lost accidently
+            # a permanent cookie got lost accidentally
             counter["perm_after"] != counter["perm_before"] or
             # a session cookie hasn't been cleared
             counter["session_after"] != 0 or
