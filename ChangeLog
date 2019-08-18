@@ -1,6 +1,13 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2019-08-18 Kovid Goyal
+	* 0.4.3 release
+	* When filling forms with unicode strings automatically encode them into
+	the correct encoding fr the HTML page being viewed
+	* Guess content type when uploading files if not specified
+	* py3 compat - Have the version of simple cookies be 0 rather than None
+
 2019-04-12 Kovid Goyal
 	* 0.4.2 release
 	* A couple of python 3 specific fixes for proxy authorization and
