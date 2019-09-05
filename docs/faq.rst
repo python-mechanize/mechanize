@@ -11,8 +11,8 @@ General
 Which version of Python do I need?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Any Python 2.x version >= `2.7.0`. mechanize does not currently support python
-3.
+mechanize works on all python versions, python 2 (>= 2.7) and 3 (>= 3.5).
+
 
 What dependencies does mechanize need?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -142,7 +142,7 @@ Why does mechanize not follow the HTML 4.0 / RFC 1866 standards for `RADIO` and 
 
 Because by default, it follows browser behaviour when setting the
 initially-selected items in list controls that have no items explicitly
-selected in the HTML.  
+selected in the HTML.
 
 Why does `.click()` ing on a button not work for me?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
