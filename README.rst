@@ -86,5 +86,5 @@ patches.
     :alt: Latest version released on PyPi
 
 .. |build| image:: https://dev.azure.com/divok/mechanize/_apis/build/status/python-mechanize.mechanize?branchName=master
-    :target: https://dev.azure.com/divok/mechanize/_build/latest?definitionId=1&branchName=master
+    :target: https://dev.azure.com/divok/mechanize/_build/latest?definitionId=3&branchName=master
     :alt: Build status of the master branch
