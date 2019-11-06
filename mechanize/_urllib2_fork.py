@@ -44,7 +44,7 @@ import sys
 import time
 from collections import OrderedDict
 from functools import partial
-from io import BytesIO, BufferedReader
+from io import BufferedReader, BytesIO
 
 from . import _rfc3986
 from ._clientcookie import CookieJar
@@ -57,7 +57,7 @@ from .polyglot import (HTTPConnection, HTTPError, HTTPSConnection, URLError,
                        splitpasswd, splitport, splittype, splituser,
                        splitvalue, unquote, unwrap, url2pathname,
                        urllib_proxy_bypass, urllib_splithost, urlparse,
-                       urlsplit)
+                       urlsplit, urlunparse)
 
 
 def sha1_digest(data):
@@ -133,12 +133,60 @@ def request_host(request):
     return host.lower()
 
 
+PERCENT_RE = re.compile(b"%[a-fA-F0-9]{2}")
+ZONE_ID_CHARS = set(bytearray(
+    b"ABCDEFGHIJKLMNOPQRSTUVWXYZ" b"abcdefghijklmnopqrstuvwxyz" b"0123456789._!-"
+))
+USERINFO_CHARS = ZONE_ID_CHARS | set(bytearray(b"$&'()*+,;=:"))
+PATH_CHARS = USERINFO_CHARS | set(bytearray(b'@/'))
+QUERY_CHARS = FRAGMENT_CHARS = PATH_CHARS | {ord(b"?")}
+
+
+def fix_invalid_bytes_in_url_component(component, allowed_chars=PATH_CHARS):
+    if not component:
+        return component
+    is_bytes = isinstance(component, bytes)
+    if not is_bytes:
+        component = component.encode('utf-8', 'surrogatepass')
+    percent_encodings = PERCENT_RE.findall(component)
+    for enc in percent_encodings:
+        if not enc.isupper():
+            component = component.replace(enc, enc.upper())
+    is_percent_encoded = len(percent_encodings) == component.count(b"%")
+    encoded_component = bytearray()
+    percent = ord('%')
+    for byte_ord in bytearray(component):
+        if (is_percent_encoded and byte_ord == percent) or (byte_ord < 128 and byte_ord in allowed_chars):
+            encoded_component.append(byte_ord)
+            continue
+        encoded_component.extend(b"%" + (hex(byte_ord)[2:].encode().zfill(2).upper()))
+    encoded_component = bytes(encoded_component)
+    if not is_bytes:
+        encoded_component = encoded_component.decode('utf-8')
+    return encoded_component
+
+
+def normalize_url(url):
+    parsed = urlparse(url)
+    netloc = parsed.netloc
+    if not isinstance(netloc, bytes) and netloc:
+        try:
+            netloc = netloc.encode('idna').decode('ascii')
+        except ValueError:
+            pass
+    return urlunparse(parsed._replace(
+        path=fix_invalid_bytes_in_url_component(parsed.path), netloc=netloc,
+        query=fix_invalid_bytes_in_url_component(parsed.query, QUERY_CHARS),
+        fragment=fix_invalid_bytes_in_url_component(parsed.fragment, FRAGMENT_CHARS),
+    ))
+
+
 class Request:
 
     def __init__(self, url, data=None, headers={},
                  origin_req_host=None, unverifiable=False, method=None):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
-        self.__original = unwrap(url)
+        self.__original = normalize_url(unwrap(url))
         self.type = None
         self._method = method and str(method)
         # self.__r_type is what's left after doing the splittype

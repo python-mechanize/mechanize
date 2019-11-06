@@ -1,6 +1,13 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+future Kovid Goyal
+	* 0.4.4 release
+	* URLs passed into mechanize now automatically have URL unsafe characters
+	percent encoded. This is necessary because newer versions of python
+	disallow processing of URLs with unsafe characters. Note that this means
+	values return by get_ful_url(), get_seletor() etc will be percent encoded.
+
 2019-08-18 Kovid Goyal
 	* 0.4.3 release
 	* When filling forms with unicode strings automatically encode them into

@@ -1866,11 +1866,11 @@ class RequestTests(unittest.TestCase):
         self.assertEqual("POST", self.get.get_method())
 
     def test_get_full_url(self):
-        self.assertEqual("http://www.python.org/~jeremy/",
+        self.assertEqual("http://www.python.org/%7Ejeremy/",
                          self.get.get_full_url())
 
     def test_selector(self):
-        self.assertEqual("/~jeremy/", self.get.get_selector())
+        self.assertEqual("/%7Ejeremy/", self.get.get_selector())
         req = Request("http://www.python.org/")
         self.assertEqual("/", req.get_selector())
 
