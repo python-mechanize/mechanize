@@ -170,10 +170,13 @@ def normalize_url(url):
     parsed = urlparse(url)
     netloc = parsed.netloc
     if not isinstance(netloc, bytes) and netloc:
-        try:
-            netloc = netloc.encode('idna').decode('ascii')
-        except ValueError:
-            pass
+        def safe_encode(label):
+            try:
+                return label.encode('idna').decode('ascii')
+            except ValueError:
+                return label.encode('ascii', 'replace').decode('ascii')
+        netloc = u'.'.join(map(safe_encode, netloc.split(u'.')))
+
     return urlunparse(parsed._replace(
         path=fix_invalid_bytes_in_url_component(parsed.path), netloc=netloc,
         query=fix_invalid_bytes_in_url_component(parsed.query, QUERY_CHARS),
