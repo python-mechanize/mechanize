@@ -1881,6 +1881,7 @@ class RequestTests(unittest.TestCase):
 
         t('https://simple.com/moo%7Ese')
         t('https://ex.com/Spört', 'https://ex.com/Sp%C3%B6rt')
+        t('https://ex.com/Sp%C3%B6rt')
 
     def test_get_type(self):
         self.assertEqual("http", self.get.get_type())
