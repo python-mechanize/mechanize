@@ -1,3 +1,4 @@
+# vim:fileencoding=utf-8
 """Tests for urllib2-level functionality.
 
 This is urllib2's tests (most of which came from mechanize originally), plus
@@ -23,7 +24,7 @@ from mechanize import HTTPRedirectHandler, \
     HTTPCookieProcessor, HTTPRefererProcessor, \
     HTTPErrorProcessor, HTTPHandler
 from mechanize import OpenerDirector, build_opener, Request
-from mechanize._urllib2_fork import AbstractHTTPHandler
+from mechanize._urllib2_fork import AbstractHTTPHandler, normalize_url
 from mechanize._util import write_file
 
 import mechanize._response
@@ -1873,6 +1874,13 @@ class RequestTests(unittest.TestCase):
         self.assertEqual("/%7Ejeremy/", self.get.get_selector())
         req = Request("http://www.python.org/")
         self.assertEqual("/", req.get_selector())
+
+    def test_normalize_url(self):
+        def t(x, expected=None):
+            self.assertEqual(normalize_url(x), expected or x)
+
+        t('https://simple.com/moo%7Ese')
+        t('https://ex.com/Spört', 'https://ex.com/Sp%C3%B6rt')
 
     def test_get_type(self):
         self.assertEqual("http", self.get.get_type())
