@@ -120,6 +120,8 @@ class Browser(UserAgentBase):
         received html/xhtml content. See the builtin
         :func:`mechanize._html.content_parser()` function for details
         on the interface this function must support.
+    :param factory_class: HTML Factory class to use. Defaults to
+                            :class:`mechanize.Factory`
 
     """
 
@@ -133,6 +135,7 @@ class Browser(UserAgentBase):
             history=None,
             request_class=None,
             content_parser=None,
+            factory_class=Factory,
             allow_xhtml=False, ):
         """
         Only named arguments should be passed to this constructor.
@@ -147,7 +150,7 @@ class Browser(UserAgentBase):
         if request_class is None:
             request_class = _request.Request
 
-        factory = Factory(allow_xhtml=allow_xhtml)
+        factory = factory_class(allow_xhtml=allow_xhtml)
         factory.set_request_class(request_class)
         if content_parser is not None:
             factory.set_content_parser(content_parser)
