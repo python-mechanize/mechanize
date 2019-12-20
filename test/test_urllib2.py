@@ -1365,7 +1365,7 @@ class HandlerTests(mechanize._testcase.TestCase):
             rp._sleep = st.sleep
             rp.http_response(
                 Request("http://example.com"),
-                test_response(headers=[("Refresh", header)]), )
+                test_response(headers=[("Refresh", header)], url="http://example.com/"), )
             self.assertEqual(expect_refresh, opener.called)
             st.verify()
 

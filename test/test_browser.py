@@ -1081,7 +1081,7 @@ class HttplibTests(mechanize._testcase.TestCase):
 <form>
     <input type="text" name="p" value="q"></input>
 </form>
-</body></html>"""))
+</body></html>""", url="http://example.com/"))
 
         def has_a(form):
             try:

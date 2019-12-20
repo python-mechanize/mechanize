@@ -426,7 +426,7 @@ class closeable_response:
 
 def test_response(data='test data',
                   headers=[],
-                  url="http://example.com/",
+                  url=None,
                   code=200,
                   msg="OK"):
     return make_response(data, headers, url, code, msg)
@@ -434,7 +434,7 @@ def test_response(data='test data',
 
 def test_html_response(data='test data',
                        headers=[],
-                       url="http://example.com/",
+                       url=None,
                        code=200,
                        msg="OK"):
     headers += [("Content-type", "text/html")]

@@ -21,7 +21,9 @@ class RegressionTests(TestCase):
         # a document with a base tag with no href used to cause an exception
         br = mechanize.Browser()
         response = test_html_response(
-            "<BASE TARGET='_main'><a href='http://example.com/'>eg</a>")
+            "<BASE TARGET='_main'><a href='http://example.com/'>eg</a>",
+            url="http://example.com/",
+        )
         br.set_response(response)
         list(br.links())
 
@@ -71,7 +73,7 @@ class MiscTests(TestCase):
 
         def get_first_link_text(html):
             factory = Factory()
-            response = test_html_response(html)
+            response = test_html_response(html, url="http://example.com/")
             factory.set_response(response)
             return list(factory.links())[0].text
 

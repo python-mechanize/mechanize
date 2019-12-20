@@ -13,7 +13,7 @@ as well as mechanize._rfc3986).  Fixed in ClientForm r33622 .
 ...         '<input type="submit" name="s"/></form>' % method
 ...         )
 ...         br = mechanize.Browser()
-...         response = test_response(data, [("content-type", "text/html")])
+...         response = test_response(data, [("content-type", "text/html")], "http://example.com/")
 ...         br.set_response(response)
 ...         br.select_form(nr=0)
 ...         forms.append(br.form)
