@@ -11,7 +11,6 @@ import mechanize
 import mechanize._response
 import mechanize._testcase
 from mechanize._gzip import HTTPGzipProcessor, compress_readable_output
-from mechanize._response import test_html_response
 from mechanize.polyglot import (HTTPConnection, addinfourl, codepoint_to_chr,
                                 create_response_info, iteritems, unicode_type)
 
@@ -447,13 +446,9 @@ class BrowserTests(TestCase):
 
     def test_forms(self):
         import mechanize
-        url = "http://example.com"
 
         b = TestBrowser()
-        r = test_html_response(
-            url=url,
-            headers=[("content-type", "text/html")],
-            data="""\
+        b.set_html("""\
 <html>
 <head><title>Title</title></head>
 <body>
@@ -470,8 +465,6 @@ class BrowserTests(TestCase):
 </body>
 </html>
 """)
-        b.add_handler(make_mock_handler()([("http_open", r)]))
-        r = b.open(url)
 
         forms = list(b.forms())
         self.assertEqual(len(forms), 2)
@@ -1058,7 +1051,6 @@ class HttplibTests(mechanize._testcase.TestCase):
             407, 'Proxy-Authenticate: Basic realm="realm"\r\n\r\n')
         test_state(test_one_visit([ph, hh, ah]))
 
-        from mechanize._response import test_response
         br = TestBrowser2()
         html = b"""\
         <html><body>
@@ -1066,22 +1058,20 @@ class HttplibTests(mechanize._testcase.TestCase):
         <form><input type="text" name="b" /></form>
         </body></html>
         """
-        response = test_response(html, headers=[("Content-type", "text/html")])
         self.assertRaises(mechanize.BrowserStateError, br.global_form)
-        br.set_response(response)
+        br.set_html(html)
         self.assertEqual(str(br.global_form().find_control(nr=0).name), 'a')
         self.assertEqual(len(list(br.forms())), 1)
         self.assertEqual(str(next(iter(br.forms())).find_control(nr=0).name), 'b')
 
-        from mechanize._response import test_html_response
         br = TestBrowser2()
-        br.visit_response(test_html_response(b"""\
+        br.set_html("""\
 <html><head><title></title></head><body>
 <input type="text" name="a" value="b"></input>
 <form>
     <input type="text" name="p" value="q"></input>
 </form>
-</body></html>""", url="http://example.com/"))
+</body></html>""")
 
         def has_a(form):
             try:

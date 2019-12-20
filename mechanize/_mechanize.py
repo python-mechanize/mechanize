@@ -20,6 +20,7 @@ from ._headersutil import normalize_header_name
 from ._html import Factory
 from ._useragent import UserAgentBase
 from .polyglot import pathname2url, HTTPError, is_string, iteritems
+from ._response import make_response
 
 
 class BrowserStateError(Exception):
@@ -382,6 +383,16 @@ class Browser(UserAgentBase):
         # we want self.request to be assigned even if UserAgentBase.open
         # fails
         self.request = request
+
+    def set_html(self, html, url=None):
+        """Set the response to dummy with given HTML, and URL if given.
+
+        Allows you to then parse that HTML, especially to extract forms
+        information. If there is no URL then any URL-related methods
+        will fail.
+        """
+        response = make_response(html, [("Content-type", "text/html")], url)
+        self._set_response(response, True)
 
     def geturl(self):
         """Get URL of current document."""

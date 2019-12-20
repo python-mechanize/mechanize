@@ -441,7 +441,7 @@ def test_html_response(data='test data',
     return make_response(data, headers, url, code, msg)
 
 
-def make_response(data, headers, url, code, msg):
+def make_response(data, headers, url=None, code=200, msg="OK"):
     """Convenient factory for objects implementing response interface.
 
     data: string containing response body data
