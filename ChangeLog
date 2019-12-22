@@ -1,6 +1,10 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2019-12-22 Kovid Goyal
+	* 0.4.5 release
+	* Add a set_html() method to the browser object
+
 2019-11-07 Kovid Goyal
 	* 0.4.4 release
 	* URLs passed into mechanize now automatically have URL unsafe characters
