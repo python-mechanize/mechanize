@@ -20,6 +20,7 @@ from ._headersutil import normalize_header_name
 from ._html import Factory
 from ._useragent import UserAgentBase
 from .polyglot import pathname2url, HTTPError, is_string, iteritems
+from ._response import make_response
 
 
 class BrowserStateError(Exception):
@@ -120,6 +121,8 @@ class Browser(UserAgentBase):
         received html/xhtml content. See the builtin
         :func:`mechanize._html.content_parser()` function for details
         on the interface this function must support.
+    :param factory_class: HTML Factory class to use. Defaults to
+                            :class:`mechanize.Factory`
 
     """
 
@@ -133,6 +136,7 @@ class Browser(UserAgentBase):
             history=None,
             request_class=None,
             content_parser=None,
+            factory_class=Factory,
             allow_xhtml=False, ):
         """
         Only named arguments should be passed to this constructor.
@@ -147,7 +151,7 @@ class Browser(UserAgentBase):
         if request_class is None:
             request_class = _request.Request
 
-        factory = Factory(allow_xhtml=allow_xhtml)
+        factory = factory_class(allow_xhtml=allow_xhtml)
         factory.set_request_class(request_class)
         if content_parser is not None:
             factory.set_content_parser(content_parser)
@@ -379,6 +383,15 @@ class Browser(UserAgentBase):
         # we want self.request to be assigned even if UserAgentBase.open
         # fails
         self.request = request
+
+    def set_html(self, html, url="http://example.com/"):
+        """Set the response to dummy with given HTML, and URL if given.
+
+        Allows you to then parse that HTML, especially to extract forms
+        information. If no URL was given then the default is "example.com".
+        """
+        response = make_response(html, [("Content-type", "text/html")], url)
+        self._set_response(response, True)
 
     def geturl(self):
         """Get URL of current document."""

@@ -20,6 +20,8 @@ from .polyglot import is_string
 
 
 def is_html_file_extension(url, allow_xhtml):
+    if url is None:
+        return False
     ext = os.path.splitext(_rfc3986.urlsplit(url)[2])[1]
     html_exts = [".htm", ".html"]
     if allow_xhtml:
@@ -27,7 +29,7 @@ def is_html_file_extension(url, allow_xhtml):
     return ext in html_exts
 
 
-def is_html(ct_headers, url, allow_xhtml=False):
+def is_html(ct_headers, url=None, allow_xhtml=False):
     """
     ct_headers: Sequence of Content-Type headers
     url: Response URL

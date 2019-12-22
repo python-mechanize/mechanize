@@ -13,8 +13,7 @@ as well as mechanize._rfc3986).  Fixed in ClientForm r33622 .
 ...         '<input type="submit" name="s"/></form>' % method
 ...         )
 ...         br = mechanize.Browser()
-...         response = test_response(data, [("content-type", "text/html")])
-...         br.set_response(response)
+...         br.set_html(data, "http://example.com/")
 ...         br.select_form(nr=0)
 ...         forms.append(br.form)
 ...     return forms
@@ -34,13 +33,12 @@ error.
 
 >>> import mechanize
 >>> br = mechanize.Browser()
->>> r = mechanize._response.test_html_response("""\
+>>> br.set_html("""\
 ... <form>
 ... <input type="text" name="foo" value="a"></input><!!!>
 ... <input type="text" name="bar" value="b"></input>
 ... </form>
 ... """)
->>> br.set_response(r)
 >>> try:
 ...     br.select_form(nr=0)
 ... except mechanize.ParseError:

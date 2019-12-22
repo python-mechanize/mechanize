@@ -13,16 +13,16 @@ class RegressionTests(TestCase):
     def test_close_base_tag(self):
         # any document containing a </base> tag used to cause an exception
         br = mechanize.Browser()
-        response = test_html_response("</base>")
-        br.set_response(response)
+        br.set_html("</base>")
         list(br.links())
 
     def test_bad_base_tag(self):
         # a document with a base tag with no href used to cause an exception
         br = mechanize.Browser()
-        response = test_html_response(
-            "<BASE TARGET='_main'><a href='http://example.com/'>eg</a>")
-        br.set_response(response)
+        br.set_html(
+            "<BASE TARGET='_main'><a href='http://example.com/'>eg</a>",
+            url="http://example.com/",
+        )
         list(br.links())
 
 
@@ -71,7 +71,7 @@ class MiscTests(TestCase):
 
         def get_first_link_text(html):
             factory = Factory()
-            response = test_html_response(html)
+            response = test_html_response(html, url="http://example.com/")
             factory.set_response(response)
             return list(factory.links())[0].text
 
