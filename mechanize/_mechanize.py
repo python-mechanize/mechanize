@@ -384,12 +384,11 @@ class Browser(UserAgentBase):
         # fails
         self.request = request
 
-    def set_html(self, html, url=None):
+    def set_html(self, html, url="http://example.com/"):
         """Set the response to dummy with given HTML, and URL if given.
 
         Allows you to then parse that HTML, especially to extract forms
-        information. If there is no URL then any URL-related methods
-        will fail.
+        information. If no URL was given then the default is "example.com".
         """
         response = make_response(html, [("Content-type", "text/html")], url)
         self._set_response(response, True)
