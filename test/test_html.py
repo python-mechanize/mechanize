@@ -67,6 +67,11 @@ class TitleTests(TestCase):
 
 class MiscTests(TestCase):
 
+    def test_util_func(self):
+        headers1 = str(test_html_response('').info())
+        headers2 = str(test_html_response('').info())
+        self.assertEqual(headers1, headers2)
+
     def test_link_parsing(self):
 
         def get_first_link_text(html):
