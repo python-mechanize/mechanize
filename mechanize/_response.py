@@ -425,20 +425,22 @@ class closeable_response:
 
 
 def test_response(data='test data',
-                  headers=[],
+                  headers=(),
                   url=None,
                   code=200,
                   msg="OK"):
-    return make_response(data, headers, url, code, msg)
+    return make_response(data, list(headers), url, code, msg)
+
+
+_html_header = [("Content-type", "text/html")]
 
 
 def test_html_response(data='test data',
-                       headers=[],
+                       headers=(),
                        url=None,
                        code=200,
                        msg="OK"):
-    headers += [("Content-type", "text/html")]
-    return make_response(data, headers, url, code, msg)
+    return make_response(data, list(headers) + _html_header, url, code, msg)
 
 
 def make_response(data, headers, url=None, code=200, msg="OK"):
