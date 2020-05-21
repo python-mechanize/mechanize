@@ -99,7 +99,7 @@ You may control the browser's policy by using the methods of
     br.set_request_gzip(True)
     # Do not verify SSL certificates
     import ssl
-    br.set_ca_data(context=ssl._create_unverified_context(cert_reqs=ssl.CERT_NONE)
+    br.set_ca_data(context=ssl._create_unverified_context(cert_reqs=ssl.CERT_NONE))
     # Log information about HTTP redirects and Refreshes.
     br.set_debug_redirects(True)
     # Log HTTP response bodies (i.e. the HTML, most of the time).
