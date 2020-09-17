@@ -35,7 +35,7 @@ To install for normal usage:
 
 .. code-block:: bash
 
-    sudo pip2 install mechanize
+    pip3 install mechanize
 
 To install for development:
 
@@ -43,7 +43,7 @@ To install for development:
 
     git clone https://github.com/python-mechanize/mechanize.git
     cd mechanize
-    sudo pip2 install -e .
+    pip3 install -e .
 
 To install manually, simply add the `mechanize` sub-directory somewhere on your
 `PYTHONPATH`.
