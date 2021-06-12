@@ -188,13 +188,19 @@ class CookieJar(CJ):
         raise IndexError()
 
 
+try:
+    from http.cookiejar import NETSCAPE_MAGIC_RGX
+except ImportError:  # python < 3.10
+    NETSCAPE_MAGIC_RGX = MCJ.magic_re
+
+
 class MozillaCookieJar(MCJ):
 
     def _really_load(self, f, filename, ignore_discard, ignore_expires):
         now = time.time()
 
         magic = f.readline()
-        if not re.search(self.magic_re, magic):
+        if not re.search(NETSCAPE_MAGIC_RGX, magic):
             f.close()
             raise LoadError(
                 "%r does not look like a Netscape format cookies file" %
