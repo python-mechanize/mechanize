@@ -189,9 +189,12 @@ class CookieJar(CJ):
 
 
 try:
-    from http.cookiejar import NETSCAPE_MAGIC_RGX
+    from http.cookiejar import NETSCAPE_MAGIC_RGX, NETSCAPE_HEADER_TEXT
 except ImportError:  # python < 3.10
     NETSCAPE_MAGIC_RGX = MCJ.magic_re
+    NETSCAPE_HEADER_TEXT = MCJ.header
+else:
+    MCJ.header = NETSCAPE_HEADER_TEXT  # needed for tests
 
 
 class MozillaCookieJar(MCJ):
