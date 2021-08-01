@@ -185,10 +185,10 @@ class HTTPGzipProcessor(BaseHandler):
     def http_request(self, request):
         if self.request_gzip:
             existing = [
-                x.strip()
+                x.strip().lower()
                 for x in request.get_header('Accept-Encoding', '').split(',')
             ]
-            if sum('gzip' in x for x in existing) < 1:
+            if 'gzip' not in existing:
                 existing.append('gzip')
                 request.add_header("Accept-Encoding",
                                    ', '.join(filter(None, existing)))
