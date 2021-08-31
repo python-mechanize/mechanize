@@ -24,7 +24,7 @@ from mechanize import HTTPRedirectHandler, \
     HTTPCookieProcessor, HTTPRefererProcessor, \
     HTTPErrorProcessor, HTTPHandler
 from mechanize import OpenerDirector, build_opener, Request
-from mechanize._urllib2_fork import AbstractHTTPHandler, normalize_url
+from mechanize._urllib2_fork import AbstractHTTPHandler, normalize_url, AbstractBasicAuthHandler
 from mechanize._util import write_file
 
 import mechanize._response
@@ -68,6 +68,10 @@ class TrivialTests(mechanize._testcase.TestCase):
         for string, list in tests:
             self.assertEqual(
                 mechanize._urllib2_fork.parse_http_list(string), list)
+
+    def test_parse_authreq(self):
+        for bad in (",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,",):
+            self.assertIsNone(AbstractBasicAuthHandler.rx.search(bad))
 
 
 def test_request_headers_dict():
