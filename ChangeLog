@@ -1,6 +1,11 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2021-09-01 Kovid Goyal
+	* 0.4.6 release
+	* Python 3.10 compatibility
+	* Fix a bug in the regex used to parse www-authenticate headers that could lead to Denial-of-Service
+
 2019-12-22 Kovid Goyal
 	* 0.4.5 release
 	* Add a set_html() method to the browser object
