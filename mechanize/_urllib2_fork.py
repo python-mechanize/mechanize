@@ -138,7 +138,7 @@ ZONE_ID_CHARS = set(bytearray(
     b"ABCDEFGHIJKLMNOPQRSTUVWXYZ" b"abcdefghijklmnopqrstuvwxyz" b"0123456789._!-"
 ))
 USERINFO_CHARS = ZONE_ID_CHARS | set(bytearray(b"$&'()*+,;=:"))
-PATH_CHARS = USERINFO_CHARS | set(bytearray(b'@/'))
+PATH_CHARS = USERINFO_CHARS | set(bytearray(b'@/~'))
 QUERY_CHARS = FRAGMENT_CHARS = PATH_CHARS | {ord(b"?")}
 
 
