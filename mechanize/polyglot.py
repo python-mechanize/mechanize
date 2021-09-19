@@ -63,10 +63,10 @@ else:
     from urllib.robotparser import RobotFileParser
     from urllib.parse import (
             urlsplit, urljoin, urlparse, urlunparse, urlencode, quote_plus,
-            unquote, unwrap
+            unquote, unwrap, quote
     )
     from urllib.request import (
-            pathname2url, quote, addinfourl, install_opener, build_opener,
+            pathname2url, addinfourl, install_opener, build_opener,
             ProxyHandler, urlopen as _urlopen, getproxies, ftpwrapper,
             proxy_bypass as urllib_proxy_bypass, url2pathname, Request)
     from http.client import (
