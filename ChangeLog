@@ -1,6 +1,10 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2021-09-19 Kovid Goyal
+	* 0.4.7 release
+	* Fix the ~ character being percent escaped when sending URLs to servers. See RFC 3986.
+
 2021-09-01 Kovid Goyal
 	* 0.4.6 release
 	* Python 3.10 compatibility
