@@ -16,7 +16,7 @@ jobs:
       Python27:
         python.version: '2.7'
       Python35:
-        python.version: '3.5'
+        python.version: '3.6'
       Python39:
         python.version: '3.9'
     maxParallel: 3
@@ -73,7 +73,7 @@ jobs:
 
   - script: |
       python -m pip install --upgrade pip
-      pip install -e '.[test]'
+      pip install -e .[test]
     displayName: 'Install dependencies'
 
   - script: |
