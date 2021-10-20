@@ -10,7 +10,6 @@ import os
 import shlex
 import shutil
 import subprocess
-import sys
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -38,7 +37,7 @@ def run(*cmd):
 def build_release():
     for rem in 'dist build'.split():
         os.path.exists(rem) and shutil.rmtree(rem)
-    run(sys.executable, 'setup.py', '-q', 'sdist', 'bdist_wheel')
+    run('pyproject-build')
 
 
 def sign_release():
