@@ -25,7 +25,7 @@ from ._request import Request
 from ._response import response_seek_wrapper
 from ._urllib2_fork import BaseHandler, HTTPError
 from ._equiv import HTTPEquivParser
-from .polyglot import create_response_info, RobotFileParser, is_py2, as_unicode
+from .polyglot import create_response_info, RobotFileParser, is_py2
 
 debug = logging.getLogger("mechanize").debug
 debug_robots = logging.getLogger("mechanize.robots").debug
@@ -88,6 +88,11 @@ class MechanizeRobotFileParser(RobotFileParser):
     def set_timeout(self, timeout):
         self._timeout = timeout
 
+    def as_iso_88591(self, x, encoding='iso-8859-1'):
+        if isinstance(x, bytes):
+            x = x.decode(encoding)
+        return x
+
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
         if self._opener is None:
@@ -119,7 +124,7 @@ class MechanizeRobotFileParser(RobotFileParser):
             if is_py2:
                 self.parse(lines)
             else:
-                self.parse(map(as_unicode, lines))
+                self.parse(map(self.as_iso_88591, lines))
 
 
 class RobotExclusionError(HTTPError):
