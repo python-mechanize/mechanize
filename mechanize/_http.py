@@ -119,7 +119,10 @@ class MechanizeRobotFileParser(RobotFileParser):
             if is_py2:
                 self.parse(lines)
             else:
-                self.parse(map(as_unicode, lines))
+                # As per: https://developers.google.com/search/docs/advanced/robots/robots_txt
+                # robots.txt must be utf-8 encoded and invalid encoding causes
+                # bytes to be ignored to be ignored
+                self.parse((as_unicode(x, errors='ignore') for x in lines))
 
 
 class RobotExclusionError(HTTPError):

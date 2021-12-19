@@ -195,9 +195,9 @@ else:
         return attr, (value if delim else None)
 
 
-def as_unicode(x, encoding='utf-8'):
+def as_unicode(x, encoding='utf-8', errors='strict'):
     if isinstance(x, bytes):
-        x = x.decode('utf-8')
+        x = x.decode('utf-8', errors=errors)
     return x
 
 
