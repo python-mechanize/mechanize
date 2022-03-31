@@ -595,8 +595,8 @@ class HTTPRedirectHandler(BaseHandler):
         """
         from ._request import Request
         m = req.get_method()
-        if (code in (301, 302, 303, 307, "refresh") and m in ("GET", "HEAD")
-                or code in (301, 302, 303, "refresh") and m == "POST"):
+        if (code in (301, 302, 303, 307, 308, "refresh") and m in ("GET", "HEAD")
+                or code in (301, 302, 303, 307, 308, "refresh") and m == "POST"):
             # Strictly (according to RFC 2616), 301 or 302 in response
             # to a POST MUST NOT cause a redirection without confirmation
             # from the user (of urllib2, in this case).  In practice,
@@ -609,7 +609,7 @@ class HTTPRedirectHandler(BaseHandler):
                 headers=req.headers,
                 origin_req_host=req.get_origin_req_host(),
                 unverifiable=True,
-                visit=False,
+                visit=False, method=m if code in (307, 308) else None,
                 timeout=req.timeout)
             new._origin_req = getattr(req, "_origin_req", req)
             return new
@@ -655,7 +655,7 @@ class HTTPRedirectHandler(BaseHandler):
         return self.parent.open(new)
 
     http_error_301 = http_error_303 = http_error_307 = http_error_302
-    http_error_refresh = http_error_302
+    http_error_refresh = http_error_308 = http_error_302
 
     inf_msg = "The HTTP server returned a redirect error that would " \
               "lead to an infinite loop.\n" \
