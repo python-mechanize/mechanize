@@ -1,3 +1,3 @@
-"0.4.7"
-string_version = "0.4.7"
-__version__ = (0, 4, 7, None, None)
+"0.4.8"
+string_version = "0.4.8"
+__version__ = (0, 4, 8, None, None)

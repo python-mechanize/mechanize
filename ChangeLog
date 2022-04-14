@@ -1,6 +1,11 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2022-04-14 Kovid Goyal
+	* 0.4.8 release
+	* Handle mal-encoded robots.txt files more gracefully
+	* Support HTTP 308 redirects
+
 2021-09-19 Kovid Goyal
 	* 0.4.7 release
 	* Fix the ~ character being percent escaped when sending URLs to servers. See RFC 3986.
