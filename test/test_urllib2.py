@@ -1394,7 +1394,7 @@ class HandlerTests(mechanize._testcase.TestCase):
         o = h.parent = MockOpener()
 
         # ordinary redirect behaviour
-        for code in 301, 302, 303, 307, "refresh":
+        for code in 301, 302, 303, "refresh":
             for data in None, "blah\nblah\n":
                 method = getattr(h, "http_error_%s" % code)
                 req = Request(from_url, data)
