@@ -75,10 +75,16 @@ def md5_digest(data):
 if platform.python_implementation() == 'PyPy':
     def create_readline_wrapper(fh):
         fh.recv = fh.read
-        if not hasattr(fh, '_drop'):
-            fh._drop = lambda: None
-            fh._reuse = lambda: None
-        return socket._fileobject(fh, close=True)
+        if is_py2:
+            if not hasattr(fh, '_drop'):
+                fh._drop = lambda: None
+                fh._reuse = lambda: None
+            ans = socket._fileobject(fh, close=True)
+        else:
+            fh.recv_into = fh.readinto
+            fh._decref_socketios = lambda: None
+            ans = BufferedReader(socket.SocketIO(fh, 'r'))
+        return ans
 else:
     def create_readline_wrapper(fh):
         fh.recv = fh.read
