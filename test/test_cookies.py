@@ -1025,14 +1025,9 @@ class CookieTests(unittest.TestCase):
 
         # sequential iteration
         for i in range(4):
-            i = 0
-            for c in cs:
+            for c, expected in zip(cs, zip(versions, names, domains, paths)):
                 # assert isinstance(c, Cookie)
-                self.assertEqual(c.version, versions[i])
-                self.assertEqual(c.name, names[i])
-                self.assertEqual(c.domain, domains[i])
-                self.assertEqual(c.path, paths[i])
-                i = i + 1
+                self.assertEqual((c.version, c.name, c.domain, c.path), expected)
 
         self.assertRaises(IndexError, lambda cs=cs: cs[5])
 
