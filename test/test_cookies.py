@@ -1022,13 +1022,12 @@ class CookieTests(unittest.TestCase):
             "www.acme.com"
         ]
         paths = ["/", "/", "/", "/blah", "/blah/"]
-
+        expected = set(zip(versions, names, domains, paths))
         # sequential iteration
-        for i in range(4):
-            for c, expected in zip(cs, zip(versions, names, domains, paths)):
-                # assert isinstance(c, Cookie)
-                self.assertEqual((c.version, c.name, c.domain, c.path), expected)
-
+        # python 3.11 iterates in add order, earlier pythons iterate in domain
+        # sorted order
+        actual = {(c.version, c.name, c.domain, c.path) for c in cs}
+        self.assertEqual(expected, actual)
         self.assertRaises(IndexError, lambda cs=cs: cs[5])
 
     def test_parse_ns_headers(self):
