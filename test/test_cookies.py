@@ -1028,10 +1028,10 @@ class CookieTests(unittest.TestCase):
             i = 0
             for c in cs:
                 # assert isinstance(c, Cookie)
-                assert c.version == versions[i]
-                assert c.name == names[i]
-                assert c.domain == domains[i]
-                assert c.path == paths[i]
+                self.assertEqual(c.version, versions[i])
+                self.assertEqual(c.name, names[i])
+                self.assertEqual(c.domain, domains[i])
+                self.assertEqual(c.path, paths[i])
                 i = i + 1
 
         self.assertRaises(IndexError, lambda cs=cs: cs[5])
