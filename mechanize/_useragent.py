@@ -251,11 +251,11 @@ class UserAgentBase(_opener.OpenerDirector):
         Set the SSL Context used for connecting to SSL servers.
 
         This method accepts the same arguments as the
-        :py:meth:`ssl.SSLContext.load_verify_locations()` method from the
-        python standard library. You can also pass a pre-built context via the
-        `context` keyword argument. Note that to use this feature, you must be
-        using python >= 2.7.9. In addition you can directly pass in
-        a pre-built :class:`ssl.SSLContext` as the `context` argument.
+        :py:meth:`ssl.SSLContext.load_verify_locations()` method from
+        the Python standard library. You can also pass a pre-built
+        :class:`ssl.SSLContext` via the `context` keyword argument.
+        Note that to use this feature, you must be using Python >=
+        2.7.9.
 
         '''
         import ssl
