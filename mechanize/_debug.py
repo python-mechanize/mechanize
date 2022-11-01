@@ -30,3 +30,6 @@ class HTTPRedirectDebugProcessor(BaseHandler):
             info = logging.getLogger("mechanize.http_redirects").info
             info("redirecting to %s", request.get_full_url())
         return request
+        
+    https_response = http_response
+    
