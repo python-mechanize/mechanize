@@ -15,10 +15,10 @@ jobs:
     matrix:
       Python27:
         python.version: '2.7'
-      Python35:
-        python.version: '3.6'
       Python39:
         python.version: '3.9'
+      Python311:
+        python.version: '3.11'
     maxParallel: 3
 
   steps:
@@ -47,7 +47,7 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.7'
+      versionSpec: '3.10'
       architecture: 'x64'
 
   - script: |
