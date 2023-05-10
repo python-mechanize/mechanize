@@ -396,15 +396,12 @@ class closeable_response:
         return self.code
 
     def get_header_values(self, name):
-        return self._headers.getheaders(name)
+        return self._headers.get_all(name)
 
     def get_all_header_names(self, normalize=True):
-        ans = []
-        for line in self._headers.headers:
-            h = line.partition(':')[0]
-            if normalize:
-                h = normalize_header_name(h)
-            ans.append(h)
+        ans = self._headers.keys()
+        if normalize:
+            ans = list(map(normalize_header_name, ans))
         return ans
 
     def __getitem__(self, name):
