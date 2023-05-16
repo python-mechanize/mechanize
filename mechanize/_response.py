@@ -289,6 +289,10 @@ class response_seek_wrapper(seek_wrapper):
     def info(self):
         return self._headers
 
+    @property
+    def headers(self):
+        return self._headers
+
     def geturl(self):
         return self.wrapped.geturl()
 
@@ -332,6 +336,10 @@ class eofresponse(eoffile):
         return self._url
 
     def info(self):
+        return self._headers
+
+    @property
+    def headers(self):
         return self._headers
 
 
@@ -390,6 +398,10 @@ class closeable_response:
                                              hex(abs(id(self))), self.fp)
 
     def info(self):
+        return self._headers
+
+    @property
+    def headers(self):
         return self._headers
 
     def getcode(self):
