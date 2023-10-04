@@ -1278,14 +1278,21 @@ class HTTPSHandler(AbstractHTTPHandler):
         if self.client_cert_manager is not None:
             key_file, cert_file = self.client_cert_manager.find_key_cert(
                 req.get_full_url())
-        if self.ssl_context is None:
-            conn_factory = partial(
-                HTTPSConnection, key_file=key_file,
-                cert_file=cert_file)
+        if sys.version_info > (3, 5):
+            import ssl
+            ctx = self.ssl_context or ssl.create_default_context()
+            if cert_file:
+                ctx.load_cert_chain(cert_file, key_file)
+            conn_factory = partial(HTTPSConnection, context=ctx)
         else:
-            conn_factory = partial(
-                HTTPSConnection, key_file=key_file,
-                cert_file=cert_file, context=self.ssl_context)
+            if self.ssl_context is None:
+                conn_factory = partial(
+                    HTTPSConnection, key_file=key_file,
+                    cert_file=cert_file)
+            else:
+                conn_factory = partial(
+                    HTTPSConnection, key_file=key_file,
+                    cert_file=cert_file, context=self.ssl_context)
         return self.do_open(conn_factory, req)
 
     https_request = AbstractHTTPHandler.do_request_
