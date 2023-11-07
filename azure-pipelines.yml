@@ -18,7 +18,7 @@ jobs:
       Python39:
         python.version: '3.9'
       Python311:
-        python.version: '3.11'
+        python.version: '3.12'
     maxParallel: 3
 
   steps:
