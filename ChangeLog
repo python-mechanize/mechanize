@@ -1,6 +1,11 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2023-11-07 Kovid Goyal
+	* 0.4.9 release
+	* Fix error on PyPy3
+	* Fix error CPython 3.12
+
 2022-04-14 Kovid Goyal
 	* 0.4.8 release
 	* Handle mal-encoded robots.txt files more gracefully
