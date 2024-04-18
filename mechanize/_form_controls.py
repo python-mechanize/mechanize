@@ -72,7 +72,8 @@ def isstringlike(x):
 def choose_boundary():
     """Return a string usable as a multipart boundary."""
     # follow IE and firefox
-    nonce = "".join(str(random.randint(0, 2**31 - 1)) for i in (0, 1, 2))
+    limit = (1 << 31) - 1
+    nonce = "".join(str(random.randint(0, limit)) for i in (0, 1, 2))
     return "-" * 27 + nonce
 
 
