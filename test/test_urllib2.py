@@ -864,7 +864,7 @@ class HandlerTests(mechanize._testcase.TestCase):
              ["foo", "bar"], _sockettimeout._GLOBAL_DEFAULT_TIMEOUT, "", None),
             ("ftp://localhost/baz.gif;type=a", "localhost", ftplib.FTP_PORT,
              "A", [], _sockettimeout._GLOBAL_DEFAULT_TIMEOUT, "baz.gif",
-             None),  # TODO: really this should guess image/gif
+             "image/gif" if sys.version_info >= (3, 11) else None),
         ]:
             req = Request(url, timeout=timeout)
             r = h.ftp_open(req)
