@@ -69,7 +69,9 @@ class Request(_urllib2_fork.Request):
             data = urlencode(data)
             data = data or None
             if data and method == 'GET':
+                url, separator, fragment = url.partition('#')
                 url += ('&' if '?' in url else '?') + data
+                url += separator + fragment
                 data = None
         _urllib2_fork.Request.__init__(self, url, data, headers, method=method)
         self.selector = None
