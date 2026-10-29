@@ -1913,6 +1913,21 @@ class RequestTests(unittest.TestCase):
         self.assertEqual(r.get_data(), None)
         self.assertEqual(r.get_full_url(), 'https://example.com?a=1')
 
+    def test_get_data_before_fragment(self):
+        for suffix, expected in (
+                ('#section', '?a=two+words#section'),
+                ('?old=1#section', '?old=1&a=two+words#section'),
+                ('#section?question', '?a=two+words#section?question'),
+                ('#', '?a=two+words')):
+            url = 'https://example.com/path'
+            request = Request(url + suffix, data={'a': 'two words'},
+                              method='GET')
+            self.assertEqual(request.get_full_url(), url + expected)
+            self.assertEqual(request.get_selector(),
+                             '/path' + expected.split('#', 1)[0])
+            self.assertIsNone(request.get_data())
+            self.assertEqual(request.get_method(), 'GET')
+
 
 if __name__ == "__main__":
     import doctest
