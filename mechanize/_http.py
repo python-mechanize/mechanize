@@ -141,6 +141,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
         self.rfp_class = rfp_class
         self.rfp = None
         self._host = None
+        self._scheme = None
 
     def __copy__(self):
         return self.__class__(self.rfp_class)
@@ -164,7 +165,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
                 origin_req.get_host() == host):
             return request
 
-        if host != self._host:
+        if host != self._host or scheme != self._scheme:
             self.rfp = self.rfp_class()
             try:
                 self.rfp.set_opener(self.parent)
@@ -175,6 +176,7 @@ class HTTPRobotRulesProcessor(BaseHandler):
             self.rfp.set_timeout(request.timeout)
             self.rfp.read()
             self._host = host
+            self._scheme = scheme
 
         ua = request.get_header("User-agent", "")
         if self.rfp.can_fetch(ua, request.get_full_url()):
