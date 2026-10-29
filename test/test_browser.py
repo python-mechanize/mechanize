@@ -2,8 +2,10 @@
 """Tests for mechanize.Browser."""
 
 import copy
+import gzip
 import os
 import re
+import struct
 from io import BytesIO
 from unittest import TestCase
 
@@ -769,6 +771,22 @@ class BrowserTests(TestCase):
         h = r.info()
         self.assertFalse(h.getheaders('content-encoding'))
         self.assertFalse(h.getheaders('content-length'))
+
+    def test_gzip_extra_field(self):
+        data = b'compressed response with an optional header'
+        compressed = b''.join(compress_readable_output(BytesIO(data)))
+        for size in (0, 4, 260):
+            # RFC 1952 stores XLEN as a little-endian 16-bit integer.
+            extra = b'XY' + struct.pack('<H', size - 4) + b'x' * (size - 4) if size else b''
+            encoded = (compressed[:3] + b'\x04' + compressed[4:10] +
+                       struct.pack('<H', len(extra)) + extra + compressed[10:])
+            with gzip.GzipFile(fileobj=BytesIO(encoded)) as decoded:
+                self.assertEqual(decoded.read(), data)
+            response = MockResponse('https://example.com/', data=encoded,
+                                    info={'Content-Encoding': 'gzip'})
+            response = HTTPGzipProcessor().https_response(
+                mechanize.Request(response.geturl()), response)
+            self.assertEqual(response.read(), data)
 
 
 class ResponseTests(TestCase):

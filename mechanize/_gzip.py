@@ -158,8 +158,7 @@ def create_gzip_decompressor(zipped_file):
                          prefix[2])
     flag = ord(prefix[3:4])
     if flag & 4:  # extra
-        extra_amt = read_amt(zipped_file, 2)
-        extra_amt = ord(extra_amt[0]) + 256 * ord(extra_amt[1])
+        extra_amt = struct.unpack(b'<H', read_amt(zipped_file, 2))[0]
         if extra_amt:
             read_amt(zipped_file, extra_amt)
     if flag & 8:  # filename
