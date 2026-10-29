@@ -1247,6 +1247,26 @@ class HandlerTests(mechanize._testcase.TestCase):
         h.http_request(req)
         self.assertTrue(rfpc.calls == [])
 
+    def test_robots_scheme_change(self):
+        rfpc = MockRobotFileParserClass()
+        handler = mechanize.HTTPRobotRulesProcessor(rfpc)
+        opener = OpenerDirector()
+        opener.add_handler(handler)
+
+        for scheme in ("http", "https", "http"):
+            rfpc.clear()
+            url = scheme + "://example.com/page"
+            handler.http_request(Request(url))
+            self.assertIn(("set_url", scheme + "://example.com/robots.txt"),
+                          rfpc.calls)
+            self.assertIn("read", rfpc.calls)
+
+            # A different path on the same origin still uses cached rules.
+            rfpc.clear()
+            url = scheme + "://example.com/another-page"
+            handler.http_request(Request(url))
+            self.assertEqual(rfpc.calls, [("can_fetch", "", url)])
+
     def test_redirected_robots_txt(self):
         # redirected robots.txt fetch shouldn't result in another attempted
         # robots.txt fetch to check the redirection is allowed!

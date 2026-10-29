@@ -332,9 +332,13 @@ class CookieTests(unittest.TestCase):
         cookie = c._cookies["www.acme.com"]['/foo/']['"spam"']
         assert cookie.name == '"spam"'
         assert cookie.value is None
-        assert lwp_cookie_str(cookie) == (
+        assert lwp_cookie_str(cookie) in (
+            r'"spam"; path="/foo/"; domain=www.acme.com; '
+            'path_spec; discard; version=0',
+            # prior to fix for https://github.com/python/cpython/issues/130631:
             r'"spam"; path="/foo/"; domain="www.acme.com"; '
-            'path_spec; discard; version=0')
+            'path_spec; discard; version=0',
+            )
         old_str = repr(c)
         c.save(ignore_expires=True, ignore_discard=True)
         try:
