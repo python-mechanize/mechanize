@@ -799,8 +799,6 @@ class BrowserTests(TestCase):
                 writer.write(data)
             for padding in (0, 1, 2048):
                 encoded = output.getvalue() + b'\0' * padding
-                with gzip.GzipFile(fileobj=BytesIO(encoded)) as decoded:
-                    self.assertEqual(decoded.read(), data)
                 for stream in (BytesIO, ShortReads):
                     response = MockResponse('https://example.com/',
                                             info={'Content-Encoding': 'gzip'})
@@ -819,6 +817,28 @@ class BrowserTests(TestCase):
             mechanize.Request(response.geturl()), response)
         with self.assertRaises(ValueError):
             response.read()
+
+    def test_gzip_nonzero_trailing_data(self):
+        def gz(data):
+            return b''.join(compress_readable_output(BytesIO(data)))
+
+        class ShortReads(BytesIO):
+            def read(self, size=-1):
+                return BytesIO.read(self, min(size, 7) if size >= 0 else size)
+
+        for encoded in (
+                gz(b'first') + gz(b'second'),  # multiple members
+                gz(b'payload') + b'garbage',
+                gz(b'payload') + b'\0' * 2048 + b'x',  # beyond first read
+        ):
+            for stream in (BytesIO, ShortReads):
+                response = MockResponse('https://example.com/',
+                                        info={'Content-Encoding': 'gzip'})
+                response.fp = stream(encoded)
+                response = HTTPGzipProcessor().https_response(
+                    mechanize.Request(response.geturl()), response)
+                with self.assertRaises(ValueError):
+                    response.read()
 
     def test_gzip_truncated_trailer(self):
         encoded = b''.join(compress_readable_output(BytesIO(b'payload')))
