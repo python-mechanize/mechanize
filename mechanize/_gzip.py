@@ -103,7 +103,7 @@ class UnzipWrapper:
                 # ignore any extra bytes after end of compressed stream
                 self.__fp.read()
                 # check CRC, ignore size mismatch
-                crc, size = struct.unpack(b'<LL', tail)
+                crc, size = struct.unpack(b'<LL', tail[:8])
                 if (crc & CRC_MASK) != (self.__crc & CRC_MASK):
                     raise ValueError(
                         'gzip stream is corrupted, CRC does not match')
