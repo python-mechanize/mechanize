@@ -564,6 +564,26 @@ class HTTPDefaultErrorHandler(BaseHandler):
         raise response
 
 
+_CROSS_ORIGIN_STRIP_HEADERS = frozenset(('authorization', 'cookie'))
+_DEFAULT_PORTS = {'http': 80, 'https': 443}
+
+
+def _url_origin(url):
+    parts = urlsplit(url)
+    scheme = (parts.scheme or '').lower()
+    try:
+        port = parts.port
+    except ValueError:
+        port = parts.netloc.rpartition(':')[2]
+    if port is None:
+        port = _DEFAULT_PORTS.get(scheme)
+    return scheme, parts.hostname, port
+
+
+def _same_origin(url_a, url_b):
+    return _url_origin(url_a) == _url_origin(url_b)
+
+
 class HTTPRedirectHandler(BaseHandler):
     # maximum number of redirections to any single URL
     # this is needed because of the state that cookies introduce
@@ -610,9 +630,16 @@ class HTTPRedirectHandler(BaseHandler):
             # the same.
             # TODO: really refresh redirections should be visiting; tricky to
             # fix
+            headers = req.headers
+            if not _same_origin(req.get_full_url(), newurl):
+                # Do not leak credentials set by the caller to a different
+                # origin
+                headers = OrderedDict(
+                    (k, v) for k, v in iteritems(req.headers)
+                    if k.lower() not in _CROSS_ORIGIN_STRIP_HEADERS)
             new = Request(
                 newurl,
-                headers=req.headers,
+                headers=headers,
                 origin_req_host=req.get_origin_req_host(),
                 unverifiable=True,
                 visit=False, method=m if code in (307, 308) else None,
@@ -922,7 +949,9 @@ class AbstractBasicAuthHandler:
             if req.get_header(self.auth_header, None) == auth:
                 return None
             newreq = copy.copy(req)
-            newreq.add_header(self.auth_header, auth)
+            # Use an unredirected header so that the credentials are not
+            # sent along to whatever URL a redirect points at
+            newreq.add_unredirected_header(self.auth_header, auth)
             newreq.visit = False
             return self.parent.open(newreq)
         else:
