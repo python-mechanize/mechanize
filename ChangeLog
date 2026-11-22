@@ -1,6 +1,16 @@
 This isn't really in proper GNU ChangeLog format, it just happens to
 look that way.
 
+2026-11-22 Kovid Goyal
+	* 0.4.11 release
+	* Security: Do not send Basic auth credentials to redirect targets, and drop
+	caller-set Authorization and Cookie headers when a redirect changes the
+	scheme, host or port
+	* Accept zero-padded gzip responses
+	* Fix reading gzip extra-field lengths on Python 3
+	* Append GET form parameters before the URL fragment
+	* Reload robots rules when the request scheme changes
+
 2024-04-26 Kovid Goyal
 	* 0.4.10 release
 	* Fix overly long MIME multipart separator on 64 bit systems
