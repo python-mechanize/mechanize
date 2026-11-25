@@ -21,6 +21,8 @@ def label_text(elem):
     if elem.text:
         ans.append(elem.text)
     for child in elem:
+        if is_string(child.tag):
+            ans.append(label_text(child))
         if child.tail:
             ans.append(child.tail)
     return ''.join(ans)

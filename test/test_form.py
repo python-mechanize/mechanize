@@ -3174,6 +3174,24 @@ class MoreFormTests(unittest.TestCase):  # {{{
         self.assertRaises(ItemNotFoundError, ctl.get, id="4")
         self.assertRaises(ItemNotFoundError, ctl.get, id="4")
 
+    def test_explicit_nested_label(self):
+        form = parse_file(BytesIO('''<form>
+<label for="email">Your <strong>email <em>address</em></strong>:
+<!-- not label text --></label>outside
+<input name="email" id="email">
+</form>'''), 'http://example.com/')[0]
+        control = form.find_control(label='Your email address:')
+        self.assertEqual(control.name, 'email')
+        self.assertEqual(control.get_labels()[0].text, 'Your email address:')
+
+    def test_implicit_nested_label(self):
+        form = parse_file(BytesIO('''<form>
+<label><span>Your <b>name</b></span>: <input name="name"> please</label>
+</form>'''), 'http://example.com/')[0]
+        control = form.find_control(label='Your name: please')
+        self.assertEqual(control.name, 'name')
+        self.assertEqual(control.get_labels()[0].text, 'Your name: please')
+
     def test_label_whitespace(self):
         f = BytesIO("""\
 <form>
