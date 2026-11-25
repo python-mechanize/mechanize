@@ -107,6 +107,22 @@ class SeekableTests(TestCase):
         self.assertEqual(list(response), [b"bb\n", b"ccc"])
         self.assertEqual(stream.log, [])
 
+    def testReadAfterEOFUsesCache(self):
+        from mechanize._response import seek_wrapper
+        stream = TestUnSeekable(b"abcdef")
+        response = seek_wrapper(stream)
+        self.assertEqual(response.read(), b"abcdef")
+        self.assertTrue(response.read_complete)
+        del stream.log[:]
+        self.assertEqual(response.read(), b"")
+        self.assertEqual(response.read(10), b"")
+        response.seek(2)
+        self.assertEqual(response.read(10), b"cdef")
+        response.seek(1)
+        self.assertEqual(response.read(), b"bcdef")
+        self.assertEqual(response.tell(), 6)
+        self.assertEqual(stream.log, [])
+
     def testReadNegativeOrNoneSize(self):
         from mechanize._response import seek_wrapper
         for size in (None, -2, -100):
