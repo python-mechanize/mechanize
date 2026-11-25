@@ -141,7 +141,7 @@ jumps over the lazy
 dog.
 
 """
-    text_lines = list(map(lambda l: l + b"\n", text.split(b"\n")[:-1]))
+    text_lines = list(map(lambda line: line + b"\n", text.split(b"\n")[:-1]))
 
     def testSeekable(self):
         from mechanize._response import seek_wrapper

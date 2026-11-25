@@ -188,8 +188,8 @@ control.set_all_items_disabled(False)
 request2 = form.click()  # mechanize.Request object
 try:
     response2 = mechanize.urlopen(request2)
-except mechanize.HTTPError as response2:
-    pass
+except mechanize.HTTPError as e:
+    response2 = e
 
 print(response2.geturl())
 # headers

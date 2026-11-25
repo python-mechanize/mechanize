@@ -2129,11 +2129,11 @@ class ControlTests(unittest.TestCase):  # {{{
         form._id_to_labels['name_value_3'] = [
             _form_controls.Label('Last Option', 'name_value_3')
         ]  # notice __label above
-        self.assertEqual([l.text for l in c1.items[0].get_labels()],
+        self.assertEqual([lbl.text for lbl in c1.items[0].get_labels()],
                          ['First Option'])
-        self.assertEqual([l.text for l in c1.items[1].get_labels()],
+        self.assertEqual([lbl.text for lbl in c1.items[1].get_labels()],
                          ['Second Option'])
-        self.assertEqual([l.text for l in c1.items[2].get_labels()],
+        self.assertEqual([lbl.text for lbl in c1.items[2].get_labels()],
                          ['Third Option', 'Last Option'])
         self.assertEqual(c1.get_value_by_label(), ['First Option'])
         c1.set_value_by_label(['Second Option'])

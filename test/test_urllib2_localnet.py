@@ -182,7 +182,7 @@ class DigestAuthHandler:
                 password = self._users[auth_dict["username"]]
             else:
                 return self._return_auth_challenge(request_handler)
-            if not auth_dict.get("nonce") in self._nonces:
+            if auth_dict.get("nonce") not in self._nonces:
                 return self._return_auth_challenge(request_handler)
             else:
                 self._nonces.remove(auth_dict["nonce"])

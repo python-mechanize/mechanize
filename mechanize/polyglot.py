@@ -6,193 +6,170 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import collections
+import re
 import sys
 
-is_py2 = sys.version_info.major < 3
+from urllib.error import HTTPError, URLError
+from urllib.robotparser import RobotFileParser
+from urllib.parse import (
+        urlsplit, urljoin, urlparse, urlunparse, urlencode, quote_plus,
+        unquote, unwrap, quote
+)
+from urllib.request import (
+        pathname2url, addinfourl, install_opener, build_opener,
+        ProxyHandler, urlopen as _urlopen, getproxies, ftpwrapper,
+        proxy_bypass as urllib_proxy_bypass, url2pathname, Request)
+from http.client import (
+        HTTPMessage, parse_headers, HTTPConnection,
+        HTTPSConnection)
+from http.cookiejar import (
+        DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
+        FileCookieJar, LoadError, LWPCookieJar, _debug, domain_match,
+        eff_request_host, escape_path, is_HDN, lwp_cookie_str, reach,
+        request_path, request_port, user_domain_match, Cookie, CookieJar,
+        MozillaCookieJar, request_host)
+from io import StringIO
 
-if is_py2:
-    import types
-    from urllib import (
-            urlencode, pathname2url, quote, addinfourl, quote_plus,
-            urlopen, splitattr, splithost as urllib_splithost, getproxies,
-            ftpwrapper, proxy_bypass as urllib_proxy_bypass, splitpasswd,
-            splitport, splittype, splituser, splitvalue,
-            unquote, unwrap, url2pathname
-    )
-    from urllib2 import (
-            HTTPError, URLError, install_opener, build_opener, ProxyHandler
-    )
-    from robotparser import RobotFileParser
-    from urlparse import urlsplit, urljoin, urlparse, urlunparse
-    from httplib import HTTPMessage, HTTPConnection, HTTPSConnection
-    from cookielib import (
-            DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
-            FileCookieJar, LoadError, LWPCookieJar, _debug, domain_match,
-            eff_request_host, escape_path, is_HDN, lwp_cookie_str, reach,
-            request_path, request_port, user_domain_match, Cookie, CookieJar,
-            MozillaCookieJar, request_host)
-    from cStringIO import StringIO
-    from future_builtins import map  # noqa
-
-    def is_string(x):
-        return isinstance(x, basestring)
-
-    def iteritems(x):
-        return x.iteritems()
-
-    def itervalues(x):
-        return x.itervalues()
-
-    def is_class(obj):
-        return isinstance(obj, (types.ClassType, type))
-
-    def raise_with_traceback(exc):
-        exec('raise exc, None, sys.exc_info()[2]')
-
-    def is_mapping(x):
-        return isinstance(x, collections.Mapping)
-
-    codepoint_to_chr = unichr
-    unicode_type = unicode
-    create_response_info = HTTPMessage
+is_py2 = False
 
 
-else:
-    import re
-    from urllib.error import HTTPError, URLError
-    from urllib.robotparser import RobotFileParser
-    from urllib.parse import (
-            urlsplit, urljoin, urlparse, urlunparse, urlencode, quote_plus,
-            unquote, unwrap, quote
-    )
-    from urllib.request import (
-            pathname2url, addinfourl, install_opener, build_opener,
-            ProxyHandler, urlopen as _urlopen, getproxies, ftpwrapper,
-            proxy_bypass as urllib_proxy_bypass, url2pathname, Request)
-    from http.client import (
-            HTTPMessage, parse_headers, HTTPConnection,
-            HTTPSConnection)
-    from http.cookiejar import (
-            DEFAULT_HTTP_PORT, CookiePolicy, DefaultCookiePolicy,
-            FileCookieJar, LoadError, LWPCookieJar, _debug, domain_match,
-            eff_request_host, escape_path, is_HDN, lwp_cookie_str, reach,
-            request_path, request_port, user_domain_match, Cookie, CookieJar,
-            MozillaCookieJar, request_host)
-    from io import StringIO
+def splitattr(url):
+    words = url.split(';')
+    return words[0], words[1:]
 
-    def splitattr(url):
-        words = url.split(';')
-        return words[0], words[1:]
 
-    def is_string(x):
-        return isinstance(x, str)
+def is_string(x):
+    return isinstance(x, str)
 
-    def iteritems(x):
-        return x.items()
 
-    def itervalues(x):
-        return x.values()
+def iteritems(x):
+    return x.items()
 
-    def is_class(obj):
-        return isinstance(obj, type)
 
-    def raise_with_traceback(exc):
-        raise exc.with_traceback(sys.exc_info()[2])
+def itervalues(x):
+    return x.values()
 
-    codepoint_to_chr = chr
-    unicode_type = str
-    map = map
 
-    # Legacy code expects HTTPMessage.getheaders()
-    def getheaders(self, name):
-        return self.get_all(name, failobj=[])
-    HTTPMessage.getheaders = getheaders
+def is_class(obj):
+    return isinstance(obj, type)
 
-    # We want __getitem__ to return the last header not the first
-    def getitem(self, name):
-        vals = self.get_all(name, [None])
-        return vals[-1]
-    HTTPMessage.__getitem__ = getitem
 
-    # Legacy method names
-    HTTPMessage.gettype = HTTPMessage.get_content_type
-    HTTPMessage.getmainttype = HTTPMessage.get_content_maintype
-    HTTPMessage.getsubtype = HTTPMessage.get_content_subtype
+def raise_with_traceback(exc):
+    raise exc.with_traceback(sys.exc_info()[2])
 
-    def is_mapping(x):
-        return isinstance(x, collections.abc.Mapping)
 
-    def create_response_info(fp):
-        return parse_headers(fp)
+codepoint_to_chr = chr
+unicode_type = str
+map = map
 
-    def urlopen(*a, **kw):
-        proxies = kw.pop('proxies', None)
-        if proxies is None:
-            return _urlopen(*a, **kw)
-        r = Request(a[0])
-        for k, v in proxies.items():
-            r.set_proxy(v, k)
-        return _urlopen(r, *a[1:], **kw)
 
-    _hostprog = None
+# Legacy code expects HTTPMessage.getheaders()
+def getheaders(self, name):
+    return self.get_all(name, failobj=[])
 
-    def urllib_splithost(url):
-        """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
-        global _hostprog
-        if _hostprog is None:
-            _hostprog = re.compile('//([^/#?]*)(.*)', re.DOTALL)
 
-        match = _hostprog.match(url)
-        if match:
-            host_port, path = match.groups()
-            if path and path[0] != '/':
-                path = '/' + path
-            return host_port, path
-        return None, url
+HTTPMessage.getheaders = getheaders
 
-    _typeprog = None
 
-    def splittype(url):
-        """splittype('type:opaquestring') --> 'type', 'opaquestring'."""
-        global _typeprog
-        if _typeprog is None:
-            _typeprog = re.compile('([^/:]+):(.*)', re.DOTALL)
+# We want __getitem__ to return the last header not the first
+def getitem(self, name):
+    vals = self.get_all(name, [None])
+    return vals[-1]
 
-        match = _typeprog.match(url)
-        if match:
-            scheme, data = match.groups()
-            return scheme.lower(), data
-        return None, url
 
-    def splituser(host):
-        """splituser('user[:passwd]@host[:port]') --> 'user[:passwd]', 'host[:port]'."""
-        user, delim, host = host.rpartition('@')
-        return (user if delim else None), host
+HTTPMessage.__getitem__ = getitem
 
-    def splitpasswd(user):
-        """splitpasswd('user:passwd') -> 'user', 'passwd'."""
-        user, delim, passwd = user.partition(':')
-        return user, (passwd if delim else None)
+# Legacy method names
+HTTPMessage.gettype = HTTPMessage.get_content_type
+HTTPMessage.getmainttype = HTTPMessage.get_content_maintype
+HTTPMessage.getsubtype = HTTPMessage.get_content_subtype
 
-    _portprog = None
 
-    def splitport(host):
-        """splitport('host:port') --> 'host', 'port'."""
-        global _portprog
-        if _portprog is None:
-            _portprog = re.compile('(.*):([0-9]*)$', re.DOTALL)
+def is_mapping(x):
+    return isinstance(x, collections.abc.Mapping)
 
-        match = _portprog.match(host)
-        if match:
-            host, port = match.groups()
-            if port:
-                return host, port
-        return host, None
 
-    def splitvalue(attr):
-        """splitvalue('attr=value') --> 'attr', 'value'."""
-        attr, delim, value = attr.partition('=')
-        return attr, (value if delim else None)
+def create_response_info(fp):
+    return parse_headers(fp)
+
+
+def urlopen(*a, **kw):
+    proxies = kw.pop('proxies', None)
+    if proxies is None:
+        return _urlopen(*a, **kw)
+    r = Request(a[0])
+    for k, v in proxies.items():
+        r.set_proxy(v, k)
+    return _urlopen(r, *a[1:], **kw)
+
+
+_hostprog = None
+
+
+def urllib_splithost(url):
+    """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
+    global _hostprog
+    if _hostprog is None:
+        _hostprog = re.compile('//([^/#?]*)(.*)', re.DOTALL)
+
+    match = _hostprog.match(url)
+    if match:
+        host_port, path = match.groups()
+        if path and path[0] != '/':
+            path = '/' + path
+        return host_port, path
+    return None, url
+
+
+_typeprog = None
+
+
+def splittype(url):
+    """splittype('type:opaquestring') --> 'type', 'opaquestring'."""
+    global _typeprog
+    if _typeprog is None:
+        _typeprog = re.compile('([^/:]+):(.*)', re.DOTALL)
+
+    match = _typeprog.match(url)
+    if match:
+        scheme, data = match.groups()
+        return scheme.lower(), data
+    return None, url
+
+
+def splituser(host):
+    """splituser('user[:passwd]@host[:port]') --> 'user[:passwd]', 'host[:port]'."""
+    user, delim, host = host.rpartition('@')
+    return (user if delim else None), host
+
+
+def splitpasswd(user):
+    """splitpasswd('user:passwd') -> 'user', 'passwd'."""
+    user, delim, passwd = user.partition(':')
+    return user, (passwd if delim else None)
+
+
+_portprog = None
+
+
+def splitport(host):
+    """splitport('host:port') --> 'host', 'port'."""
+    global _portprog
+    if _portprog is None:
+        _portprog = re.compile('(.*):([0-9]*)$', re.DOTALL)
+
+    match = _portprog.match(host)
+    if match:
+        host, port = match.groups()
+        if port:
+            return host, port
+    return host, None
+
+
+def splitvalue(attr):
+    """splitvalue('attr=value') --> 'attr', 'value'."""
+    attr, delim, value = attr.partition('=')
+    return attr, (value if delim else None)
 
 
 def as_unicode(x, encoding='utf-8', errors='strict'):

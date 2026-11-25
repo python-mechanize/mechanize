@@ -4,7 +4,6 @@ from __future__ import absolute_import
 
 import random
 import re
-import sys
 import warnings
 from io import BytesIO
 from mimetypes import guess_type
@@ -874,8 +873,8 @@ class ListControl(Control):
             if name is not None and o.name != name:
                 continue
             if label is not None:
-                for l in o.get_labels():
-                    if label in l.text:
+                for lbl in o.get_labels():
+                    if label in lbl.text:
                         break
                 else:
                     continue
@@ -1245,9 +1244,9 @@ class ListControl(Control):
         res = []
         for o in self.items:
             if (not o.disabled) and o.selected:
-                for l in o.get_labels():
-                    if l.text:
-                        res.append(l.text)
+                for lbl in o.get_labels():
+                    if lbl.text:
+                        res.append(lbl.text)
                         break
                 else:
                     res.append(None)
@@ -1263,9 +1262,9 @@ class ListControl(Control):
         if by_label:
             res = []
             for o in self.items:
-                for l in o.get_labels():
-                    if l.text:
-                        res.append(l.text)
+                for lbl in o.get_labels():
+                    if lbl.text:
+                        res.append(lbl.text)
                         break
                 else:
                     res.append(None)
@@ -2411,8 +2410,8 @@ class HTMLForm:
             if predicate and not predicate(control):
                 continue
             if label:
-                for l in control.get_labels():
-                    if l.text.find(label) > -1:
+                for lbl in control.get_labels():
+                    if lbl.text.find(label) > -1:
                         break
                 else:
                     continue

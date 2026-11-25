@@ -5,12 +5,9 @@ import zlib
 from io import DEFAULT_BUFFER_SIZE
 
 from ._urllib2_fork import BaseHandler
-from .polyglot import is_py2
 
 
 CRC_MASK = 0xffffffff
-if is_py2:
-    CRC_MASK = long(CRC_MASK)
 
 
 def gzip_prefix():
