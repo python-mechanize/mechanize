@@ -128,6 +128,9 @@ class seek_wrapper:
 
         # how much data, if any, do we need to read?
         if whence == 2:  # 2: relative to end of *wrapped* file
+            # Note that, unlike file.seek(), a positive offset moves
+            # backwards from the end of the file, so seek(n, 2) positions n
+            # bytes before the end. This is long-standing behaviour.
             if offset < 0:
                 raise ValueError("negative seek offset")
             # since we don't know yet where the end of that file is, we must
@@ -144,16 +147,20 @@ class seek_wrapper:
                     raise ValueError("seek to before start of file")
             end = len_of_seekable(self.__cache)
             to_read = dest - end
-            if to_read < 0:
+            if to_read < 0 or self.read_complete:
                 to_read = 0
 
         if to_read != 0:
             self.__cache.seek(0, 2)
             if to_read is None:
                 assert whence == 2
-                self.__cache.write(self.wrapped.read())
-                self.read_complete = True
-                self.__pos = self.__cache.tell() - offset
+                if not self.read_complete:
+                    self.__cache.write(self.wrapped.read())
+                    self.read_complete = True
+                dest = self.__cache.tell() - offset
+                if dest < 0:
+                    raise ValueError("seek to before start of file")
+                self.__pos = dest
             else:
                 data = self.wrapped.read(to_read)
                 if not data:

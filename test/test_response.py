@@ -273,6 +273,52 @@ dog.
         self.assertEqual(response.tell(), 0)
         self.assertEqual(response.read(2), b"01")
 
+    def testSeekFromEnd(self):
+        from mechanize._response import seek_wrapper
+        response = seek_wrapper(TestUnSeekable(b"0123456789"))
+        response.seek(3, 2)
+        self.assertEqual(response.tell(), 7)
+        self.assertEqual(response.read(), b"789")
+        response.seek(10, 2)
+        self.assertEqual(response.tell(), 0)
+        self.assertEqual(response.read(2), b"01")
+
+    def testSeekFromEndBeforeStartPreservesPosition(self):
+        from mechanize._response import seek_wrapper
+        response = seek_wrapper(TestUnSeekable(b"0123456789"))
+        self.assertEqual(response.read(3), b"012")
+        self.assertRaises(ValueError, response.seek, 11, 2)
+        self.assertEqual(response.tell(), 3)
+        self.assertEqual(response.read(2), b"34")
+
+    def testSeekAfterWrappedFileClosed(self):
+        from mechanize._response import seek_wrapper
+        response = seek_wrapper(BytesIO(b"0123456789"))
+        self.assertEqual(response.read(), b"0123456789")
+        response.wrapped.close()
+        response.seek(3, 2)
+        self.assertEqual(response.tell(), 7)
+        self.assertEqual(response.read(), b"789")
+        response.seek(20)
+        self.assertEqual(response.tell(), 20)
+        self.assertEqual(response.read(), b"")
+
+    def testSetDataThenSeekFromEnd(self):
+        # set_data() closes the wrapped file, so seeking must not read it again
+        from mechanize import response_seek_wrapper
+
+        class ClosingResponse(BytesIO):
+            def info(self):
+                return {}
+
+            def geturl(self):
+                return "http://example.com/"
+
+        response = response_seek_wrapper(ClosingResponse(b"original"))
+        response.set_data(b"replaced")
+        response.seek(3, 2)
+        self.assertEqual(response.read(), b"ced")
+
     def testResponseSeekWrapper(self):
         from mechanize import response_seek_wrapper
         hdrs = {"Content-type": "text/html"}
