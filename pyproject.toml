@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mechanize"
+dynamic = ["version"]
+description = "Stateful, programmatic web browsing"
+readme = "README.rst"
+authors = [{ name = "Kovid Goyal" }]
+license = "BSD-3-Clause"
+license-files = ["LICENSE", "COPYRIGHT"]
+requires-python = ">=3.10"
+dependencies = ["html5lib>=0.999999999"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Internet",
+    "Topic :: Internet :: File Transfer Protocol (FTP)",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
+    "Topic :: Internet :: WWW/HTTP :: Site Management :: Link Checking",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Testing :: Traffic Generation",
+    "Topic :: System :: Archiving :: Mirroring",
+    "Topic :: System :: Networking :: Monitoring",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Text Processing",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Text Processing :: Markup :: XML",
+]
+
+[project.optional-dependencies]
+fast = ["html5-parser>=0.4.4"]
+test = ["twisted", "service_identity", "six", "html5lib"]
+binarytest = ["lxml", "html5-parser"]
+
+[project.urls]
+Homepage = "https://github.com/python-mechanize/mechanize"
+
+[tool.setuptools]
+packages = ["mechanize"]
+
+[tool.setuptools.dynamic]
+version = { attr = "mechanize._version.string_version" }
