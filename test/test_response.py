@@ -81,6 +81,32 @@ class SeekableTests(TestCase):
         self.assertEqual(response.tell(), 0)
         self.assertEqual(stream.log, [])
 
+    def testReadlineUsesCachedLines(self):
+        from mechanize._response import seek_wrapper
+        stream = TestUnSeekable(b"a\nbb\nccc")
+        response = seek_wrapper(stream)
+        # bounded reads within a line only read that line from the stream
+        self.assertEqual(response.readline(1), b"a")
+        self.assertEqual(response.readline(1), b"\n")
+        self.assertEqual(response.readline(1), b"b")
+        self.assertEqual(stream.log, [("readline", -1), ("readline", -1)])
+        self.assertEqual(response.readline(), b"b\n")
+        # lines already in the cache are not read again from the stream
+        del stream.log[:]
+        response.seek(0)
+        self.assertEqual(response.readline(), b"a\n")
+        self.assertEqual(response.readline(), b"bb\n")
+        self.assertEqual(stream.log, [])
+        # incomplete final line, then EOF
+        self.assertEqual(response.readline(), b"ccc")
+        self.assertEqual(response.readline(), b"")
+        self.assertTrue(response.read_complete)
+        del stream.log[:]
+        # once the stream is exhausted it is not read again
+        response.seek(2)
+        self.assertEqual(list(response), [b"bb\n", b"ccc"])
+        self.assertEqual(stream.log, [])
+
     def testReadNegativeOrNoneSize(self):
         from mechanize._response import seek_wrapper
         for size in (None, -2, -100):
