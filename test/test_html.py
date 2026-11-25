@@ -10,6 +10,40 @@ from mechanize._html import content_parser, get_title, Factory
 
 class RegressionTests(TestCase):
 
+    def test_relative_base_links(self):
+        for href, expected_base in [
+            ('assets/', 'https://example.test/docs/assets/'),
+            ('../assets/', 'https://example.test/assets/'),
+            ('/assets/', 'https://example.test/assets/'),
+            ('//cdn.example.test/assets/', 'https://cdn.example.test/assets/'),
+            ('https://cdn.example.test/assets/', 'https://cdn.example.test/assets/'),
+        ]:
+            browser = mechanize.Browser()
+            browser.set_html(
+                '<base href="%s"><a href="chapter.html">chapter</a>' % href,
+                url='https://example.test/docs/index.html',
+            )
+            self.assertEqual(browser.find_link().absolute_url, expected_base + 'chapter.html')
+            self.assertEqual(browser.click_link().get_full_url(), expected_base + 'chapter.html')
+
+    def test_relative_base_form_actions(self):
+        for href, expected_base in [
+            ('assets/', 'https://example.test/docs/assets/'),
+            ('../assets/', 'https://example.test/assets/'),
+            ('/assets/', 'https://example.test/assets/'),
+            ('//cdn.example.test/assets/', 'https://cdn.example.test/assets/'),
+            ('https://cdn.example.test/assets/', 'https://cdn.example.test/assets/'),
+        ]:
+            browser = mechanize.Browser()
+            browser.set_html(
+                '<base href="%s"><form action="submit" method="post">'
+                '<input name="q" value="test"></form>' % href,
+                url='https://example.test/docs/index.html',
+            )
+            browser.select_form(nr=0)
+            self.assertEqual(browser.form.action, expected_base + 'submit')
+            self.assertEqual(browser.click().get_full_url(), expected_base + 'submit')
+
     def test_close_base_tag(self):
         # any document containing a </base> tag used to cause an exception
         br = mechanize.Browser()

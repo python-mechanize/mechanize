@@ -101,7 +101,9 @@ def parse_forms(root, base_url, request_class=None, select_default=False, encodi
                 labels.append(label)
                 id_to_labels[for_id].append(label)
         elif q == 'base':
-            base_url = e.get('href') or base_url
+            href = e.get('href')
+            if href:
+                base_url = urljoin(base_url, href)
 
     def parent_of(elem, parent_name):
         q = elem

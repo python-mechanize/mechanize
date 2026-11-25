@@ -82,7 +82,7 @@ def iterlinks(root, base_url):
         elif q == 'base':
             href = tag.get('href')
             if href:
-                base_url = href
+                base_url = urljoin(base_url, href)
 
 
 def compress_whitespace(text):
