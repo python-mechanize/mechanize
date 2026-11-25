@@ -60,3 +60,10 @@ packages = ["mechanize"]
 
 [tool.setuptools.dynamic]
 version = { attr = "mechanize._version.string_version" }
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+# flake8's default rule set: pycodestyle errors and warnings, and pyflakes
+select = ["E", "W", "F"]
