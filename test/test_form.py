@@ -3174,6 +3174,60 @@ class MoreFormTests(unittest.TestCase):  # {{{
         self.assertRaises(ItemNotFoundError, ctl.get, id="4")
         self.assertRaises(ItemNotFoundError, ctl.get, id="4")
 
+    def test_label_nested_inline_text(self):
+        # explicit label using for=
+        form = parse_file(BytesIO('''<form>
+<label for="email">Your <strong>email <em>address</em></strong>:
+<!-- not label text --></label>outside
+<input name="email" id="email">
+</form>'''), 'http://example.com/')[0]
+        control = form.find_control(label='Your email address:')
+        self.assertEqual(control.name, 'email')
+        self.assertEqual(
+            [lbl.text for lbl in control.get_labels()], ['Your email address:'])
+        # implicit label wrapping its control
+        form = parse_file(BytesIO('''<form>
+<label><span>Your <b>name</b></span>: <input name="name"> please</label>
+</form>'''), 'http://example.com/')[0]
+        control = form.find_control(label='Your name: please')
+        self.assertEqual(control.name, 'name')
+        self.assertEqual(
+            [lbl.text for lbl in control.get_labels()], ['Your name: please'])
+
+    def test_label_excludes_embedded_control_text(self):
+        form = parse_file(BytesIO('''<form>
+<label>Country <select name="c"><option>United States</option>
+<optgroup label="g"><option>UK</option></optgroup></select> <i>now</i></label>
+<label for="t">Notes <textarea id="t" name="t">default</textarea>
+<script>var x = 1;</script><style>b {}</style>here</label>
+<label>Do <button name="b">Press</button> it</label>
+<label for="o">Outer <label for="i">Inner</label> label</label>
+<input id="o" name="o"><input id="i" name="i">
+</form>'''), 'http://example.com/')[0]
+        self.assertEqual(form.find_control(label='Inner').name, 'i')
+        self.assertEqual(form.find_control(label='Outer label').name, 'o')
+        self.assertEqual(
+            [lbl.text for lbl in form.find_control('c').get_labels()],
+            ['Country now'])
+        self.assertEqual(
+            [lbl.text for lbl in form.find_control('t').get_labels()],
+            ['Notes here', 'Notes here'])
+        self.assertEqual(
+            [lbl.text for lbl in form.find_control('b').get_labels()],
+            ['Do it'])
+        self.assertRaises(
+            ControlNotFoundError, form.find_control, label='UK')
+        self.assertRaises(
+            ControlNotFoundError, form.find_control, label='default')
+
+    def test_label_deeply_nested(self):
+        depth = 5000
+        form = parse_file(BytesIO(
+            '<form><label for="q">a' + '<b>' * depth + 'b' + '</b>' * depth +
+            'c</label><input id="q" name="q"></form>'),
+            'http://example.com/')[0]
+        self.assertEqual(form.find_control(label='abc').name, 'q')
+
     def test_label_whitespace(self):
         f = BytesIO("""\
 <form>

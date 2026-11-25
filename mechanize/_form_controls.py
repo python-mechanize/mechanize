@@ -2,6 +2,7 @@
 # vim:fileencoding=utf-8
 from __future__ import absolute_import
 
+import copy
 import random
 import re
 import warnings
@@ -254,10 +255,24 @@ class Label:
     __str__ = __repr__
 
 
+# (label text, Label) for the most recently created label. When parsing, every
+# control wrapped by a <label> is given the same string object as its label
+# text, so this avoids re-compressing the whitespace of a possibly long string
+# once per control, which is quadratic.
+_last_label = (None, None)
+
+
 def _get_label(attrs):
+    global _last_label
     text = attrs.get("__label")
-    if text is not None:
-        return Label(text)
+    if text is None:
+        return None
+    last_text, last_label = _last_label
+    if last_text is text:
+        return copy.copy(last_label)
+    ans = Label(text)
+    _last_label = (text, copy.copy(ans))
+    return ans
 
 
 class Control:

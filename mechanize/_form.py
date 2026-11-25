@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import re
 from collections import defaultdict
 
-from ._form_controls import HTMLForm, Label
+from ._form_controls import HTMLForm, Label, compress_whitespace
 from ._request import Request
 from ._rfc3986 import clean_url, urlsplit
 from ._rfc3986 import urljoin as rfc3986_urljoin
@@ -18,12 +18,39 @@ def normalize_line_endings(text):
     return re.sub(as_unicode(r"(?:(?<!\r)\n)|(?:\r(?!\n))"), u"\r\n", text)
 
 
+# The text inside these elements is not part of the text of a <label> that
+# contains them: it is either the content of an embedded control (options,
+# textarea default value, button caption), the text of another (invalidly
+# nested) label, fallback content, or not rendered text at all.
+_LABEL_TEXT_EXCLUDED_SUBTREES = frozenset((
+    'select', 'datalist', 'option', 'optgroup', 'textarea', 'button',
+    'label', 'meter', 'progress', 'script', 'style', 'template', 'noscript'))
+
+
 def label_text(elem):
+    # Return the text of a <label> element, including text inside nested
+    # inline elements, in document order. Comments are ignored and the text of
+    # embedded controls is excluded. Iterative, so that deeply nested
+    # documents cannot exhaust the recursion limit.
     ans = []
     if elem.text:
         ans.append(elem.text)
-    for child in elem:
-        if child.tail:
+    # Each entry is (iterator over children, tail text to emit when done)
+    stack = [(iter(elem), None)]
+    while stack:
+        children, tail = stack[-1]
+        child = next(children, None)
+        if child is None:
+            stack.pop()
+            if tail:
+                ans.append(tail)
+            continue
+        if (is_string(child.tag) and
+                child.tag.lower() not in _LABEL_TEXT_EXCLUDED_SUBTREES):
+            if child.text:
+                ans.append(child.text)
+            stack.append((iter(child), child.tail))
+        elif child.tail:
             ans.append(child.tail)
     return ''.join(ans)
 
@@ -81,29 +108,30 @@ def resolve_base_url(root, document_url):
     return rfc3986_urljoin(document_url, href)
 
 
-def parse_control(elem, parent_of, default_type='text'):
+def parse_control(elem, parent_of, label_text_of, default_type='text'):
     attrs = dict(elem.attrib)
     label_elem = parent_of(elem, 'label')
     if label_elem is not None:
-        lt = label_text(label_elem)
-        if lt:
+        lt = label_text_of(label_elem)
+        if lt is not None:
             attrs["__label"] = lt
     ctype = attrs.get('type') or default_type
     return ctype, attrs.get('name'), attrs
 
 
-def parse_input(elem, parent_of, *a):
-    return parse_control(elem, parent_of)
+def parse_input(elem, parent_of, label_text_of, attrs_map):
+    return parse_control(elem, parent_of, label_text_of)
 
 
-def parse_button(elem, parent_of, *a):
-    ctype, name, attrs = parse_control(elem, parent_of, default_type='submit')
+def parse_button(elem, parent_of, label_text_of, attrs_map):
+    ctype, name, attrs = parse_control(
+        elem, parent_of, label_text_of, default_type='submit')
     ctype += 'button'
     return ctype, name, attrs
 
 
-def parse_option(elem, parent_of, attrs_map):
-    ctype, name, attrs = parse_control(elem, parent_of)
+def parse_option(elem, parent_of, label_text_of, attrs_map):
+    ctype, name, attrs = parse_control(elem, parent_of, label_text_of)
     og = parent_of(elem, 'optgroup')
     contents = (elem.text or '').strip()
     attrs['contents'] = contents
@@ -118,15 +146,15 @@ def parse_option(elem, parent_of, attrs_map):
     return 'select', sel.get('name'), attrs
 
 
-def parse_textarea(elem, parent_of, *a):
-    ctype, name, attrs = parse_control(elem, parent_of)
+def parse_textarea(elem, parent_of, label_text_of, attrs_map):
+    ctype, name, attrs = parse_control(elem, parent_of, label_text_of)
     ctype = 'textarea'
     attrs['value'] = normalize_line_endings(elem.text or u'')
     return ctype, name, attrs
 
 
-def parse_select(elem, parent_of, *a):
-    ctype, name, attrs = parse_control(elem, parent_of)
+def parse_select(elem, parent_of, label_text_of, attrs_map):
+    ctype, name, attrs = parse_control(elem, parent_of, label_text_of)
     ctype = 'select'
     return ctype, name, {'__select': attrs}
 
@@ -145,6 +173,20 @@ def parse_forms(root, base_url, request_class=None, select_default=False, encodi
     id_to_labels = defaultdict(list)
     base_url = resolve_base_url(root, document_url)
     global_form = HTMLForm(document_url, encoding=encoding, base_url=base_url)
+    label_texts = {}
+
+    def label_text_of(label_elem):
+        # Cached, as a <label> can wrap many controls and walking its subtree
+        # for each of them would be quadratic. Returns None if the label has
+        # no text at all, otherwise its whitespace-compressed text.
+        try:
+            return label_texts[label_elem]
+        except KeyError:
+            lt = label_text(label_elem)
+            ans = label_texts[label_elem] = (
+                compress_whitespace(lt) if lt else None)
+            return ans
+
     for e in all_elems:
         q = e.tag.lower()
         if q == 'form':
@@ -155,7 +197,7 @@ def parse_forms(root, base_url, request_class=None, select_default=False, encodi
         elif q == 'label':
             for_id = e.get('for')
             if for_id is not None:
-                label = Label(label_text(e), for_id)
+                label = Label(label_text_of(e), for_id)
                 labels.append(label)
                 id_to_labels[for_id].append(label)
 
@@ -207,8 +249,8 @@ def parse_forms(root, base_url, request_class=None, select_default=False, encodi
                 form_elem = parent_of(elem, 'form')
             form = forms_map.get(form_elem, global_form)
             try:
-                control_type, control_name, attrs = cfunc(elem, parent_of,
-                                                          attrs_map)
+                control_type, control_name, attrs = cfunc(
+                    elem, parent_of, label_text_of, attrs_map)
             except SkipControl:
                 continue
             attrs_map[elem] = attrs
