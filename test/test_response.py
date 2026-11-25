@@ -168,6 +168,30 @@ dog.
         sfh.seek(0)
         self.assertEqual(sfh.read(), text)
 
+    def testRelativeSeekForward(self):
+        from mechanize._response import seek_wrapper
+        response = seek_wrapper(TestUnSeekable(b"0123456789"))
+        response.seek(4, 1)
+        self.assertEqual(response.tell(), 4)
+        self.assertEqual(response.read(2), b"45")
+        response.seek(10, 1)
+        self.assertEqual(response.tell(), 16)
+        self.assertEqual(response.read(), b"")
+        response.seek(-13, 1)
+        self.assertEqual(response.tell(), 3)
+        self.assertEqual(response.read(2), b"34")
+
+    def testRelativeSeekBeforeStartPreservesPosition(self):
+        from mechanize._response import seek_wrapper
+        response = seek_wrapper(TestUnSeekable(b"0123456789"))
+        self.assertEqual(response.read(3), b"012")
+        self.assertRaises(ValueError, response.seek, -4, 1)
+        self.assertEqual(response.tell(), 3)
+        self.assertEqual(response.read(2), b"34")
+        response.seek(-5, 1)
+        self.assertEqual(response.tell(), 0)
+        self.assertEqual(response.read(2), b"01")
+
     def testResponseSeekWrapper(self):
         from mechanize import response_seek_wrapper
         hdrs = {"Content-type": "text/html"}

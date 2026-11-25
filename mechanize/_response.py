@@ -132,10 +132,9 @@ class seek_wrapper:
                     raise ValueError("negative seek offset")
                 dest = offset
             else:  # 1: relative to current position
-                pos = self.__pos
-                if pos < offset:
+                dest = self.__pos + offset
+                if dest < 0:
                     raise ValueError("seek to before start of file")
-                dest = pos + offset
             end = len_of_seekable(self.__cache)
             to_read = dest - end
             if to_read < 0:
