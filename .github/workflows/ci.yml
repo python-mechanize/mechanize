@@ -32,6 +32,12 @@ jobs:
           pip install -e '.[test]'
           pip install --no-binary lxml -e '.[binarytest]'
 
+      - name: Lint
+        if: matrix.python-version == '3.14'
+        run: |
+          pip install ruff==0.17.6
+          ruff check --output-format=github .
+
       - name: Test
         run: python run_tests.py
 
