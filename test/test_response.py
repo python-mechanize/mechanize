@@ -53,6 +53,34 @@ class TestUnSeekableResponse(TestUnSeekable):
 
 class SeekableTests(TestCase):
 
+    def testReadlineBoundedPosition(self):
+        from mechanize._response import seek_wrapper
+        data = b"a\nbb\nccc"
+        for size in (1, 2, 3, 100):
+            expected = BytesIO(data)
+            response = seek_wrapper(TestUnSeekable(data))
+            for _ in range(len(data) + 1):
+                self.assertEqual(response.readline(size), expected.readline(size))
+                self.assertEqual(response.tell(), expected.tell())
+            response.seek(0)
+            self.assertEqual(response.read(), data)
+
+    def testReadlineNegativeSize(self):
+        from mechanize._response import seek_wrapper
+        for size in (-1, -2, -100):
+            response = seek_wrapper(TestUnSeekable(b"a\nbb\n"))
+            self.assertEqual(response.readline(size), b"a\n")
+            self.assertEqual(response.tell(), 2)
+            self.assertEqual(response.read(), b"bb\n")
+
+    def testReadlineZeroDoesNotRead(self):
+        from mechanize._response import seek_wrapper
+        stream = TestUnSeekable(b"a\nbb\n")
+        response = seek_wrapper(stream)
+        self.assertEqual(response.readline(0), b"")
+        self.assertEqual(response.tell(), 0)
+        self.assertEqual(stream.log, [])
+
     text = b"""\
 The quick brown fox
 jumps over the lazy

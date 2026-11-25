@@ -216,6 +216,8 @@ class seek_wrapper:
     def readline(self, size=-1):
         if not self.__have_readline:
             raise NotImplementedError("no readline method on wrapped object")
+        if size == 0:
+            return b""
 
         # line we're about to read might not be complete in the cache, so
         # read another line first
@@ -228,14 +230,9 @@ class seek_wrapper:
             self.__cache.write(data)
         self.__cache.seek(pos)
 
-        data = self.__cache.readline()
-        if size != -1:
-            r = data[:size]
-            self.__pos = pos + size
-        else:
-            r = data
-            self.__pos = pos + len(data)
-        return r
+        data = self.__cache.readline(size)
+        self.__pos = pos + len(data)
+        return data
 
     def readlines(self, sizehint=-1):
         pos = self.__pos
