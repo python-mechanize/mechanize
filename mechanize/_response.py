@@ -183,6 +183,8 @@ class seek_wrapper:
             self.__pos = pos
 
     def read(self, size=-1):
+        if size is None or size < 0:
+            size = -1
         pos = self.__pos
         end = len_of_seekable(self.__cache)
         available = end - pos

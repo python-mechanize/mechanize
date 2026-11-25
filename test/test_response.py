@@ -81,6 +81,17 @@ class SeekableTests(TestCase):
         self.assertEqual(response.tell(), 0)
         self.assertEqual(stream.log, [])
 
+    def testReadNegativeOrNoneSize(self):
+        from mechanize._response import seek_wrapper
+        for size in (None, -2, -100):
+            response = seek_wrapper(TestUnSeekable(b"abcdef"))
+            self.assertEqual(response.read(3), b"abc")
+            self.assertEqual(response.read(size), b"def")
+            self.assertEqual(response.tell(), 6)
+            response.seek(1)
+            self.assertEqual(response.read(size), b"bcdef")
+            self.assertEqual(response.tell(), 6)
+
     text = b"""\
 The quick brown fox
 jumps over the lazy
