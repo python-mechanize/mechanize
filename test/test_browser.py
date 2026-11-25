@@ -808,6 +808,25 @@ class BrowserTests(TestCase):
                     self.assertEqual(response.read(3) + response.read(), data)
                     self.assertEqual(response.read(), b'')
 
+    def test_gzip_readline(self):
+        from mechanize._gzip import create_gzip_decompressor
+
+        def decompressor(data):
+            return create_gzip_decompressor(BytesIO(
+                b''.join(compress_readable_output(BytesIO(data)))))
+
+        data = b'\na\n\nbb\nccc'
+        lines = data.splitlines(True)
+        self.assertEqual(list(decompressor(data)), lines)
+        f = decompressor(data)
+        self.assertEqual(
+            [f.readline() for _ in range(len(lines) + 1)], lines + [b''])
+        for size in (1, 2, 3, 100):
+            expected = BytesIO(data)
+            f = decompressor(data)
+            for _ in range(len(data) + 1):
+                self.assertEqual(f.readline(size), expected.readline(size))
+
     def test_gzip_padding_does_not_hide_bad_crc(self):
         encoded = b''.join(compress_readable_output(BytesIO(b'payload')))
         encoded = encoded[:-8] + b'\0' * 4 + encoded[-4:] + b'\0'

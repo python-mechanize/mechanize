@@ -36,6 +36,13 @@ def len_of_seekable(file_):
         file_.seek(pos)
 
 
+def normalize_read_size(size):
+    # like io.BytesIO, treat None and all negative sizes as "read everything"
+    if size is None or size < 0:
+        return -1
+    return size
+
+
 # XXX Andrew Dalke kindly sent me a similar class in response to my request on
 # comp.lang.python, which I then proceeded to lose.  I wrote this class
 # instead, but I think he's released his code publicly since, could pinch the
@@ -183,6 +190,7 @@ class seek_wrapper:
             self.__pos = pos
 
     def read(self, size=-1):
+        size = normalize_read_size(size)
         pos = self.__pos
         end = len_of_seekable(self.__cache)
         available = end - pos
@@ -194,18 +202,19 @@ class seek_wrapper:
             return self.__cache.read(size)
 
         # no, so read sufficient data from wrapped file and cache it
-        self.__cache.seek(0, 2)
-        if size == -1:
-            self.__cache.write(self.wrapped.read())
-            self.read_complete = True
-        else:
-            to_read = size - available
-            assert to_read > 0
-            data = self.wrapped.read(to_read)
-            if not data:
+        if not self.read_complete:
+            self.__cache.seek(0, 2)
+            if size == -1:
+                self.__cache.write(self.wrapped.read())
                 self.read_complete = True
             else:
-                self.__cache.write(data)
+                to_read = size - available
+                assert to_read > 0
+                data = self.wrapped.read(to_read)
+                if not data:
+                    self.read_complete = True
+                else:
+                    self.__cache.write(data)
         self.__cache.seek(pos)
 
         data = self.__cache.read(size)
@@ -216,21 +225,26 @@ class seek_wrapper:
     def readline(self, size=-1):
         if not self.__have_readline:
             raise NotImplementedError("no readline method on wrapped object")
+        size = normalize_read_size(size)
         if size == 0:
             return b""
 
-        # line we're about to read might not be complete in the cache, so
-        # read another line first
         pos = self.__pos
-        self.__cache.seek(0, 2)
-        data = self.wrapped.readline()
-        if not data:
-            self.read_complete = True
-        else:
-            self.__cache.write(data)
         self.__cache.seek(pos)
-
         data = self.__cache.readline(size)
+        if (not data.endswith(b"\n") and len(data) != size and
+                not self.read_complete):
+            # the line we're about to read is not complete in the cache, so
+            # read another line from the wrapped file first
+            self.__cache.seek(0, 2)
+            line = self.wrapped.readline()
+            if not line:
+                self.read_complete = True
+            else:
+                self.__cache.write(line)
+            self.__cache.seek(pos)
+            data = self.__cache.readline(size)
+
         self.__pos = pos + len(data)
         return data
 

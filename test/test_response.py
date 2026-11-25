@@ -81,6 +81,59 @@ class SeekableTests(TestCase):
         self.assertEqual(response.tell(), 0)
         self.assertEqual(stream.log, [])
 
+    def testReadlineUsesCachedLines(self):
+        from mechanize._response import seek_wrapper
+        stream = TestUnSeekable(b"a\nbb\nccc")
+        response = seek_wrapper(stream)
+        # bounded reads within a line only read that line from the stream
+        self.assertEqual(response.readline(1), b"a")
+        self.assertEqual(response.readline(1), b"\n")
+        self.assertEqual(response.readline(1), b"b")
+        self.assertEqual(stream.log, [("readline", -1), ("readline", -1)])
+        self.assertEqual(response.readline(), b"b\n")
+        # lines already in the cache are not read again from the stream
+        del stream.log[:]
+        response.seek(0)
+        self.assertEqual(response.readline(), b"a\n")
+        self.assertEqual(response.readline(), b"bb\n")
+        self.assertEqual(stream.log, [])
+        # incomplete final line, then EOF
+        self.assertEqual(response.readline(), b"ccc")
+        self.assertEqual(response.readline(), b"")
+        self.assertTrue(response.read_complete)
+        del stream.log[:]
+        # once the stream is exhausted it is not read again
+        response.seek(2)
+        self.assertEqual(list(response), [b"bb\n", b"ccc"])
+        self.assertEqual(stream.log, [])
+
+    def testReadAfterEOFUsesCache(self):
+        from mechanize._response import seek_wrapper
+        stream = TestUnSeekable(b"abcdef")
+        response = seek_wrapper(stream)
+        self.assertEqual(response.read(), b"abcdef")
+        self.assertTrue(response.read_complete)
+        del stream.log[:]
+        self.assertEqual(response.read(), b"")
+        self.assertEqual(response.read(10), b"")
+        response.seek(2)
+        self.assertEqual(response.read(10), b"cdef")
+        response.seek(1)
+        self.assertEqual(response.read(), b"bcdef")
+        self.assertEqual(response.tell(), 6)
+        self.assertEqual(stream.log, [])
+
+    def testReadNegativeOrNoneSize(self):
+        from mechanize._response import seek_wrapper
+        for size in (None, -2, -100):
+            response = seek_wrapper(TestUnSeekable(b"abcdef"))
+            self.assertEqual(response.read(3), b"abc")
+            self.assertEqual(response.read(size), b"def")
+            self.assertEqual(response.tell(), 6)
+            response.seek(1)
+            self.assertEqual(response.read(size), b"bcdef")
+            self.assertEqual(response.tell(), 6)
+
     text = b"""\
 The quick brown fox
 jumps over the lazy

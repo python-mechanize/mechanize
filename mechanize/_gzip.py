@@ -127,7 +127,7 @@ class UnzipWrapper:
         # Dont care about making this efficient
         data = self.read()
         idx = data.find(b'\n')
-        if idx > 0:
+        if idx > -1:
             if sz < 0 or idx < sz:
                 line, self.__data = data[:idx + 1], data[idx + 1:]
             else:
@@ -146,15 +146,14 @@ class UnzipWrapper:
         return self.__fp.fileno()
 
     def __iter__(self):
-        ans = self.readline()
-        if ans:
-            yield ans
+        return self
 
-    def next(self):
+    def __next__(self):
         ans = self.readline()
         if not ans:
             raise StopIteration()
         return ans
+    next = __next__
 
 
 def create_gzip_decompressor(zipped_file):
