@@ -5,6 +5,8 @@ from collections import defaultdict
 
 from ._form_controls import HTMLForm, Label
 from ._request import Request
+from ._rfc3986 import clean_url, urlsplit
+from ._rfc3986 import urljoin as rfc3986_urljoin
 from .polyglot import urljoin, is_string, as_unicode
 
 
@@ -24,6 +26,59 @@ def label_text(elem):
         if child.tail:
             ans.append(child.tail)
     return ''.join(ans)
+
+
+# <base> elements inside these are not part of the HTML document's base URL
+_BASE_EXCLUDED_SUBTREES = frozenset(('svg', 'math', 'template'))
+
+
+def _find_base_href(root):
+    # Return the href of the first <base> element in document order that has
+    # one, without descending into the excluded subtrees. Iterative, so that
+    # deeply nested documents cannot exhaust the recursion limit.
+    stack = [iter((root,))]
+    while stack:
+        elem = next(stack[-1], None)
+        if elem is None:
+            stack.pop()
+            continue
+        if not is_string(elem.tag):
+            continue
+        q = elem.tag.lower()
+        if q == 'base':
+            href = elem.get('href')
+            if href is not None:
+                return href
+        elif q not in _BASE_EXCLUDED_SUBTREES:
+            stack.append(iter(elem))
+
+
+def _is_opaque(url):
+    # True for URLs such as about:blank and data: URLs that have no
+    # hierarchical path to resolve relative references against
+    scheme, authority, path = urlsplit(url)[:3]
+    return scheme is not None and authority is None and not path.startswith('/')
+
+
+def resolve_base_url(root, document_url):
+    '''
+    Return the base URL of the document whose root element is root: the href
+    of the first <base> element that has an href attribute, resolved against
+    document_url. As in browsers, later <base> elements are ignored and the
+    base URL applies to the whole document, including content that precedes
+    the <base> element. If there is no such <base> element, or the document
+    URL cannot be used as a base for relative URLs, document_url is returned.
+    '''
+    href = None if root is None else _find_base_href(root)
+    if href is None:
+        return document_url
+    href = clean_url(href)
+    if document_url is None:
+        return href
+    if _is_opaque(document_url) and urlsplit(href)[0] is None:
+        # A relative URL cannot be resolved against eg about:blank
+        return document_url
+    return rfc3986_urljoin(document_url, href)
 
 
 def parse_control(elem, parent_of, default_type='text'):
@@ -77,9 +132,10 @@ def parse_select(elem, parent_of, *a):
 
 
 def parse_forms(root, base_url, request_class=None, select_default=False, encoding=None):
+    # base_url is the URL of the document, any <base> element is applied below
+    document_url = base_url
     if request_class is None:
         request_class = Request
-    global_form = HTMLForm(base_url, encoding=encoding)
     forms, labels = [], []
     form_elems = []
     form_id_map = {}
@@ -87,6 +143,8 @@ def parse_forms(root, base_url, request_class=None, select_default=False, encodi
         e for e in root.iter('*') if is_string(e.tag))
     parent_map = {c: p for p in all_elems for c in p}
     id_to_labels = defaultdict(list)
+    base_url = resolve_base_url(root, document_url)
+    global_form = HTMLForm(document_url, encoding=encoding, base_url=base_url)
     for e in all_elems:
         q = e.tag.lower()
         if q == 'form':
@@ -100,8 +158,6 @@ def parse_forms(root, base_url, request_class=None, select_default=False, encodi
                 label = Label(label_text(e), for_id)
                 labels.append(label)
                 id_to_labels[for_id].append(label)
-        elif q == 'base':
-            base_url = e.get('href') or base_url
 
     def parent_of(elem, parent_name):
         q = elem
@@ -122,9 +178,12 @@ def parse_forms(root, base_url, request_class=None, select_default=False, encodi
         if action:
             action = urljoin(base_url, action)
         else:
-            action = base_url
+            # A missing or empty action submits to the document URL, not to
+            # the base URL
+            action = base_url if document_url is None else document_url
         form = HTMLForm(action, method, enctype, name, form_elem.attrib,
-                        request_class, forms, labels, id_to_labels, encoding=encoding)
+                        request_class, forms, labels, id_to_labels,
+                        encoding=encoding, base_url=base_url)
         forms_map[form_elem] = form
         forms.append(form)
 

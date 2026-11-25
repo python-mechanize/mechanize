@@ -4,7 +4,7 @@ import codecs
 import copy
 import re
 
-from ._form import parse_forms
+from ._form import parse_forms, resolve_base_url
 from ._headersutil import is_html as _is_html
 from ._headersutil import split_header_words
 from ._rfc3986 import clean_url, urljoin
@@ -67,6 +67,7 @@ def elem_text(elem):
 
 def iterlinks(root, base_url):
     link_tags = {"a": "href", "area": "href", "iframe": "src"}
+    base_url = resolve_base_url(root, base_url)
     for tag in root.iter('*'):
         if not is_string(tag.tag):
             continue
@@ -79,10 +80,6 @@ def iterlinks(root, base_url):
                 yield Link(base_url, url,
                            compress_whitespace(u''.join(elem_text(tag))), q,
                            tag.items())
-        elif q == 'base':
-            href = tag.get('href')
-            if href:
-                base_url = href
 
 
 def compress_whitespace(text):

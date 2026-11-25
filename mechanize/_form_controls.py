@@ -11,7 +11,7 @@ from mimetypes import guess_type
 
 from . import _request
 from .polyglot import (as_unicode, is_py2, iteritems, unicode_type, urlencode,
-                       urlparse, urlunparse)
+                       urljoin, urlparse, urlunparse)
 
 if is_py2:
     from cStringIO import StringIO
@@ -1842,7 +1842,8 @@ class HTMLForm:
                  forms=None,
                  labels=None,
                  id_to_labels=None,
-                 encoding=None):
+                 encoding=None,
+                 base_url=None):
         """
         In the usual case, use ParseResponse (or ParseFile) to create new
         HTMLForm objects.
@@ -1852,9 +1853,12 @@ class HTMLForm:
         enctype: form transfer encoding MIME type
         name: name of form
         attrs: dictionary mapping original HTML form attributes to their values
+        base_url: base URL of the document containing the form, used to
+         resolve relative formaction attributes of submit controls
 
         """
         self.action = action
+        self.base_url = base_url
         self.method = method
         self.enctype = enctype
         self.form_encoding = encoding or 'utf-8'
@@ -2474,8 +2478,12 @@ class HTMLForm:
                 if isinstance(control, ScalarControl):
                     self.method = control.attrs.get(
                         'formmethod') or self.method
-                    self.action = control.attrs.get(
-                        'formaction') or self.action
+                    formaction = control.attrs.get('formaction')
+                    if formaction:
+                        base_url = getattr(self, 'base_url', None)
+                        if base_url:
+                            formaction = urljoin(base_url, formaction)
+                        self.action = formaction
                     self.enctype = control.attrs.get(
                         'formenctype') or self.enctype
                 return control._click(self, coord, return_type, request_class)
